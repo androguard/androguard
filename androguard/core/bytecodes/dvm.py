@@ -2740,11 +2740,17 @@ class EncodedField:
         :rtype: string
         """
         if self.access_flags_string is None:
-            self.access_flags_string = get_access_flags_string(
-                self.get_access_flags())
+            if self.get_access_flags() == 0:
+                # No access flags, i.e. Java defaults apply
+                self.access_flags_string = ""
+                return self.access_flags_string
 
+            # Try to parse the string
+            self.access_flags_string = get_access_flags_string(self.get_access_flags())
+
+            # Fallback for unknown strings
             if self.access_flags_string == "":
-                self.access_flags_string = "0x%x" % self.get_access_flags()
+                self.access_flags_string = "0x{:06x}".format(self.get_access_flags())
         return self.access_flags_string
 
     def set_name(self, value):
@@ -4090,6 +4096,9 @@ class Instruction:
         """
         Return the 'kind' argument of the instruction
 
+        This is the type of the argument, i.e. in which kind of table you have
+        to look up the argument in the ClassManager
+
         :rtype: int
         """
         if self.OP >= 0xf2ff:
@@ -4152,7 +4161,7 @@ class Instruction:
 
         :rtype: string
         """
-        raise Exception("not implemented")
+        return ""
 
     def get_operands(self, idx=-1):
         """
@@ -4163,7 +4172,7 @@ class Instruction:
 
         :rtype: List[Tuple(Operand, object, ...)]
         """
-        raise Exception("not implemented")
+        return []
 
     def get_length(self):
         """
@@ -4197,8 +4206,10 @@ class Instruction:
 
         Returns None if no operands, otherwise a List
 
-        :return:
+        .. deprecated:: 3.4.0
+            Will be removed! This method always returns None
         """
+        warnings.warn("deprecated, this class will be removed!", DeprecationWarning)
         return None
 
     def get_hex(self):
@@ -4352,6 +4363,10 @@ class FillArrayData:
         s = binascii.hexlify(self.get_raw()).decode("ascii")
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
+    def disasm(self):
+        # FIXME:
+        return self.show_buff(None)
+
 
 class SparseSwitch:
     """
@@ -4483,6 +4498,10 @@ class SparseSwitch:
         """
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
+
+    def disasm(self):
+        # FIXME:
+        return self.show_buff(None)
 
 
 class PackedSwitch:
@@ -4622,6 +4641,10 @@ class PackedSwitch:
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i:i + 2] for i in range(0, len(s), 2))
 
+    def disasm(self):
+        # FIXME:
+        return self.show_buff(None)
+
 
 class Instruction35c(Instruction):
     """
@@ -4633,7 +4656,7 @@ class Instruction35c(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16a, self.BBBB, i16b = cm.packer["3H"].unpack(buff[0:6])
+        i16a, self.BBBB, i16b = cm.packer["3H"].unpack(buff[:self.length])
         self.OP = i16a & 0xff
         self.G = (i16a >> 8) & 0xf
         self.A = (i16a >> 12) & 0xf
@@ -4714,12 +4737,6 @@ class Instruction10x(Instruction):
         if padding != 0:
             raise InvalidInstruction('High byte of opcode with format 10x must be zero!')
 
-    def get_output(self, idx=-1):
-        return ""
-
-    def get_operands(self, idx=-1):
-        return []
-
     def get_raw(self):
         return self.cm.packer["H"].pack(self.OP)
 
@@ -4728,35 +4745,23 @@ class Instruction21h(Instruction):
     """
     This class represents all instructions which have the 21h format
     """
-
     length = 4
 
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
 
-        # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
-        i16, self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
-        self.formatted_operands = []
-
-        # FIXME: the actual literal value should be BBBB0000: Move the given literal value (right-zero-extended to 32/64 bits) into the specified register.
+        # FIXME: the actual literal value should be BBBB0000 or BBBB00000000000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
         # The question is, if we should leave BBBB untouched and only show it in the formatted operands or not.
-        if self.OP == 0x15:
-            self.formatted_operands.append(cm.packer["i"].unpack(bytearray([0] * 2) + cm.packer["h"].pack(self.BBBB))[0])
-        elif self.OP == 0x19:
-            self.formatted_operands.append(cm.packer["q"].unpack(bytearray([0] * 6) + cm.packer["h"].pack(self.BBBB))[0])
+        # OP 0x15: int16_t -> int32_t
+        # OP 0x19: int16_t -> int64_t
+        self.OP, self.AA, self.BBBB = cm.packer["BBh"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
-        return "v{}, {}{}".format(self.AA, self.BBBB,
-                                ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
+        return "v{}, {}".format(self.AA, self.BBBB)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBB)]
-
-    def get_formatted_operands(self):
-        return self.formatted_operands
 
     def get_literals(self):
         return [self.BBBB]
@@ -4775,7 +4780,7 @@ class Instruction11n(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, = cm.packer["h"].unpack(buff[0:2])
+        i16, = cm.packer["h"].unpack(buff[:self.length])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12)
@@ -4803,14 +4808,13 @@ class Instruction21c(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
-        i16, \
-        self.BBBB = cm.packer["2H"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB = cm.packer["BBH"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
-        return "v%d, %s" % (self.AA, kind)
+        if self.get_kind() == Kind.STRING:
+            kind = '"{}"'.format(kind)
+        return "v{}, {}".format(self.AA, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBB)
@@ -4868,15 +4872,14 @@ class Instruction22c(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.CCCC = cm.packer["2H"].unpack(buff[0:4])
+        i16, self.CCCC = cm.packer["2H"].unpack(buff[:self.length])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
-        return "v%d, v%d, %s" % (self.A, self.B, kind)
+        return "v{}, v{}, {}".format(self.A, self.B, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
@@ -4901,15 +4904,14 @@ class Instruction22cs(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.CCCC = cm.packer["2H"].unpack(buff[0:4])
+        i16, self.CCCC = cm.packer["2H"].unpack(buff[:self.length])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
-        return "v%d, v%d, %s" % (self.A, self.B, kind)
+        return "v{}, v{}, {}".format(self.A, self.B, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCC)
@@ -4958,14 +4960,11 @@ class Instruction31c(Instruction):
     def __init__(self, cm, buff):
         super().__init__()
         self.cm = cm
-        i16, \
-        self.BBBBBBBB = cm.packer["Hi"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBBBBBB = cm.packer["BBi"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
-        return "v%d, %s" % (self.AA, kind)
+        return "v{}, {}".format(self.AA, kind)
 
     def get_operands(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5001,13 +5000,13 @@ class Instruction12x(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, = cm.packer["h"].unpack(buff[0:2])
+        i16, = cm.packer["h"].unpack(buff[:self.length])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
 
     def get_output(self, idx=-1):
-        return "v%d, v%d" % (self.A, self.B)
+        return "v{}, v{}".format(self.A, self.B)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.A), (Operand.REGISTER, self.B)]
@@ -5054,7 +5053,6 @@ class Instruction51l(Instruction):
         self.OP, self.AA, self.BBBBBBBBBBBBBBBB = cm.packer["BBQ"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
-        # FIXME const-wide uses register pair
         return "v{}, {}".format(self.AA, self.BBBBBBBBBBBBBBBB)
 
     def get_operands(self, idx=-1):
@@ -5071,7 +5069,6 @@ class Instruction31i(Instruction):
     """
     This class represents all instructions which have the 31i format
     """
-
     length = 6
 
     def __init__(self, cm, buff):
@@ -5079,29 +5076,19 @@ class Instruction31i(Instruction):
         self.cm = cm
 
         self.OP, self.AA, self.BBBBBBBB = cm.packer["BBI"].unpack(buff[:self.length])
-        self.formatted_operands = []
 
-        if self.OP == 0x14:
-            # const vAA, #+BBBBBBBB: arbitrary 32-bit constant
-            # Show as hex (as it is often used for resources)
-            self.formatted_operands.append(hex(self.BBBBBBBB))
-
-        elif self.OP == 0x17:
-            # const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
-            # FIXME: it would be better to have the signed variant in BBBBBBBB and not just in formatted
-            self.formatted_operands.append(cm.packer["i"].unpack(cm.packer["I"].pack(self.BBBBBBBB))[0])
+        # FIXME: value transformation
+        # 0x14 // const vAA, #+BBBBBBBB: arbitrary 32-bit constant
+        # 0x17 // const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
 
     def get_output(self, idx=-1):
         #FIXME: on const-wide/32: it is actually a register pair vAA:vAA+1!
         #FIXME: the value must be sign extended to 64bit
-        return "v{}, {}{}".format(self.AA, self.BBBBBBBB, ' # {}'.format(self.formatted_operands[0]) if self.formatted_operands else '')
+        return "v{}, {}".format(self.AA, self.BBBBBBBB)
 
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBBBBBB)]
 
-    def get_formatted_operands(self):
-        return self.formatted_operands
-        return [self.BBBBBBBB]
 
     def get_raw(self):
         return self.cm.packer["BBI"].pack(self.OP, self.AA, self.BBBBBBBB)
@@ -5141,12 +5128,7 @@ class Instruction23x(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16a, \
-        i16b = cm.packer["2H"].unpack(buff[0:4])
-        self.OP = i16a & 0xff
-        self.AA = (i16a >> 8) & 0xff
-        self.BB = i16b & 0xff
-        self.CC = (i16b >> 8) & 0xff
+        self.OP, self.AA, self.BB, self.CC = cm.packer["BBBB"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}, v{}, v{}".format(self.AA, self.BB, self.CC)
@@ -5170,9 +5152,9 @@ class Instruction20t(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.AAAA = cm.packer["Hh"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
+        self.OP, padding, self.AAAA = cm.packer["BBh"].unpack(buff[:self.length])
+        if padding != 0:
+            raise InvalidInstruction('High byte of opcode with format 20t must be zero!')
 
     def get_output(self, idx=-1):
         # Offset is in 16bit units
@@ -5198,10 +5180,7 @@ class Instruction21t(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB = cm.packer["Hh"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB = cm.packer["BBh"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}, {:+04x}h".format(self.AA, self.BBBB)
@@ -5227,8 +5206,7 @@ class Instruction10t(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, \
-        self.AA = cm.packer["Bb"].unpack(buff[0:2])
+        self.OP, self.AA = cm.packer["Bb"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         # Offset is given in 16bit units
@@ -5255,8 +5233,7 @@ class Instruction22t(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.CCCC = cm.packer["Hh"].unpack(buff[0:4])
+        i16, self.CCCC = cm.packer["Hh"].unpack(buff[:self.length])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
@@ -5286,8 +5263,7 @@ class Instruction22s(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.CCCC = cm.packer["Hh"].unpack(buff[0:4])
+        i16, self.CCCC = cm.packer["Hh"].unpack(buff[:self.length])
         self.OP = i16 & 0xff
         self.A = (i16 >> 8) & 0xf
         self.B = (i16 >> 12) & 0xf
@@ -5317,11 +5293,7 @@ class Instruction22b(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BB, \
-        self.CC = cm.packer["HBb"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BB, self.CC = cm.packer["BBBb"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}, v{}, {}".format(self.AA, self.BB, self.CC)
@@ -5348,9 +5320,9 @@ class Instruction30t(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.AAAAAAAA = cm.packer["Hi"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
+        self.OP, padding, self.AAAAAAAA = cm.packer["BBi"].unpack(buff[:self.length])
+        if padding != 0:
+            raise InvalidInstruction('High byte of opcode with format 30t must be zero!')
 
     def get_output(self, idx=-1):
         return "{:+08x}h".format(self.AAAAAAAA)
@@ -5376,11 +5348,7 @@ class Instruction3rc(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB, \
-        self.CCCC = cm.packer["3H"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB, self.CCCC = cm.packer["BBHH"].unpack(buff[:self.length])
 
         self.NNNN = self.CCCC + self.AA - 1
 
@@ -5416,11 +5384,9 @@ class Instruction32x(Instruction):
         super().__init__()
         self.cm = cm
 
-        # FIXME check that higher byte of OP is zero
-        i16, \
-        self.AAAA, \
-        self.BBBB = cm.packer["3H"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
+        self.OP, padding, self.AAAA, self.BBBB = cm.packer["BBHH"].unpack(buff[:self.length])
+        if padding != 0:
+            raise InvalidInstruction('High byte of opcode with format 32x must be zero!')
 
     def get_output(self, idx=-1):
         return "v{}, v{}".format(self.AAAA, self.BBBB)
@@ -5443,10 +5409,7 @@ class Instruction20bc(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB = cm.packer["2H"].unpack(buff[0:4])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB = cm.packer["BBH"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "{}, {}".format(self.AA, self.BBBB)
@@ -5471,7 +5434,7 @@ class Instruction35mi(Instruction):
 
         i16a, \
         self.BBBB, \
-        i16b = cm.packer["3H"].unpack(buff[0:6])
+        i16b = cm.packer["3H"].unpack(buff[:self.length])
         self.OP = i16a & 0xff
         self.G = (i16a >> 8) & 0xf
         self.A = (i16a >> 12) & 0xf
@@ -5543,7 +5506,7 @@ class Instruction35ms(Instruction):
 
         i16a, \
         self.BBBB, \
-        i16b = cm.packer["3H"].unpack(buff[0:6])
+        i16b = cm.packer["3H"].unpack(buff[:self.length])
         self.OP = i16a & 0xff
         self.G = (i16a >> 8) & 0xf
         self.A = (i16a >> 12) & 0xf
@@ -5615,11 +5578,7 @@ class Instruction3rmi(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB, \
-        self.CCCC = cm.packer["3H"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB, self.CCCC = cm.packer["BBHH"].unpack(buff[:self.length])
 
         self.NNNN = self.CCCC + self.AA - 1
 
@@ -5665,11 +5624,7 @@ class Instruction3rms(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, \
-        self.BBBB, \
-        self.CCCC = cm.packer["3H"].unpack(buff[0:6])
-        self.OP = i16 & 0xff
-        self.AA = (i16 >> 8) & 0xff
+        self.OP, self.AA, self.BBBB, self.CCCC = cm.packer["BBHH"].unpack(buff[:self.length])
 
         self.NNNN = self.CCCC + self.AA - 1
 
@@ -5717,7 +5672,7 @@ class Instruction41c(Instruction):
 
         self.OP, \
         self.BBBBBBBB, \
-        self.AAAA = cm.packer["HIH"].unpack(buff[0:8])
+        self.AAAA = cm.packer["HIH"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5750,7 +5705,7 @@ class Instruction40sc(Instruction):
 
         self.OP, \
         self.BBBBBBBB, \
-        self.AAAA = cm.packer["HIH"].unpack(buff[0:8])
+        self.AAAA = cm.packer["HIH"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
@@ -5781,10 +5736,12 @@ class Instruction52c(Instruction):
         super().__init__()
         self.cm = cm
 
+        # FIXME: Not in the documentation!
+        # Using 16bit for opcode, but its ODEX, so...
         self.OP, \
         self.CCCCCCCC, \
         self.AAAA, \
-        self.BBBB = cm.packer["HI2H"].unpack(buff[0:10])
+        self.BBBB = cm.packer["HI2H"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         kind = get_kind(self.cm, self.get_kind(), self.CCCCCCCC)
@@ -5818,7 +5775,7 @@ class Instruction5rc(Instruction):
         self.OP, \
         self.BBBBBBBB, \
         self.AAAA, \
-        self.CCCC = cm.packer["HI2H"].unpack(buff[0:10])
+        self.CCCC = cm.packer["HI2H"].unpack(buff[:self.length])
 
         self.NNNN = self.CCCC + self.AAAA - 1
 
@@ -5863,11 +5820,15 @@ class Instruction45cc(Instruction):
         self.OP, reg1, self.BBBB, reg2, self.HHHH = self.cm.packer["BBHHH"].unpack(buff[:self.get_length()])
         # TODO need to check if registers are correct
         self.A = (reg1 & 0xF0) >> 4
+        if self.A > 5:
+            raise InvalidInstruction("A is greater than 5 (it is {}) which should never happen!".format(self.A))
         self.G = (reg1 & 0x0F)
-        self.C = (reg2 & 0x0F)
+
         self.D = (reg2 & 0xF0) >> 4
-        self.E = (reg2 & 0x0F00) >> 8
+        self.C = (reg2 & 0x0F)
+
         self.F = (reg2 & 0xF000) >> 12
+        self.E = (reg2 & 0x0F00) >> 8
 
     def get_raw(self):
         return self.cm.packer["BBHHH"].pack(
@@ -5878,7 +5839,23 @@ class Instruction45cc(Instruction):
                     self.HHHH)
 
     def get_output(self, idx=-1):
-        return 'FIXME!!!'
+        # FIXME get_kind of BBBB (method) and HHHH (proto)
+        if self.A == 1:
+            return 'v{}, {}, {}'.format(self.C, self.BBBB, self.HHHH)
+        if self.A == 2:
+            return 'v{}, v{}, {}, {}'.format(self.C, self.D, self.BBBB, self.HHHH)
+        if self.A == 3:
+            return 'v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.BBBB, self.HHHH)
+        if self.A == 4:
+            return 'v{}, v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.F, self.BBBB, self.HHHH)
+        if self.A == 5:
+            return 'v{}, v{}, v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.F, self.G, self.BBBB, self.HHHH)
+
+    def get_operands(self):
+        # FIXME
+        # THis one gets especially nasty, as all other opcodes assume that there
+        # is only a single kind type! But this opcode has two...
+        pass
 
 
 class Instruction4rcc(Instruction):
@@ -5893,10 +5870,15 @@ class Instruction4rcc(Instruction):
         self.NNNN = self.AA + self.CCCC - 1
 
     def get_raw(self):
-        return pack('<BBHHH', self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH)
+        return self.cm.packer['BBHHH'].pack(self.OP, self.AA, self.BBBB, self.CCCC, self.HHHH)
 
     def get_output(self, idx=-1):
-        return 'FIXME!!!'
+        # FIXME get_kind of BBBB (meth) and HHHH (proto)
+        return 'v{} .. v{} {} {}'.format(self.CCCC, self.NNNN, self.BBBB, self.HHHH)
+
+    def get_operands(self):
+        # FIXME
+        pass
 
 
 class Instruction00x(Instruction):
@@ -5918,6 +5900,10 @@ DALVIK_OPCODES_FORMAT = {
     # > The final letter semi-mnemonically indicates the type of any extra data encoded by the format.
     # > For example, format "21t" is of length two, contains one register reference,
     # > and additionally contains a branch target.
+    #
+    # This dict contains the Instruction type as a python class, the instruction
+    # name and if the instruction contains typed arguments also the Kind
+    # descriptor.
 
     0x00: [Instruction10x, ["nop"]],
     0x01: [Instruction12x, ["move"]],
