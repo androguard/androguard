@@ -24,6 +24,13 @@ To get all CFG in png format and limit the processing only to a certain namespac
 .. code-block:: bash
 
     androguard decompile -o outputfolder -f png -i someapp.apk --limit "^Lcom/elite/.*"
+    
+Please make sure that graphviz and pydot are installed.
+
+.. code-block:: bash
+
+    $ sudo apt-get install graphviz
+    $ pip install -U pydot
 
 
 This will decompile the app `someapp.apk` into the folder `outputfolder` and limit the processing to all methods, where
