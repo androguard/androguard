@@ -4089,6 +4089,23 @@ class Instruction:
     More information about the instruction format can be found in the official documentation:
     https://source.android.com/devices/tech/dalvik/instruction-formats.html
 
+    .. warning::
+        Values stored in the instructions are already interpreted at this stage.
+
+    The Dalvik VM has a eight opcodes to create constant integer values.
+    There are four variants for 32bit values and four for 64bit.
+    If floating point numbers are required, you have to use the conversion opcodes
+    like :code:`int-to-float`, :code:`int-to-double` or the variants using :code:`long`.
+
+    Androguard will always show the values as they are used in the opcode and also extend signs
+    and shift values!
+    As an example: The opcode :code:`const/high16` can be used to create constant values
+    where the lower 16 bits are all zero.
+    In this case, androguard will process bytecode :code:`15 00 CD AB` as beeing
+    :code:`const/high16 v0, 0xABCD0000`.
+    For the sign-extension, nothing is really done here, as it only affects the bit represenation
+    in the virtual machine. As androguard parses the values and uses python types internally,
+    we are not bound to specific size.
     """
     length = 0
     OP = 0
@@ -4752,11 +4769,17 @@ class Instruction21h(Instruction):
         super().__init__()
         self.cm = cm
 
-        # FIXME: the actual literal value should be BBBB0000 or BBBB00000000000: Move the given literal value (right-zero-extended to 32 bits) into the specified register.
-        # The question is, if we should leave BBBB untouched and only show it in the formatted operands or not.
-        # OP 0x15: int16_t -> int32_t
-        # OP 0x19: int16_t -> int64_t
-        self.OP, self.AA, self.BBBB = cm.packer["BBh"].unpack(buff[:self.length])
+        self.OP, self.AA, self.__BBBB = cm.packer["BBh"].unpack(buff[:self.length])
+
+        if self.OP == 0x15:
+            # OP 0x15: int16_t -> int32_t
+            self.BBBB = self.__BBBB << 16
+        elif self.OP == 0x19:
+            # OP 0x19: int16_t -> int64_t
+            self.BBBB = self.__BBBB << 48
+        else:
+            # Unknown opcode?
+            self.BBBB = self.__BBBB
 
     def get_output(self, idx=-1):
         return "v{}, {}".format(self.AA, self.BBBB)
@@ -4768,7 +4791,7 @@ class Instruction21h(Instruction):
         return [self.BBBB]
 
     def get_raw(self):
-        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, self.BBBB)
+        return self.cm.packer["Hh"].pack((self.AA << 8) | self.OP, self.__BBBB)
 
 
 class Instruction11n(Instruction):
@@ -4781,10 +4804,10 @@ class Instruction11n(Instruction):
         super().__init__()
         self.cm = cm
 
-        i16, = cm.packer["h"].unpack(buff[:self.length])
-        self.OP = i16 & 0xff
-        self.A = (i16 >> 8) & 0xf
-        self.B = (i16 >> 12)
+        self.OP, i8 = cm.packer["Bb"].unpack(buff[:self.length])
+        self.A = i8 & 0xf
+        # Sign extension not required
+        self.B = i8 >> 4
 
     def get_output(self, idx=-1):
         return "v{}, {}".format(self.A, self.B)
@@ -5051,7 +5074,7 @@ class Instruction51l(Instruction):
         self.cm = cm
 
         # arbitrary double-width (64-bit) constant
-        self.OP, self.AA, self.BBBBBBBBBBBBBBBB = cm.packer["BBQ"].unpack(buff[:self.length])
+        self.OP, self.AA, self.BBBBBBBBBBBBBBBB = cm.packer["BBq"].unpack(buff[:self.length])
 
     def get_output(self, idx=-1):
         return "v{}, {}".format(self.AA, self.BBBBBBBBBBBBBBBB)
@@ -5063,7 +5086,7 @@ class Instruction51l(Instruction):
         return [self.BBBBBBBBBBBBBBBB]
 
     def get_raw(self):
-        return self.cm.packer["BBQ"].pack(self.OP, self.AA, self.BBBBBBBBBBBBBBBB)
+        return self.cm.packer["BBq"].pack(self.OP, self.AA, self.BBBBBBBBBBBBBBBB)
 
 
 class Instruction31i(Instruction):
@@ -5076,15 +5099,13 @@ class Instruction31i(Instruction):
         super().__init__()
         self.cm = cm
 
-        self.OP, self.AA, self.BBBBBBBB = cm.packer["BBI"].unpack(buff[:self.length])
+        self.OP, self.AA, self.BBBBBBBB = cm.packer["BBi"].unpack(buff[:self.length])
 
-        # value transformation is done at the decompiler stage. At this point, we dont care!
         # 0x14 // const vAA, #+BBBBBBBB: arbitrary 32-bit constant
         # 0x17 // const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
 
     def get_output(self, idx=-1):
         #FIXME: on const-wide/32: it is actually a register pair vAA:vAA+1!
-        #FIXME: the value must be sign extended to 64bit
         return "v{}, {}".format(self.AA, self.BBBBBBBB)
 
     def get_operands(self, idx=-1):
@@ -5094,7 +5115,7 @@ class Instruction31i(Instruction):
         return [self.BBBBBBBB]
 
     def get_raw(self):
-        return self.cm.packer["BBI"].pack(self.OP, self.AA, self.BBBBBBBB)
+        return self.cm.packer["BBi"].pack(self.OP, self.AA, self.BBBBBBBB)
 
 
 class Instruction22x(Instruction):

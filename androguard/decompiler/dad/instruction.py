@@ -74,6 +74,13 @@ class IRForm:
 
 class Constant(IRForm):
     def __init__(self, value, atype, int_value=None, descriptor=None):
+        """
+
+        :param value:
+        :param atype: the type of the constant as described in https://source.android.com/devices/tech/dalvik/dex-format.html#typedescriptor
+        :param int_value:
+        :param descriptor:
+        """
         self.v = 'c%s' % value
         self.cst = value
         if int_value is None:

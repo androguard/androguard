@@ -402,27 +402,55 @@ class InstructionTest(unittest.TestCase):
         """Test function of Instruction 21h used for const{,-wide}/high16"""
         ins = dvm.Instruction21h(MockClassManager(), bytearray([0x15, 0x00, 0x42, 0x11]))
         self.assertEqual(ins.get_op_value(), 0x15)
-        self.assertEqual(ins.get_literals(), [0x1142])
-        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
+        self.assertEqual(ins.get_literals(), [0x11420000])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x11420000)])
         self.assertEqual(ins.get_name(), 'const/high16')
-        self.assertEqual(ins.get_output(), 'v0, 4418')
+        self.assertEqual(ins.get_output(), 'v0, 289538048')
         self.assertEqual(ins.get_raw(), bytearray([0x15, 0x00, 0x42, 0x11]))
 
         ins = dvm.Instruction21h(MockClassManager(), bytearray([0x19, 0x00, 0x42, 0x11]))
         self.assertEqual(ins.get_op_value(), 0x19)
-        self.assertEqual(ins.get_literals(), [0x1142])
-        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142)])
+        self.assertEqual(ins.get_literals(), [0x1142000000000000])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x1142000000000000)])
         self.assertEqual(ins.get_name(), 'const-wide/high16')
-        self.assertEqual(ins.get_output(), 'v0, 4418')
+        self.assertEqual(ins.get_output(), 'v0, 1243556447107678208')
         self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0x42, 0x11]))
 
         ins = dvm.Instruction21h(MockClassManager(), bytearray([0x19, 0x00, 0xbe, 0xff]))
         self.assertEqual(ins.get_op_value(), 0x19)
-        self.assertEqual(ins.get_literals(), [-66])
-        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, -66)])
+        self.assertEqual(ins.get_literals(), [-18577348462903296])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, -18577348462903296)])
         self.assertEqual(ins.get_name(), 'const-wide/high16')
-        self.assertEqual(ins.get_output(), 'v0, -66')
+        self.assertEqual(ins.get_output(), 'v0, -18577348462903296')
         self.assertEqual(ins.get_raw(), bytearray([0x19, 0x00, 0xbe, 0xff]))
+
+    def testInstruction51l(self):
+        """test the functionality of const-wide"""
+        ins = dvm.Instruction51l(MockClassManager(), bytearray([0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        self.assertEqual(ins.get_op_value(), 0x18)
+        self.assertEqual(ins.get_literals(), [0])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0)])
+        self.assertEqual(ins.get_name(), 'const-wide')
+        self.assertEqual(ins.get_output(), 'v0, 0')
+        self.assertEqual(ins.get_raw(), bytearray([0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+
+        bytecode = bytearray([0x18, 0x00, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x70])
+        ins = dvm.Instruction51l(MockClassManager(), bytecode)
+        self.assertEqual(ins.get_op_value(), 0x18)
+        self.assertEqual(ins.get_literals(), [0x7034129078563412])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, 0x7034129078563412)])
+        self.assertEqual(ins.get_name(), 'const-wide')
+        self.assertEqual(ins.get_output(), 'v0, 8085107642740388882')
+        self.assertEqual(ins.get_raw(), bytecode)
+
+        bytecode = bytearray([0x18, 0x00, 0xee, 0xcb, 0xa9, 0x87, 0x6f, 0xed, 0xcb, 0x8f])
+        ins = dvm.Instruction51l(MockClassManager(), bytecode)
+        self.assertEqual(ins.get_op_value(), 0x18)
+        self.assertEqual(ins.get_literals(), [-8085107642740388882])
+        self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, 0x00), (dvm.Operand.LITERAL, -8085107642740388882)])
+        self.assertEqual(ins.get_name(), 'const-wide')
+        self.assertEqual(ins.get_output(), 'v0, -8085107642740388882')
+        self.assertEqual(ins.get_raw(), bytecode)
 
     def testInstruction11n(self):
         """Test the functionality for Instruction 11n (only used for const/4)"""
@@ -449,6 +477,7 @@ class InstructionTest(unittest.TestCase):
         """Test functionality of Instruction 21s (const/16, const-wide/16)"""
 
         # Both instructions have the same format, the difference is that they either write into 32bit or 64bit registers
+        # But this does not matter for us...
         tests = [
             ([0x01, 0x0E, 0x00], 1, 0x0E),
             ([0x02, 0x10, 0x00], 2, 0x10),
@@ -487,6 +516,7 @@ class InstructionTest(unittest.TestCase):
             ([0x00, 0xFF, 0xFF, 0xFF, 0x1F], 0, 0x1FFFFFFF),
             ([0x00, 0x62, 0x00, 0x07, 0x7F], 0, 0x7F070062),
             ([0x00, 0x74, 0x00, 0x07, 0x7F], 0, 0x7F070074),
+            # FIXME: test negative numbers
         ]
         for args, reg, lit in tests:
             # const
@@ -498,7 +528,14 @@ class InstructionTest(unittest.TestCase):
             self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, reg), (dvm.Operand.LITERAL, lit)])
             self.assertEqual(ins.get_output(), 'v{}, {}'.format(reg, lit))
 
-        # TODO tests for const-wide/32
+            # const-wide/32
+            bytecode = bytearray([0x17] + args)
+            ins = dvm.Instruction31i(MockClassManager(), bytecode)
+            self.assertEqual(ins.get_name(), 'const-wide/32')
+            self.assertEqual(ins.get_literals(), [lit])
+            self.assertEqual(ins.get_raw(), bytecode)
+            self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, reg), (dvm.Operand.LITERAL, lit)])
+            self.assertEqual(ins.get_output(), 'v{}, {}'.format(reg, lit))
 
 
 if __name__ == '__main__':
