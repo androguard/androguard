@@ -5090,6 +5090,8 @@ class Instruction31i(Instruction):
     def get_operands(self, idx=-1):
         return [(Operand.REGISTER, self.AA), (Operand.LITERAL, self.BBBBBBBB)]
 
+    def get_literals(self):
+        return [self.BBBBBBBB]
 
     def get_raw(self):
         return self.cm.packer["BBI"].pack(self.OP, self.AA, self.BBBBBBBB)
@@ -5135,7 +5137,8 @@ class Instruction23x(Instruction):
         return "v{}, v{}, v{}".format(self.AA, self.BB, self.CC)
 
     def get_operands(self, idx=-1):
-        return [(Operand.REGISTER, self.AA), (Operand.REGISTER, self.BB),
+        return [(Operand.REGISTER, self.AA),
+                (Operand.REGISTER, self.BB),
                 (Operand.REGISTER, self.CC)]
 
     def get_raw(self):

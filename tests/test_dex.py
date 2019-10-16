@@ -226,10 +226,10 @@ class InstructionTest(unittest.TestCase):
             self.assertEqual(instruction.get_raw(), bytecode)
 
             # Test with some pseudorandom stuff
-            if ins.__name__ in ['Instruction10x', 'Instruction20t', 'Instruction30t', 'Instruction32x']:
+            if ins.__name__ in ['Instruction10x', 'Instruction20t', 'Instruction30t', 'Instruction32x', 'Instruction45cc']:
                 # note this only works for certain opcode (which are not forced to 0 in certain places)
                 # Thus we need to make sure these places are zero.
-                # TODO: actually raise an error in the instruction if the place is not zero
+                # Instruction45cc: Has constrained regarding the parameter AA
                 bytecode = bytearray([op_value, 0] + [random.randint(0x00, 0xff) for _ in range(length - 2)])
             else:
                 bytecode = bytearray([op_value] + [random.randint(0x00, 0xff) for _ in range(length - 1)])
@@ -496,7 +496,7 @@ class InstructionTest(unittest.TestCase):
             self.assertEqual(ins.get_literals(), [lit])
             self.assertEqual(ins.get_raw(), bytecode)
             self.assertEqual(ins.get_operands(), [(dvm.Operand.REGISTER, reg), (dvm.Operand.LITERAL, lit)])
-            self.assertEqual(ins.get_output(), 'v{}, {} # {}'.format(reg, lit, hex(lit)))
+            self.assertEqual(ins.get_output(), 'v{}, {}'.format(reg, lit))
 
         # TODO tests for const-wide/32
 
