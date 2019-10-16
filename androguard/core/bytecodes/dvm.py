@@ -4088,6 +4088,7 @@ class Instruction:
 
     More information about the instruction format can be found in the official documentation:
     https://source.android.com/devices/tech/dalvik/instruction-formats.html
+
     """
     length = 0
     OP = 0
@@ -5077,7 +5078,7 @@ class Instruction31i(Instruction):
 
         self.OP, self.AA, self.BBBBBBBB = cm.packer["BBI"].unpack(buff[:self.length])
 
-        # FIXME: value transformation
+        # value transformation is done at the decompiler stage. At this point, we dont care!
         # 0x14 // const vAA, #+BBBBBBBB: arbitrary 32-bit constant
         # 0x17 // const-wide/32 vAA, #+BBBBBBBB: signed int (32 bits)
 

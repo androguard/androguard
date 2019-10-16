@@ -110,6 +110,8 @@ def assign_lit(op_type, val_cst, val_a, val_b, vmap):
     return AssignExpression(var_a, BinaryExpressionLit(op_type, var_b, cst))
 
 
+## From here on, there are all defined instructions
+
 # nop
 def nop(ins, vmap):
     return NopExpression()
@@ -243,7 +245,8 @@ def const16(ins, vmap):
 # const vAA, #+BBBBBBBB ( 8b, 32b )
 def const(ins, vmap):
     logger.debug('Const : %s', ins.get_output())
-    value = unpack("=f", pack("=i", ins.BBBBBBBB))[0]
+    # FIXME: why was float used here?!
+    value = unpack("=I", pack("=I", ins.BBBBBBBB))[0]
     cst = Constant(value, 'I', ins.BBBBBBBB)
     return assign_const(ins.AA, cst, vmap)
 
@@ -275,8 +278,9 @@ def constwide32(ins, vmap):
 # const-wide vAA, #+BBBBBBBBBBBBBBBB ( 8b, 64b )
 def constwide(ins, vmap):
     logger.debug('ConstWide : %s', ins.get_output())
-    value = unpack('=d', pack('=q', ins.BBBBBBBBBBBBBBBB))[0]
-    cst = Constant(value, 'D', ins.BBBBBBBBBBBBBBBB)
+    # FIXME: why was double used here?
+    value = unpack('=Q', pack('=Q', ins.BBBBBBBBBBBBBBBB))[0]
+    cst = Constant(value, 'Q', ins.BBBBBBBBBBBBBBBB)
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -1708,6 +1712,8 @@ def ushrintlit8(ins, vmap):
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 
+# FIXME: Need to add all opcodes here, check for new unused ones.
+# FIXME: The instruction set is dalvik version specific
 INSTRUCTION_SET = [
     # 0x00
     nop,  # nop
