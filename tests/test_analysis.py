@@ -1,11 +1,9 @@
 import unittest
 
-import sys
 from operator import itemgetter
 
 from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
-from androguard.core.mutf8 import MUTF8String
 from androguard.misc import AnalyzeAPK, AnalyzeDex
 
 
@@ -19,8 +17,6 @@ class AnalysisTest(unittest.TestCase):
 
     def testAPK(self):
         a, d, dx = AnalyzeAPK("examples/tests/a2dp.Vol_137.apk")
-
-        dx.create_xref()
 
         self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
         self.assertEqual(len(dx.get_strings()), 1564)
@@ -149,7 +145,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.find_methods(testcls.name, '^onCreate$'))), 1)
         self.assertEqual(list(dx.find_methods(testcls.name, '^onCreate$'))[0], testmeth)
 
-        self.assertIsInstance(testmeth, analysis.MethodClassAnalysis)
+        self.assertIsInstance(testmeth, analysis.MethodAnalysis)
         self.assertFalse(testmeth.is_external())
         self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
         self.assertEqual(testmeth.name, 'onCreate')
@@ -171,7 +167,7 @@ class AnalysisTest(unittest.TestCase):
         # Now, test if the reverse is true
         other = list(dx.find_methods('^Landroid/app/Activity;$', '^onCreate$'))
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
@@ -179,7 +175,7 @@ class AnalysisTest(unittest.TestCase):
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^setContentView$'))
         # External because not overwritten in class:
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
@@ -187,21 +183,21 @@ class AnalysisTest(unittest.TestCase):
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^getApplicationContext$'))
         # External because not overwritten in class:
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Landroid/widget/Toast;$', '^makeText$'))
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Landroid/widget/Toast;$', '^show$'))
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
@@ -212,7 +208,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.find_methods(testcls.name, '^testCalls$'))), 1)
         self.assertEqual(list(dx.find_methods(testcls.name, '^testCalls$'))[0], testmeth)
 
-        self.assertIsInstance(testmeth, analysis.MethodClassAnalysis)
+        self.assertIsInstance(testmeth, analysis.MethodAnalysis)
         self.assertFalse(testmeth.is_external())
         self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
         self.assertEqual(testmeth.name, 'testCalls')
@@ -227,27 +223,26 @@ class AnalysisTest(unittest.TestCase):
 
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^testCall2$'))
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertFalse(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ltests/androguard/TestIfs;$', '^testIF$'))
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertFalse(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ljava/lang/Object;$', '^getClass$'))
         self.assertEqual(len(other), 1)
-        self.assertIsInstance(other[0], analysis.MethodClassAnalysis)
+        self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
 
         # Not testing println, as it has too many variants...
-
 
     def testXrefOffsets(self):
         """Tests if String offsets in bytecode are correctly stored"""

@@ -19,9 +19,6 @@ for i in dvm.BRANCH_DVM_OPCODES:
         if p.match(items[1][0]):
             BasicOPCODES.add(op)
 
-# BasicOPCODESo = []
-# for i in dvm.BRANCH_DVM_OPCODES:
-#     BasicOPCODESo.append(re.compile(i))
 
 class REF_TYPE(IntEnum):
     """
@@ -225,12 +222,7 @@ class BasicBlocks:
 
     It is a collection of many :class:`DVMBasicBlock`.
     """
-    def __init__(self, _vm):
-        """
-
-        :param androguard.core.bytecodes.dvm.DalvikVMFormat _vm:
-        """
-        self.__vm = _vm
+    def __init__(self):
         self.bb = []
 
     def push(self, bb):
@@ -312,8 +304,7 @@ class ExceptionAnalysis:
 
 
 class Exceptions:
-    def __init__(self, _vm):
-        self.__vm = _vm
+    def __init__(self):
         self.exceptions = []
 
     def add(self, exceptions, basic_blocks):
@@ -339,42 +330,79 @@ class Exceptions:
 
 
 class MethodAnalysis:
-    def __init__(self, vm, method):
-        """
-        This class analyses in details a method of a class/dex file
-        It is a wrapper around a :class:`EncodedMethod` and enhances it
-        by using multiple :class:`DVMBasicBlock` encapsulated in a :class:`BasicBlocks` object.
+    """
+    This class analyses in details a method of a class/dex file
+    It is a wrapper around a :class:`EncodedMethod` and enhances it
+    by using multiple :class:`DVMBasicBlock` encapsulated in a :class:`BasicBlocks` object.
 
-        :type vm: a :class:`DalvikVMFormat` object
-        :type method: a :class:`EncodedMethod` object
-        """
+    :type vm: a :class:`DalvikVMFormat` object
+    :type method: a :class:`EncodedMethod` object
+    """
+    def __init__(self, vm, method):
         self.__vm = vm
         self.method = method
 
-        self.basic_blocks = BasicBlocks(self.__vm)
-        self.exceptions = Exceptions(self.__vm)
+        self.basic_blocks = BasicBlocks()
+        self.exceptions = Exceptions()
 
-        self.code = self.method.get_code()
+        self.xrefto = set()
+        self.xreffrom = set()
+
+        # Reserved for further use
+        self.apilist = None
+
+        if vm is None or isinstance(method, ExternalMethod):
+            # Support external methods here
+            # external methods usually dont have a VM associated
+            self.code = None
+        else:
+            self.code = self.method.get_code()
+
         if self.code:
             self._create_basic_block()
 
+    @property
+    def name(self):
+        """Returns the name of this method"""
+        return self.method.get_name()
+
+    @property
+    def descriptor(self):
+        """Returns the type descriptor for this method"""
+        return self.method.get_descriptor()
+
+    @property
+    def access(self):
+        """Returns the access flags to the method as a string"""
+        return self.method.get_access_flags_string()
+
+    @property
+    def class_name(self):
+        """Returns the name of the class of this method"""
+        return self.method.class_name
+
+    @property
+    def full_name(self):
+        """Returns classname + name + descriptor, separated by spaces (no access flags)"""
+        return self.method.full_name
+
     def _create_basic_block(self):
+        """
+        Internal Method to create the basic block structure
+        Parses all instructions and exceptions.
+        """
         current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
         self.basic_blocks.push(current_basic)
 
-        bc = self.code.get_bc()
         l = []
-        h = {}
-        idx = 0
+        h = dict()
 
-        log.debug("Parsing instructions for method at @{}".format(self.method.get_code_off()))
-        for i in bc.get_instructions():
-            if i.OP in BasicOPCODES:
-                v = dvm.determineNext(i, idx, self.method)
+        log.debug("Parsing instructions for method at @0x{:08x}".format(self.method.get_code_off()))
+        for idx, ins in self.method.get_instructions_idx():
+            if ins.get_op_value() in BasicOPCODES:
+                v = dvm.determineNext(ins, idx, self.method)
                 h[idx] = v
                 l.extend(v)
-
-            idx += i.get_length()
 
         log.debug("Parsing exceptions")
         excepts = dvm.determineException(self.__vm, self.method)
@@ -383,29 +411,25 @@ class MethodAnalysis:
             for handler in i[2:]:
                 l.append(handler[1])
 
-        log.debug("Creating basic blocks in method at @%s" % self.method.get_code_off())
-        idx = 0
-        for i in bc.get_instructions():
+        log.debug("Creating basic blocks")
+        for idx, ins in self.method.get_instructions_idx():
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
                     current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                     self.basic_blocks.push(current_basic)
 
-            current_basic.push(i)
+            current_basic.push(ins)
 
             # index is a branch instruction
             if idx in h:
                 current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                 self.basic_blocks.push(current_basic)
 
-            idx += i.get_length()
-
         if current_basic.get_nb_instructions() == 0:
             self.basic_blocks.pop(-1)
 
         log.debug("Settings basic blocks childs")
-
         for i in self.basic_blocks.get():
             try:
                 i.set_childs(h[i.end - i.get_last_length()])
@@ -413,13 +437,93 @@ class MethodAnalysis:
                 i.set_childs([])
 
         log.debug("Creating exceptions")
-
-        # Create exceptions
         self.exceptions.add(excepts, self.basic_blocks)
 
         for i in self.basic_blocks.get():
             # setup exception by basic block
             i.set_exception_analysis(self.exceptions.get_exception(i.start, i.end - 1))
+
+    def add_xref_to(self, classobj, methodobj, offset):
+        """
+        Add a crossreference to another method
+        (this method calls another method)
+
+        :param classobj: :class:`~ClassAnalysis`
+        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param offset: integer where in the method the call happens
+        """
+        self.xrefto.add((classobj, methodobj, offset))
+
+    def add_xref_from(self, classobj, methodobj, offset):
+        """
+        Add a crossrefernece from another method
+        (this method is called by another method)
+
+        :param classobj: :class:`~ClassAnalysis`
+        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param offset: integer where in the method the call happens
+        """
+        self.xreffrom.add((classobj, methodobj, offset))
+
+    def get_xref_from(self):
+        """
+        Returns a list of tuples containing the class, method and offset of
+        the call, from where this object was called.
+
+        The list of tuples has the form:
+        (:class:`~ClassAnalysis`,
+        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
+        :class:`~ExternalMethod`, :class:`int`)
+        """
+        return self.xreffrom
+
+    def get_xref_to(self):
+        """
+        Returns a list of tuples containing the class, method and offset of
+        the call, which are called by this method.
+
+        The list of tuples has the form:
+        (:class:`~ClassAnalysis`,
+        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
+        :class:`~ExternalMethod`, :class:`int`)
+        """
+        return self.xrefto
+
+    def is_external(self):
+        """
+        Returns True if the underlying method is external
+
+        :rtype: boolean
+        """
+        return isinstance(self.method, ExternalMethod)
+
+    def is_android_api(self):
+        """
+        Returns True if the method seems to be an Android API method.
+
+        This method might be not very precise unless an list of known API methods
+        is given.
+
+        :return: boolean
+        """
+        if not self.is_external():
+            # Method must be external to be an API
+            return False
+
+        # Packages found at https://developer.android.com/reference/packages.html
+        api_candidates = ["Landroid/", "Lcom/android/internal/util", "Ldalvik/", "Ljava/", "Ljavax/", "Lorg/apache/",
+                          "Lorg/json/", "Lorg/w3c/dom/", "Lorg/xml/sax", "Lorg/xmlpull/v1/", "Ljunit/"]
+
+        if self.apilist:
+            # FIXME: This will not work... need to introduce a name for lookup (like EncodedMethod.__str__ but without
+            # the offset! Such a name is also needed for the lookup in permissions
+            return self.method.get_name() in self.apilist
+        else:
+            for candidate in api_candidates:
+                if self.method.get_class_name().startswith(candidate):
+                    return True
+
+        return False
 
     def get_basic_blocks(self):
         """
@@ -432,14 +536,24 @@ class MethodAnalysis:
 
     def get_length(self):
         """
-        :rtype: an integer which is the length of the code
+        :returns: an integer which is the length of the code
+        :rtype: int
         """
         return self.code.get_length() if self.code else 0
 
     def get_vm(self):
+        """
+        :rtype: androguard.core.bytecodes.dvm.DalvikVMFormat
+        :return:
+        """
         return self.__vm
 
     def get_method(self):
+        """
+
+        :rtype: androguard.core.bytecodes.dvm.EncodedMethod
+        :return:
+        """
         return self.method
 
     def show(self):
@@ -465,6 +579,19 @@ class MethodAnalysis:
               self.method.get_name(),
               ", ".join(args), ret))
         bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
+
+    def show_xrefs(self):
+        data = "XREFto for %s\n" % self.method
+        for ref_class, ref_method, offset in self.xrefto:
+            data += "in\n"
+            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
+
+        data += "XREFFrom for %s\n" % self.method
+        for ref_class, ref_method, offset in self.xreffrom:
+            data += "in\n"
+            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
+
+        return data
 
     def __repr__(self):
         return "<analysis.MethodAnalysis {}>".format(self.method)
@@ -556,154 +683,6 @@ class StringAnalysis:
             s = "'{}'".format(self.get_value())
         return "<analysis.StringAnalysis {}>".format(s)
 
-
-class MethodClassAnalysis:
-    def __init__(self, method):
-        """
-        MethodClassAnalysis contains the XREFs for a given method.
-
-        Both referneces to other methods (XREF_TO) as well as methods calling
-        this method (XREF_FROM) are saved.
-
-        :param androguard.core.bytecodes.dvm.EncodedMethod method: the DVM Method object
-        """
-        self.method = method
-        self.xrefto = set()
-        self.xreffrom = set()
-
-        # Reserved for further use
-        self.apilist = None
-
-    @property
-    def name(self):
-        """Returns the name of this method"""
-        return self.method.get_name()
-
-    @property
-    def descriptor(self):
-        """Returns the type descriptor for this method"""
-        return self.method.get_descriptor()
-
-    @property
-    def access(self):
-        """Returns the access flags to the method as a string"""
-        return self.method.get_access_flags_string()
-
-    @property
-    def class_name(self):
-        """Returns the name of the class of this method"""
-        return self.method.class_name
-
-    @property
-    def full_name(self):
-        """Returns classname + name + descriptor, separated by spaces (no access flags)"""
-        return self.method.full_name
-
-    def add_xref_to(self, classobj, methodobj, offset):
-        """
-        Add a crossreference to another method
-        (this method calls another method)
-
-        :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
-        :param offset: integer where in the method the call happens
-        """
-        self.xrefto.add((classobj, methodobj, offset))
-
-    def add_xref_from(self, classobj, methodobj, offset):
-        """
-        Add a crossrefernece from another method
-        (this method is called by another method)
-
-        :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
-        :param offset: integer where in the method the call happens
-        """
-        self.xreffrom.add((classobj, methodobj, offset))
-
-    def get_xref_from(self):
-        """
-        Returns a list of tuples containing the class, method and offset of
-        the call, from where this object was called.
-
-        The list of tuples has the form:
-        (:class:`~ClassAnalysis`,
-        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
-        :class:`~ExternalMethod`, :class:`int`)
-        """
-        return self.xreffrom
-
-    def get_xref_to(self):
-        """
-        Returns a list of tuples containing the class, method and offset of
-        the call, which are called by this method.
-
-        The list of tuples has the form:
-        (:class:`~ClassAnalysis`,
-        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
-        :class:`~ExternalMethod`, :class:`int`)
-        """
-        return self.xrefto
-
-    def is_external(self):
-        """
-        Returns True if the underlying method is external
-
-        :rtype: boolean
-        """
-        return isinstance(self.method, ExternalMethod)
-
-    def is_android_api(self):
-        """
-        Returns True if the method seems to be an Android API method.
-
-        This method might be not very precise unless an list of known API methods
-        is given.
-
-        :return: boolean
-        """
-        if not self.is_external():
-            # Method must be external to be an API
-            return False
-
-        # Packages found at https://developer.android.com/reference/packages.html
-        api_candidates = ["Landroid/", "Lcom/android/internal/util", "Ldalvik/", "Ljava/", "Ljavax/", "Lorg/apache/",
-                          "Lorg/json/", "Lorg/w3c/dom/", "Lorg/xml/sax", "Lorg/xmlpull/v1/", "Ljunit/"]
-
-        if self.apilist:
-            # FIXME: This will not work... need to introduce a name for lookup (like EncodedMethod.__str__ but without
-            # the offset! Such a name is also needed for the lookup in permissions
-            return self.method.get_name() in self.apilist
-        else:
-            for candidate in api_candidates:
-                if self.method.get_class_name().startswith(candidate):
-                    return True
-
-        return False
-
-    def get_method(self):
-        """
-        Return the `EncodedMethod` object that relates to this object
-        :return: `dvm.EncodedMethod`
-        """
-        return self.method
-
-    def __str__(self):
-        data = "XREFto for %s\n" % self.method
-        for ref_class, ref_method, offset in self.xrefto:
-            data += "in\n"
-            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
-
-        data += "XREFFrom for %s\n" % self.method
-        for ref_class, ref_method, offset in self.xreffrom:
-            data += "in\n"
-            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
-
-        return data
-
-    def __repr__(self):
-        return "<analysis.MethodClassAnalysis {}{}>".format(self.method,
-               " EXTERNAL" if isinstance(self.method, ExternalMethod) else "")
 
 
 class FieldClassAnalysis:
@@ -806,38 +785,17 @@ class ExternalClass:
     """
     def __init__(self, name):
         self.name = name
-        self.methods = {}
+        self.methods = []
 
     def get_methods(self):
         """
         Return the stored methods for this external class
         :return:
         """
-        return self.methods.values()
+        return self.methods
 
-    def GetMethod(self, name, descriptor):
-        """
-        .. deprecated:: 3.1.0
-            Use :meth:`get_method` instead.
-
-        """
-        warnings.warn("deprecated, use get_method instead. This function might be removed in a later release!", DeprecationWarning)
-        return self.get_method(name, descriptor)
-
-    def get_method(self, name, descriptor):
-        """
-        Get the method by name and descriptor,
-        or create a new one if the requested method does not exists.
-
-        :param name: method name
-        :param descriptor: method descriptor, for example `'(I)V'`
-        :return: :class:`ExternalMethod`
-        """
-        key = name + mutf8.MUTF8String.join(descriptor)
-        if key not in self.methods:
-            self.methods[key] = ExternalMethod(self.name, name, descriptor)
-
-        return self.methods[key]
+    def add_method(self, method):
+        self.methods.append(method)
 
     def get_name(self):
         """
@@ -925,8 +883,10 @@ class ClassAnalysis:
         self.external = isinstance(classobj, ExternalClass)
 
         self.orig_class = classobj
-        self._inherits_methods = {}
-        self._methods = {}
+
+        # Contains EncodedMethod/ExternalMethod -> MethodAnalysis
+        self._methods = dict()
+
         self._fields = {}
 
         self.xrefto = collections.defaultdict(set)
@@ -934,6 +894,18 @@ class ClassAnalysis:
 
         # Reserved for further use
         self.apilist = None
+
+    def add_method(self, method_analysis):
+        """
+        Add the given method to this analyis.
+        usually only called during Analysis.add and Analysis._resolve_method
+
+        :param MethodAnalysis method_analysis:
+        """
+        self._methods[method_analysis.get_method()] = method_analysis
+        if self.external:
+            # Propagate ExternalMethod to ExternalClass
+            self.orig_class.add_method(method_analysis.get_method())
 
     @property
     def implements(self):
@@ -1008,9 +980,9 @@ class ClassAnalysis:
 
     def get_methods(self):
         """
-        Return all :class:`MethodClassAnalysis` objects of this class
+        Return all :class:`MethodAnalysis` objects of this class
 
-        :rtype: Iterator[MethodClassAnalysis]
+        :rtype: Iterator[MethodAnalysis]
         """
         return list(self._methods.values())
 
@@ -1028,35 +1000,16 @@ class ClassAnalysis:
 
     def get_method_analysis(self, method):
         """
-        Return the MethodClassAnalysis object for a given EncodedMethod
+        Return the MethodAnalysis object for a given EncodedMethod
 
         :param method: :class:`EncodedMethod`
-        :return: :class:`MethodClassAnalysis`
+        :return: :class:`MethodAnalysis`
+        :rtype: MethodAnalysis
         """
         return self._methods.get(method)
 
     def get_field_analysis(self, field):
         return self._fields.get(field)
-
-    def get_fake_method(self, name, descriptor):
-        """
-        Search for the given method name and descriptor
-        and return a fake (ExternalMethod) if required.
-
-        :param name: name of the method
-        :param descriptor: descriptor of the method, for example `'(I I I)V'`
-        :return: :class:`ExternalMethod`
-        """
-        if self.external:
-            # An external class can only generate the methods on demand
-            return self.orig_class.get_method(name, descriptor)
-
-        # We are searching an unknown method in this class
-        # It could be something that the class herits
-        key = name + mutf8.MUTF8String.join(descriptor)
-        if key not in self._inherits_methods:
-            self._inherits_methods[key] = ExternalMethod(self.orig_class.get_name(), name, descriptor)
-        return self._inherits_methods[key]
 
     def add_field_xref_read(self, method, classobj, field, off):
         """
@@ -1087,13 +1040,23 @@ class ClassAnalysis:
         self._fields[field].add_xref_write(classobj, method, off)
 
     def add_method_xref_to(self, method1, classobj, method2, offset):
-        if method1 not in self._methods:
-            self._methods[method1] = MethodClassAnalysis(method1)
+        """
+
+        :param MethodAnalysis method1:
+        :param ClassAnalysis classobj:
+        :param MethodAnalysis method2:
+        :param int offset:
+        """
         self._methods[method1].add_xref_to(classobj, method2, offset)
 
     def add_method_xref_from(self, method1, classobj, method2, offset):
-        if method1 not in self._methods:
-            self._methods[method1] = MethodClassAnalysis(method1)
+        """
+
+        :param MethodAnalysis method1:
+        :param ClassAnalysis classobj:
+        :param MethodAnalysis method2:
+        :param int offset:
+        """
         self._methods[method1].add_xref_from(classobj, method2, offset)
 
     def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
@@ -1203,6 +1166,19 @@ class ClassAnalysis:
         return data
 
 
+class MethodClassAnalysis(MethodAnalysis):
+    """
+
+    .. deprecated:: 3.4.0
+
+        Always use MethodAnalysis!
+        This method is just here for compatability
+
+    """
+    def __init__(self, meth):
+        super().__init__(meth.cm.vm, meth)
+
+
 class Analysis:
     def __init__(self, vm=None):
         """
@@ -1215,7 +1191,7 @@ class Analysis:
 
         XREFs are created for:
         * classes (`ClassAnalysis`)
-        * methods (`MethodClassAnalysis`)
+        * methods (`MethodAnalysis`)
         * strings (`StringAnalyis`)
         * fields (`FieldClassAnalysis`)
 
@@ -1225,37 +1201,40 @@ class Analysis:
         # Contains DalvikVMFormat objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
-        self.classes = {}
+        self.classes = dict()
         # A dict of {string: StringAnalysis}, populated on create_xref()
-        self.strings = {}
+        self.strings = dict()
         # A dict of {EncodedMethod: MethodAnalysis}, populated on add(vm)
-        self.methods = {}
+        self.methods = dict()
+
+        # Used to quickly look up methods
+        self.__method_hashes = dict()
 
         if vm:
             self.add(vm)
 
+        self.__created_xrefs = False
+
     def add(self, vm):
         """
-        Add a DalvikVMFormat to this Analysis
+        Add a DalvikVMFormat to this Analysis.
 
-        :param vm: :class:`dvm.DalvikVMFormat` to add to this Analysis
+        :param androguard.core.bytecodes.dvm.DalvikVMFormat vm: :class:`dvm.DalvikVMFormat` to add to this Analysis
         """
         self.vms.append(vm)
+
         log.info("Adding DEX file version {}".format(vm.version))
+        # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(current_class)
+            for method in current_class.get_methods():
+                self.methods[method] = MethodAnalysis(vm, method)
 
-        for method in vm.get_methods():
-            self.methods[method] = MethodAnalysis(vm, method)
+                self.classes[current_class.get_name()].add_method(self.methods[method])
 
-    def _get_all_classes(self):
-        """
-        Returns all Class objects of all VMs in this Analysis
-        Used by create_xref().
-        """
-        for vm in self.vms:
-            for current_class in vm.get_classes():
-                yield current_class
+                # Store for faster lookup during create_xrefs
+                m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
+                self.__method_hashes[m_hash] = self.methods[method]
 
     def create_xref(self):
         """
@@ -1264,23 +1243,30 @@ class Analysis:
 
         If you are using multiple DEX files, this function must
         be called when all DEX files are added.
-        If you call the function after every DEX file, the
-        crossreferences might be wrong!
+        If you call the function after every DEX file, it will only work
+        for the first time.
         """
+        if self.__created_xrefs:
+            # TODO on concurrent runs, we probably need to clean up first,
+            # or check that we do not write garbage.
+            log.error("You have requested to run create_xref() twice! "
+                      "This will not work and cause problems! This function will exit right now. "
+                      "If you want to add multiple DEX files, use add() several times and then run create_xref() once.")
+            return
+
+        self.__created_xrefs = True
         log.debug("Creating Crossreferences (XREF)")
         tic = time.time()
-
-        # TODO on concurrent runs, we probably need to clean up first,
-        # or check that we do not write garbage.
 
         # TODO multiprocessing
         # One reason why multiprocessing is hard to implement is the creation of
         # the external classes and methods. This must be synchronized.
-        for c in self._get_all_classes():
-            self._create_xref(c)
+        for vm in self.vms:
+            for current_class in vm.get_classes():
+                self._create_xref(current_class)
 
         # TODO: After we collected all the information, we should add field and
-        # string xrefs to each MethodClassAnalysis
+        # string xrefs to each MethodAnalysis
 
         log.info("End of creating cross references (XREF) "
                  "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
@@ -1303,9 +1289,9 @@ class Analysis:
         """
         cur_cls_name = current_class.get_name()
 
-        log.debug("Creating XREF/DREF for class at @%s" % current_class.get_class_data_off())
+        log.debug("Creating XREF/DREF for class at @0x{:08x}".format(current_class.get_class_data_off()))
         for current_method in current_class.get_methods():
-            log.debug("Creating XREF for method at @%s" % current_method.get_code_off())
+            log.debug("Creating XREF for method at @0x{:08x}".format(current_method.get_code_off()))
 
             for off, instruction in current_method.get_instructions_idx():
                 op_value = instruction.get_op_value()
@@ -1352,22 +1338,8 @@ class Analysis:
                         # If another type, like int is used, we simply skip it.
                         continue
 
-                    method_item = None
-                    # TODO: should create get_method_descriptor inside Analysis,
-                    # otherwise we need to search in all DalvikVMFormat objects
-                    # for the corrent method
-                    for vm in self.vms:
-                        method_item = vm.get_method_descriptor(class_info, method_info[1], mutf8.MUTF8String.join(method_info[2]))
-                        if method_item:
-                            break
-
-                    if not method_item:
-                        # Seems to be an external class, create it first
-                        # Beware: if not all DEX files are loaded at the time create_xref runs
-                        # you will run into problems!
-                        if class_info not in self.classes:
-                            self.classes[class_info] = ClassAnalysis(ExternalClass(class_info))
-                        method_item = self.classes[class_info].get_fake_method(method_info[1], method_info[2])
+                    # Resolve the second MethodAnalysis, FIXME: for now get EncodedMethod/ExternalMethod
+                    method_item = self._resolve_method(class_info, method_info[1], method_info[2]).get_method()
 
                     self.classes[cur_cls_name].add_method_xref_to(current_method, self.classes[class_info], method_item, off)
                     self.classes[class_info].add_method_xref_from(method_item, self.classes[cur_cls_name], current_method, off)
@@ -1410,11 +1382,43 @@ class Analysis:
 
         :param method: :class:`EncodedMethod` to search for
         :return: :class:`MethodAnalysis` object for the given method, or None if method was not found
+        :rtype: MethodAnalysis
         """
         if method in self.methods:
             return self.methods[method]
-        else:
-            return None
+        return None
+
+    # Alias
+    get_method_analysis = get_method
+
+    def _resolve_method(self, class_name, method_name, method_descriptor):
+        """
+        Resolves the Method and returns MethodAnalysis.
+        Will automatically create ExternalMethods if can not resolve and add to the ClassAnalysis etc
+
+        :param str class_name:
+        :param str method_name:
+        :param List[str] method_descriptor: Tuple which has parameters and return type, i.e. ['(I Z)', 'V']
+        :return:
+        :rtype: MethodAnalysis
+        """
+        m_hash = (class_name, method_name, mutf8.MUTF8String.join(method_descriptor))
+        if m_hash not in self.__method_hashes:
+            # Need to create a new method
+            if class_name not in self.classes:
+                # External class? no problem!
+                self.classes[class_name] = ClassAnalysis(ExternalClass(class_name))
+
+            # Create external method
+            meth = ExternalMethod(class_name, method_name, method_descriptor)
+            meth_analysis = MethodAnalysis(None, meth)
+
+            # add to all the collections we have
+            self.__method_hashes[m_hash] = meth_analysis
+            self.classes[class_name].add_method(meth_analysis)
+            self.methods[meth] = meth_analysis
+
+        return self.__method_hashes[m_hash]
 
     def get_method_by_name(self, class_name, method_name, method_descriptor):
         """
@@ -1425,27 +1429,9 @@ class Analysis:
         :param method_descriptor: descriptor, for example '(I I Ljava/lang/String)V
         :return: :class:`EncodedMethod` or None if method was not found
         """
-        if class_name in self.classes:
-            for method in self.classes[class_name].get_vm_class().get_methods():
-                if method.get_name() == method_name and method.get_descriptor() == method_descriptor:
-                    return method
-        return None
-
-    def get_method_analysis(self, method):
-        """
-        Returns the crossreferencing object for a given Method.
-
-        Beware: the similar named function :meth:`~get_method()` will return
-        a :class:`MethodAnalysis` object, while this function returns a :class:`MethodClassAnalysis` object!
-
-        This Method will only work after a run of :meth:`~create_xref()`
-
-        :param method: :class:`EncodedMethod`
-        :return: :class:`MethodClassAnalysis` for the given method or None, if method was not found
-        """
-        class_analysis = self.get_class_analysis(method.get_class_name())
-        if class_analysis:
-            return class_analysis.get_method_analysis(method)
+        m_a = self.get_method_analysis_by_name(class_name, method_name, method_descriptor)
+        if m_a and not m_a.is_external():
+            return m_a.get_method()
         return None
 
     def get_method_analysis_by_name(self, class_name, method_name, method_descriptor):
@@ -1458,18 +1444,19 @@ class Analysis:
         :param class_name: name of the class, for example `'Ljava/lang/Object;'`
         :param method_name: name of the method, for example `'onCreate'`
         :param method_descriptor: method descriptor, for example `'(I I)V'`
-        :return: :class:`MethodClassAnalysis`
+        :return: :class:`MethodAnalysis`
+        :rtype: MethodAnalysis
         """
-        method = self.get_method_by_name(class_name, method_name, method_descriptor)
-        if method:
-            return self.get_method_analysis(method)
-        return None
+        m_hash = (class_name, method_name, method_descriptor)
+        if m_hash not in self.__method_hashes:
+            return None
+        return self.__method_hashes[m_hash]
 
     def get_field_analysis(self, field):
         """
         Get the FieldAnalysis for a given fieldname
 
-        :param field: TODO
+        :param androguard.core.bytecodes.dvm.EncodedField field: the field
         :return: :class:`FieldClassAnalysis`
         """
         class_analysis = self.get_class_analysis(field.get_class_name())
@@ -1545,14 +1532,12 @@ class Analysis:
 
     def get_methods(self):
         """
-        Returns a list of `MethodClassAnalysis` objects
+        Returns a list of `MethodAnalysis` objects
 
-        :rtype: Iterator[MethodClassAnalysis]
+        :rtype: Iterator[MethodAnalysis]
 
         """
-        for c in self.classes.values():
-            for m in c.get_methods():
-                yield m
+        yield from self.methods.values()
 
     def get_fields(self):
         """
@@ -1585,7 +1570,7 @@ class Analysis:
             accessflags=".*", no_external=False):
         """
         Find a method by name using regular expression.
-        This method will return all MethodClassAnalysis objects, which match the
+        This method will return all MethodAnalysis objects, which match the
         classname, methodname, descriptor and accessflags of the method.
 
         :param classname: regular expression for the classname
@@ -1593,7 +1578,7 @@ class Analysis:
         :param descriptor: regular expression for the descriptor
         :param accessflags: regular expression for the accessflags
         :param no_external: Remove external method from the output (default False)
-        :rtype: Iterator[MethodClassAnalysis]
+        :rtype: Iterator[MethodAnalysis]
         """
         classname = bytes(mutf8.MUTF8String.from_str(classname))
         methodname = bytes(mutf8.MUTF8String.from_str(methodname))
@@ -1647,7 +1632,7 @@ class Analysis:
                         yield f
 
     def __repr__(self):
-        return "<analysis.Analysis VMs: {}, Classes: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.strings))
+        return "<analysis.Analysis VMs: {}, Classes: {}, Methods: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.methods), len(self.strings))
 
     def get_call_graph(self, classname=".*", methodname=".*", descriptor=".*",
                        accessflags=".*", no_isolated=False, entry_points=[]):
@@ -1752,7 +1737,7 @@ class Analysis:
         As Strings can contain nearly anything, use :meth:`find_strings` instead.
 
         * Each `CLASS_` item will return a :class:`~ClassAnalysis`
-        * Each `METHOD_` item will return a :class:`~MethodClassAnalysis`
+        * Each `METHOD_` item will return a :class:`~MethodAnalysis`
         * Each `FIELD_` item will return a :class:`~FieldClassAnalysis`
         """
         # TODO: it would be fun to have the classes organized like the packages. I.e. you could do dx.CLASS_xx.yyy.zzz
@@ -1811,7 +1796,7 @@ class Analysis:
             If the wrong API level is used, the results might be wrong.
 
         :param apilevel: API level to load, or None for default
-        :return: yields tuples of :class:`MethodClassAnalysis` (of the API method) and list of permission string
+        :return: yields tuples of :class:`MethodAnalysis` (of the API method) and list of permission string
         """
 
         # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
@@ -1845,7 +1830,7 @@ class Analysis:
 
         :param permission: the name of the android permission (usually 'android.permission.XXX')
         :param apilevel: the requested API level or None for default
-        :return: yields :class:`MethodClassAnalysis` objects for all using API methods
+        :return: yields :class:`MethodAnalysis` objects for all using API methods
         """
 
         # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
