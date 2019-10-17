@@ -25,7 +25,7 @@ Use :code:`AnalyzeAPK(filename)` or :code:`AnalyzeDEX(filename)` to load a file 
 There are already plenty of APKs in the androguard repo, you can either use one
 of those, or start your own analysis.
 
-.. code-block:: python
+.. code-block:: none
 
     $ androguard analyze
     Androguard version 3.1.1 started
@@ -151,7 +151,7 @@ graphs to see the dependencies of different classes.
 
 As a first example, we will get all classes from the Analysis:
 
-.. code-block:: python
+.. code-block:: none
 
     In [2]: dx.get_classes()
     Out[2]:
@@ -178,7 +178,7 @@ actual code but the :class:`~androguard.core.bytecodes.dvm.ClassDefItem` can be
 loaded using the
 :meth:`~androguard.core.analysis.analysis.ClassAnalysis.get_vm_class`:
 
-.. code-block:: python
+.. code-block:: none
 
     In [5]: dx.get_classes()[2].get_vm_class()
     Out[5]: <dvm.ClassDefItem Ljava/lang/Object;->Landroid/support/v4/widget/FocusStrategy$BoundsAdapter;>

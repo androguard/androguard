@@ -5,13 +5,13 @@ One often requested task is to parse the bytecode of all (or certain) methods.
 The bytecode can be used for various tasks, from creating simple statistics to machine learning.
 
 The bytecode is stored for each method in the Dalvik file.
-Google provides some documentation about the `bytecode format<https://source.android.com/devices/tech/dalvik/dalvik-bytecode>`_, which is very useful
+Google provides some documentation about the `bytecode format <https://source.android.com/devices/tech/dalvik/dalvik-bytecode>`_, which is very useful
 if you want to process it.
 Androguard can provide three different forms of the bytecode:
 
-# Raw bytes
-# disassembled representation
-# decompiled representation
+* Raw bytes
+* disassembled representation
+* decompiled representation
 
 All three serve different purposes and might be used at the same time.
 
@@ -30,7 +30,7 @@ If the value is hexadecimal, the value is suffixed with a :code:`h`, i.e. :code:
 In the following few examples, we will take the provided APK file :code:`examples\android\TestsAndroguard\bin\TestActivity.apk`
 and assume that you have loaded it via :code:`AnalyzeAPK` and have the following objects:
 
-.. code-block:: python
+.. code-block:: guess
 
     >>> a
     <androguard.core.bytecodes.apk.APK object at 0x00000000058DD240>
@@ -81,7 +81,7 @@ of the :class:`~androguard.core.bytecodes.dvm.Instruction` class.
 
 This will print something like:
 
-.. code-block::
+.. code-block:: none
 
     0 91 iput-object v1, v0, LTestDefaultPackage$TestInnerClass$TestInnerInnerClass;->this$1 LTestDefaultPackage$TestInnerClass;
     4 112 invoke-direct v0, Ljava/lang/Object;-><init>()V
@@ -113,7 +113,7 @@ As an example, let's count the number of individual opcodes and create some stat
 
 This will output the top ten opcodes and the count:
 
-.. code-block::
+.. code-block:: none
 
     (110, 'invoke-virtual') --> 3532
     (84, 'iget-object') --> 2223
@@ -147,7 +147,7 @@ As another example, we will collect all constant integer values:
 
 This will print:
 
-.. code-block::
+.. code-block:: none
 
     minimal: -4616189618054758400
     maximal: 4707499256968118272
@@ -186,7 +186,7 @@ Unfortunately, the method to get to the AST is a little bit awkward:
 
 The AST is a dictionary, wich might look like this one:
 
-.. code-block::
+.. code-block:: none
 
     {'body': ['BlockStatement',
               None,
