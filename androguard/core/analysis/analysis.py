@@ -2,7 +2,6 @@ import re
 import collections
 from operator import itemgetter
 import time
-import warnings
 from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
 from androguard.core.bytecodes import dvm
 import logging
@@ -684,11 +683,10 @@ class StringAnalysis:
         return "<analysis.StringAnalysis {}>".format(s)
 
 
-
-class FieldClassAnalysis:
+class FieldAnalysis:
     def __init__(self, field):
         """
-        FieldClassAnalysis contains the XREFs for a class field.
+        FieldAnalysis contains the XREFs for a class field.
 
         Instead of using XREF_FROM/XREF_TO, this object has methods for READ and
         WRITE access to the field.
@@ -773,7 +771,7 @@ class FieldClassAnalysis:
         return data
 
     def __repr__(self):
-        return "<analysis.FieldClassAnalysis {}->{}>".format(self.field.class_name, self.field.name)
+        return "<analysis.FieldAnalysis {}->{}>".format(self.field.class_name, self.field.name)
 
 
 class ExternalClass:
@@ -819,9 +817,9 @@ class ExternalMethod:
     but obviously they have no code attached.
     The only known information about such methods are the class name, the method name and its descriptor.
 
-    :param class_name: name of the class
-    :param name: name of the method
-    :param descriptor: descriptor string
+    :param str class_name: name of the class
+    :param str name: name of the method
+    :param List[str] descriptor: descriptor string
     """
     def __init__(self, class_name, name, descriptor):
         self.class_name = class_name
@@ -835,7 +833,7 @@ class ExternalMethod:
         return self.class_name
 
     def get_descriptor(self):
-        return mutf8.MUTF8String.join(self.descriptor)
+        return str(mutf8.MUTF8String.join(self.descriptor))
 
     @property
     def full_name(self):
@@ -887,7 +885,8 @@ class ClassAnalysis:
         # Contains EncodedMethod/ExternalMethod -> MethodAnalysis
         self._methods = dict()
 
-        self._fields = {}
+        # Contains EncodedField -> FieldAnalysis
+        self._fields = dict()
 
         self.xrefto = collections.defaultdict(set)
         self.xreffrom = collections.defaultdict(set)
@@ -988,7 +987,7 @@ class ClassAnalysis:
 
     def get_fields(self):
         """
-        Return all `FieldClassAnalysis` objects of this class
+        Return all `FieldAnalysis` objects of this class
         """
         return self._fields.values()
 
@@ -1017,12 +1016,12 @@ class ClassAnalysis:
 
         :param androguard.core.bytecodes.dvm.EncodedMethod method:
         :param ClassAnalysis classobj:
-        :param str field:
+        :param androguard.code.bytecodes.dvm.EncodedField field:
         :param int off:
         :return:
         """
         if field not in self._fields:
-            self._fields[field] = FieldClassAnalysis(field)
+            self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_read(classobj, method, off)
 
     def add_field_xref_write(self, method, classobj, field, off):
@@ -1031,39 +1030,58 @@ class ClassAnalysis:
 
         :param androguard.core.bytecodes.dvm.EncodedMethod method:
         :param ClassAnalysis classobj:
-        :param str field:
+        :param androguard.core.bytecodes.dvm.EncodedField field:
         :param int off:
         :return:
         """
         if field not in self._fields:
-            self._fields[field] = FieldClassAnalysis(field)
+            self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_write(classobj, method, off)
 
     def add_method_xref_to(self, method1, classobj, method2, offset):
         """
 
+        FIXME: the parameters method1 and method2 are of type EncodedMethod or ExternalMethod
+        but we want them to be MethodAnalysis!
+
         :param MethodAnalysis method1:
         :param ClassAnalysis classobj:
         :param MethodAnalysis method2:
         :param int offset:
         """
-        self._methods[method1].add_xref_to(classobj, method2, offset)
+
+        # FIXME: Not entirely sure why this can happen but usually a multidex issue:
+        # The given method was not added before...
+        if method1.get_method() not in self._methods:
+            self.add_method(method1)
+
+        self._methods[method1.get_method()].add_xref_to(classobj, method2, offset)
 
     def add_method_xref_from(self, method1, classobj, method2, offset):
         """
 
-        :param MethodAnalysis method1:
+        FIXME: the parameters method1 and method2 are of type EncodedMethod or ExternalMethod
+        but we want them to be MethodAnalysis!
+
+        :param method1:
         :param ClassAnalysis classobj:
-        :param MethodAnalysis method2:
+        :param method2:
         :param int offset:
         """
-        self._methods[method1].add_xref_from(classobj, method2, offset)
+        # FIXME: Not entirely sure why this can happen but usually a multidex issue:
+        # The given method was not added before...
+        if method1.get_method() not in self._methods:
+            self.add_method(method1)
 
-    def AddXrefTo(self, ref_kind, classobj, methodobj, offset):
+        self._methods[method1.get_method()].add_xref_from(classobj, method2, offset)
+
+    def add_xref_to(self, ref_kind, classobj, methodobj, offset):
         """
         Creates a crossreference to another class.
         XrefTo means, that the current class calls another class.
         The current class should also be contained in the another class' XrefFrom list.
+
+        FIXME: methodobj should be MethodAnalysis!
 
         :param REF_TYPE ref_kind: type of call
         :param classobj: :class:`ClassAnalysis` object to link
@@ -1073,10 +1091,12 @@ class ClassAnalysis:
         """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
-    def AddXrefFrom(self, ref_kind, classobj, methodobj, offset):
+    def add_xref_from(self, ref_kind, classobj, methodobj, offset):
         """
         Creates a crossreference from this class.
         XrefFrom means, that the current class is called by another class.
+
+        FIXME: methodobj should be MethodAnalysis!
 
         :param REF_TYPE ref_kind: type of call
         :param classobj: :class:`ClassAnalysis` object to link
@@ -1138,6 +1158,9 @@ class ClassAnalysis:
     def get_vm_class(self):
         return self.orig_class
 
+    # Alias
+    get_class = get_vm_class
+
     def __repr__(self):
         return "<analysis.ClassAnalysis {}{}>".format(self.orig_class.get_name(),
                 " EXTERNAL" if isinstance(self.orig_class, ExternalClass) else "")
@@ -1193,7 +1216,7 @@ class Analysis:
         * classes (`ClassAnalysis`)
         * methods (`MethodAnalysis`)
         * strings (`StringAnalyis`)
-        * fields (`FieldClassAnalysis`)
+        * fields (`FieldAnalysis`)
 
         :param vm: inital DalvikVMFormat object (default None)
         """
@@ -1225,6 +1248,7 @@ class Analysis:
 
         log.info("Adding DEX file version {}".format(vm.version))
         # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
+        tic = time.time()
         for current_class in vm.get_classes():
             self.classes[current_class.get_name()] = ClassAnalysis(current_class)
             for method in current_class.get_methods():
@@ -1235,6 +1259,8 @@ class Analysis:
                 # Store for faster lookup during create_xrefs
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
                 self.__method_hashes[m_hash] = self.methods[method]
+
+        log.info("Reading bytecode took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def create_xref(self):
         """
@@ -1260,7 +1286,7 @@ class Analysis:
 
         # TODO multiprocessing
         # One reason why multiprocessing is hard to implement is the creation of
-        # the external classes and methods. This must be synchronized.
+        # the external classes and methods. This must be synchronized, which is now possible as we have a single method!
         for vm in self.vms:
             for current_class in vm.get_classes():
                 self._create_xref(current_class)
@@ -1305,12 +1331,8 @@ class Analysis:
                         # Need to make sure, that we get class types and not other types
                         continue
 
-                    # Internal xref related to class manipulation
-                    # FIXME should the xref really only set if the class is in self.classes? If an external class is added later, it will be added too!
-                    # See https://github.com/androguard/androguard/blob/d720ebf2a9c8e2a28484f1c81fdddbc57e04c157/androguard/core/analysis/analysis.py#L806
-                    # Before the check would go for internal classes only!
-                    # FIXME: effectively ignoring calls to itself - do we want that?
                     if type_info == cur_cls_name:
+                        # FIXME: effectively ignoring calls to itself - do we want that?
                         continue
 
                     if type_info not in self.classes:
@@ -1321,15 +1343,20 @@ class Analysis:
                     oth_cls = self.classes[type_info]
 
                     # FIXME: xref_to does not work here! current_method is wrong, as it is not the target!
-                    cur_cls.AddXrefTo(REF_TYPE(op_value), oth_cls, current_method, off)
-                    oth_cls.AddXrefFrom(REF_TYPE(op_value), cur_cls, current_method, off)
+                    # In this case that means, that current_method calls the class oth_class.
+                    # Hence, on xref_to the method info is the calling method not the called one,
+                    # as there is no called method!
+                    cur_cls.add_xref_to(REF_TYPE(op_value), oth_cls, current_method, off)
+                    oth_cls.add_xref_from(REF_TYPE(op_value), cur_cls, current_method, off)
 
                 # 2) check for method calls: invoke-* (0x6e ... 0x72), invoke-xxx/range (0x74 ... 0x78)
                 elif (0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if not method_info:
-                        log.warning("Could not get method_info for instruction at {} in method at @{}".format(off, current_method.get_code_off()))
+                        log.warning("Could not get method_info "
+                                    "for instruction at {} in method at @{}. "
+                                    "Requested IDX {}".format(off, current_method.get_code_off(), idx_meth))
                         continue
 
                     class_info = method_info[0].lstrip(b'[')
@@ -1338,16 +1365,19 @@ class Analysis:
                         # If another type, like int is used, we simply skip it.
                         continue
 
-                    # Resolve the second MethodAnalysis, FIXME: for now get EncodedMethod/ExternalMethod
-                    method_item = self._resolve_method(class_info, method_info[1], method_info[2]).get_method()
+                    # Resolve the second MethodAnalysis
+                    cur_meth = self.get_method(current_method)
+                    oth_meth = self._resolve_method(class_info, method_info[1], method_info[2])
 
-                    self.classes[cur_cls_name].add_method_xref_to(current_method, self.classes[class_info], method_item, off)
-                    self.classes[class_info].add_method_xref_from(method_item, self.classes[cur_cls_name], current_method, off)
+                    cur_cls = self.classes[cur_cls_name]
+                    oth_cls = self.classes[class_info]
 
+                    # FIXME: we could merge add_method_xref_* and add_xref_*
+                    cur_cls.add_method_xref_to(cur_meth, oth_cls, oth_meth, off)
+                    oth_cls.add_method_xref_from(oth_meth, cur_cls, cur_meth, off)
                     # Internal xref related to class manipulation
-                    if class_info in self.classes and class_info != cur_cls_name:
-                        self.classes[cur_cls_name].AddXrefTo(REF_TYPE(op_value), self.classes[class_info], method_item, off)
-                        self.classes[class_info].AddXrefFrom(REF_TYPE(op_value), self.classes[cur_cls_name], current_method, off)
+                    cur_cls.add_xref_to(REF_TYPE(op_value), oth_cls, oth_meth, off)
+                    oth_cls.add_xref_from(REF_TYPE(op_value), cur_cls, cur_meth, off)
 
                 # 3) check for string usage: const-string (0x1a), const-string/jumbo (0x1b)
                 elif 0x1a <= op_value <= 0x1b:
@@ -1457,7 +1487,7 @@ class Analysis:
         Get the FieldAnalysis for a given fieldname
 
         :param androguard.core.bytecodes.dvm.EncodedField field: the field
-        :return: :class:`FieldClassAnalysis`
+        :return: :class:`FieldAnalysis`
         """
         class_analysis = self.get_class_analysis(field.get_class_name())
         if class_analysis:
@@ -1541,9 +1571,9 @@ class Analysis:
 
     def get_fields(self):
         """
-        Returns a list of `FieldClassAnalysis` objects
+        Returns a list of `FieldAnalysis` objects
 
-        :rtype: Iterator[FieldClassAnalysis]
+        :rtype: Iterator[FieldAnalysis]
         """
         for c in self.classes.values():
             for f in c.get_fields():
@@ -1617,7 +1647,7 @@ class Analysis:
         :param fieldname: regular expression of the fieldname
         :param fieldtype: regular expression of the fieldtype
         :param accessflags: regular expression of the access flags
-        :rtype: Iterator[FieldClassAnalysis]
+        :rtype: Iterator[FieldAnalysis]
         """
         classname = bytes(mutf8.MUTF8String.from_str(classname))
         fieldname = bytes(mutf8.MUTF8String.from_str(fieldname))
@@ -1738,7 +1768,7 @@ class Analysis:
 
         * Each `CLASS_` item will return a :class:`~ClassAnalysis`
         * Each `METHOD_` item will return a :class:`~MethodAnalysis`
-        * Each `FIELD_` item will return a :class:`~FieldClassAnalysis`
+        * Each `FIELD_` item will return a :class:`~FieldAnalysis`
         """
         # TODO: it would be fun to have the classes organized like the packages. I.e. you could do dx.CLASS_xx.yyy.zzz
         for cls in self.get_classes():
