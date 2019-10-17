@@ -11,17 +11,8 @@ if sys.version_info < (3, 5):
           "Please upgrade at least to Python 3.5!", file=sys.stderr)
     sys.exit(1)
 
-install_requires = [
-                    'networkx>=1.11',
-                    'pygments',
-                    'lxml',
-                    'colorama',
-                    'matplotlib',
-                    'asn1crypto>=0.24.0',
-                    'click',
-                    'pydot>=1.4.1',
-                    'ipython>=5.0.0',
-                    ]
+with open('requirements.txt', 'r') as fp:
+    install_requires = fp.read().splitlines()
 
 # Find the right version for the magic package
 if sys.platform in ('darwin', 'win32'):
@@ -86,7 +77,7 @@ setup(
         'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
     },
     setup_requires=['setuptools'],
-    python_requires='>=3.4',
+    python_requires='>=3.5',
     classifiers=[
                  'License :: OSI Approved :: Apache Software License',
                  'Programming Language :: Python',
