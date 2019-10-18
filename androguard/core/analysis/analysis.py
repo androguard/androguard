@@ -1221,14 +1221,20 @@ class Analysis:
 
         The Analysis contains a lot of information about (multiple) DalvikVMFormat objects
         Features are for example XREFs between Classes, Methods, Fields and Strings.
+        Yet another part is the creation of BasicBlocks, which is important in the usage of
+        the Androguard Decompiler.
 
-        Multiple DalvikVMFormat Objects can be added using the function `add`
+        Multiple DalvikVMFormat Objects can be added using the function :meth:`add`.
 
         XREFs are created for:
         * classes (`ClassAnalysis`)
         * methods (`MethodAnalysis`)
         * strings (`StringAnalyis`)
         * fields (`FieldAnalysis`)
+
+        The Analysis should be the only object you are using next to the :class:`~androguard.core.bytecodes.apk.APK`.
+        It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
+        the functions from :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat` and the related classes.
 
         :param Optional[androguard.core.bytecodes.dvm.DalvikVMFormat] vm: inital DalvikVMFormat object (default None)
         """
