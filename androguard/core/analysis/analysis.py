@@ -385,6 +385,14 @@ class MethodAnalysis:
         """Returns classname + name + descriptor, separated by spaces (no access flags)"""
         return self.method.full_name
 
+    def get_class_name(self):
+        """Return the class name of the method"""
+        return self.class_name
+
+    def get_access_flags_string(self):
+        """Returns the concatenated access flags string"""
+        return self.access
+
     def _create_basic_block(self):
         """
         Internal Method to create the basic block structure
@@ -1710,21 +1718,20 @@ class Analysis:
             """
             Wrapper to add methods to a graph without duplication
 
-            method might be EncodedMethod or ExternalMethod
+            :param nx.MultiDiGraph G:
+            :param MethodAnalysis method:
             """
             if method in G.node:
                 return
 
-            external = isinstance(method, ExternalMethod)
-
             G.add_node(method,
-                       external=external,
-                       entrypoint=method.get_class_name() in entry_points,
-                       native="native" in method.get_access_flags_string(),
-                       public="public" in method.get_access_flags_string(),
-                       static="static" in method.get_access_flags_string(),
-                       vm=hash(method.CM.vm) if not external else 0,
-                       codesize=len(list(method.get_instructions())) if not external else 0,
+                       external=method.is_external(),
+                       entrypoint=method.class_name in entry_points,
+                       native="native" in method.access,
+                       public="public" in method.access,
+                       static="static" in method.access,
+                       vm=hash(method.get_method().CM.vm) if not method.is_external() else 0,
+                       codesize=len(list(method.get_method().get_instructions())) if not method.is_external() else 0,
                        )
 
         CG = nx.MultiDiGraph()
@@ -1734,18 +1741,17 @@ class Analysis:
         # Obviously, you can always do this later at the costs of computational power.
         for m in self.find_methods(classname=classname, methodname=methodname,
                                    descriptor=descriptor, accessflags=accessflags):
-            orig_method = m.get_method()
-            log.info("Adding Method '{}' to callgraph".format(orig_method))
+            log.info("Adding Method '{}' to callgraph".format(m.full_name))
 
             if no_isolated and len(m.get_xref_to()) == 0 and len(m.get_xref_from()) == 0:
-                log.info("Skipped {}, because if has no xrefs".format(orig_method))
+                log.info("Skipped {}, because if has no xrefs".format(m.full_name))
                 continue
 
-            _add_node(CG, orig_method)
+            _add_node(CG, m)
 
             for _, callee, offset in m.get_xref_to():
                 _add_node(CG, callee)
-                CG.add_edge(orig_method, callee, key=offset, offset=offset)
+                CG.add_edge(m, callee, key=offset, offset=offset)
 
             for _, caller, offset in m.get_xref_from():
                 # If _all_ methods are added to the CG, this will not make any difference.
@@ -1753,7 +1759,7 @@ class Analysis:
                 # This is particularly useful for external classes, as they do not have xref_to,
                 # thus if an external class is chosen as starting point, it will generate an empty graph.
                 _add_node(CG, caller)
-                CG.add_edge(caller, orig_method, key=offset, offset=offset)
+                CG.add_edge(caller, m, key=offset, offset=offset)
 
         return CG
 
