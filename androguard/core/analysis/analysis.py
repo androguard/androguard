@@ -1731,7 +1731,7 @@ class Analysis:
             :param nx.MultiDiGraph G:
             :param MethodAnalysis method:
             """
-            if method in G.node:
+            if method in G.nodes:
                 return
 
             G.add_node(method,

@@ -145,7 +145,7 @@ def plot(cg):
     internal = []
     external = []
 
-    for n in cg.node:
+    for n in cg.nodes:
         if n.is_external():
             external.append(n)
         else:

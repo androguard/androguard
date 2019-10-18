@@ -178,8 +178,6 @@ class EntryPointsTest(unittest.TestCase):
                                      'Test-debug.apk')
         arguments = ['--debug', 'cg', apk_path]
         result = runner.invoke(entry_points.entry_point, arguments)
-        print(result.exception)
-        print(result.output)
         assert result.exit_code == 0
 
     def test_cg_help(self):
