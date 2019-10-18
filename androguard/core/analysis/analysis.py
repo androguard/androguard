@@ -393,6 +393,9 @@ class MethodAnalysis:
         """Returns the concatenated access flags string"""
         return self.access
 
+    def get_descriptor(self):
+        return self.descriptor
+
     def _create_basic_block(self):
         """
         Internal Method to create the basic block structure
