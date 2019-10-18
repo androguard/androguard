@@ -20,8 +20,8 @@ class AnalysisTest(unittest.TestCase):
 
         self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
         self.assertEqual(len(dx.get_strings()), 1564)
-        self.assertEqual(len(list(dx.get_methods())), 11691)
-        self.assertEqual(len(list(dx.get_fields())), 3033)
+        self.assertEqual(len(list(dx.get_methods())), 12792)  # according to DEX Header 12795
+        self.assertEqual(len(list(dx.get_fields())), 3033)  # According to DEX Header 4005
         self.assertEqual(len(list(dx.get_external_classes())), 388)
 
         for cls in dx.get_external_classes():
@@ -56,14 +56,12 @@ class AnalysisTest(unittest.TestCase):
             self.assertIn(c, map(lambda x: x.orig_class.get_name(),
                 dx.get_external_classes()))
 
-
     def testMultidex(self):
         a, d, dx = AnalyzeAPK("examples/tests/multidex/multidex.apk")
 
         cls = list(map(lambda x: x.get_vm_class().get_name(), dx.get_classes()))
         self.assertIn('Lcom/foobar/foo/Foobar;', cls)
         self.assertIn('Lcom/blafoo/bar/Blafoo;', cls)
-
 
     def testMultiDexExternal(self):
         """
@@ -106,7 +104,6 @@ class AnalysisTest(unittest.TestCase):
         self.assertFalse(dx.classes["Lcom/blafoo/bar/Blafoo;"].is_external())
         self.assertIn("Lcom/foobar/foo/Foobar;", dx.classes)
         self.assertFalse(dx.classes["Lcom/foobar/foo/Foobar;"].is_external())
-
 
     def testInterfaces(self):
         h, d, dx = AnalyzeDex('examples/tests/InterfaceCls.dex')
@@ -170,7 +167,8 @@ class AnalysisTest(unittest.TestCase):
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        # We have MethodAnalysis now stored in the xref!
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^setContentView$'))
         # External because not overwritten in class:
@@ -178,7 +176,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ltests/androguard/TestActivity;$', '^getApplicationContext$'))
         # External because not overwritten in class:
@@ -186,21 +184,21 @@ class AnalysisTest(unittest.TestCase):
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Landroid/widget/Toast;$', '^makeText$'))
         self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Landroid/widget/Toast;$', '^show$'))
         self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         # Next test internal calls
         testmeth = list(filter(lambda x: x.name == 'testCalls', testcls.get_methods()))[0]
@@ -226,21 +224,21 @@ class AnalysisTest(unittest.TestCase):
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertFalse(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ltests/androguard/TestIfs;$', '^testIF$'))
         self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertFalse(other[0].is_external())
         self.assertFalse(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         other = list(dx.find_methods('^Ljava/lang/Object;$', '^getClass$'))
         self.assertEqual(len(other), 1)
         self.assertIsInstance(other[0], analysis.MethodAnalysis)
         self.assertTrue(other[0].is_external())
         self.assertTrue(other[0].is_android_api())
-        self.assertIn(testmeth.method, map(itemgetter(1), other[0].get_xref_from()))
+        self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
         # Not testing println, as it has too many variants...
 
