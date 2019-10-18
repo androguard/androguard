@@ -21,8 +21,9 @@ def is_ascii_problem(s):
     """
     Test if a string contains other chars than ASCII
 
-    :param MUTF8Strin s: a string to test
+    :param androguard.core.mutf8.MUTF8String s: a string to test
     :return: True if string contains other chars than ASCII, False otherwise
+    :rtype: bool
     """
     try:
         # As MUTF8Strings are actually bytes, we can simply check if they are ASCII or not
