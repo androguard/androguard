@@ -36,10 +36,10 @@ androguard.core.bytecodes.axml module
     :undoc-members:
     :show-inheritance:
 
-androguard.core.bytecodes.mutf8 module
---------------------------------------
+androguard.core.mutf8 module
+----------------------------
 
-.. automodule:: androguard.core.bytecodes.mutf8
+.. automodule:: androguard.core.mutf8
     :members:
     :undoc-members:
     :show-inheritance:

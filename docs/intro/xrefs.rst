@@ -11,7 +11,7 @@ Next, we want to show a few usecases for XREFs and how they can be obtained.
 Start up a ipython shell using :code:`androguard analyze` in order to play through the example.
 We use an example from the androguard repo here:
 
-.. code-block:: ipython
+.. code-block:: none
 
     $ androguard analyze examples/android/TestsAndroguard/bin/TestActivity.apk
     Please be patient, this might take a while.

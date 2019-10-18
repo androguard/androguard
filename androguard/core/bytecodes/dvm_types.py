@@ -4,21 +4,50 @@ from collections import OrderedDict
 # This file contains dictionaries used in the Dalvik Format.
 
 # Used to identify different types of operands
-KIND_METH = 0
-KIND_STRING = 1
-KIND_FIELD = 2
-KIND_TYPE = 3
-VARIES = 4
-INLINE_METHOD = 5
-VTABLE_OFFSET = 6
-FIELD_OFFSET = 7
-KIND_RAW_STRING = 8
+class Kind(IntEnum):
+    """
+    This Enum is used to determine the kind of argument
+    inside an Dalvik instruction.
 
-OPERAND_REGISTER = 0
-OPERAND_LITERAL = 1
-OPERAND_RAW = 2
-OPERAND_OFFSET = 3
-OPERAND_KIND = 0x100
+    It is used to reference the actual item instead of the refernece index
+    from the :class:`ClassManager` when disassembling the bytecode.
+    """
+    # Indicates a method reference
+    METH = 0
+    # Indicates that opcode argument is a string index
+    STRING = 1
+    # Indicates a field reference
+    FIELD = 2
+    # Indicates a type reference
+    TYPE = 3
+    # indicates a prototype reference
+    PROTO = 9
+    # indicates method reference and proto reference (invoke-polymorphic)
+    METH_PROTO = 10
+    # indicates call site item
+    CALL_SITE = 11
+
+    # TODO: not very well documented
+    VARIES = 4
+    # inline lined stuff
+    INLINE_METHOD = 5
+    # static linked stuff
+    VTABLE_OFFSET = 6
+    FIELD_OFFSET = 7
+    RAW_STRING = 8
+
+
+class Operand(IntEnum):
+    """
+    Enumeration used for the operand type of opcodes
+    """
+    REGISTER = 0
+    LITERAL = 1
+    RAW = 2
+    OFFSET = 3
+    # FIXME: KIND is used in combination with others, ie the Kind enum, therefore it is 0x100...
+    # thus we could use an IntFlag here as well
+    KIND = 0x100
 
 
 # https://source.android.com/devices/tech/dalvik/dex-format#type-codes
@@ -30,6 +59,8 @@ class TypeMapItem(IntEnum):
     FIELD_ID_ITEM = 0x4
     METHOD_ID_ITEM = 0x5
     CLASS_DEF_ITEM = 0x6
+    CALL_SITE_ITEM = 0x7  # New in DEX038
+    METHOD_HANDLE_ITEM = 0x8  # New in DEX038
     MAP_LIST = 0x1000
     TYPE_LIST = 0x1001
     ANNOTATION_SET_REF_LIST = 0x1002
@@ -52,6 +83,8 @@ class TypeMapItem(IntEnum):
             (TypeMapItem.FIELD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM])),
             (TypeMapItem.METHOD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.PROTO_ID_ITEM])),
             (TypeMapItem.CLASS_DEF_ITEM, set([TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST, TypeMapItem.STRING_ID_ITEM, TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, TypeMapItem.CLASS_DATA_ITEM, TypeMapItem.ENCODED_ARRAY_ITEM])),
+            (TypeMapItem.CALL_SITE_ITEM, {TypeMapItem.METHOD_HANDLE_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),  # TODO: check if this is correct
+            (TypeMapItem.METHOD_HANDLE_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),  # TODO: check if this is correct
             (TypeMapItem.MAP_LIST, set()),
             (TypeMapItem.TYPE_LIST, set([TypeMapItem.TYPE_ID_ITEM])),
             (TypeMapItem.ANNOTATION_SET_REF_LIST, set([TypeMapItem.ANNOTATION_SET_ITEM])),

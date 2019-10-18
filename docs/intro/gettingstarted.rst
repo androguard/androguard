@@ -7,17 +7,17 @@ Using Androguard tools
 There are already some tools for specific purposes.
 
 To just decode the AndroidManifest.xml or resources.arsc, there are
-`androaxml.py` and `androarsc.py`.
-To get information about the certificates use `androsign.py`.
+`androguard axml` and `androguard arsc`.
+To get information about the certificates use `androguard sign`.
 
-If you want to create call graphs, use `androcg.py`, or if you want control flow
-graphs, you can use `androdd.py`.
+If you want to create call graphs, use `androguard cg`, or if you want control flow
+graphs, you can use `androguard decompile`.
 
 
 Using Androlyze and the python API
 ----------------------------------
 
-The easiest way to analyze APK files, is by using :code:`androlyze.py`.
+The easiest way to analyze APK files, is by using :code:`androguard analyze`.
 It will start a iPython shell and has all modules loaded to get into action.
 
 For analyzing and loading APK or DEX files, some wrapper functions exists.
@@ -25,9 +25,9 @@ Use :code:`AnalyzeAPK(filename)` or :code:`AnalyzeDEX(filename)` to load a file 
 There are already plenty of APKs in the androguard repo, you can either use one
 of those, or start your own analysis.
 
-.. code-block:: python
+.. code-block:: none
 
-    $ androlyze.py
+    $ androguard analyze
     Androguard version 3.1.1 started
     In [1]: a, d, dx = AnalyzeAPK("examples/android/abcore/app-prod-debug.apk")
     # Depending on the size of the APK, this might take a while...
@@ -151,7 +151,7 @@ graphs to see the dependencies of different classes.
 
 As a first example, we will get all classes from the Analysis:
 
-.. code-block:: python
+.. code-block:: none
 
     In [2]: dx.get_classes()
     Out[2]:
@@ -178,7 +178,7 @@ actual code but the :class:`~androguard.core.bytecodes.dvm.ClassDefItem` can be
 loaded using the
 :meth:`~androguard.core.analysis.analysis.ClassAnalysis.get_vm_class`:
 
-.. code-block:: python
+.. code-block:: none
 
     In [5]: dx.get_classes()[2].get_vm_class()
     Out[5]: <dvm.ClassDefItem Ljava/lang/Object;->Landroid/support/v4/widget/FocusStrategy$BoundsAdapter;>

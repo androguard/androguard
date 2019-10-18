@@ -315,7 +315,7 @@ class DvClass:
                 value = init_value.value
                 if f_type == 'String':
                     if value:
-                        value = '"%s"' % value.encode("unicode-escape").decode("ascii")
+                        value = '"%s"' % str(value).encode("unicode-escape").decode("ascii")
                     else:
                         # FIXME we can not check if this value here is null or ""
                         # In both cases we end up here...

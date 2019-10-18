@@ -200,18 +200,22 @@ class Session:
 
         for dex in apk.get_all_dex():
             # we throw away the output... FIXME?
-            self.addDEX(filename, dex, dx)
+            self.addDEX(filename, dex, dx, postpone_xref=True)
+
+        # Postponed
+        dx.create_xref()
 
         log.debug("added APK:%s" % digest)
         return digest, apk
 
-    def addDEX(self, filename, data, dx=None):
+    def addDEX(self, filename, data, dx=None, postpone_xref=False):
         """
         Add a DEX file to the Session and run analysis.
 
         :param filename: the (file)name of the DEX file
         :param data: binary data of the dex file
         :param dx: an existing Analysis Object (optional)
+        :param postpone_xref: True if no xref shall be created, and will be called manually
         :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
@@ -230,7 +234,8 @@ class Session:
             dx = Analysis()
 
         dx.add(d)
-        dx.create_xref()
+        if not postpone_xref:
+            dx.create_xref()
 
         # TODO: If multidex: this will called many times per dex, even if already set
         for d in dx.vms:

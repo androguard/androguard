@@ -21,11 +21,12 @@ def is_ascii_problem(s):
     """
     Test if a string contains other chars than ASCII
 
-    :param s: a string to test
+    :param MUTF8Strin s: a string to test
     :return: True if string contains other chars than ASCII, False otherwise
     """
     try:
-        s.encode("ascii")
+        # As MUTF8Strings are actually bytes, we can simply check if they are ASCII or not
+        s.decode("ascii")
         return False
     except (UnicodeEncodeError, UnicodeDecodeError):
         return True

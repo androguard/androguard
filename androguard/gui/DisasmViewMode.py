@@ -1,6 +1,6 @@
 from PyQt5 import QtGui, QtCore
 
-from androguard.core.bytecodes import dvm_types
+from androguard.core.bytecodes.dvm_types import Kind, Operand
 from androguard.gui import TextSelection
 from androguard.gui.ViewMode import ViewMode
 from androguard.gui.cemu import ConsoleEmulator, Directions
@@ -37,29 +37,29 @@ class InstructionView:
         offset = 0
         for operand in self.ins.get_operands(0):
             value = None
-            if operand[0] == dvm_types.OPERAND_REGISTER:
+            if operand[0] == Operand.REGISTER:
                 value = [operand[0], "v%d" % operand[1]]
 
-            elif operand[0] == dvm_types.OPERAND_LITERAL:
+            elif operand[0] == Operand.LITERAL:
                 value = [operand[0], "%d" % operand[1]]
 
-            elif operand[0] == dvm_types.OPERAND_RAW:
+            elif operand[0] == Operand.RAW:
                 value = [operand[0], "%s" % operand[1]]
 
-            elif operand[0] == dvm_types.OPERAND_OFFSET:
+            elif operand[0] == Operand.OFFSET:
                 value = [operand[0], "%d" % operand[1]]
 
-            elif operand[0] & dvm_types.OPERAND_KIND:
-                if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_STRING):
+            elif operand[0] & Operand.KIND:
+                if operand[0] == (Operand.KIND + Kind.STRING):
                     value = [operand[0], "%s" % operand[2]]
 
-                elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_METH):
+                elif operand[0] == (Operand.KIND + Kind.METH):
                     value = [operand[0], "%s" % operand[2]]
 
-                elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_FIELD):
+                elif operand[0] == (Operand.KIND + Kind.FIELD):
                     value = [operand[0], "%s" % operand[2]]
 
-                elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_TYPE):
+                elif operand[0] == (Operand.KIND + Kind.TYPE):
                     value = [operand[0], "%s" % operand[2]]
 
             if value:
@@ -568,36 +568,36 @@ class DisasmViewMode(ViewMode):
         for operand in operands:
             qp.save()
 
-            if operand[0] == dvm_types.OPERAND_REGISTER:
+            if operand[0] == Operand.REGISTER:
                 qp.setPen(QtGui.QPen(QtGui.QColor('white')))
                 cemu.write("%s" % operand[1])
 
-            elif operand[0] == dvm_types.OPERAND_LITERAL:
+            elif operand[0] == Operand.LITERAL:
                 qp.setPen(QtGui.QPen(QtGui.QColor('yellow')))
                 cemu.write("%s" % operand[1])
 
-            elif operand[0] == dvm_types.OPERAND_RAW:
+            elif operand[0] == Operand.RAW:
                 qp.setPen(QtGui.QPen(QtGui.QColor('red')))
                 cemu.write("%s" % operand[1])
 
-            elif operand[0] == dvm_types.OPERAND_OFFSET:
+            elif operand[0] == Operand.OFFSET:
                 qp.setPen(QtGui.QPen(QtGui.QColor('purple')))
                 cemu.write("%s" % operand[1])
 
-            elif operand[0] & dvm_types.OPERAND_KIND:
-                if operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_STRING):
+            elif operand[0] & Operand.KIND:
+                if operand[0] == (Operand.KIND + Kind.STRING):
                     qp.setPen(QtGui.QPen(QtGui.QColor('red')))
                     cemu.write("%s" % operand[1])
 
-                elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_METH):
+                elif operand[0] == (Operand.KIND + Kind.METH):
                     qp.setPen(QtGui.QPen(QtGui.QColor('cyan')))
                     cemu.write("%s" % operand[1])
 
-                elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_FIELD):
+                elif operand[0] == (Operand.KIND + Kind.FIELD):
                     qp.setPen(QtGui.QPen(QtGui.QColor('green')))
                     cemu.write("%s" % operand[1])
 
-                elif operand[0] == (dvm_types.OPERAND_KIND + dvm_types.KIND_TYPE):
+                elif operand[0] == (Operand.KIND + Kind.TYPE):
                     qp.setPen(QtGui.QPen(QtGui.QColor('blue')))
                     cemu.write("%s" % operand[1])
 

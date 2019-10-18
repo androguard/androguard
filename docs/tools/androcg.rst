@@ -13,9 +13,11 @@ Examples
 
 The call graph is constructed from the
 :class:`~androguard.analysis.analysis.Analysis` object and then converted into a
-networkx `DiGraph`. Currently supported formats are gml, gexf, gpickle, graphml, yaml and net.
-Note that calls between methods are only added once. Thus, if a method calls
-some other method multiple times, this is not saved.
+networkx `MultiDiGraph`. Currently supported formats are gml, gexf, gpickle, graphml, yaml and net.
+
+The call graph contains methods as nodes and calls as edges. Each edge has the
+offset inside the method stored as an attribute and multiple calls between two
+methods result in multiple edges.
 
 The methods to construct the callgraph from can be filtered. It is highly
 suggested to do that, as call graphs can get very large:
@@ -23,6 +25,14 @@ suggested to do that, as call graphs can get very large:
 .. image:: screenshot_182338.png
 
 Of course, you can export the call graph with androguard and filter it later.
+If you filter with androguard, calls to this method will be stored, as well as
+calls from the method.
+For external methods only the first direction can be saved.
+
+.. note::
+   External methods are not automatically API methods!
+   It might be the case, that the method in question could not be found during
+   disassembly time, hence it is stored as external.
 
 Here is an example of an already filtered graph, visualized in gephi_.
 Each node has an attribute to indicate if it is an internal (defined somewhere

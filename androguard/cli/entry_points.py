@@ -254,7 +254,7 @@ def arsc(input_,
 )
 @click.option(
     '--show', '-s',
-    default=False,
+    is_flag=True,
     help='instead of saving the graph, print it with mathplotlib '
          '(you might not see anything!)',
 )

@@ -1,0 +1,9 @@
+networkx>=2.2
+pygments>=2.3.1
+lxml>=4.3.0
+colorama>=0.4.1
+matplotlib>=3.0.2
+asn1crypto>=0.24.0
+click>=7.0
+pydot>=1.4.1
+ipython>=5.0.0

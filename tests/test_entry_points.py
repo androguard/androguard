@@ -176,7 +176,7 @@ class EntryPointsTest(unittest.TestCase):
         apk_path = resource_filename('androguard',
                                      '../examples/dalvik/test/bin/'
                                      'Test-debug.apk')
-        arguments = ['cg', apk_path]
+        arguments = ['--debug', 'cg', apk_path]
         result = runner.invoke(entry_points.entry_point, arguments)
         assert result.exit_code == 0
 

@@ -5,7 +5,7 @@ Submodules
 ----------
 
 androguard.decompiler.dad.dast module
-------------------------------------
+-------------------------------------
 
 .. automodule:: androguard.decompiler.dad.dast
     :members:

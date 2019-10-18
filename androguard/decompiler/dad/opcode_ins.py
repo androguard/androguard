@@ -110,6 +110,8 @@ def assign_lit(op_type, val_cst, val_a, val_b, vmap):
     return AssignExpression(var_a, BinaryExpressionLit(op_type, var_b, cst))
 
 
+## From here on, there are all defined instructions
+
 # nop
 def nop(ins, vmap):
     return NopExpression()
@@ -243,48 +245,42 @@ def const16(ins, vmap):
 # const vAA, #+BBBBBBBB ( 8b, 32b )
 def const(ins, vmap):
     logger.debug('Const : %s', ins.get_output())
-    value = unpack("=f", pack("=i", ins.BBBBBBBB))[0]
-    cst = Constant(value, 'I', ins.BBBBBBBB)
+    cst = Constant(ins.BBBBBBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
 def consthigh16(ins, vmap):
     logger.debug('ConstHigh16 : %s', ins.get_output())
-    value = unpack('=f', pack('=i', ins.BBBB << 16))[0]
-    cst = Constant(value, 'I', ins.BBBB << 16)
+    cst = Constant(ins.BBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/16 vAA, #+BBBB ( 8b, 16b )
 def constwide16(ins, vmap):
     logger.debug('ConstWide16 : %s', ins.get_output())
-    value = unpack('=d', pack('=d', ins.BBBB))[0]
-    cst = Constant(value, 'J', ins.BBBB)
+    cst = Constant(ins.BBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/32 vAA, #+BBBBBBBB ( 8b, 32b )
 def constwide32(ins, vmap):
     logger.debug('ConstWide32 : %s', ins.get_output())
-    value = unpack('=d', pack('=d', ins.BBBBBBBB))[0]
-    cst = Constant(value, 'J', ins.BBBBBBBB)
+    cst = Constant(ins.BBBBBBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide vAA, #+BBBBBBBBBBBBBBBB ( 8b, 64b )
 def constwide(ins, vmap):
     logger.debug('ConstWide : %s', ins.get_output())
-    value = unpack('=d', pack('=q', ins.BBBBBBBBBBBBBBBB))[0]
-    cst = Constant(value, 'D', ins.BBBBBBBBBBBBBBBB)
+    cst = Constant(ins.BBBBBBBBBBBBBBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
 def constwidehigh16(ins, vmap):
     logger.debug('ConstWideHigh16 : %s', ins.get_output())
-    value = unpack('=d', b'\x00\x00\x00\x00\x00\x00' + pack('=h', ins.BBBB))[0]
-    cst = Constant(value, 'D', ins.BBBB)
+    cst = Constant(ins.BBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -1708,6 +1704,8 @@ def ushrintlit8(ins, vmap):
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 
+# FIXME: Need to add all opcodes here, check for new unused ones.
+# FIXME: The instruction set is dalvik version specific
 INSTRUCTION_SET = [
     # 0x00
     nop,  # nop

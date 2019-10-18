@@ -140,10 +140,14 @@ VALUES = {
 def format_value(literal, ins, to):
     # Need to convert the instruction (which is always signed)
     # to the requested format.
-    formats = dict(i='i', h='h', l='q', s='h')
+    formats = dict(i='i', h='i', l='q', s='h')
     char = ins.__class__.__name__[-1]
     if char not in formats:
         raise ValueError("wrong type of instruction")
+
+    # Special treatment for const/high16 and const-wide/high16
+    if char == 'h' and 'wide' in ins.get_name():
+        formats['h'] = 'q'
 
     # Need to calculate for extra padding bytes
     # if the number is negative, trailing \xff are added (sign extension)

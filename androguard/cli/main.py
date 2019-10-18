@@ -138,7 +138,6 @@ def plot(cg):
 
     :param cg: A networkx call graph to plot
     """
-    from androguard.core.analysis.analysis import ExternalMethod
     import matplotlib.pyplot as plt
     import networkx as nx
     pos = nx.spring_layout(cg)
@@ -146,8 +145,8 @@ def plot(cg):
     internal = []
     external = []
 
-    for n in cg.node:
-        if isinstance(n, ExternalMethod):
+    for n in cg.nodes:
+        if n.is_external():
             external.append(n)
         else:
             internal.append(n)
@@ -155,10 +154,7 @@ def plot(cg):
     nx.draw_networkx_nodes(cg, pos=pos, node_color='r', nodelist=internal)
     nx.draw_networkx_nodes(cg, pos=pos, node_color='b', nodelist=external)
     nx.draw_networkx_edges(cg, pos, arrow=True)
-    nx.draw_networkx_labels(cg, pos=pos,
-                            labels={x: "{} {}".format(x.get_class_name(),
-                                                      x.get_name())
-                                    for x in cg.edge})
+    nx.draw_networkx_labels(cg, pos=pos, labels={x: "{}{}".format(x.class_name, x.name) for x in cg.nodes})
     plt.draw()
     plt.show()
 
@@ -490,7 +486,6 @@ def androsign_main(args_apk, args_hash, args_all, show):
                     except ValueError as ve:
                         # RSA pkey does not have an hash algorithm
                         pass
-                
                 print()
 
 
@@ -508,6 +503,18 @@ def androdis_main(offset, size, dex):
     with open(dex, "rb") as fp:
         buf = fp.read()
     d = dvm.DalvikVMFormat(buf)
+
+    if size == 0 and offset == 0:
+        # Assume you want to just get a disassembly of all classes and methods
+        for cls in d.get_classes():
+            print("# CLASS: {}".format(cls.get_name()))
+            for m in cls.get_methods():
+                print("## METHOD: {} {} {}".format(m.get_access_flags_string(), m.get_name(), m.get_descriptor()))
+                for idx, ins in m.get_instructions_idx():
+                    print('{:08x}  {}'.format(idx, ins.disasm()))
+
+                print()
+            print()
 
     if size == 0:
         size = len(buf)
