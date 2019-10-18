@@ -138,7 +138,6 @@ def plot(cg):
 
     :param cg: A networkx call graph to plot
     """
-    from androguard.core.analysis.analysis import ExternalMethod
     import matplotlib.pyplot as plt
     import networkx as nx
     pos = nx.spring_layout(cg)
@@ -147,7 +146,7 @@ def plot(cg):
     external = []
 
     for n in cg.node:
-        if isinstance(n, ExternalMethod):
+        if n.is_external():
             external.append(n)
         else:
             internal.append(n)
@@ -155,10 +154,7 @@ def plot(cg):
     nx.draw_networkx_nodes(cg, pos=pos, node_color='r', nodelist=internal)
     nx.draw_networkx_nodes(cg, pos=pos, node_color='b', nodelist=external)
     nx.draw_networkx_edges(cg, pos, arrow=True)
-    nx.draw_networkx_labels(cg, pos=pos,
-                            labels={x: "{} {}".format(x.get_class_name(),
-                                                      x.get_name())
-                                    for x in cg.edge})
+    nx.draw_networkx_labels(cg, pos=pos, labels={x: "{}{}".format(x.class_name, x.name) for x in cg.nodes})
     plt.draw()
     plt.show()
 

@@ -1230,7 +1230,7 @@ class Analysis:
         * strings (`StringAnalyis`)
         * fields (`FieldAnalysis`)
 
-        :param vm: inital DalvikVMFormat object (default None)
+        :param Optional[androguard.core.bytecodes.dvm.DalvikVMFormat] vm: inital DalvikVMFormat object (default None)
         """
 
         # Contains DalvikVMFormat objects
@@ -1470,6 +1470,7 @@ class Analysis:
         :param method_name: name of the method, for example 'onCreate'
         :param method_descriptor: descriptor, for example '(I I Ljava/lang/String)V
         :return: :class:`EncodedMethod` or None if method was not found
+        :rtype: androguard.core.bytecodes.dvm.EncodedMethod
         """
         m_a = self.get_method_analysis_by_name(class_name, method_name, method_descriptor)
         if m_a and not m_a.is_external():
@@ -1500,6 +1501,7 @@ class Analysis:
 
         :param androguard.core.bytecodes.dvm.EncodedField field: the field
         :return: :class:`FieldAnalysis`
+        :rtype: FieldAnalysis
         """
         class_analysis = self.get_class_analysis(field.get_class_name())
         if class_analysis:
@@ -1512,6 +1514,7 @@ class Analysis:
 
         :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
         :return: True if class was found, False otherwise
+        :rtype: bool
         """
         return class_name in self.classes
 
@@ -1521,6 +1524,7 @@ class Analysis:
 
         :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
         :return: :class:`ClassAnalysis`
+        :rtype: ClassAnalysis
         """
         return self.classes.get(class_name)
 
@@ -1550,7 +1554,7 @@ class Analysis:
         """
         Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
 
-        :rtype: dict
+        :rtype: Dict[str, StringAnalysis]
         """
         return self.strings
 
