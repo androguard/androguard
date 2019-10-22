@@ -209,16 +209,22 @@ def clean_file_name(filename, unique=True, replace="_", force_nt=False):
     # Do not end with dot or space
     fname = re.sub(r'[ .]$', replace, fname)
 
-    if force_nt or os.name == 'nt':
-        PATH_MAX_LENGTH = 230  # give extra space for other stuff...
-        # Check filename length limit, usually a problem on older Windows versions
-        if len(fname) > PATH_MAX_LENGTH:
-            if "." in fname:
-                f, ext = fname.rsplit(".", 1)
-                fname = "{}.{}".format(f[:PATH_MAX_LENGTH-(len(ext)+1)], ext)
-            else:
-                fname = fname[:PATH_MAX_LENGTH]
+    # It is a sensible default, to assume that there is a hard 255 char limit per filename
+    # See https://en.wikipedia.org/wiki/Comparison_of_file_systems
+    # If you are using a filesystem with less, you have other problems ;)
+    #
+    # We simply make a hard cut after 255 chars. To leave some space for an extension, which might get added later,
+    # There is room for improvement here, so feel free to implement a better method!
+    PATH_MAX_LENGTH = 230  # give extra space for other stuff...
+    # Check filename length limit, usually a problem on older Windows versions
+    if len(fname) > PATH_MAX_LENGTH:
+        if "." in fname:
+            f, ext = fname.rsplit(".", 1)
+            fname = "{}.{}".format(f[:PATH_MAX_LENGTH-(len(ext)+1)], ext)
+        else:
+            fname = fname[:PATH_MAX_LENGTH]
 
+    if force_nt or os.name == 'nt':
         # Special behaviour... On Windows, there is also a problem with the maximum path length in explorer.exe
         # maximum length is limited to 260 chars, so use 250 to have room for other stuff
         if len(os.path.abspath(os.path.join(path, fname))) > 250:
