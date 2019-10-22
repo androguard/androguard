@@ -11,11 +11,11 @@ class MiscTest(unittest.TestCase):
         self.assertEqual("foobarsdf_", clean_file_name("foobarsdf.", unique=False))
         self.assertEqual("_init_", clean_file_name("<init>", unique=False))
         if os.name == "nt":
-            self.assertEqual("C:\\" + "a" * 230, clean_file_name("C:\\" + "a" * 999, unique=False, force_nt=True))
-            self.assertEqual("C:\\" + "a" * 226 + ".foo", clean_file_name("C:\\" + "a" * 999 + ".foo", unique=False, force_nt=True))
+            self.assertEqual("C:\\" + "a" * 230, clean_file_name("C:\\" + "a" * 999, unique=False))
+            self.assertEqual("C:\\" + "a" * 226 + ".foo", clean_file_name("C:\\" + "a" * 999 + ".foo", unique=False))
         else:
-            self.assertEqual("/some/path/" + "a" * 230, clean_file_name("/some/path/" + "a" * 999, unique=False, force_nt=True))
-            self.assertEqual("/some/path/" + "a" * 226 + ".foo", clean_file_name("/some/path/" + "a" * 999 + ".foo", unique=False, force_nt=True))
+            self.assertEqual("/some/path/" + "a" * 230, clean_file_name("/some/path/" + "a" * 999, unique=False))
+            self.assertEqual("/some/path/" + "a" * 226 + ".foo", clean_file_name("/some/path/" + "a" * 999 + ".foo", unique=False))
 
         with tempfile.NamedTemporaryFile() as fp:
             self.assertEqual(fp.name + "_0", clean_file_name(fp.name, unique=True))
