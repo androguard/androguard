@@ -12,7 +12,7 @@ python:
   - "3.7"
   - "3.5"
   - "3.8"
-  - "pypy3"
+#  - "pypy3"  # matplotlib does not compile
 #  - "3.4"  # Disabled due to LXML compile error on 3.4
 #  - "3.8-dev"  # Disabled due to LXML compile error on 3.8
 # command to install dependencies
