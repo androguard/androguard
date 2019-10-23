@@ -295,6 +295,7 @@ class EntryPointsTest(unittest.TestCase):
 
     def test_androarsc(self):
         runner = CliRunner()
+        # TODO could check here more stuff for example returned lists etc
         for apk in get_test_apks():
             print("testing for {}".format(apk))
             arguments = ['arsc', apk]
@@ -302,5 +303,17 @@ class EntryPointsTest(unittest.TestCase):
             assert result.exit_code == 0
 
             arguments = ['arsc', "-t", "string", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "--list-packages", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "--list-types", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "--list-locales", apk]
             result = runner.invoke(entry_points.entry_point, arguments)
             assert result.exit_code == 0
