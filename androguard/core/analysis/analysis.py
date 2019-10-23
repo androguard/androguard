@@ -588,7 +588,7 @@ class MethodAnalysis:
               self.method.get_access_flags_string(),
               self.method.get_name(),
               ", ".join(args), ret))
-        bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
+        bytecode.PrettyShow(self.basic_blocks.gets(), self.method.notes)
 
     def show_xrefs(self):
         data = "XREFto for %s\n" % self.method

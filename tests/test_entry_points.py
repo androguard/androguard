@@ -67,8 +67,7 @@ class EntryPointsTest(unittest.TestCase):
         arguments = ['axml', '-i', axml_path,
                      '-o', output_path,
                      axml_path]
-        result = runner.invoke(entry_points.entry_point,
-                               arguments)
+        result = runner.invoke(entry_points.entry_point, arguments)
         assert result.exit_code == 1, arguments
         os.remove(output_path)
 
@@ -76,8 +75,7 @@ class EntryPointsTest(unittest.TestCase):
         _, output_path = mkstemp(prefix='androguard_', suffix='decoded.txt')
         runner = CliRunner()
         arguments = ['axml', '-o', output_path]
-        result = runner.invoke(entry_points.entry_point,
-                               arguments)
+        result = runner.invoke(entry_points.entry_point, arguments)
         assert result.exit_code == 1, arguments
         os.remove(output_path)
 
@@ -257,8 +255,8 @@ class EntryPointsTest(unittest.TestCase):
                                      'Test-debug.apk')
         runner = CliRunner()
         arguments = ['sign', apk_path]
-        result = runner.invoke(entry_points.entry_point, )
-        assert result.exit_code == 0, arguments
+        result = runner.invoke(entry_points.entry_point, arguments)
+        assert result.exit_code == 0
 
     def test_sign_help(self):
         runner = CliRunner()

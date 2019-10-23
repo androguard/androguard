@@ -5,20 +5,10 @@ import textwrap
 import json
 import logging
 
-from androguard.core.androconf import CONF, enable_colors, remove_colors, save_colors, color_range
+from androguard.core.androconf import CONF, color_range
 from androguard.core.bytecodes.dvm_types import Kind, Operand
 
 log = logging.getLogger("androguard.bytecode")
-
-
-def disable_print_colors():
-    colors = save_colors()
-    remove_colors()
-    return colors
-
-
-def enable_print_colors(colors):
-    enable_colors(colors)
 
 
 def _PrintBanner():
@@ -41,8 +31,8 @@ def _PrintNote(note, tab=0):
     print_fct("\t" * tab + "{}# {}{}".format(note_color, note, normal_color) + "\n")
 
 
-# Print arg into a correct format
 def _Print(name, arg):
+    """Print arg into a correct format"""
     buff = name + " "
 
     if type(arg).__name__ == 'int':
@@ -92,40 +82,33 @@ def _colorize_operands(operands, colors):
     """
     for operand in operands:
         if operand[0] == Operand.REGISTER:
-            yield "%sv%d%s" % (colors["registers"], operand[1],
-                               colors["normal"])
+            yield "{}v{}{}".format(colors["registers"], operand[1], colors["normal"])
 
         elif operand[0] == Operand.LITERAL:
-            yield "%s%d%s" % (colors["literal"], operand[1],
-                              colors["normal"])
+            yield "{}{}{}".format(colors["literal"], operand[1], colors["normal"])
 
         elif operand[0] == Operand.RAW:
             yield "{}{}{}".format(colors["raw"], operand[1], colors["normal"])
 
         elif operand[0] == Operand.OFFSET:
-            yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"]
-                              )
+            yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"])
 
         elif operand[0] & Operand.KIND:
             if operand[0] == (Operand.KIND + Kind.STRING):
-                yield "{}{}{}".format(colors["string"], operand[2],
-                                      colors["normal"])
+                yield "{}{}{}".format(colors["string"], operand[2], colors["normal"])
             elif operand[0] == (Operand.KIND + Kind.METH):
-                yield "{}{}{}".format(colors["meth"], operand[2],
-                                      colors["normal"])
+                yield "{}{}{}".format(colors["meth"], operand[2], colors["normal"])
             elif operand[0] == (Operand.KIND + Kind.FIELD):
-                yield "{}{}{}".format(colors["field"], operand[2],
-                                      colors["normal"])
+                yield "{}{}{}".format(colors["field"], operand[2], colors["normal"])
             elif operand[0] == (Operand.KIND + Kind.TYPE):
-                yield "{}{}{}".format(colors["type"], operand[2],
-                                      colors["normal"])
+                yield "{}{}{}".format(colors["type"], operand[2], colors["normal"])
             else:
-                yield "%s" % repr(operands[2])
+                yield "{}".format(repr(operands[2]))
         else:
-            yield "%s" % repr(operands[1])
+            yield "{}".format(repr(operands[1]))
 
 
-def PrettyShow(m_a, basic_blocks, notes={}):
+def PrettyShow(basic_blocks, notes={}):
     idx = 0
 
     offset_color = CONF["COLORS"]["OFFSET"]
@@ -304,11 +287,13 @@ def method2dot(mx, colors=None):
     method = mx.get_method()
 
     # This is used as a seed to create unique hashes for the nodes
-    sha256 = hashlib.sha256(mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).digest()
+    sha256 = hashlib.sha256(
+        mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).digest()
 
     # Collect all used Registers and create colors
     if method.get_code() and method.get_code().get_registers_size() != 0:
-        registers = {i: c for i, c in enumerate(color_range(colors["registers_range"][0], colors["registers_range"][1], method.get_code().get_registers_size()))}
+        registers = {i: c for i, c in enumerate(color_range(colors["registers_range"][0], colors["registers_range"][1],
+                                                            method.get_code().get_registers_size()))}
     else:
         registers = dict()
 
@@ -369,7 +354,9 @@ def method2dot(mx, colors=None):
                 label_edge = values.pop(0)
 
             child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild[-1].get_name()).hexdigest()
-            edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(block_id, child_id, val, label_edge)
+            edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(block_id,
+                                                                                                       child_id, val,
+                                                                                                       label_edge)
 
             # color switch
             if val == colors["false_branch"]:
@@ -647,12 +634,12 @@ def method2json_direct(mx):
             c_ins = {"idx": ins_idx,
                      "name": DVMBasicMethodBlockInstruction.get_name(),
                      "operands": DVMBasicMethodBlockInstruction.get_operands(ins_idx),
-                    }
+                     }
 
             cblock["instructions"].append(c_ins)
 
             if (DVMBasicMethodBlockInstruction.get_op_value() == 0x2b or
-                DVMBasicMethodBlockInstruction.get_op_value() == 0x2c):
+                    DVMBasicMethodBlockInstruction.get_op_value() == 0x2c):
                 values = DVMBasicMethodBlock.get_special_ins(ins_idx)
                 cblock["info_next"] = values.get_values()
 
@@ -665,7 +652,7 @@ def method2json_direct(mx):
                 cblock["info_bb"] = 1
 
             if (last_instru.get_op_value() == 0x2b or
-                last_instru.get_op_value() == 0x2c):
+                    last_instru.get_op_value() == 0x2c):
                 cblock["info_bb"] = 2
 
         cblock["Edge"] = []
@@ -1014,4 +1001,3 @@ class Node:
         self.id = n
         self.title = s
         self.children = []
-

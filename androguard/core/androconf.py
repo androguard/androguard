@@ -2,12 +2,17 @@ import sys
 import os
 import logging
 import tempfile
+from colorama import init, Fore
 
 from androguard import __version__
 from androguard.core.api_specific_resources import load_permission_mappings, load_permissions
 ANDROGUARD_VERSION = __version__
 
 log = logging.getLogger("androguard.default")
+
+
+# initialize colorama, only has an effect on windows
+init()
 
 
 class InvalidResourceError(Exception):
@@ -33,19 +38,6 @@ def is_ascii_problem(s):
         return True
 
 
-class Color:
-    Normal = "\033[0m"
-    Black = "\033[30m"
-    Red = "\033[31m"
-    Green = "\033[32m"
-    Yellow = "\033[33m"
-    Blue = "\033[34m"
-    Purple = "\033[35m"
-    Cyan = "\033[36m"
-    Grey = "\033[37m"
-    Bold = "\033[1m"
-
-
 default_conf = {
     ## Configuration for executables used by androguard
     # Assume the binary is in $PATH, otherwise give full path
@@ -54,7 +46,7 @@ default_conf = {
     "BIN_DEX2JAR": "dex2jar.sh",
 
     # TODO Use apksigner instead
-    "BIN_JARSIGNER": "jarsigner",
+    "BIN_JARSIGNER": "jarsigner",  # TO BE REMOVED
 
     "BIN_DED": "ded.sh",  # TO BE REMOVED
     "BIN_JAD": "jad",  # TO BE REMOVED
@@ -63,7 +55,8 @@ default_conf = {
     "OPTIONS_FERNFLOWER": {"dgs": '1',  # TO BE REMOVED
                            "asc": '1'},
 
-    ## Runtime variables
+    # Runtime variables
+    #
     # A path to the temporary directory
     "TMP_DIRECTORY": tempfile.gettempdir(),
 
@@ -76,34 +69,28 @@ default_conf = {
     # Session, for persistence
     "SESSION": None,
 
-    # Recode strings when getting them from ClassManager
-    # FIXME: Should be not needed anymore?
-    "RECODE_ASCII_STRING": False,
-    # Optional Function which can recode a string
-    "RECODE_ASCII_STRING_METH": None,
-
-    ## Color output configuration
+    # Color output configuration
     "COLORS": {
-        "OFFSET": Color.Yellow,
-        "OFFSET_ADDR": Color.Green,
-        "INSTRUCTION_NAME": Color.Yellow,
-        "BRANCH_FALSE": Color.Red,
-        "BRANCH_TRUE": Color.Green,
-        "BRANCH": Color.Blue,
-        "EXCEPTION": Color.Cyan,
-        "BB": Color.Purple,
-        "NOTE": Color.Red,
-        "NORMAL": Color.Normal,
+        "OFFSET": Fore.YELLOW,
+        "OFFSET_ADDR": Fore.GREEN,
+        "INSTRUCTION_NAME": Fore.YELLOW,
+        "BRANCH_FALSE": Fore.RED,
+        "BRANCH_TRUE": Fore.GREEN,
+        "BRANCH": Fore.BLUE,
+        "EXCEPTION": Fore.CYAN,
+        "BB": Fore.MAGENTA,
+        "NOTE": Fore.RED,
+        "NORMAL": Fore.RESET,
         "OUTPUT": {
-            "normal": Color.Normal,
-            "registers": Color.Normal,
-            "literal": Color.Green,
-            "offset": Color.Purple,
-            "raw": Color.Red,
-            "string": Color.Red,
-            "meth": Color.Cyan,
-            "type": Color.Blue,
-            "field": Color.Green,
+            "normal": Fore.RESET,
+            "registers": Fore.YELLOW,
+            "literal": Fore.GREEN,
+            "offset": Fore.MAGENTA,
+            "raw": Fore.RED,
+            "string": Fore.RED,
+            "meth": Fore.CYAN,
+            "type": Fore.BLUE,
+            "field": Fore.GREEN,
         },
     },
 }
@@ -137,66 +124,6 @@ class Configuration:
 
 
 CONF = Configuration()
-
-
-def default_colors(obj):
-    CONF["COLORS"]["OFFSET"] = obj.Yellow
-    CONF["COLORS"]["OFFSET_ADDR"] = obj.Green
-    CONF["COLORS"]["INSTRUCTION_NAME"] = obj.Yellow
-    CONF["COLORS"]["BRANCH_FALSE"] = obj.Red
-    CONF["COLORS"]["BRANCH_TRUE"] = obj.Green
-    CONF["COLORS"]["BRANCH"] = obj.Blue
-    CONF["COLORS"]["EXCEPTION"] = obj.Cyan
-    CONF["COLORS"]["BB"] = obj.Purple
-    CONF["COLORS"]["NOTE"] = obj.Red
-    CONF["COLORS"]["NORMAL"] = obj.Normal
-
-    CONF["COLORS"]["OUTPUT"]["normal"] = obj.Normal
-    CONF["COLORS"]["OUTPUT"]["registers"] = obj.Normal
-    CONF["COLORS"]["OUTPUT"]["literal"] = obj.Green
-    CONF["COLORS"]["OUTPUT"]["offset"] = obj.Purple
-    CONF["COLORS"]["OUTPUT"]["raw"] = obj.Red
-    CONF["COLORS"]["OUTPUT"]["string"] = obj.Red
-    CONF["COLORS"]["OUTPUT"]["meth"] = obj.Cyan
-    CONF["COLORS"]["OUTPUT"]["type"] = obj.Blue
-    CONF["COLORS"]["OUTPUT"]["field"] = obj.Green
-
-
-def disable_colors():
-    """ Disable colors from the output (color = normal)"""
-    for i in CONF["COLORS"]:
-        if isinstance(CONF["COLORS"][i], dict):
-            for j in CONF["COLORS"][i]:
-                CONF["COLORS"][i][j] = Color.normal
-        else:
-            CONF["COLORS"][i] = Color.normal
-
-
-def remove_colors():
-    """ Remove colors from the output (no escape sequences)"""
-    for i in CONF["COLORS"]:
-        if isinstance(CONF["COLORS"][i], dict):
-            for j in CONF["COLORS"][i]:
-                CONF["COLORS"][i][j] = ""
-        else:
-            CONF["COLORS"][i] = ""
-
-
-def enable_colors(colors):
-    for i in colors:
-        CONF["COLORS"][i] = colors[i]
-
-
-def save_colors():
-    c = {}
-    for i in CONF["COLORS"]:
-        if isinstance(CONF["COLORS"][i], dict):
-            c[i] = {}
-            for j in CONF["COLORS"][i]:
-                c[i][j] = CONF["COLORS"][i][j]
-        else:
-            c[i] = CONF["COLORS"][i]
-    return c
 
 
 def is_android(filename):
