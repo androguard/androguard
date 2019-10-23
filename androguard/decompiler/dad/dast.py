@@ -281,7 +281,7 @@ def visit_expr(op):
             return visit_expr(arg)
 
         expr = visit_expr(arg)
-        atype = arg.get_type()
+        atype = str(arg.get_type())
         if atype == 'Z':
             if op.op == opcode_ins.Op.EQUAL:
                 expr = unary_prefix('!', expr)
