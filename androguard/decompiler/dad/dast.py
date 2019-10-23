@@ -168,8 +168,7 @@ def parse_descriptor(desc):
 
 # Note: the literal_foo functions (and dummy) are also imported by decompile.py
 def literal_string(s):
-    # We return a escaped string in ASCII encoding
-    return literal(s.encode('unicode_escape').decode("ascii"), ('java/lang/String', 0))
+    return literal(str(s), ('java/lang/String', 0))
 
 
 def literal_class(desc):
