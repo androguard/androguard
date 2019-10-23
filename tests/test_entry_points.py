@@ -13,10 +13,14 @@ from click.testing import CliRunner
 # internal modules
 from androguard.cli import entry_points
 
+
 def get_test_apks():
     """Get a list of APKs for testing scripts"""
     for root, _, files in os.walk(resource_filename('androguard', '..')):
         for f in files:
+            if f == 'multidex.apk':
+                # This file does not have a manifest, hence everything fails
+                continue
             if f.endswith('.apk') and 'signing' not in root:
                 yield os.path.join(root, f)
 
