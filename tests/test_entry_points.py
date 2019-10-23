@@ -14,7 +14,7 @@ from click.testing import CliRunner
 from androguard.cli import entry_points
 
 
-def get_test_apks():
+def get_apks():
     """Get a list of APKs for testing scripts"""
     for root, _, files in os.walk(resource_filename('androguard', '..')):
         for f in files:
@@ -277,7 +277,7 @@ class EntryPointsTest(unittest.TestCase):
 
     def test_androsign(self):
         runner = CliRunner()
-        for apk in get_test_apks():
+        for apk in get_apks():
             print("testing for {}".format(apk))
             arguments = ['sign', apk]
             result = runner.invoke(entry_points.entry_point, arguments)
@@ -285,7 +285,7 @@ class EntryPointsTest(unittest.TestCase):
 
     def test_androaxml(self):
         runner = CliRunner()
-        for apk in get_test_apks():
+        for apk in get_apks():
             print("testing for {}".format(apk))
             arguments = ['axml', apk]
             result = runner.invoke(entry_points.entry_point, arguments)
@@ -294,7 +294,7 @@ class EntryPointsTest(unittest.TestCase):
     def test_androarsc(self):
         runner = CliRunner()
         # TODO could check here more stuff for example returned lists etc
-        for apk in get_test_apks():
+        for apk in get_apks():
             print("testing for {}".format(apk))
             arguments = ['arsc', apk]
             result = runner.invoke(entry_points.entry_point, arguments)
