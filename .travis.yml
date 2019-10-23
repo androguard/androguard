@@ -21,17 +21,6 @@ install:
 # command to run tests
 script:
   - nosetests --with-coverage --with-timer --timer-top-n 50 --logging-level CRITICAL
-  # FIXME Testing the scripts - crude ;) there should be a better way...
-  - for f in $(find ./ -! -path \*signing\* -name \*.apk); do
-      echo "testing $f";
-      androsign "$f" > /dev/null || true;
-      androaxml -i "$f" > /dev/null || true;
-      androaxml -i "$f" -o /dev/null || true;
-      androarsc -i "$f" > /dev/null || true;
-      androarsc -i "$f" -o /dev/null || true;
-      androarsc -i "$f" -t string> /dev/null || true;
-      androarsc -i "$f" -t string -o /dev/null || true;
-      done
   - python setup.py build_sphinx
 
 after_success:
