@@ -494,7 +494,7 @@ class HeaderItem:
         self.type_ids_size, \
         self.type_ids_off, \
         self.proto_ids_size, \
-        self.proto_ids_offn, \
+        self.proto_ids_off, \
         self.field_ids_size, \
         self.field_ids_off, \
         self.method_ids_size, \
@@ -689,8 +689,10 @@ class AnnotationOffItem:
 
     def get_length(self):
         return len(self.get_obj())
+
     def get_annotation_item(self):
         return self.CM.get_annotation_item(self.get_annotation_off())
+
 
 class AnnotationSetItem:
     """
@@ -843,8 +845,7 @@ class FieldAnnotation:
         self.offset = buff.get_idx()
 
         self.CM = cm
-        self.field_idx, \
-        self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
+        self.field_idx, self.annotations_off = cm.packer["2I"].unpack(buff.read(8))
 
     def get_field_idx(self):
         """
@@ -1040,6 +1041,7 @@ class AnnotationsDirectoryItem:
 
     def get_annotation_set_item(self):
         return self.CM.get_annotation_set_item(self.class_annotations_off)
+
     def get_annotated_fields_size(self):
         """
         Return the count of fields annotated by this item
@@ -3555,7 +3557,12 @@ class ClassDefItem:
             return self.class_data_item.get_fields()
         return []
 
-    def get_annotations(self):
+    def _get_annotation_type_ids(self):
+        """
+        Get the EncodedAnnotations from this class
+
+        :rtype: Iterator[EncodedAnnotation]
+        """
         if self.annotations_directory_item is None:
             return []
         annotation_set_item = self.annotations_directory_item.get_annotation_set_item()
@@ -3568,6 +3575,17 @@ class ClassDefItem:
             return []
         
         return [annotation.get_annotation_item().annotation for annotation in annotation_off_item]
+
+    def get_annotations(self):
+        """
+        Returns the class names of the annotations of this class.
+
+        For example, if the class is marked as :code:`@Deprecated`, this will return
+        :code:`['Ljava/lang/Deprecated;']`.
+
+        :rtype: Iterator[mutf8.MUTF8String]
+        """
+        return [self.CM.get_type(x.get_type_idx()) for x in self._get_annotation_type_ids()]
 
     def get_class_idx(self):
         """
