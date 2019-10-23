@@ -223,12 +223,10 @@ def visit_arr_data(value):
 
 
 def write_inplace_if_possible(lhs, rhs):
-    if isinstance(
-            rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
+    if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
         exp_rhs = rhs.var_map[rhs.arg2]
         # post increment/decrement
-        if rhs.op in '+-' and isinstance(
-                exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
+        if rhs.op in '+-' and isinstance(exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
             return unary_postfix(visit_expr(lhs), rhs.op * 2)
         # compound assignment
         return assignment(visit_expr(lhs), visit_expr(exp_rhs), op=rhs.op)
