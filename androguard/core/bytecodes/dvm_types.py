@@ -77,25 +77,36 @@ class TypeMapItem(IntEnum):
     def _get_dependencies():
         return OrderedDict([
             (TypeMapItem.HEADER_ITEM, set()),
-            (TypeMapItem.STRING_ID_ITEM, set([TypeMapItem.STRING_DATA_ITEM])),
-            (TypeMapItem.TYPE_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM])),
-            (TypeMapItem.PROTO_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST])),
-            (TypeMapItem.FIELD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM])),
-            (TypeMapItem.METHOD_ID_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.PROTO_ID_ITEM])),
-            (TypeMapItem.CLASS_DEF_ITEM, set([TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST, TypeMapItem.STRING_ID_ITEM, TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, TypeMapItem.CLASS_DATA_ITEM, TypeMapItem.ENCODED_ARRAY_ITEM])),
-            (TypeMapItem.CALL_SITE_ITEM, {TypeMapItem.METHOD_HANDLE_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),  # TODO: check if this is correct
-            (TypeMapItem.METHOD_HANDLE_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),  # TODO: check if this is correct
+            (TypeMapItem.STRING_ID_ITEM, {TypeMapItem.STRING_DATA_ITEM}),
+            (TypeMapItem.TYPE_ID_ITEM, {TypeMapItem.STRING_ID_ITEM}),
+            (TypeMapItem.PROTO_ID_ITEM, {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST}),
+            (TypeMapItem.FIELD_ID_ITEM, {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM}),
+            (TypeMapItem.METHOD_ID_ITEM,
+             {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.PROTO_ID_ITEM}),
+            (TypeMapItem.CLASS_DEF_ITEM,
+             {TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST, TypeMapItem.STRING_ID_ITEM, TypeMapItem.DEBUG_INFO_ITEM,
+              TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, TypeMapItem.CLASS_DATA_ITEM, TypeMapItem.ENCODED_ARRAY_ITEM}),
+            (TypeMapItem.CALL_SITE_ITEM,
+             {TypeMapItem.METHOD_HANDLE_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
+            # TODO: check if this is correct
+            (TypeMapItem.METHOD_HANDLE_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
+            # TODO: check if this is correct
             (TypeMapItem.MAP_LIST, set()),
-            (TypeMapItem.TYPE_LIST, set([TypeMapItem.TYPE_ID_ITEM])),
-            (TypeMapItem.ANNOTATION_SET_REF_LIST, set([TypeMapItem.ANNOTATION_SET_ITEM])),
-            (TypeMapItem.ANNOTATION_SET_ITEM, set([TypeMapItem.ANNOTATION_ITEM])),
-            (TypeMapItem.CLASS_DATA_ITEM, set([TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM])),
-            (TypeMapItem.CODE_ITEM, set([TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.TYPE_ID_ITEM])),
+            (TypeMapItem.TYPE_LIST, {TypeMapItem.TYPE_ID_ITEM}),
+            (TypeMapItem.ANNOTATION_SET_REF_LIST, {TypeMapItem.ANNOTATION_SET_ITEM}),
+            (TypeMapItem.ANNOTATION_SET_ITEM, {TypeMapItem.ANNOTATION_ITEM}),
+            (TypeMapItem.CLASS_DATA_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
+            (TypeMapItem.CODE_ITEM, {TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.TYPE_ID_ITEM}),
             (TypeMapItem.STRING_DATA_ITEM, set()),
-            (TypeMapItem.DEBUG_INFO_ITEM, set([TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM])),
-            (TypeMapItem.ANNOTATION_ITEM, set([TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM])),
-            (TypeMapItem.ENCODED_ARRAY_ITEM, set([TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM])),
-            (TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, set([TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM, TypeMapItem.ANNOTATION_SET_ITEM]))
+            (TypeMapItem.DEBUG_INFO_ITEM, {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM}),
+            (TypeMapItem.ANNOTATION_ITEM,
+             {TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM,
+              TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
+            (TypeMapItem.ENCODED_ARRAY_ITEM,
+             {TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM,
+              TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
+            (TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM,
+             {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM, TypeMapItem.ANNOTATION_SET_ITEM})
         ])
 
     @staticmethod

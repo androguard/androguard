@@ -17,6 +17,7 @@
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
+from androguard.core.bytecodes.dvm_types import TYPE_DESCRIPTOR
 
 
 def array_access(arr, ind):
@@ -136,20 +137,6 @@ def _append(sb, stmt):
     assert (sb[0] == 'BlockStatement')
     if stmt is not None:
         sb[2].append(stmt)
-
-
-################################################################################
-TYPE_DESCRIPTOR = {
-    'V': 'void',
-    'Z': 'boolean',
-    'B': 'byte',
-    'S': 'short',
-    'C': 'char',
-    'I': 'int',
-    'J': 'long',
-    'F': 'float',
-    'D': 'double',
-}
 
 
 def parse_descriptor(desc):
