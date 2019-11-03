@@ -514,6 +514,9 @@ def construct(start_block, vmap, exceptions):
         if preds and all(pred.in_catch for pred in preds):
             node.in_catch = True
 
+    # FIXME: We have seen samples in the wild which have multiple exit nodes!
+    #        This seems to be not necessarily a obfuscation method, but rather some
+    #        speciality with certain compilers!
     # Create a list of Node which are 'return' node
     # There should be one and only one node of this type
     # If this is not the case, try to continue anyway by setting the exit node

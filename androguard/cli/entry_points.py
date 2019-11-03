@@ -123,17 +123,17 @@ def axml(input_, output, file_, resource):
     help="Resolve the given ID for the given locale and package. Provide the hex ID!"
 )
 @click.option(
-    '--list-packages', '-t', is_flag=True,
+    '--list-packages', is_flag=True,
     default=False,
     help='List all package names and exit',
 )
 @click.option(
-    '--list-locales', '-t', is_flag=True,
+    '--list-locales', is_flag=True,
     default=False,
     help='List all package names and exit',
 )
 @click.option(
-    '--list-types', '-t', is_flag=True,
+    '--list-types', is_flag=True,
     default=False,
     help='List all types and exit',
 )

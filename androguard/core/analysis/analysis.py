@@ -393,6 +393,9 @@ class MethodAnalysis:
         """Returns the concatenated access flags string"""
         return self.access
 
+    def get_descriptor(self):
+        return self.descriptor
+
     def _create_basic_block(self):
         """
         Internal Method to create the basic block structure
@@ -585,7 +588,7 @@ class MethodAnalysis:
               self.method.get_access_flags_string(),
               self.method.get_name(),
               ", ".join(args), ret))
-        bytecode.PrettyShow(self, self.basic_blocks.gets(), self.method.notes)
+        bytecode.PrettyShow(self.basic_blocks.gets(), self.method.notes)
 
     def show_xrefs(self):
         data = "XREFto for %s\n" % self.method
@@ -692,17 +695,17 @@ class StringAnalysis:
 
 
 class FieldAnalysis:
+    """
+    FieldAnalysis contains the XREFs for a class field.
+
+    Instead of using XREF_FROM/XREF_TO, this object has methods for READ and
+    WRITE access to the field.
+
+    That means, that it will show you, where the field is read or written.
+
+    :param androguard.core.bytecodes.dvm.EncodedField field: `dvm.EncodedField`
+    """
     def __init__(self, field):
-        """
-        FieldAnalysis contains the XREFs for a class field.
-
-        Instead of using XREF_FROM/XREF_TO, this object has methods for READ and
-        WRITE access to the field.
-
-        That means, that it will show you, where the field is read or written.
-
-        :param androguard.core.bytecodes.dvm.EncodedField field: `dvm.EncodedField`
-        """
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
@@ -874,18 +877,18 @@ class ExternalMethod:
 
 
 class ClassAnalysis:
+    """
+    ClassAnalysis contains the XREFs from a given Class.
+    It is also used to wrap :class:`~androguard.core.bytecode.dvm.ClassDefItem`, which
+    contain the actual class content like bytecode.
+
+    Also external classes will generate xrefs, obviously only XREF_FROM are
+    shown for external classes.
+
+    :param classobj: class:`~androguard.core.bytecode.dvm.ClassDefItem` or :class:`ExternalClass`
+    """
+
     def __init__(self, classobj):
-        """
-        ClassAnalysis contains the XREFs from a given Class.
-        It is also used to wrap :class:`~androguard.core.bytecode.dvm.ClassDefItem`, which
-        contain the actual class content like bytecode.
-
-        Also external classes will generate xrefs, obviously only XREF_FROM are
-        shown for external classes.
-
-        :param classobj: class:`~androguard.core.bytecode.dvm.ClassDefItem` or :class:`ExternalClass`
-        """
-
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
 
@@ -1215,30 +1218,29 @@ class MethodClassAnalysis(MethodAnalysis):
 
 
 class Analysis:
+    """
+    Analysis Object
+
+    The Analysis contains a lot of information about (multiple) DalvikVMFormat objects
+    Features are for example XREFs between Classes, Methods, Fields and Strings.
+    Yet another part is the creation of BasicBlocks, which is important in the usage of
+    the Androguard Decompiler.
+
+    Multiple DalvikVMFormat Objects can be added using the function :meth:`add`.
+
+    XREFs are created for:
+    * classes (`ClassAnalysis`)
+    * methods (`MethodAnalysis`)
+    * strings (`StringAnalyis`)
+    * fields (`FieldAnalysis`)
+
+    The Analysis should be the only object you are using next to the :class:`~androguard.core.bytecodes.apk.APK`.
+    It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
+    the functions from :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat` and the related classes.
+
+    :param Optional[androguard.core.bytecodes.dvm.DalvikVMFormat] vm: inital DalvikVMFormat object (default None)
+    """
     def __init__(self, vm=None):
-        """
-        Analysis Object
-
-        The Analysis contains a lot of information about (multiple) DalvikVMFormat objects
-        Features are for example XREFs between Classes, Methods, Fields and Strings.
-        Yet another part is the creation of BasicBlocks, which is important in the usage of
-        the Androguard Decompiler.
-
-        Multiple DalvikVMFormat Objects can be added using the function :meth:`add`.
-
-        XREFs are created for:
-        * classes (`ClassAnalysis`)
-        * methods (`MethodAnalysis`)
-        * strings (`StringAnalyis`)
-        * fields (`FieldAnalysis`)
-
-        The Analysis should be the only object you are using next to the :class:`~androguard.core.bytecodes.apk.APK`.
-        It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
-        the functions from :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat` and the related classes.
-
-        :param Optional[androguard.core.bytecodes.dvm.DalvikVMFormat] vm: inital DalvikVMFormat object (default None)
-        """
-
         # Contains DalvikVMFormat objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
@@ -1906,8 +1908,9 @@ def is_ascii_obfuscation(vm):
     Tests if any class inside a DalvikVMObject
     uses ASCII Obfuscation (e.g. UTF-8 Chars in Classnames)
 
-    :param vm: `DalvikVMObject`
+    :param androguard.core.bytecodes.dvm.DalvikVMFormat vm: `DalvikVMObject`
     :return: True if ascii obfuscation otherwise False
+    :rtype: bool
     """
     for classe in vm.get_classes():
         if is_ascii_problem(classe.get_name()):

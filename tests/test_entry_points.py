@@ -14,6 +14,17 @@ from click.testing import CliRunner
 from androguard.cli import entry_points
 
 
+def get_apks():
+    """Get a list of APKs for testing scripts"""
+    for root, _, files in os.walk(resource_filename('androguard', '..')):
+        for f in files:
+            if f == 'multidex.apk':
+                # This file does not have a manifest, hence everything fails
+                continue
+            if f.endswith('.apk') and 'signing' not in root:
+                yield os.path.join(root, f)
+
+
 class EntryPointsTest(unittest.TestCase):
     def test_entry_point_help(self):
         runner = CliRunner()
@@ -56,8 +67,7 @@ class EntryPointsTest(unittest.TestCase):
         arguments = ['axml', '-i', axml_path,
                      '-o', output_path,
                      axml_path]
-        result = runner.invoke(entry_points.entry_point,
-                               arguments)
+        result = runner.invoke(entry_points.entry_point, arguments)
         assert result.exit_code == 1, arguments
         os.remove(output_path)
 
@@ -65,8 +75,7 @@ class EntryPointsTest(unittest.TestCase):
         _, output_path = mkstemp(prefix='androguard_', suffix='decoded.txt')
         runner = CliRunner()
         arguments = ['axml', '-o', output_path]
-        result = runner.invoke(entry_points.entry_point,
-                               arguments)
+        result = runner.invoke(entry_points.entry_point, arguments)
         assert result.exit_code == 1, arguments
         os.remove(output_path)
 
@@ -246,8 +255,8 @@ class EntryPointsTest(unittest.TestCase):
                                      'Test-debug.apk')
         runner = CliRunner()
         arguments = ['sign', apk_path]
-        result = runner.invoke(entry_points.entry_point, )
-        assert result.exit_code == 0, arguments
+        result = runner.invoke(entry_points.entry_point, arguments)
+        assert result.exit_code == 0
 
     def test_sign_help(self):
         runner = CliRunner()
@@ -266,3 +275,43 @@ class EntryPointsTest(unittest.TestCase):
                                ['analyze', '--help'])
         assert result.exit_code == 0
 
+    def test_androsign(self):
+        runner = CliRunner()
+        for apk in get_apks():
+            print("testing for {}".format(apk))
+            arguments = ['sign', apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+    def test_androaxml(self):
+        runner = CliRunner()
+        for apk in get_apks():
+            print("testing for {}".format(apk))
+            arguments = ['axml', apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+    def test_androarsc(self):
+        runner = CliRunner()
+        # TODO could check here more stuff for example returned lists etc
+        for apk in get_apks():
+            print("testing for {}".format(apk))
+            arguments = ['arsc', apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "-t", "string", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "--list-packages", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "--list-types", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0
+
+            arguments = ['arsc', "--list-locales", apk]
+            result = runner.invoke(entry_points.entry_point, arguments)
+            assert result.exit_code == 0

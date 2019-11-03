@@ -9,13 +9,8 @@ from androguard.core.bytecodes.dvm import DalvikVMFormat
 from androguard.core.analysis.analysis import Analysis
 
 import logging
+import warnings
 log = logging.getLogger("androguard.misc")
-
-
-def init_print_colors():
-    from IPython.utils import coloransi, io
-    androconf.default_colors(coloransi.TermColors)
-    androconf.CONF["PRINT_FCT"] = io.stdout.write
 
 
 def get_default_session():
@@ -165,10 +160,15 @@ def sign_apk(filename, keystore, storepass):
     """
     Use jarsigner to sign an APK file.
 
+
+    .. deprecated:: 3.4.0
+        dont use this function! Use apksigner directly
+
     :param filename: APK file on disk to sign (path)
     :param keystore: path to keystore
     :param storepass: your keystorage passphrase
     """
+    warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
     from subprocess import Popen, PIPE, STDOUT
     # TODO use apksigner instead of jarsigner
     cmd = Popen([androconf.CONF["BIN_JARSIGNER"], "-sigalg", "MD5withRSA",

@@ -17,6 +17,7 @@
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
+from androguard.core.bytecodes.dvm_types import TYPE_DESCRIPTOR
 
 
 def array_access(arr, ind):
@@ -138,20 +139,6 @@ def _append(sb, stmt):
         sb[2].append(stmt)
 
 
-################################################################################
-TYPE_DESCRIPTOR = {
-    'V': 'void',
-    'Z': 'boolean',
-    'B': 'byte',
-    'S': 'short',
-    'C': 'char',
-    'I': 'int',
-    'J': 'long',
-    'F': 'float',
-    'D': 'double',
-}
-
-
 def parse_descriptor(desc):
     dim = 0
     while desc and desc[0] == '[':
@@ -168,8 +155,7 @@ def parse_descriptor(desc):
 
 # Note: the literal_foo functions (and dummy) are also imported by decompile.py
 def literal_string(s):
-    # We return a escaped string in ASCII encoding
-    return literal(s.encode('unicode_escape').decode("ascii"), ('java/lang/String', 0))
+    return literal(str(s), ('java/lang/String', 0))
 
 
 def literal_class(desc):
@@ -224,12 +210,10 @@ def visit_arr_data(value):
 
 
 def write_inplace_if_possible(lhs, rhs):
-    if isinstance(
-            rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
+    if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
         exp_rhs = rhs.var_map[rhs.arg2]
         # post increment/decrement
-        if rhs.op in '+-' and isinstance(
-                exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
+        if rhs.op in '+-' and isinstance(exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
             return unary_postfix(visit_expr(lhs), rhs.op * 2)
         # compound assignment
         return assignment(visit_expr(lhs), visit_expr(exp_rhs), op=rhs.op)
@@ -284,7 +268,7 @@ def visit_expr(op):
             return visit_expr(arg)
 
         expr = visit_expr(arg)
-        atype = arg.get_type()
+        atype = str(arg.get_type())
         if atype == 'Z':
             if op.op == opcode_ins.Op.EQUAL:
                 expr = unary_prefix('!', expr)

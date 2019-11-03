@@ -180,7 +180,7 @@ Unfortunately, the method to get to the AST is a little bit awkward:
     for method in dx.get_methods():
         if method.is_external():
             continue
-        dv = DvMethod(dx.get_method(method.get_method()))
+        dv = DvMethod(method)
         dv.process(doAST=True)
         pprint(dv.get_ast())
 
