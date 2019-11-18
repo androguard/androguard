@@ -570,7 +570,9 @@ class APK:
             return None
 
         if app_icon.startswith("@"):
-            res_id = int(app_icon[1:], 16)
+            app_icon_id = app_icon[1:]
+            app_icon_id = app_icon_id.split(':')[-1]
+            res_id = int(app_icon_id, 16)
             candidates = res_parser.get_resolved_res_configs(res_id)
 
             app_icon = None
