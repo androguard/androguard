@@ -347,6 +347,12 @@ class MethodAnalysis:
         self.xrefto = set()
         self.xreffrom = set()
 
+        self.xrefread = set()
+        self.xrefwrite = set()
+
+        self.xrefnewinstance = set()
+        self.xrefconstclass = set()
+
         # Reserved for further use
         self.apilist = None
 
@@ -450,6 +456,42 @@ class MethodAnalysis:
             # setup exception by basic block
             i.set_exception_analysis(self.exceptions.get_exception(i.start, i.end - 1))
 
+    def add_xref_read(self, classobj, fieldobj, offset):
+        """
+        :param ClassAnalysis classobj:
+        :param FieldAnalysis fieldobj:
+        :param int offset: offset in the bytecode
+        """
+        self.xrefread.add((classobj, fieldobj, offset))
+
+    def add_xref_write(self, classobj, fieldobj, offset):
+        """
+        :param ClassAnalysis classobj:
+        :param FieldAnalysis fieldobj:
+        :param int offset: offset in the bytecode
+        """
+        self.xrefwrite.add((classobj, fieldobj, offset))
+
+    def get_xref_read(self):
+        """
+        Returns a list of xrefs where a field is read by this method.
+
+        The list contains tuples of the originating class and methods,
+        where the class is represented as a :class:`ClassAnalysis`,
+        while the Field is a :class:`FieldAnalysis`.
+        """
+        return self.xrefread
+
+    def get_xref_write(self):
+        """
+        Returns a list of xrefs where a field is written to by this method.
+
+        The list contains tuples of the originating class and methods,
+        where the class is represented as a :class:`ClassAnalysis`,
+        while the Field is a :class:`FieldAnalysis`.
+        """
+        return self.xrefwrite
+
     def add_xref_to(self, classobj, methodobj, offset):
         """
         Add a crossreference to another method
@@ -495,6 +537,47 @@ class MethodAnalysis:
         :class:`~ExternalMethod`, :class:`int`)
         """
         return self.xrefto
+
+    def add_xref_new_instance(self, classobj, offset):
+        """
+        Add a crossreference to another class that is
+        instanced within this method.
+
+        :param classobj: :class:`~ClassAnalysis`
+        :param offset: integer where in the method the instantiation happens
+        """
+        self.xrefnewinstance.add((classobj, offset))
+
+    def get_xref_new_instance(self):
+        """
+        Returns a list of tuples containing the class and offset of
+        the creation of a new instance of a class by this method.
+
+        The list of tuples has the form:
+        (:class:`~ClassAnalysis`,
+        :class:`int`)
+        """
+        return self.xrefnewinstance
+
+    def add_xref_const_class(self, classobj, offset):
+        """
+        Add a crossreference to another classtype.
+
+        :param classobj: :class:`~ClassAnalysis`
+        :param offset: integer where in the method the classtype is referenced
+        """
+        self.xrefconstclass.add((classobj, offset))
+
+    def get_xref_const_class(self):
+        """
+        Returns a list of tuples containing the class and offset of
+        the references to another classtype by this method.
+
+        The list of tuples has the form:
+        (:class:`~ClassAnalysis`,
+        :class:`int`)
+        """
+        return self.xrefconstclass
 
     def is_external(self):
         """
@@ -900,6 +983,9 @@ class ClassAnalysis:
         self.xrefto = collections.defaultdict(set)
         self.xreffrom = collections.defaultdict(set)
 
+        self.xrefnewinstance = set()
+        self.xrefconstclass = set()
+
         # Reserved for further use
         self.apilist = None
 
@@ -1161,6 +1247,48 @@ class ClassAnalysis:
         """
         return self.xrefto
 
+    def add_xref_new_instance(self, methobj, offset):
+        """
+        Add a crossreference to another method that is
+        instancing this class.
+
+        :param classobj: :class:`~MethodAnalysis`
+        :param offset: integer where in the method the instantiation happens
+        """
+        self.xrefnewinstance.add((methobj, offset))
+
+    def get_xref_new_instance(self):
+        """
+        Returns a list of tuples containing the set of methods
+        with offsets that instance this class
+
+
+        The list of tuples has the form:
+        (:class:`~MathodAnalysis`,
+        :class:`int`)
+        """
+        return self.xrefnewinstance
+
+    def add_xref_const_class(self, methobj, offset):
+        """
+        Add a crossreference to a method referencing this classtype.
+
+        :param classobj: :class:`~MethodAnalysis`
+        :param offset: integer where in the method the classtype is referenced
+        """
+        self.xrefconstclass.add((methobj, offset))
+
+    def get_xref_const_class(self):
+        """
+        Returns a list of tuples containing the method and offset
+        referencing this classtype.
+
+        The list of tuples has the form:
+        (:class:`~MethodAnalysis`,
+        :class:`int`)
+        """
+        return self.xrefconstclass
+
     def get_vm_class(self):
         """
         Returns the original Dalvik VM class or the external class object.
@@ -1366,8 +1494,17 @@ class Analysis:
                     # In this case that means, that current_method calls the class oth_class.
                     # Hence, on xref_to the method info is the calling method not the called one,
                     # as there is no called method!
+                    # With the _new_instance and _const_class can this be deprecated?
+                    # Removing these does not impact tests
                     cur_cls.add_xref_to(REF_TYPE(op_value), oth_cls, cur_meth, off)
                     oth_cls.add_xref_from(REF_TYPE(op_value), cur_cls, cur_meth, off)
+
+                    if op_value == 0x1c:
+                        cur_meth.add_xref_const_class(oth_cls, off)
+                        oth_cls.add_xref_const_class(cur_meth, off)
+                    if op_value == 0x22:
+                        cur_meth.add_xref_new_instance(oth_cls, off)
+                        oth_cls.add_xref_new_instance(cur_meth, off)
 
                 # 2) check for method calls: invoke-* (0x6e ... 0x72), invoke-xxx/range (0x74 ... 0x78)
                 elif (0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
@@ -1419,9 +1556,11 @@ class Analysis:
                     if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
                         # read access to a field
                         self.classes[cur_cls_name].add_field_xref_read(cur_meth, cur_cls, field_item, off)
+                        cur_meth.add_xref_read(cur_cls, field_item, off)
                     else:
                         # write access to a field
                         self.classes[cur_cls_name].add_field_xref_write(cur_meth, cur_cls, field_item, off)
+                        cur_meth.add_xref_write(cur_cls, field_item, off)
 
     def get_method(self, method):
         """
