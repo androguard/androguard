@@ -93,6 +93,32 @@ The variable :code:`idx` is the index counted in bytes where the opcode starts.
 :code:`ins.get_op_value()` returns the integer value of the opcode, :code:`ins.get_name()` the mnemonic
 and :code:`ins.get_output()` the parsed arguments.
 
+If you want to get the disassembled instructions from given specific class_name and method_name, you can follow the example as shown below.
+
+.. code-block:: python
+
+    for m in dx.find_methods("Ltests/androguard/TestActivity;","foo"):
+        print(m.full_name)
+        for idx, ins in m.get_method().get_instructions_idx():
+            print(idx, ins.get_op_value(), ins.get_name(), ins.get_output())
+
+
+The output will look like:
+
+.. code-block:: none
+
+    Ltests/androguard/TestActivity; foo (I I)I
+    0 1 move v0, v4
+    2 52 if-lt v3, v0, +005h
+    6 57 if-nez v3, +00eh
+    10 15 return v0
+    12 216 add-int/lit8 v4, v0, 1
+    16 147 div-int v3, v0, v3
+    20 1 move v0, v4
+    22 40 goto -ah
+    24 13 move-exception v1
+    26 19 const/16 v3, 10
+
 As an example, let's count the number of individual opcodes and create some statistics:
 
 .. code-block:: python
@@ -180,7 +206,7 @@ Unfortunately, the method to get to the AST is a little bit awkward:
     for method in dx.get_methods():
         if method.is_external():
             continue
-        dv = DvMethod(dx.get_method(method.get_method()))
+        dv = DvMethod(method)
         dv.process(doAST=True)
         pprint(dv.get_ast())
 

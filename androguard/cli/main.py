@@ -325,7 +325,6 @@ def androlyze_main(session, filename):
     from androguard.core.androconf import ANDROGUARD_VERSION, CONF
     from IPython.terminal.embed import InteractiveShellEmbed
     from traitlets.config import Config
-    from androguard.misc import init_print_colors
     from androguard.session import Session, Load
     from colorama import Fore
     import colorama
@@ -411,7 +410,6 @@ def androlyze_main(session, filename):
     ipshell = InteractiveShellEmbed(config=cfg, banner1="{} started"
                                     .format(_version_string))
     atexit.register(shutdown_hook)
-    init_print_colors()
     ipshell()
 
 
