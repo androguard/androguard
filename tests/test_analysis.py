@@ -240,6 +240,19 @@ class AnalysisTest(unittest.TestCase):
         self.assertTrue(other[0].is_android_api())
         self.assertIn(testmeth, map(itemgetter(1), other[0].get_xref_from()))
 
+        # Testing new_instance
+        testmeth = list(filter(lambda x: x.name == 'testString', testcls.get_methods()))[0]
+        self.assertIsInstance(testmeth, analysis.MethodAnalysis)
+        self.assertFalse(testmeth.is_external())
+        self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
+        self.assertEqual(testmeth.name, 'testString')
+
+        stringcls = dx.classes['Ljava/lang/String;']
+        self.assertIsInstance(stringcls, analysis.ClassAnalysis)
+
+        self.assertIn(stringcls, map(itemgetter(0), testmeth.get_xref_new_instance()))
+        self.assertIn(testmeth, map(itemgetter(0), stringcls.get_xref_new_instance()))
+
         # Not testing println, as it has too many variants...
 
     def testXrefOffsets(self):
