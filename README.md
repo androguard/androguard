@@ -50,6 +50,7 @@ In alphabetical order
 * [Koodous](https://koodous.com)
 * [MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
 * [qiew](https://github.com/mtivadar/qiew)
+* [Quark-Engine](https://github.com/quark-engine/quark-engine)
 * [Viper Framework](https://github.com/viper-framework/viper)
 * ... and many more!
 
