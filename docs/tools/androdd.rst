@@ -14,7 +14,7 @@ The CFGs can be exported as image file directly.
 
 Additionally to the decompiled classes in .java format, each method is given in a SMALI like format (.ag files)
 
-All filenames are sanatized, so they should work on most operating systems and filesystems.
+All filenames are sanitized, so they should work on most operating systems and filesystems.
 
 Examples
 --------
