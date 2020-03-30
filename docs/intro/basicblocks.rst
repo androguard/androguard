@@ -46,7 +46,7 @@ There is a special block, with the yellow arrow, which is the pseudo instruction
 Each of the switch blocks is followed by another, large basic block.
 If you look carefully, you can see that three of the blocks have `goto` commands at the end but the fourth block does not
 have one.
-First, take a look at the overall dissassembly of the method:
+First, take a look at the overall disassembly of the method:
 
 .. code-block:: none
 
@@ -95,22 +95,22 @@ First, take a look at the overall dissassembly of the method:
             40 (000000a8) packed-switch-payload
 
 
-All these blocks are concatenated to each other. If you like, try to identify the basic blocks inside the dissasembly!
+All these blocks are concatenated to each other. If you like, try to identify the basic blocks inside the disassembly!
 Hint: The second column gives the offset inside the bytecode and matches the offset given in the CFG.
 
 As you can see, the order of instructions in the bytecode does not match the execution order.
-For example, the `return` opcode is in the middle of the bytecode, while it is the end of the exection.
+For example, the `return` opcode is in the middle of the bytecode, while it is the end of the execution.
 Therefore some parts must have a `goto` to resume the execution at the correct point.
 For example, the basic block for the case that the argument of the switch opcode is :code:`5` ends at offset 0xa6
 and has a goto command to subtract 0x45 from the current offset.
-But that ends up beeing offset 0x61? No, it does not. To increase your confusion, you have to know,
+But that ends up being offset 0x61? No, it does not. To increase your confusion, you have to know,
 that offset arguments for opcodes are always in 16-bit units, while the offset used by androguard are counted in 8-bit units.
 That means, that you have to subtract 0x8a, which indeed returns to offset 0x1c in the bytecode.
 
 .. warning::
 
     The offset units used are sometimes a little bit inconsistent across androguard!
-    If you find some inconsistent behaviour, please report it as an issue.
+    If you find some inconsistent behavior, please report it as an issue.
 
 To conclude, let's take a look at the actual Java source code of this particular method:
 
