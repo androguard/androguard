@@ -6,7 +6,7 @@ It is also possible to use tools like `multiprocessing` for this job and
 analyse APKs in parallel.
 Usually you want to put the results of your analysis somewhere, for example a
 database or some log file.
-It is also possile to use :class:`~androguard.session.Session` objects for this
+It is also possible to use :class:`~androguard.session.Session` objects for this
 job, but you should be aware of some caveats!
 
 1) Sessions take up a lot of space per APK. The resulting Session object can be
