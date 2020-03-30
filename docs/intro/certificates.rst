@@ -31,7 +31,7 @@ Inside the APK, there are two places for certificates:
 
 * v1 aka JAR signing: PKCS#7 files in the :code:`META-INF` folder
 * v2 aka APK signing: a special section in the ZIP containing DER coded
-  certifcates
+  certificates
 
 The easiest way to get to the certificate information is :ref:`androsign`.
 It gives similar output to apksigner_, but uses only androguard.
@@ -75,7 +75,7 @@ As a comparison, here is the output of apksigner_:
     Signer #1 public key SHA-1 digest: a708f9a777bac814e6634b02521224537ec3e019
     Signer #1 public key MD5 digest: c0c8801fabf2ad970282be1c41584003
 
-The most interesting part is probaby the fingerprint of the certificate (not of
+The most interesting part is probably the fingerprint of the certificate (not of
 the public key!).
 You can use it to search for similar APKs.
 Sometimes there is a confusion about this fingerprint: The fingerprint is not
@@ -115,7 +115,7 @@ class to iterate over the certificates found there.
         # ...
 
 
-Please referr to the asn1crypto documentation_ for more information on the
+Please refer to the asn1crypto documentation_ for more information on the
 features of the :code:`Certificate` class!
 
 
