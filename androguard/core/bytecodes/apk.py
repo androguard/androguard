@@ -1696,12 +1696,7 @@ class APK:
 
         # Test if a signature is found
         if self._APK_SIG_KEY_V2_SIGNATURE in self._v2_blocks:
-            self._
-            
-            
-            
-            
-            gned_v2 = True
+            self._is_signed_v2 = True
 
         if self._APK_SIG_KEY_V3_SIGNATURE in self._v2_blocks:
             self._is_signed_v3 = True
