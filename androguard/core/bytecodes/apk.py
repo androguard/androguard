@@ -61,7 +61,7 @@ def _dump_additional_attributes(additional_attributes):
     attr_id, = unpack('<I', attributes_raw.read(4))
     if attr_id != APK._APK_SIG_ATTR_V2_STRIPPING_PROTECTION:
         return attributes_hex
-        
+
     scheme_id, = unpack('<I', attributes_raw.read(4))
 
     return "stripping protection set, scheme %d" % scheme_id
@@ -81,7 +81,7 @@ def _dump_digests_or_signatures(digests_or_sigs):
 
 
 class APKV2SignedData:
-    """ 
+    """
     This class holds all data associated with an APK V3 SigningBlock signed data.
     source : https://source.android.com/security/apksigning/v2.html
     """
@@ -117,7 +117,7 @@ class APKV2SignedData:
 
 
 class APKV3SignedData(APKV2SignedData):
-    """ 
+    """
     This class holds all data associated with an APK V3 SigningBlock signed data.
     source : https://source.android.com/security/apksigning/v3.html
     """
@@ -126,7 +126,7 @@ class APKV3SignedData(APKV2SignedData):
         super().__init__()
         self.minSDK = None
         self.maxSDK = None
-    
+
     def __str__(self):
 
         base_str = super().__str__()
@@ -139,12 +139,12 @@ class APKV3SignedData(APKV2SignedData):
         return "\n".join([
             'signer minSDK : {:d}'.format(self.minSDK),
             'signer maxSDK : {:s}'.format(max_sdk_str),
-            base_str    
+            base_str
         ])
 
 
 class APKV2Signer:
-    """ 
+    """
     This class holds all data associated with an APK V2 SigningBlock signer.
     source : https://source.android.com/security/apksigning/v2.html
     """
@@ -164,7 +164,7 @@ class APKV2Signer:
 
 
 class APKV3Signer(APKV2Signer):
-    """ 
+    """
     This class holds all data associated with an APK V3 SigningBlock signer.
     source : https://source.android.com/security/apksigning/v3.html
     """
@@ -175,7 +175,7 @@ class APKV3Signer(APKV2Signer):
         self.maxSDK = None
 
     def __str__(self):
-        
+
         base_str = super().__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
@@ -186,7 +186,7 @@ class APKV3Signer(APKV2Signer):
         return "\n".join([
             'signer minSDK : {:d}'.format(self.minSDK),
             'signer maxSDK : {:s}'.format(max_sdk_str),
-            base_str    
+            base_str
         ])
 
 
@@ -265,10 +265,11 @@ class APK:
             self._sha256 = hashlib.sha256(self.__raw).hexdigest()
             # Set the filename to something sane
             self.filename = "raw_apk_sha256:{}".format(self._sha256)
-        else:
-            self.__raw = bytearray(read(filename))
 
-        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
+            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
+        else:
+            self.__raw = None
+            self.zip = zipfile.ZipFile(filename, mode="r")
 
         if testzip:
             log.info("Testing zip file integrity, this might take a while...")
@@ -394,7 +395,7 @@ class APK:
         """
         self.__dict__ = state
 
-        self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
+        self.zip = zipfile.ZipFile(io.BytesIO(self.get_raw()), mode="r")
 
     def _get_res_string_value(self, string):
         if not string.startswith('@string/'):
@@ -762,7 +763,12 @@ class APK:
 
         :rtype: bytes
         """
-        return self.__raw
+
+        if self.__raw:
+            return self.__raw
+        else:
+            self.__raw = bytearray(read(self.filename))
+            return self.__raw
 
     def get_file(self, filename):
         """
@@ -1018,7 +1024,7 @@ class APK:
         ]
 
     def is_tag_matched(self, tag, **attribute_filter):
-        r"""
+        """
         Return true if the attributes matches in attribute filter.
 
         An attribute filter is a dictionary containing: {attribute_name: value}.
@@ -1136,7 +1142,6 @@ class APK:
     def get_res_value(self, name):
         """
         Return the literal value with a resource id
-
         :rtype: str 
         """
 
@@ -1188,7 +1193,7 @@ class APK:
                                             if value.startswith('@'):
                                                 value = self.get_res_value(value)
                                             values[attribute] = value
-                                    
+
                                     if values:
                                         d[element].append(values)
                                 else:
@@ -1250,7 +1255,7 @@ class APK:
                 implied.append([READ_PHONE_STATE, None])
 
         if (WRITE_EXTERNAL_STORAGE in self.permissions or implied_WRITE_EXTERNAL_STORAGE) \
-           and READ_EXTERNAL_STORAGE not in self.permissions:
+            and READ_EXTERNAL_STORAGE not in self.permissions:
             maxSdkVersion = None
             for name, version in self.uses_permissions:
                 if name == WRITE_EXTERNAL_STORAGE:
@@ -1260,10 +1265,10 @@ class APK:
 
         if target_sdk_version < 16:
             if READ_CONTACTS in self.permissions \
-               and READ_CALL_LOG not in self.permissions:
+                and READ_CALL_LOG not in self.permissions:
                 implied.append([READ_CALL_LOG, None])
             if WRITE_CONTACTS in self.permissions \
-               and WRITE_CALL_LOG not in self.permissions:
+                and WRITE_CALL_LOG not in self.permissions:
                 implied.append([WRITE_CALL_LOG, None])
 
         return implied
@@ -1605,7 +1610,7 @@ class APK:
 
         if not len(digest_bytes):
             return []
-        
+
         digests = []
         block = io.BytesIO(digest_bytes)
 
@@ -1632,7 +1637,7 @@ class APK:
         # * There should be again the size_of_block
         # * Now we can read the Key-Values
         # * IDs with an unknown value should be ignored.
-        f = io.BytesIO(self.__raw)
+        f = io.BytesIO(self.get_raw())
 
         size_central = None
         offset_central = None
@@ -1701,7 +1706,7 @@ class APK:
         if self._APK_SIG_KEY_V3_SIGNATURE in self._v2_blocks:
             self._is_signed_v3 = True
 
-    
+
     def parse_v3_signing_block(self):
         """
         Parse the V2 signing block and extract all features
@@ -1723,7 +1728,7 @@ class APK:
         #    * signed data:
         #        * digests:
         #            * signature algorithm ID (uint32)
-        #            * digest (length-prefixed) 
+        #            * digest (length-prefixed)
         #        * certificates
         #        * minSDK
         #        * maxSDK
@@ -1822,7 +1827,7 @@ class APK:
         #    * signed data:
         #        * digests:
         #            * signature algorithm ID (uint32)
-        #            * digest (length-prefixed) 
+        #            * digest (length-prefixed)
         #        * certificates
         #        * additional attributes
         #    * signatures
@@ -2204,4 +2209,3 @@ def get_apkid(apkfile):
         versionName = ''  # versionName is expected to always be a str
 
     return appid, versionCode, versionName.strip('\0')
-
