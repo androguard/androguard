@@ -69,7 +69,7 @@ function to retrive the analyzed objects from the Session:
 .. note::
    Session objects store a lot of data and can get very big!
 
-It is recommended not to use sessions in automated environments, where hundrets or
+It is recommended not to use sessions in automated environments, where hundreds or
 thousands of APKs are loaded.
 
 If you want to use sessions but keep the session alive only for one or multiple
