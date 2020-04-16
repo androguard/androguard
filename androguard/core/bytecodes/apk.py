@@ -1559,9 +1559,9 @@ class APK:
 
     def is_signed(self):
         """
-        Returns true if either a v1 or v2 (or both) signature was found.
+        Returns true if any of v1, v2, or v3 signatures were found.
         """
-        return self.is_signed_v1() or self.is_signed_v2()
+        return self.is_signed_v1() or self.is_signed_v2() or self.is_signed_v3()
 
     def is_signed_v1(self):
         """
