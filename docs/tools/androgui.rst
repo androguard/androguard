@@ -12,7 +12,7 @@ androguard gui - Androguard GUI
 Examples
 --------
 
-The androguard gui currently has functions to show disassmebled dalvik code,
+The androguard gui currently has functions to show disassembled dalvik code,
 print all strings, methods, API usage and resources.
 
 It uses :class:`~androguard.sessions.Session` in order to resume the work later.
@@ -39,7 +39,7 @@ View, Methods shows all methods found in the DEX files(s):
 .. image:: gui_methods.png
 
 
-Using View, API you will get a list of all API methods (or bascically all
+Using View, API you will get a list of all API methods (or basically all
 external Methods) which are used inside the APK:
 
 .. image:: gui_api.png

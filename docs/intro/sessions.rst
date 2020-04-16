@@ -3,7 +3,7 @@ Working with Sessions
 
 If you are working on a larger APK, you might want to save your current work and
 come back later.
-Thats the reason for sessions: They allow you to save your work on disk and
+That's the reason for sessions: They allow you to save your work on disk and
 resume it at any point.
 Sessions could also be used to store the analysis on disk, for example if you do
 automated analysis and want to analyse certain files later.
@@ -47,7 +47,7 @@ The session information will look like this:
 
 
 Similar functionality is available from the Session directly, but needs a second
-function to retrive the analyzed objects from the Session:
+function to retrieve the analyzed objects from the Session:
 
 .. code-block:: python
 

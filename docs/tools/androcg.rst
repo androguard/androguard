@@ -36,7 +36,7 @@ For external methods only the first direction can be saved.
 
 Here is an example of an already filtered graph, visualized in gephi_.
 Each node has an attribute to indicate if it is an internal (defined somewhere
-in the DEXs) or external (might be an API, but definetly not defined in the DEXs) method.
+in the DEXs) or external (might be an API, but definitely not defined in the DEXs) method.
 In this case all green nodes are internal and all red ones are external.
 You can see the calls of some SMS Trojan to the API methods to write SMS.
 

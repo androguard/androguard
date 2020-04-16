@@ -7,7 +7,7 @@ deliberately tries to break parsers - which is not uncommon for malware.
 
 Please feel free to open a bug report in such cases, so this error can be fixed.
 But before you do, try to gather some more information about the APK.
-Sometimes not only androguard failes to decode the file, but the official tools do as well!
+Sometimes not only androguard fails to decode the file, but the official tools do as well!
 
 It is also always interesting to know, if such a broken file can still be installed on an Android
 system. If you like to test this, fire up an emulator_ and try to run the APK there.

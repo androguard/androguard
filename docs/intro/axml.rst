@@ -86,7 +86,7 @@ Note, that the overall structure is equal but there are certain differences.
 Due to the compilation, this information is lost. But it does not matter, as the structure of the Manifest does not matter.
 To get some information about the resource IDs, we need information from the :code:`resources.arsc`.
 
-To retrive information about a single ID, simply run the following:
+To retrieve information about a single ID, simply run the following:
 
 .. code-block:: bash
 

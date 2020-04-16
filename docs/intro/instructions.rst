@@ -210,7 +210,7 @@ Unfortunately, the method to get to the AST is a little bit awkward:
         dv.process(doAST=True)
         pprint(dv.get_ast())
 
-The AST is a dictionary, wich might look like this one:
+The AST is a dictionary, which might look like this one:
 
 .. code-block:: none
 
