@@ -2041,6 +2041,18 @@ class Analysis:
                 if meth.permission_api_name in apis:
                     yield meth_analysis
 
+    def get_android_api_usage(self):
+        """
+        Get all usage of the Android APIs inside the Analysis.
+
+        :return: yields :class:`MethodAnalysis` objects for all Android APIs methods
+        """
+
+        for cls in self.get_external_classes():
+            for meth_analysis in cls.get_methods():
+                if meth_analysis.is_android_api():
+                    yield meth_analysis
+
 
 def is_ascii_obfuscation(vm):
     """
