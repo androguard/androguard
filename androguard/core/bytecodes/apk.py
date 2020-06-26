@@ -1024,7 +1024,7 @@ class APK:
         ]
 
     def is_tag_matched(self, tag, **attribute_filter):
-        """
+        r"""
         Return true if the attributes matches in attribute filter.
 
         An attribute filter is a dictionary containing: {attribute_name: value}.
