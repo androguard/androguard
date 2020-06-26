@@ -189,6 +189,29 @@ If the class is `EXTERNAL`, a
 The :class:`~androguard.core.analysis.analysis.ClassAnalysis` also contains all the
 information about XREFs, which are explained in more detail in the next section.
 
+Moreover, You can get all Android APIs usage by the following example, it will return a list of :class:`~androguard.core.analysis.analysis.MethodAnalysis` objects.
+
+.. code-block:: none
+
+    In [11]: dx.get_android_api_usage()
+    Out[11]: <generator object Analysis.get_android_api_usage at 0x12a962450>
+    
+    In [12]: for method_analysis in dx.get_android_api_usage():
+        ...:     print(method_analysis.full_name)
+        ...:
+    Ljava/lang/Object; <init> ()V
+    Ljava/lang/Object; equals (Ljava/lang/Object;)Z
+    Ljava/lang/Object; toString ()Ljava/lang/String;
+    Ljava/lang/Object; getClass ()Ljava/lang/Class;
+    Ljava/lang/Object; clone ()Ljava/lang/Object;
+    Ljava/lang/Object; hashCode ()I
+    Ljava/lang/Object; wait ()V
+    Ljava/lang/Object; notifyAll ()V
+    Ljava/lang/Object; finalize ()V
+    Ljava/lang/UnsupportedOperationException; <init> (Ljava/lang/String;)V
+    Ljava/lang/UnsupportedOperationException; <init> ()V
+    ...
+
 XREFs
 -----
 
