@@ -5,7 +5,7 @@ log = logging.getLogger("androguard.gui")
 class Signature:
     def __init__(self, cls, method=None, descriptor=None):
         self.cls = cls
-        self.class_components = self.cls.name.strip('L').strip(';').split('/')
+        self.class_components = str(self.cls.name).strip('L').strip(';').split('/')
         self.class_path = self.class_components[:-1]
         self.class_name = self.class_components[-1]
         self.full_class_name = self.cls.name
