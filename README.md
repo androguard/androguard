@@ -38,6 +38,7 @@ There are some (probably broken/outdated) examples and demos in the folders [dem
 ## Projects using Androguard
 In alphabetical order
 
+* [AndroBugs 2](https://github.com/androbugs2/androbugs2)
 * [AndroPyTool](https://github.com/alexMyG/AndroPyTool)
 * [AppKnox](http://appknox.com)
 * [Cuckoo Sandbox](https://cuckoosandbox.org)
