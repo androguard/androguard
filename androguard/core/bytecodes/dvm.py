@@ -969,7 +969,7 @@ class ParameterAnnotation:
 
         :rtype: int
         """
-        return self.get_method_idx
+        return self.method_idx
 
     def get_annotations_off(self):
         """
