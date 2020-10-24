@@ -353,6 +353,10 @@ class MethodAnalysis:
         self.xrefnewinstance = set()
         self.xrefconstclass = set()
 
+        # For Android 10+
+        self.restriction_flag = None
+        self.domain_flag = None
+
         # Reserved for further use
         self.apilist = None
 
@@ -1301,6 +1305,34 @@ class ClassAnalysis:
         """
         return self.orig_class
 
+    def set_restriction_flag(self, flag):
+        """
+        Set the level of restriction for this class (hidden level, from Android 10)
+        (only applicable to internal classes)
+
+        :param flag: The flag to set to
+        :type flag: androguard.core.bytecodes.dvm.HiddenApiClassDataItem.RestrictionApiFlag
+        """
+        if self.is_external():
+            raise RuntimeError(
+                "Can\'t set restriction flag for external class: %s"
+                % (self.orig_class.name,))
+        self.restriction_flag = flag
+
+    def set_domain_flag(self, flag):
+        """
+        Set the api domain for this class (hidden level, from Android 10)
+        (only applicable to internal classes)
+
+        :param flag: The flag to set to
+        :type flag: androguard.core.bytecodes.dvm.HiddenApiClassDataItem.DomainApiFlag
+        """
+        if self.is_external():
+            raise RuntimeError(
+                "Can\'t set domain flag for external class: %s"
+                % (self.orig_class.name,))
+        self.domain_flag = flag
+
     # Alias
     get_class = get_vm_class
 
@@ -1397,12 +1429,20 @@ class Analysis:
         log.info("Adding DEX file version {}".format(vm.version))
         # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
         tic = time.time()
-        for current_class in vm.get_classes():
+        for i, current_class in enumerate(vm.get_classes()):
             self.classes[current_class.get_name()] = ClassAnalysis(current_class)
+            new_class = self.classes[current_class.get_name()]
+            # Fix up the hidden api annotations (Android 10)
+            hidden_api = vm.get_hidden_api()
+            if hidden_api:
+                rf, df = hidden_api.get_flags(i)
+                new_class.set_restriction_flag(rf)
+                new_class.set_domain_flag(df)
+
             for method in current_class.get_methods():
                 self.methods[method] = MethodAnalysis(vm, method)
 
-                self.classes[current_class.get_name()].add_method(self.methods[method])
+                new_class.add_method(self.methods[method])
 
                 # Store for faster lookup during create_xrefs
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))

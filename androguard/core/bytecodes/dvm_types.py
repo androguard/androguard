@@ -72,6 +72,7 @@ class TypeMapItem(IntEnum):
     ANNOTATION_ITEM = 0x2004
     ENCODED_ARRAY_ITEM = 0x2005
     ANNOTATIONS_DIRECTORY_ITEM = 0x2006
+    HIDDENAPI_CLASS_DATA_ITEM = 0xf000
 
     @staticmethod
     def _get_dependencies():
@@ -106,7 +107,8 @@ class TypeMapItem(IntEnum):
              {TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM,
               TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
             (TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM,
-             {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM, TypeMapItem.ANNOTATION_SET_ITEM})
+             {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM, TypeMapItem.ANNOTATION_SET_ITEM}),
+            (TypeMapItem.HIDDENAPI_CLASS_DATA_ITEM, set()),
         ])
 
     @staticmethod
