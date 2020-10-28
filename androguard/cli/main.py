@@ -334,6 +334,7 @@ def androlyze_main(session, filename):
     from androguard.core.bytecodes.apk import APK
     from androguard.core.bytecodes.dvm import DalvikVMFormat
     from androguard.core.analysis.analysis import Analysis
+    from androguard.misc import AnalyzeAPK
 
     colorama.init()
 
