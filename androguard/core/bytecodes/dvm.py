@@ -1886,7 +1886,7 @@ class StringDataItem:
         """
         Returns a MUTF8String object
         """
-        return mutf8.MUTF8String(self.data)
+        return mutf8.decode(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2141,7 +2141,8 @@ class ProtoIdItem:
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = mutf8.MUTF8String(b'(' + b' '.join(params) + b')')
+            self.parameters_off_value = '(' + ' '.join(params) + ')'
+
         return self.parameters_off_value
 
     def show(self):
@@ -2898,7 +2899,8 @@ class EncodedMethod:
         if v and len(v) >= 3:
             self.class_name = v[0]
             self.name = v[1]
-            self.proto = mutf8.MUTF8String.join(i for i in v[2])
+            # self.proto = mutf8.MUTF8String.join(i for i in v[2])
+            self.proto = ''.join(i for i in v[2])
         else:
             self.class_name = 'CLASS_NAME_ERROR'
             self.name = 'NAME_ERROR'

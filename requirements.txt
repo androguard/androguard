@@ -7,3 +7,4 @@ asn1crypto>=0.24.0
 click>=7.0
 pydot>=1.4.1
 ipython>=5.0.0
+mutf>=1.0.2

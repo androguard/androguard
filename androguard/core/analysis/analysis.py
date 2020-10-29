@@ -62,7 +62,11 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@', hex(self.start).encode()])
+        self.name = ''.join([
+            self.method.get_name(),
+            '-BB@',
+            hex(self.start)
+        ])
         self.exception_analysis = None
 
         self.notes = []
@@ -1477,7 +1481,7 @@ class Analysis:
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip(b'[')
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
                     if type_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
@@ -1518,8 +1522,8 @@ class Analysis:
                                     "Requested IDX {}".format(off, current_method.get_code_off(), idx_meth))
                         continue
 
-                    class_info = method_info[0].lstrip(b'[')
-                    if class_info[0] != b'L':
+                    class_info = method_info[0].lstrip('[')
+                    if class_info[0] != 'L':
                         # Need to make sure, that we get class types and not other types
                         # If another type, like int is used, we simply skip it.
                         continue
@@ -1591,7 +1595,7 @@ class Analysis:
         :return:
         :rtype: MethodAnalysis
         """
-        m_hash = (class_name, method_name, mutf8.MUTF8String.join(method_descriptor))
+        m_hash = (class_name, method_name, ''.join(method_descriptor))
         if m_hash not in self.__method_hashes:
             # Need to create a new method
             if class_name not in self.classes:
