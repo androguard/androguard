@@ -43,7 +43,7 @@ def Save(session, filename=None):
         filename = "androguard_session_{:%Y-%m-%d_%H%M%S}.ag".format(datetime.datetime.now())
 
     if os.path.isfile(filename):
-        log.warning("{} already exists, overwriting!")
+        log.warning(f"{filename} already exists, overwriting!")
 
     # Setting the recursion limit according to the documentation:
     # https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
