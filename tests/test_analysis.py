@@ -325,6 +325,17 @@ class AnalysisTest(unittest.TestCase):
         meths = [x.name for x in dx.get_permission_usage('android.permission.ACCESS_NETWORK_STATE')]
         self.assertListEqual(sorted(meths), sorted(network_meths))
 
+    def testHiddenAnnotation(self):
+        a, d, dx = AnalyzeAPK("examples/android/TestsAnnotation/OPCommonTelephony.jar")
+
+        class1 = dx.classes["Lvendor/mediatek/hardware/radio_op/V1_2/IRadioIndicationOp$Stub;"]
+        self.assertEqual(class1.restriction_flag, dvm.HiddenApiClassDataItem.RestrictionApiFlag.WHITELIST)
+        self.assertEqual(class1.domain_flag, dvm.HiddenApiClassDataItem.DomapiApiFlag.CORE_PLATFORM_API)
+
+        class1 = dx.classes["Lcom/mediatek/opcommon/telephony/MtkRILConstantsOp;"]
+        self.assertEqual(class1.restriction_flag, dvm.HiddenApiClassDataItem.RestrictionApiFlag.BLACKLIST)
+        self.assertEqual(class1.domain_flag, dvm.HiddenApiClassDataItem.DomapiApiFlag.NONE)
+
 
 if __name__ == '__main__':
     unittest.main()

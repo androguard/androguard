@@ -32,6 +32,7 @@ DEX_FILE_MAGIC_35 = b'dex\n035\x00'
 DEX_FILE_MAGIC_36 = b'dex\n036\x00'
 DEX_FILE_MAGIC_37 = b'dex\n037\x00'
 DEX_FILE_MAGIC_38 = b'dex\n038\x00'
+DEX_FILE_MAGIC_39 = b'dex\n039\x00'
 
 ODEX_FILE_MAGIC_35 = b'dey\n035\x00'
 ODEX_FILE_MAGIC_36 = b'dey\n036\x00'
@@ -1140,6 +1141,109 @@ class AnnotationsDirectoryItem:
             length += i.get_length()
 
         return length
+
+
+class HiddenApiClassDataItem:
+    """
+    This class can parse an hiddenapi_class_data_item of a dex file (from Android 10 dex version 039)
+
+    :param buff: a string which represents a Buff object of the hiddenapi_class_data_item
+    :type buff: Buff object
+    :param cm: a ClassManager object
+    :type cm: :class:`ClassManager`
+    """
+
+    class RestrictionApiFlag(IntEnum):
+        WHITELIST = 0
+        GREYLIST = 1
+        BLACKLIST = 2
+        GREYLIST_MAX_O = 3
+        GREYLIST_MAX_P = 4
+        GREYLIST_MAX_Q = 5
+        GREYLIST_MAX_R = 6
+
+    class DomapiApiFlag(IntEnum):
+        NONE = 0
+        CORE_PLATFORM_API = 1
+        TEST_API = 2
+
+    def __init__(self, buff, cm):
+        self.CM = cm
+
+        self.offset = buff.get_idx()
+
+        self.section_size, = cm.packer["I"].unpack(buff.read(4))
+
+        # Find the end of the offsets array (first non-zero offset entry is the start of `flags`)
+        offsets_size = 0
+        i = 0
+        while buff.get_idx() - self.offset < self.section_size:
+            if offsets_size != 0 and i >= offsets_size:
+                break
+            offset, = cm.packer["I"].unpack(buff.read(4))
+            if offset != 0 and offsets_size == 0:
+                offsets_size = (offset - 4) // 4
+            i += 1
+
+        self.flags = []
+        for i in range(offsets_size):
+            flag = readuleb128(cm, buff)
+            self.flags.append((
+                self.RestrictionApiFlag(flag & 0b111),
+                self.DomapiApiFlag(flag >> 3)))
+
+    def get_section_size(self):
+        """
+        Return the total size of this section
+
+        :rtype: int
+        """
+        return self.section_size
+
+    def get_flags(self, idx):
+        """
+        Return a tuple of the flags per class
+
+        :param idx: The index to return the flags of (index of the class)
+        :type idx: int
+
+        :rtype: Tuple[RestrictionApiFlag, DomainApiFlag]
+        """
+        return self.flags[idx]
+
+    def set_off(self, off):
+        self.offset = off
+
+    def get_off(self):
+        return self.offset
+
+    def show(self):
+        bytecode._PrintSubBanner("HiddenApi Class Data Item")
+        bytecode._PrintDefault(
+            "section_size=0x%x\n"
+            % (self.section_size,))
+
+        for i, (rf, df) in enumerate(self.flags):
+            bytecode._PrintDefault(
+                "[%u] %s, %s\n"
+                % (i, rf, df))
+
+    def get_obj(self):
+        base = 4 + len(self.flags)
+        raw_offsets = b''
+        raw_flags = b''
+        for rf, df in self.flags:
+            raw_offsets += self.CM.packer["I"].pack(base + len(raw_flags))
+            raw_flags += writeuleb128(self.CM, (df.value << 3) | rf.value)
+
+        return (self.CM.packer["I"].pack(self.section_size) +
+                raw_offsets + raw_flags)
+
+    def get_raw(self):
+        return self.get_obj()
+
+    def get_length(self):
+        return self.section_size
 
 
 class TypeItem:
@@ -6956,6 +7060,11 @@ class MapItem:
             buff.set_idx(self.offset + (self.offset % 4))
             self.item = [AnnotationsDirectoryItem(buff, cm) for _ in range(self.size)]
 
+        elif TypeMapItem.HIDDENAPI_CLASS_DATA_ITEM == self.type:
+            # Byte aligned
+            buff.set_idx(self.offset)
+            self.item = HiddenApiClassDataItem(buff, cm)
+
         elif TypeMapItem.ANNOTATION_SET_REF_LIST == self.type:
             # 4-byte aligned
             buff.set_idx(self.offset + (self.offset % 4))
@@ -7208,9 +7317,14 @@ class ClassManager:
         for i in self.__manage_item[TypeMapItem.ANNOTATION_OFF_ITEM]:
             if i.get_off() == off:
                 return i
-    
+
     def get_annotation_item(self, off):
         for i in self.__manage_item[TypeMapItem.ANNOTATION_ITEM]:
+            if i.get_off() == off:
+                return i
+
+    def get_hiddenapi_class_data_item(self, off):
+        for i in self.__manage_item[TypeMapItem.HIDDENAPI_CLASS_DATA_ITEM]:
             if i.get_off() == off:
                 return i
 
@@ -7577,6 +7691,7 @@ class DalvikVMFormat(bytecode.BuffHandle):
             self.codes = self.map_list.get_item_type(TypeMapItem.CODE_ITEM)
             self.strings = self.map_list.get_item_type(TypeMapItem.STRING_DATA_ITEM)
             self.debug = self.map_list.get_item_type(TypeMapItem.DEBUG_INFO_ITEM)
+            self.hidden_api = self.map_list.get_item_type(TypeMapItem.HIDDENAPI_CLASS_DATA_ITEM)
 
         self._flush()
 
@@ -7695,6 +7810,14 @@ class DalvikVMFormat(bytecode.BuffHandle):
         :rtype: :class:`HeaderItem` object
         """
         return self.header
+
+    def get_hidden_api(self):
+        """
+        This function returns the hidden api item (from Android 10)
+
+        :rtype: :class:`HiddenApiClassDataItem` object
+        """
+        return self.hidden_api
 
     def get_class_manager(self):
         """
