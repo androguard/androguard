@@ -74,13 +74,14 @@ def AnalyzeAPK(_file, session=None, raw=False):
         return a, d, dx
 
 
-def AnalyzeDex(filename, session=None):
+def AnalyzeDex(filename, session=None, raw=False):
     """
     Analyze an android dex file and setup all stuff for a more quickly analysis !
 
     :param filename: the filename of the android dex file or a buffer which represents the dex file
     :type filename: string
     :param session: A session (Default None)
+    :param raw: If set, ``filename`` will be used as the odex's data (bytes). Defaults to ``False``
 
     :rtype: return a tuple of (sha256hash, :class:`DalvikVMFormat`, :class:`Analysis`)
     """
@@ -89,19 +90,23 @@ def AnalyzeDex(filename, session=None):
     if not session:
         session = get_default_session()
 
-    with open(filename, "rb") as fd:
-        data = fd.read()
+    if raw:
+        data = filename
+    else:
+        with open(filename, "rb") as fd:
+            data = fd.read()
 
     return session.addDEX(filename, data)
 
 
-def AnalyzeODex(filename, session=None):
+def AnalyzeODex(filename, session=None, raw=False):
     """
     Analyze an android odex file and setup all stuff for a more quickly analysis !
 
     :param filename: the filename of the android dex file or a buffer which represents the dex file
     :type filename: string
     :param session: The Androguard Session to add the ODex to (default: None)
+    :param raw: If set, ``filename`` will be used as the odex's data (bytes). Defaults to ``False``
 
     :rtype: return a tuple of (sha256hash, :class:`DalvikOdexVMFormat`, :class:`Analysis`)
     """
@@ -110,8 +115,11 @@ def AnalyzeODex(filename, session=None):
     if not session:
         session = get_default_session()
 
-    with open(filename, "rb") as fd:
-        data = fd.read()
+    if raw:
+        data = filename
+    else:
+        with open(filename, "rb") as fd:
+            data = fd.read()
 
     return session.addDEY(filename, data)
 
