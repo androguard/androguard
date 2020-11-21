@@ -1,6 +1,8 @@
 language: python
 dist: xenial
-
+arch:
+  - amd64
+  - ppc64le
 # Download jadx decompiler
 before_script:
   - wget https://github.com/skylot/jadx/releases/download/v1.0.0/jadx-1.0.0.zip -O /tmp/jadx-1.0.0.zip
