@@ -71,10 +71,21 @@ setup(
     },
     install_requires=install_requires,
     extras_require={
-        'GUI': ["pyperclip", "PyQt5"],
+        'GUI': ['pyperclip', 'PyQt5'],
         'magic': [magic_package],
-        'docs': ['sphinx', "sphinxcontrib-programoutput>0.8", 'sphinx_rtd_theme'],
-        'tests': ['mock>=2.0', 'nose', 'codecov', 'coverage', 'nose-timer'],
+        'docs': [
+            'sphinx',
+            'sphinxcontrib-programoutput>0.8',
+            'sphinx_rtd_theme'
+        ],
+        'tests': [
+            magic_package,
+            'mock>=2.0',
+            'nose',
+            'codecov',
+            'coverage',
+            'nose-timer'
+        ],
     },
     setup_requires=['setuptools'],
     python_requires='>=3.5',
