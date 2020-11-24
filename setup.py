@@ -6,9 +6,10 @@ from setuptools import setup, find_packages
 
 
 # We do not support Python <3.5 (lxml and pyqt5 are not supported as well)
-if sys.version_info < (3, 5):
+# py3.5 does not support format strings
+if sys.version_info < (3, 6):
     print("Unfortunately, your python version is not supported!\n"
-          "Please upgrade at least to Python 3.5!", file=sys.stderr)
+          "Please upgrade at least to Python 3.6!", file=sys.stderr)
     sys.exit(1)
 
 with open('requirements.txt', 'r') as fp:
