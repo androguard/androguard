@@ -89,7 +89,7 @@ setup(
         ],
     },
     setup_requires=['setuptools'],
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     classifiers=[
                  'License :: OSI Approved :: Apache Software License',
                  'Programming Language :: Python',
