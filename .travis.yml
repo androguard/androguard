@@ -5,15 +5,16 @@ arch:
   - ppc64le
 # Download jadx decompiler
 before_script:
-  - wget https://github.com/skylot/jadx/releases/download/v1.0.0/jadx-1.0.0.zip -O /tmp/jadx-1.0.0.zip
-  - unzip /tmp/jadx-1.0.0.zip -d jadx-1.0.0
-  - export PATH=$PATH:$PWD/jadx-1.0.0/bin
+  - wget https://github.com/skylot/jadx/releases/download/v1.2.0/jadx-1.2.0.zip -O /tmp/jadx-1.2.0.zip
+  - unzip /tmp/jadx-1.2.0.zip -d jadx-1.2.0
+  - export PATH=$PATH:$PWD/jadx-1.2.0/bin
 
 python:
   - "3.6"
   - "3.7"
-  - "3.5"
   - "3.8"
+  - "3.9"
+#  - "3.5"   # disabled because of f"" strings.
 #  - "pypy3"  # matplotlib does not compile
 #  - "3.4"  # Disabled due to LXML compile error on 3.4
 #  - "3.8-dev"  # Disabled due to LXML compile error on 3.8
