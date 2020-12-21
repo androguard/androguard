@@ -153,7 +153,7 @@ def plot(cg):
 
     nx.draw_networkx_nodes(cg, pos=pos, node_color='r', nodelist=internal)
     nx.draw_networkx_nodes(cg, pos=pos, node_color='b', nodelist=external)
-    nx.draw_networkx_edges(cg, pos, arrows=True)
+    nx.draw_networkx_edges(cg, pos, arrow=True)
     nx.draw_networkx_labels(cg, pos=pos, labels={x: "{}{}".format(x.class_name, x.name) for x in cg.nodes})
     plt.draw()
     plt.show()
@@ -334,7 +334,6 @@ def androlyze_main(session, filename):
     from androguard.core.bytecodes.apk import APK
     from androguard.core.bytecodes.dvm import DalvikVMFormat
     from androguard.core.analysis.analysis import Analysis
-    from androguard.misc import AnalyzeAPK
 
     colorama.init()
 
@@ -423,6 +422,7 @@ def androsign_main(args_apk, args_hash, args_all, show):
     import traceback
     from colorama import Fore, Style
     from asn1crypto import x509, keys
+    from oscrypto import asymmetric
 
     # Keep the list of hash functions in sync with cli/entry_points.py:sign
     hashfunctions = dict(md5=hashlib.md5,
@@ -476,12 +476,13 @@ def androsign_main(args_apk, args_hash, args_all, show):
 
             for public_key in pkeys:
                 if show:
-                    x509_public_key = keys.PublicKeyInfo.load(public_key)
+                    
+                    x509_public_key = asymmetric.load_public_key(public_key)
                     print("PublicKey Algorithm:", x509_public_key.algorithm)
                     print("Bit Size:", x509_public_key.bit_size)
                     print("Fingerprint:", binascii.hexlify(x509_public_key.fingerprint))
                     try:
-                        print("Hash Algorithm:", x509_public_key.hash_algo)
+                        print("Hash Algorithm:", hash_algo(x509_public_key))
                     except ValueError as ve:
                         # RSA pkey does not have an hash algorithm
                         pass
@@ -528,3 +529,26 @@ def androdis_main(offset, size, dex):
             idx += i.get_length()
     else:
         print("Dex could not be loaded!", file=sys.stderr)
+
+def hash_algo(pub_key):
+    """
+    Returns the name of the family of hash algorithms used to generate a
+    DSA key
+    :raises:
+        ValueError - when the key is not a DSA key
+    :return:
+        A unicode string of "sha1" or "sha2"
+    """
+
+    if pub_key.algorithm != 'dsa':
+        raise ValueError(
+            '''
+            Only DSA keys are generated using a hash algorithm, this key is
+            %s
+            ''',
+            pub_key.algorithm.upper()
+        )
+
+    byte_len = math.log(pub_key['private_key_algorithm']['parameters']['q'].native, 2) / 8
+
+    return 'sha1' if byte_len <= 20 else 'sha2'
