@@ -5,7 +5,7 @@ Other tools that are useful for androguard.
 - To decompile a given method: `androdecomp.py --input THEAPK --classname CLASSNAME --methodname METHODNAME`
 - To decompile an entire class: `androdecomp.py --input THEAPK --classname CLASSNAME`
 - To list class: `androdecomp.py --input THEAPK`
-- To list methods of a given class: ``androdecomp.py --input THEAPK --classname CLASSNAME --list`
+- To list methods of a given class: `androdecomp.py --input THEAPK --classname CLASSNAME --list`
 
 Example:
 
