@@ -55,7 +55,7 @@ def main(args):
                   
     elif args.classname:
         print("Decompiling entire class...")
-        decompile_class(dx. args.classname)
+        decompile_class(dx, args.classname)
                   
     else:
         print("List of classes: ")
