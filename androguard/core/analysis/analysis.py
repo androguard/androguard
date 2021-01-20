@@ -237,7 +237,7 @@ class BasicBlocks:
 
     def get_basic_block(self, idx):
         for i in self.bb:
-            if i.get_start() <= idx < i.get_end():
+            if i.start <= idx < i.end:
                 return i
         return None
 
