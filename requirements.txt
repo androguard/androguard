@@ -1,4 +1,4 @@
-networkx>=2.2
+networkx==2.2
 pygments>=2.3.1
 lxml>=4.3.0
 colorama>=0.4.1
