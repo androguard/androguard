@@ -319,6 +319,17 @@ def cg(output,
     \b
         $ androguard cg examples/tests/hello-world.apk
     """
+
+    extensions = ['gml', 'gexf', 'gpickle', 'graphml', 'yaml', 'net']
+    try:
+        extension = output.rsplit(".", 1)[1]
+    except IndexError:
+            extension = ""
+    if not extension in extensions:
+        print("Filename of the output file must have an extension in [{}]!"
+            .format(", ".join(extensions)))
+        sys.exit(0)
+
     androcg_main(verbose=verbose,
                  APK=apk,
                  classname=classname,
