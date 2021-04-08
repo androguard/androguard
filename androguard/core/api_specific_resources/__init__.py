@@ -61,7 +61,7 @@ def load_permissions(apilevel, permtype='permissions'):
         log.warning("Requested API Level could not be found, using {} instead".format(lower_level))
         return load_permissions(lower_level, permtype)
 
-    with open(permissions_file, "r") as fp:
+    with open(permissions_file, "r", encoding='utf-8') as fp:
         return json.load(fp)[permtype]
 
 
