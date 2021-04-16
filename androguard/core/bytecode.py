@@ -822,7 +822,7 @@ class BuffHandle:
         :rtype: bytearray
         """
         buff = self.__buff[self.__idx:self.__idx + size]
-        self.__idx += size
+        self.__idx += len(buff)
 
         return buff
 
