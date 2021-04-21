@@ -603,8 +603,11 @@ class APK(object):
                     val = sitem.get(NS_ANDROID + "name")
                     if val == "android.intent.action.MAIN":
                         x.add(item.get(NS_ANDROID + "name"))
-
-                for sitem in item.findall(".//category"):
+                # for same appliction ,maybe more than 3 category ,so it should be only one and keep right
+                categories = item.findall(".//category")
+                if len(categories)>=2:
+                    continue
+                for sitem in categories:
                     val = sitem.get(NS_ANDROID + "name")
                     if val == "android.intent.category.LAUNCHER":
                         y.add(item.get(NS_ANDROID + "name"))
