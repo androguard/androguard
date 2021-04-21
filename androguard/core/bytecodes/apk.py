@@ -617,6 +617,15 @@ class APK(object):
             return self.format_value(z.pop())
         return None
 
+    def get_application_name(self):
+        """
+        Return Application Name
+        """
+        try:
+            return self.get_element("application","name")
+        except:
+            return ""
+
     def get_activities(self):
         """
             Return the android:name attribute of all activities
