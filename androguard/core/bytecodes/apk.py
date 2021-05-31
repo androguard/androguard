@@ -1103,8 +1103,15 @@ class APK:
         :rtype: str
         """
         activities = self.get_main_activities()
-        if len(activities) > 0:
+        if len(activities) == 1:
             return self._format_value(activities.pop())
+        elif len(activities) > 1:
+            main_activities = {self._format_value(ma) for ma in activities}
+            good_main_activities = main_activities.intersection(self.get_activities())
+            if good_main_activities:
+                return good_main_activities.pop()
+            elif main_activities:
+                return main_activities.pop()
         return None
 
     def get_activities(self):
@@ -1142,12 +1149,12 @@ class APK:
     def get_res_value(self, name):
         """
         Return the literal value with a resource id
-        :rtype: str 
+        :rtype: str
         """
 
         res_parser = self.get_android_resources()
         if not res_parser:
-            return name 
+            return name
 
         res_id = res_parser.parse_id(name)[0]
         try:
@@ -1158,7 +1165,7 @@ class APK:
             log.warning("Exception get resolved resource id: %s" % e)
             return name
 
-        return value 
+        return value
 
     def get_intent_filters(self, itemtype, name):
         """
