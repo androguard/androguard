@@ -1152,7 +1152,7 @@ class APK:
                          alias.get(self._ns(attribute)))
                 if not value:
                     continue
-                activity_alias[attribute] = value
+                activity_alias[attribute] = self._format_value(value)
             if activity_alias:
                 ali.append(activity_alias)
         return ali
@@ -2253,4 +2253,3 @@ def get_apkid(apkfile):
         versionName = ''  # versionName is expected to always be a str
 
     return appid, versionCode, versionName.strip('\0')
-
