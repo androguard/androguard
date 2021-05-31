@@ -1143,6 +1143,20 @@ class APK:
                 ali.append(activity_alias)
         return ali
 
+    def get_activity_aliases(self):
+        ali = []
+        for alias in self.find_tags('activity-alias'):
+            activity_alias = {}
+            for attribute in ['name', 'targetActivity']:
+                value = (alias.get(attribute) or
+                         alias.get(self._ns(attribute)))
+                if not value:
+                    continue
+                activity_alias[attribute] = value
+            if activity_alias:
+                ali.append(activity_alias)
+        return ali
+
     def get_services(self):
         """
         Return the android:name attribute of all services
@@ -1170,12 +1184,12 @@ class APK:
     def get_res_value(self, name):
         """
         Return the literal value with a resource id
-        :rtype: str 
+        :rtype: str
         """
 
         res_parser = self.get_android_resources()
         if not res_parser:
-            return name 
+            return name
 
         res_id = res_parser.parse_id(name)[0]
         try:
@@ -1186,7 +1200,7 @@ class APK:
             log.warning("Exception get resolved resource id: %s" % e)
             return name
 
-        return value 
+        return value
 
     def get_intent_filters(self, itemtype, name):
         """
@@ -2239,3 +2253,4 @@ def get_apkid(apkfile):
         versionName = ''  # versionName is expected to always be a str
 
     return appid, versionCode, versionName.strip('\0')
+
