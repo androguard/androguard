@@ -1116,7 +1116,7 @@ class APK:
         return list(self.get_all_attribute_value("activity", "name"))
 
     def get_activity_aliases(self):
-	    """
+        """
         Return the android:name and android:targetActivity attribute of all activity aliases.
 
         :rtype: a list of dict
