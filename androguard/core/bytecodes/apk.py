@@ -1278,7 +1278,7 @@ class APK:
     def _update_permission_protection_level(self, protection_level, sdk_version):
         if not sdk_version or int(sdk_version) <= 15:
             return protection_level.replace('Or', '|').lower()
-        else: return protection_level
+        return protection_level
 
     def _fill_deprecated_permissions(self, permissions):
         min_sdk = self.get_min_sdk_version()
