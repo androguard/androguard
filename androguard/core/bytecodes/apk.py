@@ -1110,8 +1110,7 @@ class APK:
             good_main_activities = main_activities.intersection(self.get_activities())
             if good_main_activities:
                 return good_main_activities.pop()
-            elif main_activities:
-                return main_activities.pop()
+            return main_activities.pop()
         return None
 
     def get_activities(self):
