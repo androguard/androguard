@@ -768,7 +768,7 @@ class StringAnalysis:
 
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.get_value())
-        for ref_class, ref_method in self.xreffrom:
+        for ref_class, ref_method, _ in self.xreffrom:
             data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
         return data
 
