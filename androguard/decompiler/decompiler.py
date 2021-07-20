@@ -634,10 +634,13 @@ class DecompilerJADX:
         self.vmx = vmx
         # Dictionary to store classnames: sourcecode
         self.classes = {}
+        self.sources_path = None
 
         # Result directory:
         # TODO need to remove the folder correctly!
         tmpfolder = tempfile.mkdtemp()
+        if keepfiles:
+            self.sources_path = tmpfolder
 
         # We need to decompile the whole dex file, as we do not have an API...
         # dump the dex file into a temp file
@@ -721,6 +724,7 @@ class DecompilerJADX:
 
     def _find_class(self, clname, basefolder):
         # check if defpackage
+        basefolder = os.path.join(basefolder, "sources")
         if "/" not in clname:
             # this is a defpackage class probably...
             # Search first for defpackage, then search for requested string
@@ -802,3 +806,13 @@ class DecompilerJADX:
         :return:
         """
         pass
+
+    def get_sources_path(self):
+        """
+        This method returns the path to the JADX
+        decompiled sources.
+        :return:
+        """
+        if self.sources_path:
+            return os.path.join(self.sources_path, "sources")
+        return self.sources_path
