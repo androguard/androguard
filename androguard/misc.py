@@ -67,7 +67,7 @@ def AnalyzeAPK(_file, session=None, raw=False):
             df = DalvikVMFormat(dex, using_api=a.get_target_sdk_version())
             dx.add(df)
             d.append(df)
-            df.set_decompiler(decompiler.DecompilerDAD(d, dx))
+            df.set_decompiler(decompiler.DecompilerDAD(df, dx))
 
         dx.create_xref()
 
