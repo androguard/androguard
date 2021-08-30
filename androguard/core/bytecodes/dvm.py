@@ -6712,30 +6712,35 @@ class DalvikCode:
     """
 
     def __init__(self, buff, cm):
-        self.CM = cm
-        self.offset = buff.get_idx()
+        try:
+            self.CM = cm
+            self.offset = buff.get_idx()
 
-        self.registers_size, \
-        self.ins_size, \
-        self.outs_size, \
-        self.tries_size, \
-        self.debug_info_off, \
-        self.insns_size = cm.packer["4H2I"].unpack(buff.read(16))
+            self.registers_size = unpack("=H", buff.read(2))[0]
+            self.ins_size = unpack("=H", buff.read(2))[0]
+            self.outs_size = unpack("=H", buff.read(2))[0]
+            self.tries_size = unpack("=H", buff.read(2))[0]
+            self.debug_info_off = unpack("=I", buff.read(4))[0]
+            self.insns_size = unpack("=I", buff.read(4))[0]
 
-        ushort = calcsize('H')
+            ushort = calcsize('=H')
 
-        self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(self.insns_size * ushort))
+            self.code = DCode(self.CM, buff.get_idx(), self.insns_size, buff.read(
+                self.insns_size * ushort))
 
-        if self.insns_size % 2 == 1 and self.tries_size > 0:
-            self.padding, = cm.packer["H"].unpack(buff.read(2))
+            if self.insns_size % 2 == 1 and self.tries_size > 0:
+                self.padding = unpack("=H", buff.read(2))[0]
 
-        self.tries = []
-        self.handlers = None
-        if self.tries_size > 0:
-            for i in range(0, self.tries_size):
-                self.tries.append(TryItem(buff, self.CM))
+            self.tries = []
+            self.handlers = None
+            if self.tries_size > 0:
+                for i in range(0, self.tries_size):
+                    self.tries.append(TryItem(buff, self.CM))
 
-            self.handlers = EncodedCatchHandlerList(buff, self.CM)
+                self.handlers = EncodedCatchHandlerList(buff, self.CM)
+        # Ignore errors if dirty data exists in code_item
+        except Exception as e:
+            raise Exception('dirty_data_exists')
 
     def get_registers_size(self):
         """
@@ -6916,9 +6921,13 @@ class CodeItem:
             if off % 4 != 0:
                 buff.set_idx(off + (4 - (off % 4)))
 
-            x = DalvikCode(buff, cm)
-            self.code.append(x)
-            self.__code_off[x.get_off()] = x
+            # Ignore errors if dirty data exists in code_item
+            try:
+                x = DalvikCode(buff, cm)
+                self.code.append(x)
+                self.__code_off[x.get_off()] = x
+            except Exception as e:
+                continue
 
     def set_off(self, off):
         self.offset = off
