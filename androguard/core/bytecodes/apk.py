@@ -1282,11 +1282,12 @@ class APK:
 
     def _fill_deprecated_permissions(self, permissions):
         min_sdk = self.get_min_sdk_version()
-        target_sdk = self.get_min_sdk_version()
+        target_sdk = self.get_target_sdk_version()
         filled_permissions = permissions.copy()
         for permission in filled_permissions:
             protection_level, label, description = filled_permissions[permission]
-            if not label or not description and permission in self.permission_module_min_sdk:
+            if ((not label or not description) 
+                and permission in self.permission_module_min_sdk):
                 x = self.permission_module_min_sdk[permission]
                 protection_level = self._update_permission_protection_level(
                     x['protectionLevel'], min_sdk)
