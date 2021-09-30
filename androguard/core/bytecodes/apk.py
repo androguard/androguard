@@ -917,7 +917,7 @@ class APK:
         """
         tags = self.find_tags(tag_name, **attribute_filter)
         for tag in tags:
-            value = tag.get(attribute) or tag.get(self._ns(attribute))
+            value =  tag.get(self._ns(attribute)) or tag.get(attribute)
             if value is not None:
                 if format_value:
                     yield self._format_value(value)
@@ -1142,12 +1142,12 @@ class APK:
     def get_res_value(self, name):
         """
         Return the literal value with a resource id
-        :rtype: str 
+        :rtype: str
         """
 
         res_parser = self.get_android_resources()
         if not res_parser:
-            return name 
+            return name
 
         res_id = res_parser.parse_id(name)[0]
         try:
@@ -1158,7 +1158,7 @@ class APK:
             log.warning("Exception get resolved resource id: %s" % e)
             return name
 
-        return value 
+        return value
 
     def get_intent_filters(self, itemtype, name):
         """
