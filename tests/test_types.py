@@ -182,7 +182,7 @@ class TypesTest(unittest.TestCase):
             for i in filter(lambda x: 'const' in x.get_name(), method.get_instructions()):
                 i.show(0)
                 # ins should only have one literal
-                self.assertEquals(len(i.get_literals()), 1)
+                self.assertEqual(len(i.get_literals()), 1)
 
                 fmt, value = VALUES[method.full_name].pop(0)
                 converted = format_value(i.get_literals()[0], i, fmt)
