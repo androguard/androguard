@@ -1,18 +1,15 @@
+# External dependecies
+from loguru import logger
 import asn1crypto
-# Functions that might be useful
 
+# Stuff that might be useful
 
-def read(filename, binary=True):
-    """
-    Open and read a file
-
-    :param filename: filename to open and read
-    :param binary: True if the file should be read as binary
-    :return: bytes if binary is True, str otherwise
-    """
-    with open(filename, 'rb' if binary else 'r') as f:
-        return f.read()
-
+def read_at(buff, offset, size=-1):
+    idx = buff.tell()
+    buff.seek(offset)
+    d = buff.read(size)
+    buff.seek(idx)
+    return d
 
 def get_certificate_name_string(name, short=False, delimiter=', '):
     """
