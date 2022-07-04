@@ -1,16 +1,13 @@
 from androguard.session import Session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
+from androguard.core import apk, dex
+from androguard.core.analysis.analysis import Analysis
+
 import hashlib
 import re
 import os
-from androguard.core.bytecodes.apk import APK
-from androguard.core.bytecodes.dvm import DalvikVMFormat
-from androguard.core.analysis.analysis import Analysis
-
-import logging
 import warnings
-log = logging.getLogger("androguard.misc")
 
 
 def get_default_session():
@@ -64,7 +61,7 @@ def AnalyzeAPK(_file, session=None, raw=False):
         d = []
         dx = Analysis()
         for dex in a.get_all_dex():
-            df = DalvikVMFormat(dex, using_api=a.get_target_sdk_version())
+            df = dex.DEX(dex, using_api=a.get_target_sdk_version())
             dx.add(df)
             d.append(df)
             df.set_decompiler(decompiler.DecompilerDAD(d, dx))

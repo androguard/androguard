@@ -6,12 +6,13 @@ import sys
 
 # 3rd party modules
 from lxml import etree
+from loguru import logger
 
 # internal modules
 from androguard.core import androconf
 from androguard.core import apk
 from androguard.core.axml import AXMLPrinter
-from androguard.util import read
+from androguard.util import readFile
 
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
@@ -31,7 +32,7 @@ def androaxml_main(inp, outp=None, resource=None):
         else:
             axml = a.get_android_manifest_xml()
     elif ".xml" in inp:
-        axml = AXMLPrinter(read(inp)).get_xml_obj()
+        axml = AXMLPrinter(readFile(inp)).get_xml_obj()
     else:
         print("Unknown file type")
         sys.exit(1)
@@ -322,17 +323,16 @@ def androlyze_main(session, filename):
     :param session: Session file to load
     :param filename: File to analyze, can be APK or DEX (or ODEX)
     """
-    from androguard.core.androconf import ANDROGUARD_VERSION, CONF
-    from IPython.terminal.embed import InteractiveShellEmbed
-    from traitlets.config import Config
-    from androguard.session import Session, Load
     from colorama import Fore
     import colorama
     import atexit
-
-    # Import commonly used classes, for further usage...
-    from androguard.core.bytecodes.apk import APK
-    from androguard.core.bytecodes.dvm import DalvikVMFormat
+    
+    from IPython.terminal.embed import InteractiveShellEmbed
+    from traitlets.config import Config
+    
+    from androguard.core.androconf import ANDROGUARD_VERSION, CONF
+    from androguard.session import Session, Load
+    from androguard.core import dex, apk
     from androguard.core.analysis.analysis import Analysis
     from androguard.misc import AnalyzeAPK
 

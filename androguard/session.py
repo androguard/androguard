@@ -1,18 +1,17 @@
+from androguard.core.analysis.analysis import Analysis
+from androguard.core import dex, apk
+from androguard.decompiler.decompiler import DecompilerDAD
+from androguard.core import androconf
+
+
 import hashlib
 import os
 import sys
 import collections
-from androguard.core.analysis.analysis import Analysis
-from androguard.core.bytecodes.dvm import DalvikVMFormat, DalvikOdexVMFormat
-from androguard.core.bytecodes.apk import APK
-from androguard.decompiler.decompiler import DecompilerDAD
-from androguard.core import androconf
 
 import pickle
-import logging
 import datetime
-
-log = logging.getLogger("androguard.session")
+from loguru import logger
 
 
 def Save(session, filename=None):
@@ -43,7 +42,7 @@ def Save(session, filename=None):
         filename = "androguard_session_{:%Y-%m-%d_%H%M%S}.ag".format(datetime.datetime.now())
 
     if os.path.isfile(filename):
-        log.warning(f"{filename} already exists, overwriting!")
+        logger.warning(f"{filename} already exists, overwriting!")
 
     # Setting the recursion limit according to the documentation:
     # https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
@@ -59,7 +58,7 @@ def Save(session, filename=None):
             pickle.dump(session, fd)
         saved = True
     except RecursionError:
-        log.exception("Recursion Limit hit while saving. "
+        logger.exception("Recursion Limit hit while saving. "
                       "Current Recursion limit: {}. "
                       "Please report this error!".format(sys.getrecursionlimit()))
         # Remove partially written file
@@ -189,24 +188,24 @@ class Session:
         :return: a tuple of SHA256 Checksum and APK Object
         """
         digest = hashlib.sha256(data).hexdigest()
-        log.debug("add APK:%s" % digest)
-        apk = APK(data, True)
-        self.analyzed_apk[digest] = [apk]
+        logger.debug("add APK:%s" % digest)
+        newapk = apk.APK(data, True)
+        self.analyzed_apk[digest] = [newapk]
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
 
         dx = Analysis()
         self.analyzed_vms[digest] = dx
 
-        for dex in apk.get_all_dex():
+        for dex in newapk.get_all_dex():
             # we throw away the output... FIXME?
             self.addDEX(filename, dex, dx, postpone_xref=True)
 
         # Postponed
         dx.create_xref()
 
-        log.debug("added APK:%s" % digest)
-        return digest, apk
+        logger.debug("added APK:%s" % digest)
+        return digest, newapk
 
     def addDEX(self, filename, data, dx=None, postpone_xref=False):
         """
@@ -219,11 +218,11 @@ class Session:
         :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
-        log.debug("add DEX:%s" % digest)
+        logger.debug("add DEX:%s" % digest)
 
-        log.debug("Parsing format ...")
-        d = DalvikVMFormat(data)
-        log.debug("added DEX:%s" % digest)
+        logger.debug("Parsing format ...")
+        d = dex.DEX(data)
+        logger.debug("added DEX:%s" % digest)
 
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
@@ -245,7 +244,7 @@ class Session:
         self.analyzed_vms[digest] = dx
 
         if self.export_ipython:
-            log.debug("Exporting in ipython")
+            logger.debug("Exporting in ipython")
             d.create_python_export()
 
         return digest, d, dx
@@ -255,9 +254,9 @@ class Session:
         Add an ODEX file to the session and run the analysis
         """
         digest = hashlib.sha256(data).hexdigest()
-        log.debug("add DEY:%s" % digest)
-        d = DalvikOdexVMFormat(data)
-        log.debug("added DEY:%s" % digest)
+        logger.debug("add DEY:%s" % digest)
+        d = dex.ODEX(data)
+        logger.debug("added DEY:%s" % digest)
 
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
@@ -300,12 +299,12 @@ class Session:
         :return: the sha256 of the file or None on failure
         """
         if not raw_data:
-            log.debug("Loading file from '{}'".format(filename))
+            logger.debug("Loading file from '{}'".format(filename))
             with open(filename, "rb") as fp:
                 raw_data = fp.read()
 
         ret = androconf.is_android_raw(raw_data)
-        log.debug("Found filetype: '{}'".format(ret))
+        logger.debug("Found filetype: '{}'".format(ret))
         if not ret:
             return None
 

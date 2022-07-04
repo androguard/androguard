@@ -17,7 +17,7 @@
 import struct
 
 from androguard.decompiler.dad import basic_blocks, instruction, opcode_ins
-from androguard.core.bytecodes.dvm_types import TYPE_DESCRIPTOR
+from androguard.core.dex.dvm_types import TYPE_DESCRIPTOR
 
 
 def array_access(arr, ind):

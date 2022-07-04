@@ -22,7 +22,7 @@ import os
 
 from androguard.core.androconf import rrmdir
 from androguard.decompiler.dad import decompile
-from androguard.util import read
+from androguard.util import readFile
 
 from pygments.filter import Filter
 from pygments import highlight
@@ -207,7 +207,7 @@ class DecompilerDex2Jad:
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
             if os.path.isfile(fname):
-                self.classes[i.get_name()] = read(fname, binary=False)
+                self.classes[i.get_name()] = readFile(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 
@@ -306,7 +306,7 @@ class DecompilerDex2WineJad:
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".jad"
             if os.path.isfile(fname):
-                self.classes[i.get_name()] = read(fname, binary=False)
+                self.classes[i.get_name()] = readFile(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 
@@ -400,7 +400,7 @@ class DecompilerDed:
             fname = findsrc + "/" + i.get_name()[1:-1] + ".java"
             # print fname
             if os.path.isfile(fname):
-                self.classes[i.get_name()] = read(fname, binary=False)
+                self.classes[i.get_name()] = readFile(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 
@@ -513,7 +513,7 @@ class DecompilerDex2Fernflower:
         for i in vm.get_classes():
             fname = pathclasses + "/" + i.get_name()[1:-1] + ".java"
             if os.path.isfile(fname):
-                self.classes[i.get_name()] = read(fname, binary=False)
+                self.classes[i.get_name()] = readFile(fname, binary=False)
             else:
                 self.classes_failed.append(i.get_name())
 

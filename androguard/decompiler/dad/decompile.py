@@ -19,10 +19,12 @@ import struct
 import sys
 from collections import defaultdict
 
+from loguru import logger
+
 import androguard.core.androconf as androconf
 import androguard.decompiler.dad.util as util
 from androguard.core.analysis import analysis
-from androguard.core.bytecodes import apk, dvm
+from androguard.core import apk, dex
 from androguard.decompiler.dad.control_flow import identify_structures
 from androguard.decompiler.dad.dast import (
     JSONWriter,
@@ -41,10 +43,9 @@ from androguard.decompiler.dad.dataflow import (
 from androguard.decompiler.dad.graph import construct, simplify, split_if_nodes
 from androguard.decompiler.dad.instruction import Param, ThisParam
 from androguard.decompiler.dad.writer import Writer
-from androguard.util import read
+from androguard.util import readFile
 
-logger = logging.getLogger('dad')
-
+logger.add(sys.stderr, format="{time} {level} {message}", filter="dad", level="INFO")
 
 # No seperate DvField class currently
 def get_field_ast(field):
@@ -462,11 +463,11 @@ class DvMachine:
         ftype = androconf.is_android(name)
         if ftype == 'APK':
             for d in apk.APK(name).get_all_dex():
-                self.vma.add(dvm.DalvikVMFormat(d))
+                self.vma.add(dex.DEX(d))
         elif ftype == 'DEX':
-            self.vma.add(dvm.DalvikVMFormat(read(name)))
+            self.vma.add(dex.DEX(readFile(name)))
         elif ftype == 'DEY':
-            self.vma.add(dvm.DalvikOdexVMFormat(read(name)))
+            self.vma.add(dex.ODEX(readFile(name)))
         else:
             raise ValueError("Format not recognised for filename '%s'" % name)
 

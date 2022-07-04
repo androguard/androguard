@@ -28,7 +28,7 @@ from main import (androarsc_main,
                   androdis_main
 )
 
-logger.add(sys.stderr, format="{time} {level} {message}", filter="cli", level="INFO")
+#logger.add(sys.stderr, format="{time} {level} {message}", filter="cli", level="INFO")
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
@@ -152,7 +152,6 @@ def arsc(input_,
     \b
         $ androguard arsc app.apk
     """
-    logger.debug("ARSC")
 
     from androguard.core import androconf
     from androguard.core import axml, apk

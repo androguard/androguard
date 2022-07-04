@@ -1,6 +1,6 @@
 # Androguard
 from androguard.core import androconf
-from androguard.util import read, get_certificate_name_string
+from androguard.util import get_certificate_name_string
 
 from androguard.core.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig, AXMLParser, format_value, START_TAG, END_TAG, TEXT, END_DOCUMENT
 
@@ -23,8 +23,6 @@ import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
-
-logger.add(sys.stderr, format="{time} {level} {message}", filter="apk", level="INFO")
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{{{}}}'.format(NS_ANDROID_URI)  # Namespace as used by etree

@@ -1,3 +1,8 @@
+
+from androguard.core import bytecode, apk
+from androguard.core.androconf import CONF
+from androguard.util import read_at
+
 import sys
 import io
 import re
@@ -12,10 +17,6 @@ import hashlib
 from enum import IntEnum
 from loguru import logger
 
-from androguard.core import bytecode
-from androguard.core.apk import APK
-from androguard.core.androconf import CONF
-from androguard.util import read_at
 
 from androguard.core import mutf8
 from .dvm_types import (
@@ -25,8 +26,6 @@ from .dvm_types import (
         Kind,
         Operand,
         )
-
-logger.add(sys.stderr, format="{time} {level} {message}", filter="dex", level="INFO")
 
 
 # TODO: have some more generic magic...
@@ -7663,7 +7662,7 @@ class DEX:
         logger.debug("DEX {} {} {}".format(decompiler, config, using_api))
 
         # to allow to pass apk object ==> we do not need to pass additionally target version
-        if isinstance(buff, APK):
+        if isinstance(buff, apk.APK):
             self.api_version = buff.get_target_sdk_version()
             buff = buff.get_dex()  # getting dex from APK file
         elif using_api:

@@ -14,8 +14,6 @@ import binascii
 import io
 import sys
 
-logger.add(sys.stderr, format="{time} {level} {message}", filter="axml", level="INFO")
-
 # Constants for ARSC Files
 # see http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#215
 RES_NULL_TYPE = 0x0000

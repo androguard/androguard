@@ -3,12 +3,9 @@ from xml.sax.saxutils import escape
 from struct import pack
 import textwrap
 import json
-import logging
 
 from androguard.core.androconf import CONF, color_range
 from androguard.core.dex.dvm_types import Kind, Operand
-
-log = logging.getLogger("androguard.bytecode")
 
 
 def _PrintBanner():
