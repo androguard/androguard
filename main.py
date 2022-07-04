@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import sys
+import yaml
 
 # 3rd party modules
 from lxml import etree
@@ -109,11 +110,14 @@ def androcg_main(verbose,
                            entry_points,
                            )
 
+    def write_yaml(G_to_be_yaml, path_for_yaml_output, **kwds):
+        yaml.dump(G_to_be_yaml, path_for_yaml_output, **kwds)
+
     write_methods = dict(gml=_write_gml,
                          gexf=nx.write_gexf,
                          gpickle=nx.write_gpickle,
                          graphml=nx.write_graphml,
-                         yaml=nx.write_yaml,
+                         yaml=write_yaml,
                          net=nx.write_pajek,
                          )
 
