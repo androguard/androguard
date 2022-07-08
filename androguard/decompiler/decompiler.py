@@ -649,7 +649,7 @@ class DecompilerJADX:
         with tempfile.NamedTemporaryFile(suffix=".dex") as tf:
             tf.write(vm.get_buff())
 
-            cmd = [jadx, "-d", tmpfolder, "--escape-unicode", "--no-res", tf.name]
+            cmd = [jadx, "-ds", tmpfolder, "--escape-unicode", "--no-res", tf.name]
             log.debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, _ = x.communicate()
