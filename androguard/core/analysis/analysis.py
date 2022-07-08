@@ -62,7 +62,11 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@', hex(self.start).encode()])
+        self.name = ''.join([
+            self.method.get_name(),
+            '-BB@',
+            hex(self.start)
+        ])
         self.exception_analysis = None
 
         self.notes = []
@@ -931,7 +935,7 @@ class ExternalMethod:
         return self.class_name
 
     def get_descriptor(self):
-        return mutf8.MUTF8String.join(self.descriptor)
+        return self.descriptor
 
     @property
     def full_name(self):
@@ -1517,7 +1521,7 @@ class Analysis:
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip(b'[')
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
                     if type_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
@@ -1558,7 +1562,7 @@ class Analysis:
                                     "Requested IDX {}".format(off, current_method.get_code_off(), idx_meth))
                         continue
 
-                    class_info = method_info[0].lstrip(b'[')
+                    class_info = method_info[0].lstrip('[')
                     if class_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         # If another type, like int is used, we simply skip it.
@@ -1631,7 +1635,7 @@ class Analysis:
         :return:
         :rtype: MethodAnalysis
         """
-        m_hash = (class_name, method_name, mutf8.MUTF8String.join(method_descriptor))
+        m_hash = (class_name, method_name, ''.join(method_descriptor))
         if m_hash not in self.__method_hashes:
             # Need to create a new method
             if class_name not in self.classes:
@@ -1792,7 +1796,7 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: Iterator[ClassAnalysis]
         """
-        name = bytes(mutf8.MUTF8String.from_str(name))
+        name = bytes(name)
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
@@ -1813,9 +1817,9 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: Iterator[MethodAnalysis]
         """
-        classname = bytes(mutf8.MUTF8String.from_str(classname))
-        methodname = bytes(mutf8.MUTF8String.from_str(methodname))
-        descriptor = bytes(mutf8.MUTF8String.from_str(descriptor))
+        classname = bytes(classname)
+        methodname = bytes(methodname)
+        descriptor = bytes(descriptor)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for m in c.get_methods():
@@ -1837,7 +1841,7 @@ class Analysis:
         :param string: regular expression for the string to search for
         :rtype: Iterator[StringAnalysis]
         """
-        string = bytes(mutf8.MUTF8String.from_str(string))
+        string = bytes(string)
         for s, sa in self.strings.items():
             if re.match(string, s):
                 yield sa
@@ -1852,9 +1856,9 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: Iterator[FieldAnalysis]
         """
-        classname = bytes(mutf8.MUTF8String.from_str(classname))
-        fieldname = bytes(mutf8.MUTF8String.from_str(fieldname))
-        fieldtype = bytes(mutf8.MUTF8String.from_str(fieldtype))
+        classname = bytes(classname)
+        fieldname = bytes(fieldname)
+        fieldtype = bytes(fieldtype)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for f in c.get_fields():

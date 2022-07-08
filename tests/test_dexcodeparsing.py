@@ -1,4 +1,9 @@
-from androguard.core.bytecodes.dvm import DalvikVMFormat
+import sys
+
+sys.path.append(".")
+
+from androguard.core import dex
+
 from binascii import hexlify
 import parse_dex
 import unittest
@@ -15,7 +20,7 @@ class TestDexCodeParsing(unittest.TestCase):
         parsed = parse_dex.read_dex(fname)
 
         with open(fname, "rb") as f:
-            d = DalvikVMFormat(f.read())
+            d = dex.DEX(f.read())
 
         dif = Differ()
 
@@ -52,7 +57,7 @@ class TestDexCodeParsing(unittest.TestCase):
         parsed = parse_dex.read_dex(fname)
 
         with open(fname, "rb") as f:
-            d = DalvikVMFormat(f.read())
+            d = dex.DEX(f.read())
 
         cm = d.get_class_manager()
 

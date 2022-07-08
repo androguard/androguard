@@ -20,7 +20,6 @@ import androguard
 from androguard.core.androconf import show_logging
 from main import (androarsc_main,
                   androaxml_main,
-                  androcg_main,
                   export_apps_to_format,
                   androsign_main,
                   androlyze_main,
@@ -239,91 +238,6 @@ def arsc(input_,
                    package=package,
                    typ=type_,
                    locale=locale)
-
-
-@entry_point.command()
-@click.option(
-    '--output', '-o',
-    default="callgraph.gml", show_default=True,
-    help='Filename of the output file, the extension is used to decide which '
-         'format to use',
-)
-@click.option(
-    '--show', '-s',
-    is_flag=True,
-    help='instead of saving the graph, print it with mathplotlib '
-         '(you might not see anything!)',
-)
-@click.option(
-    '--verbose', '-v', is_flag=True,
-    default=False,
-    help='Print more output',
-)
-@click.option(
-    '--classname',
-    default='.*', show_default=True,
-    help='Regex to filter by classname',
-)
-@click.option(
-    '--methodname',
-    default='.*', show_default=True,
-    help='Regex to filter by methodname',
-)
-@click.option(
-    '--descriptor',
-    default='.*', show_default=True,
-    help='Regex to filter by descriptor',
-)
-@click.option(
-    '--accessflag',
-    default='.*', show_default=True,
-    help='Regex to filter by accessflags',
-)
-@click.option(
-    '--no-isolated/--isolated',
-    default=False,
-    help='Do not store methods which has no xrefs',
-)
-@click.argument(
-    'APK',
-    nargs=1,
-    type=click.Path(exists=True,
-                    file_okay=True,
-                    dir_okay=False,
-                    readable=True,
-                    allow_dash=False),
-)
-def cg(output,
-       show,
-       verbose,
-       classname,
-       methodname,
-       descriptor,
-       accessflag,
-       no_isolated,
-       apk):
-    """
-    Create a call graph and export it into a graph format.
-
-    The default is to create a file called callgraph.gml in the current
-    directory!
-
-    classnames are found in the type "Lfoo/bar/bla;".
-
-    Example:
-
-    \b
-        $ androguard cg examples/tests/hello-world.apk
-    """
-    androcg_main(verbose=verbose,
-                 APK=apk,
-                 classname=classname,
-                 methodname=methodname,
-                 descriptor=descriptor,
-                 accessflag=accessflag,
-                 no_isolated=no_isolated,
-                 show=show,
-                 output=output)
 
 
 @entry_point.command()

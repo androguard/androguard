@@ -1992,9 +1992,9 @@ class StringDataItem:
 
     def get(self):
         """
-        Returns a MUTF8String object
+        Returns a str object
         """
-        return mutf8.MUTF8String(self.data)
+        return mutf8.decode(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
@@ -2245,11 +2245,11 @@ class ProtoIdItem:
         """
         Return the string associated to the parameters_off
 
-        :rtype: MUTF8String
+        :rtype: str
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
-            self.parameters_off_value = mutf8.MUTF8String(b'(' + b' '.join(params) + b')')
+            self.parameters_off_value = '(' + ' '.join(params) + ')'
         return self.parameters_off_value
 
     def show(self):
@@ -3006,7 +3006,7 @@ class EncodedMethod:
         if v and len(v) >= 3:
             self.class_name = v[0]
             self.name = v[1]
-            self.proto = mutf8.MUTF8String.join(i for i in v[2])
+            self.proto = ''.join(i for i in v[2])
         else:
             self.class_name = 'CLASS_NAME_ERROR'
             self.name = 'NAME_ERROR'
@@ -3113,7 +3113,7 @@ class EncodedMethod:
     @property
     def full_name(self):
         """Return class_name + name + descriptor, separated by spaces (no access flags"""
-        return mutf8.MUTF8String.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
+        return ''.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
 
     @property
     def descriptor(self):
@@ -3691,7 +3691,7 @@ class ClassDefItem:
         For example, if the class is marked as :code:`@Deprecated`, this will return
         :code:`['Ljava/lang/Deprecated;']`.
 
-        :rtype: Iterator[mutf8.MUTF8String]
+        :rtype: Iterator[str]
         """
         return [self.CM.get_type(x.get_type_idx()) for x in self._get_annotation_type_ids()]
 
@@ -3775,7 +3775,7 @@ class ClassDefItem:
         """
         Return the name of this class
 
-        :rtype: MUTF8String
+        :rtype: str
         """
         return self.name
 
@@ -3783,7 +3783,7 @@ class ClassDefItem:
         """
         Return the name of the super class
 
-        :rtype: MUTF8String
+        :rtype: str
         """
         return self.sname
 
@@ -3791,7 +3791,7 @@ class ClassDefItem:
         """
         Return the names of the interfaces
 
-        :rtype: List[MUTF8String]
+        :rtype: List[str]
         """
         return self.interfaces
 
@@ -8024,7 +8024,7 @@ class DEX:
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        name = bytes(mutf8.MUTF8String.from_str(name))
+        name = bytes(name)
         prog = re.compile(name)
         l = []
         for i in self.get_classes():
@@ -8042,7 +8042,7 @@ class DEX:
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        name = bytes(mutf8.MUTF8String.from_str(name))
+        name = bytes(name)
         prog = re.compile(name)
         l = []
         for i in self.get_classes():
@@ -8258,6 +8258,7 @@ class DEX:
         """
         Export classes/methods/fields' names in the python namespace
         """
+        logger.debug("Exporting Python objects")
         setattr(self, "C", ExportObject())
 
         for _class in self.get_classes():

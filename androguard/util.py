@@ -1,5 +1,4 @@
 # External dependecies
-from loguru import logger
 import asn1crypto
 
 # Stuff that might be useful

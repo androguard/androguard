@@ -807,7 +807,7 @@ class AXMLParser:
 
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
-        if not res:
+        if not res or res == ":":
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
                 res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]

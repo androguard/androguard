@@ -8,6 +8,7 @@ import hashlib
 import re
 import os
 import warnings
+from loguru import logger
 
 
 def get_default_session():
@@ -38,10 +39,10 @@ def AnalyzeAPK(_file, session=None, raw=False):
     :param raw: boolean if raw bytes are supplied instead of a filename
     :rtype: return the :class:`~androguard.core.bytecodes.apk.APK`, list of :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
     """
-    log.debug("AnalyzeAPK")
+    logger.debug("AnalyzeAPK")
 
     if session:
-        log.debug("Using existing session {}".format(session))
+        logger.debug("Using existing session {}".format(session))
         if raw:
             data = _file
             filename = hashlib.md5(_file).hexdigest()
@@ -53,8 +54,8 @@ def AnalyzeAPK(_file, session=None, raw=False):
         digest = session.add(filename, data)
         return session.get_objects_apk(filename, digest)
     else:
-        log.debug("Analysing without session")
-        a = APK(_file, raw=raw)
+        logger.debug("Analysing without session")
+        a = apk.APK(_file, raw=raw)
         # FIXME: probably it is not necessary to keep all DalvikVMFormats, as
         # they are already part of Analysis. But when using sessions, it works
         # this way...
@@ -82,7 +83,7 @@ def AnalyzeDex(filename, session=None, raw=False):
 
     :rtype: return a tuple of (sha256hash, :class:`DalvikVMFormat`, :class:`Analysis`)
     """
-    log.debug("AnalyzeDex")
+    logger.debug("AnalyzeDex")
 
     if not session:
         session = get_default_session()
@@ -107,7 +108,7 @@ def AnalyzeODex(filename, session=None, raw=False):
 
     :rtype: return a tuple of (sha256hash, :class:`DalvikOdexVMFormat`, :class:`Analysis`)
     """
-    log.debug("AnalyzeODex")
+    logger.debug("AnalyzeODex")
 
     if not session:
         session = get_default_session()
@@ -133,7 +134,7 @@ def RunDecompiler(d, dx, decompiler_name):
     :type decompiler: string
     """
     if decompiler_name is not None:
-        log.debug("Decompiler ...")
+        logger.debug("Decompiler ...")
         decompiler_name = decompiler_name.lower()
         # TODO put this into the configuration object and make it more dynamic
         # e.g. detect new decompilers and so on...
