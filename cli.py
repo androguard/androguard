@@ -24,7 +24,8 @@ from main import (androarsc_main,
                   androsign_main,
                   androlyze_main,
                   androgui_main,
-                  androdis_main
+                  androdis_main,
+                  androstrace_main,
 )
 
 #logger.add(sys.stderr, format="{time} {level} {message}", filter="cli", level="INFO")
@@ -407,6 +408,24 @@ def disassemble(offset, size, dex):
     """
     androdis_main(offset, size, dex)
 
+
+@entry_point.command()
+@click.argument(
+    'apk',
+    default=None,
+    required=False,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+)
+def strace(apk):
+    """
+    Push an APK on the phone and start to trace all syscalls.
+
+    Example:
+
+    \b
+        $ androguard strace test.APK
+    """
+    androstrace_main(apk)
 
 if __name__ == '__main__':
     entry_point()

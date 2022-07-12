@@ -63,6 +63,8 @@ def Save(session, filename=None):
                       "Please report this error!".format(sys.getrecursionlimit()))
         # Remove partially written file
         os.unlink(filename)
+    except (pickle.PicklingError, TypeError) as e:
+        logger.error(e)
 
     sys.setrecursionlimit(reclimit)
     return filename if saved else None
@@ -137,6 +139,7 @@ class Session:
         self.analyzed_files = collections.defaultdict(list)
         self.analyzed_digest = dict()
         self.analyzed_apk = dict()
+        self.added_files = []
 
         # Stores Analysis Objects
         # needs to be ordered to return the outermost element when searching for
@@ -188,11 +191,14 @@ class Session:
         :return: a tuple of SHA256 Checksum and APK Object
         """
         digest = hashlib.sha256(data).hexdigest()
+
         logger.debug("add APK:%s" % digest)
+        
         newapk = apk.APK(data, True)
         self.analyzed_apk[digest] = [newapk]
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
+        self.added_files.append(filename)
 
         dx = Analysis()
         self.analyzed_vms[digest] = dx
@@ -218,7 +224,7 @@ class Session:
         :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
-        logger.debug("add DEX:%s" % digest)
+        logger.info("add DEX:%s" % digest)
 
         logger.debug("Parsing format ...")
         d = dex.DEX(data)
@@ -249,14 +255,14 @@ class Session:
 
         return digest, d, dx
 
-    def addDEY(self, filename, data, dx=None):
+    def addODEX(self, filename, data, dx=None):
         """
         Add an ODEX file to the session and run the analysis
         """
         digest = hashlib.sha256(data).hexdigest()
-        logger.debug("add DEY:%s" % digest)
+        logger.info("add ODEX:%s" % digest)
         d = dex.ODEX(data)
-        logger.debug("added DEY:%s" % digest)
+        logger.debug("added ODEX:%s" % digest)
 
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
@@ -313,7 +319,7 @@ class Session:
         elif ret == "DEX":
             digest, _, _ = self.addDEX(filename, raw_data, dx)
         elif ret == "DEY":
-            digest, _, _ = self.addDEY(filename, raw_data, dx)
+            digest, _, _ = self.addODEX(filename, raw_data, dx)
         else:
             return None
 

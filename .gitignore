@@ -27,3 +27,4 @@ test_session
 
 .eggs/
 ak_androguard.egg-info
+*.ag

@@ -342,6 +342,8 @@ class MethodAnalysis:
     :type method: a :class:`EncodedMethod` object
     """
     def __init__(self, vm, method):
+        logger.debug("Adding new method {} {}".format(method.get_class_name(), method.get_name()))
+
         self.__vm = vm
         self.method = method
 
@@ -1431,6 +1433,7 @@ class Analysis:
         self.vms.append(vm)
 
         logger.info("Adding DEX file version {}".format(vm.version))
+
         # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
         tic = time.time()
         for i, current_class in enumerate(vm.get_classes()):

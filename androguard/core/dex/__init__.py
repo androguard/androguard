@@ -1994,7 +1994,11 @@ class StringDataItem:
         """
         Returns a str object
         """
-        return mutf8.decode(self.data)
+        try:
+            return mutf8.decode(self.data)
+        except UnicodeDecodeError:
+            logger.error("Impossible to decode {}".format(self.data))
+            return "ANDROGUARD[INVALID_STRING] {}".format(self.data)
 
     def show(self):
         bytecode._PrintSubBanner("String Data Item")
