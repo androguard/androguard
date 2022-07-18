@@ -26,18 +26,27 @@ from main import (androarsc_main,
                   androgui_main,
                   androdis_main,
                   androstrace_main,
+                  androtrace_main
 )
 
-#logger.add(sys.stderr, format="{time} {level} {message}", filter="cli", level="INFO")
+class MyFilter:
+
+    def __init__(self, level):
+        self.level = level
+
+    def __call__(self, record):
+        levelno = logger.level(self.level).no
+        return record["level"].no >= levelno
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
 @click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
-@click.option("--quiet", 'verbosity', flag_value='quiet', help="Print less (only warnings and above)")
-@click.option("--silent", 'verbosity', flag_value='silent', help="Print no log messages")
 def entry_point(verbosity):
-    pass
-
+    if verbosity == None:
+       logger.remove(0)
+       my_filter = MyFilter("INFO")
+       logger.add(sys.stderr, filter=my_filter, level=0)
+    
 
 @entry_point.command()
 @click.option(
@@ -426,6 +435,28 @@ def strace(apk):
         $ androguard strace test.APK
     """
     androstrace_main(apk)
+
+@entry_point.command()
+@click.argument(
+    'apk',
+    default=None,
+    required=False,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+)
+@click.option("-m", "--modules",
+        multiple=True, default=[],
+        help="A list of modules to load in frida")
+
+def trace(apk, modules):
+    """
+    Push an APK on the phone and start to trace all interesting methods from the modules list
+
+    Example:
+
+    \b
+        $ androguard trace test.APK ipc/* webviews/*
+    """
+    androtrace_main(apk, modules)
 
 if __name__ == '__main__':
     entry_point()

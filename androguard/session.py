@@ -192,7 +192,7 @@ class Session:
         """
         digest = hashlib.sha256(data).hexdigest()
 
-        logger.debug("add APK:%s" % digest)
+        logger.info("add APK {}:{}".format(filename, digest))
         
         newapk = apk.APK(data, True)
         self.analyzed_apk[digest] = [newapk]
@@ -210,7 +210,7 @@ class Session:
         # Postponed
         dx.create_xref()
 
-        logger.debug("added APK:%s" % digest)
+        logger.info("added APK {}:{}".format(filename, digest))
         return digest, newapk
 
     def addDEX(self, filename, data, dx=None, postpone_xref=False):
@@ -224,11 +224,11 @@ class Session:
         :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
-        logger.info("add DEX:%s" % digest)
+        logger.info("add DEX:{}".format(digest))
 
         logger.debug("Parsing format ...")
         d = dex.DEX(data)
-        logger.debug("added DEX:%s" % digest)
+        logger.info("added DEX:{}".format(digest))
 
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
@@ -246,7 +246,6 @@ class Session:
         for d in dx.vms:
             # TODO: allow different decompiler here!
             d.set_decompiler(DecompilerDAD(d, dx))
-            d.set_vmanalysis(dx)
         self.analyzed_vms[digest] = dx
 
         if self.export_ipython:

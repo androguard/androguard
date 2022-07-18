@@ -19,7 +19,6 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters.terminal import TerminalFormatter
 
-
 def androaxml_main(inp, outp=None, resource=None):
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":
@@ -240,6 +239,7 @@ def androlyze_main(session, filename):
     from androguard.session import Session, Load
     from androguard.core import dex, apk
     from androguard.core.analysis.analysis import Analysis
+    from androguard.pentest import Pentest
     from androguard.misc import AnalyzeAPK
 
     colorama.init()
@@ -271,13 +271,15 @@ def androlyze_main(session, filename):
             with open(filename, "rb") as fp:
                 raw = fp.read()
 
-            h = s.add(apk, raw)
+            h = s.add(filename, raw)
             logger.info("Added file to session: SHA256::{}".format(h))
 
             if filetype == 'APK':
                 logger.info("Loaded APK file...")
                 a, d, dx = s.get_objects_apk(digest=h)
 
+                print(">>> filename")
+                print(filename)
                 print(">>> a")
                 print(a)
                 print(">>> d")
@@ -449,4 +451,21 @@ def androstrace_main(apk_file):
     p = Pentest()
     p.print_devices()
     p.connect_default_usb()
-    p.start_strace(apk_file, s)
+    p.start_strace(apk_file, s, loop=True)
+
+def androtrace_main(apk_file, list_modules):
+    from androguard.pentest import Pentest
+    from androguard.session import Session, Load
+
+    s = Session()
+
+    with open(apk_file, "rb") as fp:
+        raw = fp.read()
+
+    h = s.add(apk_file, raw)
+    logger.info("Added file to session: SHA256::{}".format(h))
+
+    p = Pentest()
+    p.print_devices()
+    p.connect_default_usb()
+    p.start_trace(apk_file, s, list_modules, loop=True)

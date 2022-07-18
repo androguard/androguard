@@ -1455,7 +1455,7 @@ class Analysis:
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
                 self.__method_hashes[m_hash] = self.methods[method]
 
-        logger.info("Reading bytecode took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
+        logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def create_xref(self):
         """
