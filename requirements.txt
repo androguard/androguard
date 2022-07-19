@@ -12,3 +12,4 @@ uvicorn
 loguru
 mutf8
 dataset
+frida
