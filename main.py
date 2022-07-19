@@ -236,7 +236,7 @@ def androlyze_main(session, filename):
     from traitlets.config import Config
     
     from androguard.core.androconf import ANDROGUARD_VERSION, CONF
-    from androguard.session import Session, Load
+    from androguard.session import Session
     from androguard.core import dex, apk
     from androguard.core.analysis.analysis import Analysis
     from androguard.pentest import Pentest
@@ -438,7 +438,7 @@ def androdis_main(offset, size, dex_file):
 
 def androstrace_main(apk_file):
     from androguard.pentest import Pentest
-    from androguard.session import Session, Load
+    from androguard.session import Session
 
     s = Session()
 
@@ -455,7 +455,7 @@ def androstrace_main(apk_file):
 
 def androtrace_main(apk_file, list_modules):
     from androguard.pentest import Pentest
-    from androguard.session import Session, Load
+    from androguard.session import Session
 
     s = Session()
 

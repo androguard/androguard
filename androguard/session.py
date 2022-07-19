@@ -8,85 +8,10 @@ import hashlib
 import os
 import sys
 import collections
+import dataset
 
-import pickle
 import datetime
 from loguru import logger
-
-
-def Save(session, filename=None):
-    """
-    save your session to use it later.
-
-    Returns the filename of the written file.
-    If not filename is given, a file named `androguard_session_<DATE>.ag` will
-    be created in the current working directory.
-    `<DATE>` is a timestamp with the following format: `%Y-%m-%d_%H%M%S`.
-
-    This function will overwrite existing files without asking.
-
-    If the file could not written, None is returned.
-
-    example::
-
-        s = session.Session()
-        session.Save(s, "msession.ag")
-
-    :param session: A Session object to save
-    :param filename: output filename to save the session
-    :type filename: string
-
-    """
-
-    if not filename:
-        filename = "androguard_session_{:%Y-%m-%d_%H%M%S}.ag".format(datetime.datetime.now())
-
-    if os.path.isfile(filename):
-        logger.warning(f"{filename} already exists, overwriting!")
-
-    # Setting the recursion limit according to the documentation:
-    # https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
-    #
-    # Some larger APKs require a high recursion limit.
-    # Tested to be above 35000 for some files, setting to 50k to be sure.
-    # You might want to set this even higher if you encounter problems
-    reclimit = sys.getrecursionlimit()
-    sys.setrecursionlimit(50000)
-    saved = False
-    try:
-        with open(filename, "wb") as fd:
-            pickle.dump(session, fd)
-        saved = True
-    except RecursionError:
-        logger.exception("Recursion Limit hit while saving. "
-                      "Current Recursion limit: {}. "
-                      "Please report this error!".format(sys.getrecursionlimit()))
-        # Remove partially written file
-        os.unlink(filename)
-    except (pickle.PicklingError, TypeError) as e:
-        logger.error(e)
-
-    sys.setrecursionlimit(reclimit)
-    return filename if saved else None
-
-
-def Load(filename):
-    """
-      load your session!
-
-      example::
-
-          s = session.Load("mysession.ag")
-
-      :param filename: the filename where the session has been saved
-      :type filename: string
-
-      :rtype: the elements of your session :)
-
-    """
-    with open(filename, "rb") as fd:
-        return pickle.load(fd)
-
 
 class Session:
     """
@@ -129,11 +54,24 @@ class Session:
         self._setup_objects()
         self.export_ipython = export_ipython
 
+        self.db = dataset.connect('sqlite:///androguard.db')
+        logger.info("Opening database {}".format(self.db))
+        self.table_information = self.db["information"]
+        self.table_session = self.db["session"]
+        self.table_pentest = self.db["pentest"]
+
+        self.session_id = len(self.table_session)
+
+        self.table_session.insert(dict(id=self.session_id))
+        logger.info("Creating new session [{}]".format(self.session_id))
+
+
     def save(self, filename=None):
         """
         Save the current session, see also :func:`~androguard.session.Save`.
         """
-        return Save(self, filename)
+        logger.info("Saving the database")
+        self.db.commit()
 
     def _setup_objects(self):
         self.analyzed_files = collections.defaultdict(list)
@@ -182,6 +120,9 @@ class Session:
         for d, a in self.analyzed_vms.items():
             print("\t{}: {}".format(d, a))
 
+    def insert_event(self, call, callee, params, ret):
+        self.table_pentest.insert(dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
+        
     def addAPK(self, filename, data):
         """
         Add an APK file to the Session and run analysis on it.
@@ -193,7 +134,9 @@ class Session:
         digest = hashlib.sha256(data).hexdigest()
 
         logger.info("add APK {}:{}".format(filename, digest))
-        
+        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="APK"))
+
+
         newapk = apk.APK(data, True)
         self.analyzed_apk[digest] = [newapk]
         self.analyzed_files[filename].append(digest)
@@ -225,6 +168,8 @@ class Session:
         """
         digest = hashlib.sha256(data).hexdigest()
         logger.info("add DEX:{}".format(digest))
+
+        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="DEX"))
 
         logger.debug("Parsing format ...")
         d = dex.DEX(data)
@@ -260,6 +205,9 @@ class Session:
         """
         digest = hashlib.sha256(data).hexdigest()
         logger.info("add ODEX:%s" % digest)
+
+        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="ODEX"))
+
         d = dex.ODEX(data)
         logger.debug("added ODEX:%s" % digest)
 
