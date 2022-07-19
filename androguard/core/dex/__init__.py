@@ -653,6 +653,27 @@ class HeaderItem:
         bytecode._PrintDefault("data_size=%x, data_off=%x\n" %
                                (self.data_size, self.data_off))
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Header Item magic={}, checksum={}, signature={} file_size={:X}, header_size={:X}, endian_tag={:X}," \
+               "link_size={:X}, link_off={:X}, map_off={:X}, string_ids_size={:X}, string_ids_off={:X},  " \
+                "type_ids_size={:X}, type_ids_off={:X}, proto_ids_size={:X}, proto_ids_off={:X}, " \
+                "field_ids_size={:X}, field_ids_off={:X}, method_ids_size={:X}, method_ids_off={:X}, " \
+                "class_defs_size={:X}, class_defs_off={:X}, data_size={:X}, data_off={:X}".format(
+            self.magic, self.checksum, binascii.hexlify(self.signature).decode("ASCII"),
+            self.file_size, self.header_size, self.endian_tag,
+            self.link_size, self.link_off,
+            self.map_off,
+            self.string_ids_size, self.string_ids_off,
+            self.type_ids_size, self.type_ids_off,
+            self.proto_ids_size, self.proto_ids_off,
+            self.field_ids_size, self.field_ids_off,
+            self.method_ids_size, self.method_ids_off,
+            self.class_defs_size, self.class_defs_off,
+            self.data_size, self.data_off)
+
     def set_off(self, off):
         self.offset = off
 
@@ -3175,9 +3196,15 @@ class EncodedMethod:
         """
         self.show_info()
         self.show_notes()
-        if self.code:
-            self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
-            self.code.show()
+
+        if self.CM.get_analysis():
+            self.CM.get_analysis().methods[self].show()
+        else:
+            if self.code:
+                self.each_params_by_register(self.code.get_registers_size(), self.get_descriptor())
+                self.code.show()
+
+
 
     def show_notes(self):
         """
@@ -7182,6 +7209,7 @@ class ClassManager:
         self.vm = vm
         self.buff = vm
 
+        self.analysis_dex = None
         self.decompiler_ob = None
 
         self.__packer = None
@@ -7252,6 +7280,12 @@ class ClassManager:
 
     def set_decompiler(self, decompiler):
         self.decompiler_ob = decompiler
+
+    def set_analysis(self, analysis_dex):
+        self.analysis_dex = analysis_dex
+
+    def get_analysis(self):
+        return self.analysis_dex
 
     def get_engine(self):
         """
@@ -8324,6 +8358,9 @@ class DEX:
 
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)
+
+    def set_analysis(self, analysis_dex):
+        self.CM.set_analysis(analysis_dex)
 
     def disassemble(self, offset, size):
         """

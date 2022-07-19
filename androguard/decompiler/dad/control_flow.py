@@ -23,7 +23,7 @@ from androguard.decompiler.dad.graph import Graph
 from androguard.decompiler.dad.node import Interval
 from androguard.decompiler.dad.util import common_dom
 
-logger = logging.getLogger('dad.control_flow')
+from loguru import logger
 
 
 def intervals(graph):

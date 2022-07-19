@@ -187,10 +187,11 @@ class Session:
         if not postpone_xref:
             dx.create_xref()
 
-        # TODO: If multidex: this will called many times per dex, even if already set
+        logger.debug("Associated decompiler to the DEX objects")
         for d in dx.vms:
             # TODO: allow different decompiler here!
             d.set_decompiler(DecompilerDAD(d, dx))
+            d.set_analysis(dx)
         self.analyzed_vms[digest] = dx
 
         if self.export_ipython:

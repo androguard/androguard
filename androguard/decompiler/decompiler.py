@@ -33,7 +33,7 @@ from pygments.token import Token
 import logging
 import warnings
 
-log = logging.getLogger("androguard.decompiler")
+from loguru import logger
 
 
 class JADXDecompilerError(Exception):

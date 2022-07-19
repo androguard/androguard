@@ -22,7 +22,7 @@ from androguard.decompiler.dad.instruction import MoveExceptionExpression
 from androguard.decompiler.dad.node import Node
 from androguard.decompiler.dad.util import get_type
 
-logger = logging.getLogger('dad.basic_blocks')
+from loguru import logger
 
 
 class BasicBlock(Node):

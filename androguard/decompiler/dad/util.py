@@ -17,7 +17,7 @@
 
 import logging
 
-logger = logging.getLogger('dad.util')
+from loguru import logger
 
 TYPE_DESCRIPTOR = {
     'V': 'void',

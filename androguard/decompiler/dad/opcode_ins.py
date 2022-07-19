@@ -31,7 +31,7 @@ from androguard.decompiler.dad.instruction import (
     ThrowExpression, Variable, ReturnInstruction, StaticExpression,
     StaticInstruction, SwitchExpression, ThisParam, UnaryExpression)
 
-logger = logging.getLogger('dad.opcode_ins')
+from loguru import logger
 
 
 class Op:

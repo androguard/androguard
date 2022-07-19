@@ -24,7 +24,7 @@ from androguard.decompiler.dad.instruction import (
     Constant, ThisParam, BinaryExpression, BaseClass, InstanceExpression,
     NewInstance, Variable, BinaryCompExpression)
 
-logger = logging.getLogger('dad.writer')
+from loguru import logger
 
 
 class Writer:
