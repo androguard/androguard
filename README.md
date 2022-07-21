@@ -3,13 +3,14 @@
 # Androguard
 
 [![Build Status](https://travis-ci.org/androguard/androguard.svg?branch=master)](https://travis-ci.org/androguard/androguard)
-[![Documentation Status](https://readthedocs.org/projects/androguard/badge/?version=latest)](http://androguard.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://github.com/androguard/androguard/wiki)](https://github.com/androguard/androguard/wiki)
 [![PyPI version](https://badge.fury.io/py/androguard.svg)](https://badge.fury.io/py/androguard)
 [![Codecoverage](https://codecov.io/gh/androguard/androguard/branch/master/graph/badge.svg)](https://codecov.io/gh/androguard/androguard/)
 
-```
-pip install -U androguard
-```
+## Installation
+
+Please see the [wiki](https://github.com/androguard/androguard/wiki)
+
 ... let's start reversing!
 
 ## Features
@@ -22,6 +23,8 @@ Androguard is a full python tool to play with Android files.
 * Android resources
 * Disassemble DEX/ODEX bytecodes
 * Basic Decompiler for DEX/ODEX files
+* Frida support for easy dynamic analysis
+* SQLite database to save the session
 
 ## Authors: Androguard Team
 
