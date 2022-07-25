@@ -1107,8 +1107,14 @@ class APK:
         :rtype: str
         """
         activities = self.get_main_activities()
-        if len(activities) > 0:
+        if len(activities) == 1:
             return self._format_value(activities.pop())
+        elif len(activities) > 1:
+            main_activities = {self._format_value(ma) for ma in activities}
+            good_main_activities = main_activities.intersection(self.get_activities())
+            if good_main_activities:
+                return good_main_activities.pop()
+            return main_activities.pop()
         return None
 
     def get_activities(self):
