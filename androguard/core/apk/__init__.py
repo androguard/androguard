@@ -771,7 +771,8 @@ class APK:
         if self.__raw:
             return self.__raw
         else:
-            self.__raw = bytearray(read(self.filename))
+            with open(self.filename, 'rb') as f:
+                self.__raw = bytearray(f.read())
             return self.__raw
 
     def get_file(self, filename):
