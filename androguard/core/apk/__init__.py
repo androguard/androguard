@@ -371,6 +371,8 @@ class APK:
 
         self.permission_module = androconf.load_api_specific_resource_module(
             "aosp_permissions", self.get_target_sdk_version())
+        self.permission_module_min_sdk = androconf.load_api_specific_resource_module(
+            "aosp_permissions", self.get_min_sdk_version())
 
     def __getstate__(self):
         """
@@ -1143,6 +1145,25 @@ class APK:
                 ali.append(activity_alias)
         return ali
 
+    def get_activity_aliases(self):
+        """
+        Return the android:name and android:targetActivity attribute of all activity aliases.
+
+        :rtype: a list of dict
+        """
+        ali = []
+        for alias in self.find_tags('activity-alias'):
+            activity_alias = {}
+            for attribute in ['name', 'targetActivity']:
+                value = (alias.get(attribute) or
+                         alias.get(self._ns(attribute)))
+                if not value:
+                    continue
+                activity_alias[attribute] = self._format_value(value)
+            if activity_alias:
+                ali.append(activity_alias)
+        return ali
+
     def get_services(self):
         """
         Return the android:name attribute of all services
@@ -1170,12 +1191,12 @@ class APK:
     def get_res_value(self, name):
         """
         Return the literal value with a resource id
-        :rtype: str 
+        :rtype: str
         """
 
         res_parser = self.get_android_resources()
         if not res_parser:
-            return name 
+            return name
 
         res_id = res_parser.parse_id(name)[0]
         try:
@@ -1186,7 +1207,7 @@ class APK:
             log.warning("Exception get resolved resource id: %s" % e)
             return name
 
-        return value 
+        return value
 
     def get_intent_filters(self, itemtype, name):
         """
@@ -1301,6 +1322,31 @@ class APK:
 
         return implied
 
+    def _update_permission_protection_level(self, protection_level, sdk_version):
+        if not sdk_version or int(sdk_version) <= 15:
+            return protection_level.replace('Or', '|').lower()
+        return protection_level
+
+    def _fill_deprecated_permissions(self, permissions):
+        min_sdk = self.get_min_sdk_version()
+        target_sdk = self.get_target_sdk_version()
+        filled_permissions = permissions.copy()
+        for permission in filled_permissions:
+            protection_level, label, description = filled_permissions[permission]
+            if ((not label or not description) 
+                and permission in self.permission_module_min_sdk):
+                x = self.permission_module_min_sdk[permission]
+                protection_level = self._update_permission_protection_level(
+                    x['protectionLevel'], min_sdk)
+                filled_permissions[permission] = [
+                    protection_level, x['label'], x['description']]
+            else:
+                filled_permissions[permission] = [
+                    self._update_permission_protection_level(
+                            protection_level, target_sdk),
+                    label, description]
+        return filled_permissions
+
     def get_details_permissions(self):
         """
         Return permissions with details.
@@ -1320,7 +1366,7 @@ class APK:
                 # FIXME: the permission might be signature, if it is defined by the app itself!
                 l[i] = ["normal", "Unknown permission from android reference",
                         "Unknown permission from android reference"]
-        return l
+        return self._fill_deprecated_permissions(l)
 
     def get_requested_permissions(self):
         """
