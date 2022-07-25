@@ -1,20 +1,20 @@
+from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
+from androguard.core import bytecode, mutf8, dex
+
 import re
+import sys
 import collections
 from operator import itemgetter
 import time
-from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
-from androguard.core.bytecodes import dvm
-import logging
-from androguard.core import bytecode, mutf8
-import networkx as nx
 from enum import IntEnum
 
-log = logging.getLogger("androguard.analysis")
+from loguru import logger
+
 
 BasicOPCODES = set()
-for i in dvm.BRANCH_DVM_OPCODES:
+for i in dex.BRANCH_DVM_OPCODES:
     p = re.compile(i)
-    for op, items in dvm.DALVIK_OPCODES_FORMAT.items():
+    for op, items in dex.DALVIK_OPCODES_FORMAT.items():
         if p.match(items[1][0]):
             BasicOPCODES.add(op)
 
@@ -62,7 +62,11 @@ class DVMBasicBlock:
 
         self.special_ins = {}
 
-        self.name = mutf8.MUTF8String.join([self.method.get_name(), b'-BB@', hex(self.start).encode()])
+        self.name = ''.join([
+            self.method.get_name(),
+            '-BB@',
+            hex(self.start)
+        ])
         self.exception_analysis = None
 
         self.notes = []
@@ -338,6 +342,8 @@ class MethodAnalysis:
     :type method: a :class:`EncodedMethod` object
     """
     def __init__(self, vm, method):
+        logger.debug("Adding new method {} {}".format(method.get_class_name(), method.get_name()))
+
         self.__vm = vm
         self.method = method
 
@@ -417,21 +423,21 @@ class MethodAnalysis:
         l = []
         h = dict()
 
-        log.debug("Parsing instructions for method at @0x{:08x}".format(self.method.get_code_off()))
+        logger.debug("Parsing instructions for method at @0x{:08x}".format(self.method.get_code_off()))
         for idx, ins in self.method.get_instructions_idx():
             if ins.get_op_value() in BasicOPCODES:
-                v = dvm.determineNext(ins, idx, self.method)
+                v = dex.determineNext(ins, idx, self.method)
                 h[idx] = v
                 l.extend(v)
 
-        log.debug("Parsing exceptions")
-        excepts = dvm.determineException(self.__vm, self.method)
+        logger.debug("Parsing exceptions")
+        excepts = dex.determineException(self.__vm, self.method)
         for i in excepts:
             l.extend([i[0]])
             for handler in i[2:]:
                 l.append(handler[1])
 
-        log.debug("Creating basic blocks")
+        logger.debug("Creating basic blocks")
         for idx, ins in self.method.get_instructions_idx():
             # index is a destination
             if idx in l:
@@ -449,14 +455,14 @@ class MethodAnalysis:
         if current_basic.get_nb_instructions() == 0:
             self.basic_blocks.pop(-1)
 
-        log.debug("Settings basic blocks childs")
+        logger.debug("Settings basic blocks childs")
         for i in self.basic_blocks.get():
             try:
                 i.set_childs(h[i.end - i.get_last_length()])
             except KeyError:
                 i.set_childs([])
 
-        log.debug("Creating exceptions")
+        logger.debug("Creating exceptions")
         self.exceptions.add(excepts, self.basic_blocks)
 
         for i in self.basic_blocks.get():
@@ -768,7 +774,7 @@ class StringAnalysis:
 
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.get_value())
-        for ref_class, ref_method in self.xreffrom:
+        for ref_class, ref_method, _ in self.xreffrom:
             data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
         return data
 
@@ -931,7 +937,7 @@ class ExternalMethod:
         return self.class_name
 
     def get_descriptor(self):
-        return mutf8.MUTF8String.join(self.descriptor)
+        return self.descriptor
 
     @property
     def full_name(self):
@@ -1426,7 +1432,8 @@ class Analysis:
         """
         self.vms.append(vm)
 
-        log.info("Adding DEX file version {}".format(vm.version))
+        logger.info("Adding DEX file version {}".format(vm.version))
+
         # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
         tic = time.time()
         for i, current_class in enumerate(vm.get_classes()):
@@ -1448,7 +1455,7 @@ class Analysis:
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
                 self.__method_hashes[m_hash] = self.methods[method]
 
-        log.info("Reading bytecode took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
+        logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def create_xref(self):
         """
@@ -1463,13 +1470,13 @@ class Analysis:
         if self.__created_xrefs:
             # TODO on concurrent runs, we probably need to clean up first,
             # or check that we do not write garbage.
-            log.error("You have requested to run create_xref() twice! "
+            logger.error("You have requested to run create_xref() twice! "
                       "This will not work and cause problems! This function will exit right now. "
                       "If you want to add multiple DEX files, use add() several times and then run create_xref() once.")
             return
 
         self.__created_xrefs = True
-        log.debug("Creating Crossreferences (XREF)")
+        logger.debug("Creating Crossreferences (XREF)")
         tic = time.time()
 
         # TODO multiprocessing
@@ -1482,7 +1489,7 @@ class Analysis:
         # TODO: After we collected all the information, we should add field and
         # string xrefs to each MethodAnalysis
 
-        log.info("End of creating cross references (XREF) "
+        logger.info("End of creating cross references (XREF) "
                  "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
     def _create_xref(self, current_class):
@@ -1503,9 +1510,9 @@ class Analysis:
         """
         cur_cls_name = current_class.get_name()
 
-        log.debug("Creating XREF/DREF for class at @0x{:08x}".format(current_class.get_class_data_off()))
+        logger.debug("Creating XREF/DREF for class at @0x{:08x}".format(current_class.get_class_data_off()))
         for current_method in current_class.get_methods():
-            log.debug("Creating XREF for method at @0x{:08x}".format(current_method.get_code_off()))
+            logger.debug("Creating XREF for method at @0x{:08x}".format(current_method.get_code_off()))
 
             cur_meth = self.get_method(current_method)
             cur_cls = self.classes[cur_cls_name]
@@ -1517,7 +1524,7 @@ class Analysis:
                 if op_value in [0x1c, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip(b'[')
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
                     if type_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         continue
@@ -1553,12 +1560,12 @@ class Analysis:
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if not method_info:
-                        log.warning("Could not get method_info "
+                        logger.warning("Could not get method_info "
                                     "for instruction at {} in method at @{}. "
                                     "Requested IDX {}".format(off, current_method.get_code_off(), idx_meth))
                         continue
 
-                    class_info = method_info[0].lstrip(b'[')
+                    class_info = method_info[0].lstrip('[')
                     if class_info[0] != b'L':
                         # Need to make sure, that we get class types and not other types
                         # If another type, like int is used, we simply skip it.
@@ -1631,7 +1638,7 @@ class Analysis:
         :return:
         :rtype: MethodAnalysis
         """
-        m_hash = (class_name, method_name, mutf8.MUTF8String.join(method_descriptor))
+        m_hash = (class_name, method_name, ''.join(method_descriptor))
         if m_hash not in self.__method_hashes:
             # Need to create a new method
             if class_name not in self.classes:
@@ -1792,7 +1799,7 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: Iterator[ClassAnalysis]
         """
-        name = bytes(mutf8.MUTF8String.from_str(name))
+        name = bytes(name)
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
@@ -1813,9 +1820,9 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: Iterator[MethodAnalysis]
         """
-        classname = bytes(mutf8.MUTF8String.from_str(classname))
-        methodname = bytes(mutf8.MUTF8String.from_str(methodname))
-        descriptor = bytes(mutf8.MUTF8String.from_str(descriptor))
+        classname = bytes(classname)
+        methodname = bytes(methodname)
+        descriptor = bytes(descriptor)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for m in c.get_methods():
@@ -1837,7 +1844,6 @@ class Analysis:
         :param string: regular expression for the string to search for
         :rtype: Iterator[StringAnalysis]
         """
-        string = bytes(mutf8.MUTF8String.from_str(string))
         for s, sa in self.strings.items():
             if re.match(string, s):
                 yield sa
@@ -1852,9 +1858,9 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: Iterator[FieldAnalysis]
         """
-        classname = bytes(mutf8.MUTF8String.from_str(classname))
-        fieldname = bytes(mutf8.MUTF8String.from_str(fieldname))
-        fieldtype = bytes(mutf8.MUTF8String.from_str(fieldtype))
+        classname = bytes(classname)
+        fieldname = bytes(fieldname)
+        fieldtype = bytes(fieldtype)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for f in c.get_fields():
@@ -1866,93 +1872,6 @@ class Analysis:
 
     def __repr__(self):
         return "<analysis.Analysis VMs: {}, Classes: {}, Methods: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.methods), len(self.strings))
-
-    def get_call_graph(self, classname=".*", methodname=".*", descriptor=".*",
-                       accessflags=".*", no_isolated=False, entry_points=[]):
-        """
-        Generate a directed graph based on the methods found by the filters applied.
-        The filters are the same as in
-        :meth:`~androguard.core.analaysis.analaysis.Analysis.find_methods`
-
-        A networkx.MultiDiGraph is returned, containing all xrefs.
-        That means a method which calls another method multiple times, will have multiple
-        edges between them. Attached to the edge is the attribute `offset`, which gives
-        the code offset inside the method of the call.
-
-        Specifying filters will not remove the methods if they are called by some other method.
-
-        The callgraph will check for both directions of edges. Thus, if you specify a single class
-        as input, it will contain all classes which are called by this class (xref_to),
-        as well as all methods who calls the specified one (xref_from).
-
-        Each node will contain the following meta information as attribute:
-
-        * external: is the method external or not (boolean)
-        * entrypoint: is the method a known entry point (boolean)
-        * native: is the method a native method by signature (boolean)
-        * public: is the method declared public (boolean)
-        * static: is the method declared static (boolean)
-        * vm: An ID of the DEX file where this method is declared or 0 if external (signed int)
-        * codesize: size of code of the method or zero if external (int)
-
-        :param classname: regular expression of the classname (default: ".*")
-        :param methodname: regular expression of the methodname (default: ".*")
-        :param descriptor: regular expression of the descriptor (default: ".*")
-        :param accessflags: regular expression of the access flags (default: ".*")
-        :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
-        :param entry_points: A list of classes that are marked as entry point
-
-        :rtype: networkx.MultiDiGraph
-        """
-
-        def _add_node(G, method):
-            """
-            Wrapper to add methods to a graph without duplication
-
-            :param nx.MultiDiGraph G:
-            :param MethodAnalysis method:
-            """
-            if method in G.nodes:
-                return
-
-            G.add_node(method,
-                       external=method.is_external(),
-                       entrypoint=method.class_name in entry_points,
-                       native="native" in method.access,
-                       public="public" in method.access,
-                       static="static" in method.access,
-                       vm=hash(method.get_method().CM.vm) if not method.is_external() else 0,
-                       codesize=len(list(method.get_method().get_instructions())) if not method.is_external() else 0,
-                       )
-
-        CG = nx.MultiDiGraph()
-
-        # Note: If you create the CG from many classes at the same time, the drawing
-        # will be a total mess... Hence it is recommended to reduce the number of nodes beforehand.
-        # Obviously, you can always do this later at the costs of computational power.
-        for m in self.find_methods(classname=classname, methodname=methodname,
-                                   descriptor=descriptor, accessflags=accessflags):
-            log.info("Adding Method '{}' to callgraph".format(m.full_name))
-
-            if no_isolated and len(m.get_xref_to()) == 0 and len(m.get_xref_from()) == 0:
-                log.info("Skipped {}, because if has no xrefs".format(m.full_name))
-                continue
-
-            _add_node(CG, m)
-
-            for _, callee, offset in m.get_xref_to():
-                _add_node(CG, callee)
-                CG.add_edge(m, callee, key=offset, offset=offset)
-
-            for _, caller, offset in m.get_xref_from():
-                # If _all_ methods are added to the CG, this will not make any difference.
-                # But, if only a single class is chosen as a seed point, we require this information too!
-                # This is particularly useful for external classes, as they do not have xref_to,
-                # thus if an external class is chosen as starting point, it will generate an empty graph.
-                _add_node(CG, caller)
-                CG.add_edge(caller, m, key=offset, offset=offset)
-
-        return CG
 
     def create_ipython_exports(self):
         """
@@ -1975,7 +1894,7 @@ class Analysis:
         for cls in self.get_classes():
             name = "CLASS_" + bytecode.FormatClassToPython(cls.name)
             if hasattr(self, name):
-                log.warning("Already existing class {}!".format(name))
+                logger.warning("Already existing class {}!".format(name))
             setattr(self, name, cls)
 
             for meth in cls.get_methods():
@@ -1986,7 +1905,7 @@ class Analysis:
                 # FIXME this naming schema is not very good... but to describe a method uniquely, we need all of it
                 mname = "METH_" + method_name + "_" + bytecode.FormatDescriptorToPython(meth.access) + "_" + bytecode.FormatDescriptorToPython(meth.descriptor)
                 if hasattr(cls, mname):
-                    log.warning("already existing method: {} at class {}".format(mname, name))
+                    logger.warning("already existing method: {} at class {}".format(mname, name))
                 setattr(cls, mname, meth)
 
             # FIXME: syntetic classes produce problems here.
@@ -1994,7 +1913,7 @@ class Analysis:
             for field in cls.get_fields():
                 mname = "FIELD_" + bytecode.FormatNameToPython(field.name)
                 if hasattr(cls, mname):
-                    log.warning("already existing field: {} at class {}".format(mname, name))
+                    logger.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
 
     def get_permissions(self, apilevel=None):

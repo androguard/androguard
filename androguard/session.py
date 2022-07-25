@@ -1,91 +1,17 @@
+from androguard.core.analysis.analysis import Analysis
+from androguard.core import dex, apk
+from androguard.decompiler.decompiler import DecompilerDAD
+from androguard.core import androconf
+
+
 import hashlib
 import os
 import sys
 import collections
-from androguard.core.analysis.analysis import Analysis
-from androguard.core.bytecodes.dvm import DalvikVMFormat, DalvikOdexVMFormat
-from androguard.core.bytecodes.apk import APK
-from androguard.decompiler.decompiler import DecompilerDAD
-from androguard.core import androconf
+import dataset
 
-import pickle
-import logging
 import datetime
-
-log = logging.getLogger("androguard.session")
-
-
-def Save(session, filename=None):
-    """
-    save your session to use it later.
-
-    Returns the filename of the written file.
-    If not filename is given, a file named `androguard_session_<DATE>.ag` will
-    be created in the current working directory.
-    `<DATE>` is a timestamp with the following format: `%Y-%m-%d_%H%M%S`.
-
-    This function will overwrite existing files without asking.
-
-    If the file could not written, None is returned.
-
-    example::
-
-        s = session.Session()
-        session.Save(s, "msession.ag")
-
-    :param session: A Session object to save
-    :param filename: output filename to save the session
-    :type filename: string
-
-    """
-
-    if not filename:
-        filename = "androguard_session_{:%Y-%m-%d_%H%M%S}.ag".format(datetime.datetime.now())
-
-    if os.path.isfile(filename):
-        log.warning(f"{filename} already exists, overwriting!")
-
-    # Setting the recursion limit according to the documentation:
-    # https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled
-    #
-    # Some larger APKs require a high recursion limit.
-    # Tested to be above 35000 for some files, setting to 50k to be sure.
-    # You might want to set this even higher if you encounter problems
-    reclimit = sys.getrecursionlimit()
-    sys.setrecursionlimit(50000)
-    saved = False
-    try:
-        with open(filename, "wb") as fd:
-            pickle.dump(session, fd)
-        saved = True
-    except RecursionError:
-        log.exception("Recursion Limit hit while saving. "
-                      "Current Recursion limit: {}. "
-                      "Please report this error!".format(sys.getrecursionlimit()))
-        # Remove partially written file
-        os.unlink(filename)
-
-    sys.setrecursionlimit(reclimit)
-    return filename if saved else None
-
-
-def Load(filename):
-    """
-      load your session!
-
-      example::
-
-          s = session.Load("mysession.ag")
-
-      :param filename: the filename where the session has been saved
-      :type filename: string
-
-      :rtype: the elements of your session :)
-
-    """
-    with open(filename, "rb") as fd:
-        return pickle.load(fd)
-
+from loguru import logger
 
 class Session:
     """
@@ -128,16 +54,30 @@ class Session:
         self._setup_objects()
         self.export_ipython = export_ipython
 
+        self.db = dataset.connect('sqlite:///androguard.db')
+        logger.info("Opening database {}".format(self.db))
+        self.table_information = self.db["information"]
+        self.table_session = self.db["session"]
+        self.table_pentest = self.db["pentest"]
+
+        self.session_id = len(self.table_session)
+
+        self.table_session.insert(dict(id=self.session_id))
+        logger.info("Creating new session [{}]".format(self.session_id))
+
+
     def save(self, filename=None):
         """
         Save the current session, see also :func:`~androguard.session.Save`.
         """
-        return Save(self, filename)
+        logger.info("Saving the database")
+        self.db.commit()
 
     def _setup_objects(self):
         self.analyzed_files = collections.defaultdict(list)
         self.analyzed_digest = dict()
         self.analyzed_apk = dict()
+        self.added_files = []
 
         # Stores Analysis Objects
         # needs to be ordered to return the outermost element when searching for
@@ -180,6 +120,9 @@ class Session:
         for d, a in self.analyzed_vms.items():
             print("\t{}: {}".format(d, a))
 
+    def insert_event(self, call, callee, params, ret):
+        self.table_pentest.insert(dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
+        
     def addAPK(self, filename, data):
         """
         Add an APK file to the Session and run analysis on it.
@@ -189,24 +132,29 @@ class Session:
         :return: a tuple of SHA256 Checksum and APK Object
         """
         digest = hashlib.sha256(data).hexdigest()
-        log.debug("add APK:%s" % digest)
-        apk = APK(data, True)
-        self.analyzed_apk[digest] = [apk]
+
+        logger.info("add APK {}:{}".format(filename, digest))
+        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="APK"))
+
+
+        newapk = apk.APK(data, True)
+        self.analyzed_apk[digest] = [newapk]
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
+        self.added_files.append(filename)
 
         dx = Analysis()
         self.analyzed_vms[digest] = dx
 
-        for dex in apk.get_all_dex():
+        for dex in newapk.get_all_dex():
             # we throw away the output... FIXME?
             self.addDEX(filename, dex, dx, postpone_xref=True)
 
         # Postponed
         dx.create_xref()
 
-        log.debug("added APK:%s" % digest)
-        return digest, apk
+        logger.info("added APK {}:{}".format(filename, digest))
+        return digest, newapk
 
     def addDEX(self, filename, data, dx=None, postpone_xref=False):
         """
@@ -219,11 +167,13 @@ class Session:
         :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
-        log.debug("add DEX:%s" % digest)
+        logger.info("add DEX:{}".format(digest))
 
-        log.debug("Parsing format ...")
-        d = DalvikVMFormat(data)
-        log.debug("added DEX:%s" % digest)
+        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="DEX"))
+
+        logger.debug("Parsing format ...")
+        d = dex.DEX(data)
+        logger.info("added DEX:{}".format(digest))
 
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
@@ -237,27 +187,30 @@ class Session:
         if not postpone_xref:
             dx.create_xref()
 
-        # TODO: If multidex: this will called many times per dex, even if already set
+        logger.debug("Associated decompiler to the DEX objects")
         for d in dx.vms:
             # TODO: allow different decompiler here!
             d.set_decompiler(DecompilerDAD(d, dx))
-            d.set_vmanalysis(dx)
+            d.set_analysis(dx)
         self.analyzed_vms[digest] = dx
 
         if self.export_ipython:
-            log.debug("Exporting in ipython")
+            logger.debug("Exporting in ipython")
             d.create_python_export()
 
         return digest, d, dx
 
-    def addDEY(self, filename, data, dx=None):
+    def addODEX(self, filename, data, dx=None):
         """
         Add an ODEX file to the session and run the analysis
         """
         digest = hashlib.sha256(data).hexdigest()
-        log.debug("add DEY:%s" % digest)
-        d = DalvikOdexVMFormat(data)
-        log.debug("added DEY:%s" % digest)
+        logger.info("add ODEX:%s" % digest)
+
+        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="ODEX"))
+
+        d = dex.ODEX(data)
+        logger.debug("added ODEX:%s" % digest)
 
         self.analyzed_files[filename].append(digest)
         self.analyzed_digest[digest] = filename
@@ -300,12 +253,12 @@ class Session:
         :return: the sha256 of the file or None on failure
         """
         if not raw_data:
-            log.debug("Loading file from '{}'".format(filename))
+            logger.debug("Loading file from '{}'".format(filename))
             with open(filename, "rb") as fp:
                 raw_data = fp.read()
 
         ret = androconf.is_android_raw(raw_data)
-        log.debug("Found filetype: '{}'".format(ret))
+        logger.debug("Found filetype: '{}'".format(ret))
         if not ret:
             return None
 
@@ -314,7 +267,7 @@ class Session:
         elif ret == "DEX":
             digest, _, _ = self.addDEX(filename, raw_data, dx)
         elif ret == "DEY":
-            digest, _, _ = self.addDEY(filename, raw_data, dx)
+            digest, _, _ = self.addODEX(filename, raw_data, dx)
         else:
             return None
 

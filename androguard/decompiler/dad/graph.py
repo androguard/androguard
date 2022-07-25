@@ -21,7 +21,7 @@ from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)
 from androguard.decompiler.dad.instruction import Variable
 
-logger = logging.getLogger('dad.graph')
+from loguru import logger
 
 
 # TODO Could use networkx here, as it has plenty of tools already, no need to reengineer the wheel

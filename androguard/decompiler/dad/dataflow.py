@@ -21,7 +21,7 @@ from androguard.decompiler.dad.instruction import (Variable, ThisParam, Param)
 from androguard.decompiler.dad.util import build_path, common_dom
 from androguard.decompiler.dad.node import Node
 
-logger = logging.getLogger('dad.control_flow')
+from loguru import logger
 
 
 class BasicReachDef:
