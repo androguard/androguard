@@ -921,7 +921,7 @@ class APK:
         """
         tags = self.find_tags(tag_name, **attribute_filter)
         for tag in tags:
-            value = tag.get(attribute) or tag.get(self._ns(attribute))
+            value = tag.get(self._ns(attribute)) or tag.get(attribute)
             if value is not None:
                 if format_value:
                     yield self._format_value(value)
