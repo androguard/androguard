@@ -773,7 +773,8 @@ class APK:
         if self.__raw:
             return self.__raw
         else:
-            self.__raw = bytearray(read(self.filename))
+            with open(self.filename, 'rb') as f:
+                self.__raw = bytearray(f.read())
             return self.__raw
 
     def get_file(self, filename):
@@ -1113,10 +1114,13 @@ class APK:
             return self._format_value(activities.pop())
         elif len(activities) > 1:
             main_activities = {self._format_value(ma) for ma in activities}
-            good_main_activities = main_activities.intersection(self.get_activities())
+            # sorted is necessary
+            # 9fc7d3e8225f6b377f9181a92c551814317b77e1aa0df4c6d508d24b18f0f633
+            good_main_activities = sorted(
+                main_activities.intersection(self.get_activities()))
             if good_main_activities:
-                return good_main_activities.pop()
-            return main_activities.pop()
+                return good_main_activities[0]
+            return main_activities[0]
         return None
 
     def get_activities(self):
@@ -1126,24 +1130,6 @@ class APK:
         :rtype: a list of str
         """
         return list(self.get_all_attribute_value("activity", "name"))
-    
-    def get_activity_aliases(self):
-        """
-        Return the android:name and android:targetActivity attribute of all activity aliases.
-        :rtype: a list of dict
-        """
-        ali = []
-        for alias in self.find_tags('activity-alias'):
-            activity_alias = {}
-            for attribute in ['name', 'targetActivity']:
-                value = (alias.get(attribute) or
-                         alias.get(self._ns(attribute)))
-                if not value:
-                    continue
-                activity_alias[attribute] = self._format_value(value)
-            if activity_alias:
-                ali.append(activity_alias)
-        return ali
 
     def get_activity_aliases(self):
         """
