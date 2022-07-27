@@ -454,9 +454,30 @@ def trace(apk, modules):
     Example:
 
     \b
-        $ androguard trace test.APK ipc/* webviews/*
+        $ androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**"
     """
-    androtrace_main(apk, modules)
+    androtrace_main(apk, modules, False)
+
+@entry_point.command()
+@click.argument(
+    'package_name',
+    default=None,
+    required=False,
+)
+@click.option("-m", "--modules",
+        multiple=True, default=[],
+        help="A list of modules to load in frida")
+
+def dtrace(package_name, modules):
+    """
+    Start dynamically an installed APK on the phone and start to trace all interesting methods from the modules list
+
+    Example:
+
+    \b
+        $ androguard dtrace packahe_name -m "ipc/*"  -m "webviews/*" -m "modules/**"
+    """
+    androtrace_main(package_name, modules, True)
 
 if __name__ == '__main__':
     entry_point()

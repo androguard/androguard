@@ -453,19 +453,20 @@ def androstrace_main(apk_file):
     p.connect_default_usb()
     p.start_strace(apk_file, s, loop=True)
 
-def androtrace_main(apk_file, list_modules):
+def androtrace_main(apk_file, list_modules, live=False):
     from androguard.pentest import Pentest
     from androguard.session import Session
 
     s = Session()
 
-    with open(apk_file, "rb") as fp:
-        raw = fp.read()
+    if not live:
+        with open(apk_file, "rb") as fp:
+            raw = fp.read()
 
-    h = s.add(apk_file, raw)
-    logger.info("Added file to session: SHA256::{}".format(h))
+        h = s.add(apk_file, raw)
+        logger.info("Added file to session: SHA256::{}".format(h))
 
     p = Pentest()
     p.print_devices()
     p.connect_default_usb()
-    p.start_trace(apk_file, s, list_modules, loop=True)
+    p.start_trace(apk_file, s, list_modules, loop=True, live=live)

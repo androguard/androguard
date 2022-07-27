@@ -650,13 +650,13 @@ class DecompilerJADX:
             tf.write(vm.get_buff())
 
             cmd = [jadx, "-ds", tmpfolder, "--escape-unicode", "--no-res", tf.name]
-            log.debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
+            logger.debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
             x = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, _ = x.communicate()
             # Looks like jadx does not use stderr
-            log.info("Output of JADX during decompilation")
+            logger.info("Output of JADX during decompilation")
             for line in stdout.decode("UTF-8").splitlines():
-                log.info(line)
+                logger.info(line)
 
             if x.returncode != 0:
                 rrmdir(tmpfolder)
@@ -674,7 +674,7 @@ class DecompilerJADX:
         for root, dirs, files in os.walk(tmpfolder):
             for f in files:
                 if not f.endswith(".java"):
-                    log.warning("found a file in jadx folder which is not a java file: {}".format(f))
+                    logger.warning("found a file in jadx folder which is not a java file: {}".format(f))
                     continue
                 # as the path begins always with `self.res` (hopefully), we remove that length
                 # also, all files should end with .java
@@ -692,7 +692,7 @@ class DecompilerJADX:
                         # Need to convert back to the "full" classname
                         self.classes["L{};".format(path)] = fp.read().decode("UTF-8")
                 else:
-                    log.warning("Found a class called {}, which is not found by androguard!".format(path))
+                    logger.warning("Found a class called {}, which is not found by androguard!".format(path))
 
         # Next, try to find files for the classes we have
         for cl in andr_class_names:
@@ -706,13 +706,13 @@ class DecompilerJADX:
                     # Class was already found...
                     pass
             else:
-                log.warning("Found a class called {} which is not decompiled by jadx".format(cl))
+                logger.warning("Found a class called {} which is not decompiled by jadx".format(cl))
 
         # check if we have good matching
         if len(self.classes) == len(andr_class_names):
-            log.debug("JADX looks good, we have the same number of classes: {}".format(len(self.classes)))
+            logger.debug("JADX looks good, we have the same number of classes: {}".format(len(self.classes)))
         else:
-            log.info("Looks like JADX is missing some classes or "
+            logger.info("Looks like JADX is missing some classes or "
                  "we decompiled too much: decompiled: {} vs androguard: {}".format(len(self.classes),
                                                                                    len(andr_class_names)))
 

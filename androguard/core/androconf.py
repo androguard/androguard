@@ -157,6 +157,7 @@ def is_android_raw(raw):
     # probably it would be better to rewrite this and add more sanity checks.
     if raw[0:2] == b"PK" and b'AndroidManifest.xml' in raw:
         val = "APK"
+        # check out 
     elif raw[0:3] == b"dex":
         val = "DEX"
     elif raw[0:3] == b"dey":
