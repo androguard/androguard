@@ -392,6 +392,7 @@ class AXMLParser:
 
         try:
             axml_header = ARSCHeader(self.buff)
+            logger.debug("FIRST HEADER {}".format(axml_header))
         except ResParserError as e:
             logger.error("Error parsing first resource header: %s", e)
             self._valid = False
@@ -431,6 +432,7 @@ class AXMLParser:
         # Now we parse the STRING POOL
         try:
             header = ARSCHeader(self.buff, expected_type=RES_STRING_POOL_TYPE)
+            logger.debug("STRING_POOL {}".format(header))
         except ResParserError as e:
             logger.error("Error parsing resource header of string pool: %s", e)
             self._valid = False
@@ -473,6 +475,8 @@ class AXMLParser:
         return self.m_event
 
     def _do_next(self):
+        logger.debug("M_EVENT {}".format(self.m_event))
+
         if self.m_event == END_DOCUMENT:
             return
 
@@ -486,6 +490,7 @@ class AXMLParser:
             # Again, we read an ARSCHeader
             try:
                 h = ARSCHeader(self.buff)
+                logger.debug("NEXT HEADER {}".format(h))
             except ResParserError as e:
                 logger.error("Error parsing resource header: %s", e)
                 self._valid = False
@@ -520,9 +525,9 @@ class AXMLParser:
             # Check that we read a correct header
             if h.header_size != 0x10:
                 logger.error("XML Resource Type Chunk header size does not match 16! " \
-                "At chunk type 0x{:04x}, declared header size={}, chunk size={}".format(h.type, h.header_size, h.size))
-                self._valid = False
-                return
+                "At chunk type 0x{:04x}, declared header size=0x{:04x}, chunk size=0x{:04x}".format(h.type, h.header_size, h.size))
+                self.buff.seek(h.end)
+                continue
 
             # Line Number of the source file, only used as meta information
             self.m_lineNumber, = unpack('<L', self.buff.read(4))
@@ -924,6 +929,8 @@ class AXMLPrinter:
     __replacement = None
 
     def __init__(self, raw_buff):
+        logger.debug("AXMLPrinter")
+
         self.axml = AXMLParser(raw_buff)
 
         self.root = None
@@ -932,6 +939,7 @@ class AXMLPrinter:
 
         while self.axml.is_valid():
             _type = next(self.axml)
+            logger.debug("DEBUG ARSC TYPE {}".format(_type))
 
             if _type == START_TAG:
                 uri = self._print_namespace(self.axml.namespace)

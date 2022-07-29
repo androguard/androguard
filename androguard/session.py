@@ -59,6 +59,7 @@ class Session:
         self.table_information = self.db["information"]
         self.table_session = self.db["session"]
         self.table_pentest = self.db["pentest"]
+        self.table_system = self.db["system"]
 
         self.session_id = len(self.table_session)
 
@@ -122,6 +123,9 @@ class Session:
 
     def insert_event(self, call, callee, params, ret):
         self.table_pentest.insert(dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
+
+    def insert_system_event(self, call, callee, information, params):
+        self.table_system.insert(dict(session_id=str(self.session_id), call=call, callee=callee, information=information, params=params))
         
     def addAPK(self, filename, data):
         """
