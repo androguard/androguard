@@ -368,7 +368,7 @@ class AXMLParser:
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
     """
     def __init__(self, raw_buff):
-        logger.info("AXMLParser")
+        logger.debug("AXMLParser")
 
         self._reset()
 
@@ -426,15 +426,15 @@ class AXMLParser:
         if axml_header.type != RES_XML_TYPE:
             self.axml_tampered = True
             logger.warning("AXML file has an unusual resource type! "
-                        "Malware likes to to such stuff to anti androguard! "
-                        "But we try to parse it anyways. Resource Type: 0x{:04x}".format(axml_header.type))
+                           "Malware likes to to such stuff to anti androguard! "
+                           "But we try to parse it anyways. Resource Type: 0x{:04x}".format(axml_header.type))
 
         # Now we parse the STRING POOL
         try:
             header = ARSCHeader(self.buff, expected_type=RES_STRING_POOL_TYPE)
             logger.debug("STRING_POOL {}".format(header))
         except ResParserError as e:
-            logger.error("Error parsing resource header of string pool: %s", e)
+            logger.error("Error parsing resource header of string pool: {}".format(e))
             self._valid = False
             return
 
@@ -492,7 +492,7 @@ class AXMLParser:
                 h = ARSCHeader(self.buff)
                 logger.debug("NEXT HEADER {}".format(h))
             except ResParserError as e:
-                logger.error("Error parsing resource header: %s", e)
+                logger.error("Error parsing resource header: {}".format(e))
                 self._valid = False
                 return
 
