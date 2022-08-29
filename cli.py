@@ -26,7 +26,8 @@ from main import (androarsc_main,
                   androgui_main,
                   androdis_main,
                   androstrace_main,
-                  androtrace_main
+                  androtrace_main,
+                  androdump_main,
 )
 
 class MyFilter:
@@ -475,9 +476,30 @@ def dtrace(package_name, modules):
     Example:
 
     \b
-        $ androguard dtrace packahe_name -m "ipc/*"  -m "webviews/*" -m "modules/**"
+        $ androguard dtrace package_name -m "ipc/*"  -m "webviews/*" -m "modules/**"
     """
     androtrace_main(package_name, modules, True)
+
+@entry_point.command()
+@click.argument(
+    'package_name',
+    default=None,
+    required=False,
+)
+@click.option("-m", "--modules",
+        multiple=True, default=["androguard/pentest/modules/helpers/dump/dexdump.js"],
+        help="A list of modules to load in frida")
+
+def dump(package_name, modules):
+    """
+    Start dynamically an installed APK on the phone and start to trace all interesting methods from the modules list
+
+    Example:
+
+    \b
+        $ androguard dump package_name
+    """
+    androdump_main(package_name, modules)
 
 if __name__ == '__main__':
     entry_point()

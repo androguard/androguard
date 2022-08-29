@@ -470,3 +470,15 @@ def androtrace_main(apk_file, list_modules, live=False):
     p.print_devices()
     p.connect_default_usb()
     p.start_trace(apk_file, s, list_modules, loop=True, live=live)
+
+
+def androdump_main(package_name, list_modules):
+    from androguard.pentest import Pentest
+    from androguard.session import Session
+
+    s = Session()
+
+    p = Pentest()
+    p.print_devices()
+    p.connect_default_usb()
+    p.start_trace(package_name, s, list_modules, loop=True, live=True, dump=True)
