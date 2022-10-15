@@ -641,26 +641,26 @@ class DecompilerJADX:
 
         # We need to decompile the whole dex file, as we do not have an API...
         # dump the dex file into a temp file
-        # THIS WILL NOT WORK ON WINDOWS!!!
-        # See https://stackoverflow.com/q/15169101/446140
+       
         # Files can not be read, only if they specify temp file. But jadx does not do that...
         #
         # We need to trick jadx by setting the suffix, otherwise the file will not be loaded
-        with tempfile.NamedTemporaryFile(suffix=".dex") as tf:
-            tf.write(vm.get_buff())
+        tf = tempfile.NamedTemporaryFile(suffix=".dex",delete=False)
+        tf.write(vm.get_buff())
+        tf.close()
+        cmd = [jadx, "-d", tmpfolder," --escape-unicode","--no-res", tf.name]
+        log.debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
+        x = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, _ = x.communicate()
+        # Looks like jadx does not use stderr
+        log.info("Output of JADX during decompilation")
+        for line in stdout.decode("UTF-8").splitlines():
+            log.info(line)
+        os.remove(tf.name)
+        if x.returncode != 0:
+            rrmdir(tmpfolder)
+            raise JADXDecompilerError("Could not decompile file. Args: {}".format(" ".join(cmd)))
 
-            cmd = [jadx, "-ds", tmpfolder, "--escape-unicode", "--no-res", tf.name]
-            logger.debug("Call JADX with the following cmdline: {}".format(" ".join(cmd)))
-            x = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            stdout, _ = x.communicate()
-            # Looks like jadx does not use stderr
-            logger.info("Output of JADX during decompilation")
-            for line in stdout.decode("UTF-8").splitlines():
-                logger.info(line)
-
-            if x.returncode != 0:
-                rrmdir(tmpfolder)
-                raise JADXDecompilerError("Could not decompile file. Args: {}".format(" ".join(cmd)))
 
         # Next we parse the folder structure for later lookup
         # We read the content of each file here, so we can later delete the folder
