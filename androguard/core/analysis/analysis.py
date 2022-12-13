@@ -1525,7 +1525,7 @@ class Analysis:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
                     type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
-                    if type_info[0] != b'L':
+                    if type_info[0] != 'L':
                         # Need to make sure, that we get class types and not other types
                         continue
 
@@ -1566,7 +1566,7 @@ class Analysis:
                         continue
 
                     class_info = method_info[0].lstrip('[')
-                    if class_info[0] != b'L':
+                    if class_info[0] != 'L':
                         # Need to make sure, that we get class types and not other types
                         # If another type, like int is used, we simply skip it.
                         continue
