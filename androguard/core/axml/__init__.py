@@ -154,6 +154,10 @@ class StringBlock:
         if (size % 4) != 0:
             logger.warning("Size of strings is not aligned by four bytes.")
 
+        if self.stringCount * 4 + header.header_size != self.stringsOffset :
+            logger.warning("Offset of strings is not expected. Try fixing it")
+            buff.seek(8 + self.stringsOffset)
+
         self.m_charbuff = buff.read(size)
 
         if self.stylesOffset != 0 and self.styleCount != 0:
@@ -442,7 +446,8 @@ class AXMLParser:
             logger.error("This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size))
             self._valid = False
             return
-
+        
+        self.buff.seek(axml_header.header_size + header.size)
         self.sb = StringBlock(self.buff, header)
 
         # Stores resource ID mappings, if any
