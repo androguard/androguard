@@ -1721,9 +1721,9 @@ class APK:
 
                 # These things should not happen for APKs
                 if this_disk != 0:
-                    raise BrokenAPKError("Not sure what to do with multi disk ZIP!")
+                    log.warning("Not sure what to do with multi disk ZIP!")
                 if disk_central != 0:
-                    raise BrokenAPKError("Not sure what to do with multi disk ZIP!")
+                    log.warning("Not sure what to do with multi disk ZIP!")
                 break
             f.seek(-4, io.SEEK_CUR)
 
