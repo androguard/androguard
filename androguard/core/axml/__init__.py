@@ -2555,8 +2555,6 @@ class ARSCResTableConfig:
 
         You can find how android process this at http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#3243
 
-
-        ..todo:: This name might not have all properties set! Therefore returned values might not reflect the true qualifier name!
         :return: str
         """
         res = []
