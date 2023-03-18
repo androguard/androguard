@@ -15,7 +15,7 @@ import io
 import sys
 
 # Constants for ARSC Files
-# see http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#215
+# see http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#233
 RES_NULL_TYPE = 0x0000
 RES_STRING_POOL_TYPE = 0x0001
 RES_TABLE_TYPE = 0x0002
@@ -1141,6 +1141,7 @@ class AXMLPrinter:
             uri = "{{{}}}".format(uri)
         return uri
 
+# See http://aospxref.com/android-13.0.0_r3/xref/frameworks/native/include/android/configuration.h#56
 
 ACONFIGURATION_ORIENTATION_ANY  = 0x0000
 ACONFIGURATION_ORIENTATION_PORT = 0x0001
@@ -1229,6 +1230,7 @@ ACONFIGURATION_SCREEN_ROUND = 0x8000
 ACONFIGURATION_COLOR_MODE = 0x10000
 ACONFIGURATION_MNC_ZERO = 0xffff
 
+# See http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#946
 
 ORIENTATION_ANY = ACONFIGURATION_ORIENTATION_ANY
 ORIENTATION_PORT = ACONFIGURATION_ORIENTATION_PORT
@@ -1329,8 +1331,6 @@ SHIFT_HDR = 2
 HDR_ANY = ACONFIGURATION_HDR_ANY << SHIFT_HDR
 HDR_NO = ACONFIGURATION_HDR_NO << SHIFT_HDR
 HDR_YES = ACONFIGURATION_HDR_YES << SHIFT_HDR
-
-
 
 
 class ARSCParser:
@@ -2552,6 +2552,9 @@ class ARSCResTableConfig:
         * `hdpi-v4`
 
         All possible qualifiers are listed in table 2 of https://developer.android.com/guide/topics/resources/providing-resources
+
+        You can find how android process this at http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#3243
+
 
         ..todo:: This name might not have all properties set! Therefore returned values might not reflect the true qualifier name!
         :return: str
