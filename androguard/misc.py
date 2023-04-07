@@ -61,8 +61,8 @@ def AnalyzeAPK(_file, session=None, raw=False):
         # this way...
         d = []
         dx = Analysis()
-        for dex in a.get_all_dex():
-            df = dex.DEX(dex, using_api=a.get_target_sdk_version())
+        for dex_bytes in a.get_all_dex():
+            df = dex.DEX(dex_bytes, using_api=a.get_target_sdk_version())
             dx.add(df)
             d.append(df)
             df.set_decompiler(decompiler.DecompilerDAD(d, dx))
