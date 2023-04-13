@@ -447,8 +447,9 @@ class AXMLParser:
             self._valid = False
             return
         
-        self.buff.seek(axml_header.header_size + header.size)
         self.sb = StringBlock(self.buff, header)
+        
+        self.buff.seek(axml_header.header_size + header.size)
 
         # Stores resource ID mappings, if any
         self.m_resourceIDs = []
