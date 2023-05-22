@@ -1115,6 +1115,14 @@ class APK:
         """
         return list(self.get_all_attribute_value("provider", "name"))
 
+    def get_meta_data_names(self, apk):
+        """
+        Return the android:name attribute of <meta-data> entries.
+
+        :rtype: a list of str
+        """
+        return list(self.get_all_attribute_value("meta-data", "name"))
+
     def get_res_value(self, name):
         """
         Return the literal value with a resource id
