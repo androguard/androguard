@@ -19,7 +19,7 @@ from loguru import logger
 
 
 from androguard.core import mutf8
-from .dvm_types import (
+from .dex_types import (
         TypeMapItem,
         ACCESS_FLAGS,
         TYPE_DESCRIPTOR,
@@ -172,7 +172,7 @@ FIELD_WRITE_DVM_OPCODES = [".put"]
 
 BREAK_DVM_OPCODES = ["invoke.", "move.", ".put", "if."]
 
-BRANCH_DVM_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
+BRANCH_DEX_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
                       "return.", "packed-switch$", "sparse-switch$"]
 
 
@@ -399,7 +399,7 @@ def determineException(vm, m):
     """
     Returns try-catch handler inside the method.
 
-    :param vm: a :class:`~DalvikVMFormat`
+    :param vm: a :class:`~DEX`
     :param m: a :class:`~EncodedMethod`
     :return:
     """
@@ -4373,20 +4373,6 @@ class Instruction:
         """
         raise Exception("not implemented")
 
-    def get_formatted_operands(self):
-        """
-        Returns the formatted operands, if any.
-        This is a list with the parsed and interpreted operands
-        of the opcode.
-
-        Returns None if no operands, otherwise a List
-
-        .. deprecated:: 3.4.0
-            Will be removed! This method always returns None
-        """
-        warnings.warn("deprecated, this class will be removed!", DeprecationWarning)
-        return None
-
     def get_hex(self):
         """
         Returns a HEX String, separated by spaces every byte
@@ -6491,9 +6477,7 @@ class LinearSweepAlgorithm:
                 else:
                     obj = get_instruction(cm, op_value & 0xff, insn[idx:])
             except InvalidInstruction as e:
-                # TODO somehow it would be nice to know that the parsing failed at the level of EncodedMethod or for the decompiler
-                logger.error("Invalid instruction encountered! Stop parsing bytecode at idx %s. Message: %s", idx, e)
-                return
+                raise InvalidInstruction("Invalid instruction encountered! Stop parsing bytecode at idx %s. Message: %s", idx, e)
             # emit instruction
             yield obj
             idx += obj.get_length()
@@ -7186,16 +7170,6 @@ class MapItem:
         self.item = item
 
 
-class OffObj:
-    def __init__(self, o):
-        """
-        .. deprecated:: 3.3.5
-            Will be removed!
-        """
-        warnings.warn("deprecated, this class will be removed!", DeprecationWarning)
-        self.off = o
-
-
 class ClassManager:
     """
     This class is used to access to all elements (strings, type, proto ...) of the dex format
@@ -7204,7 +7178,7 @@ class ClassManager:
 
     def __init__(self, vm):
         """
-        :param DalvikVMFormat vm: the VM to create a ClassManager for
+        :param DEX vm: the VM to create a ClassManager for
         """
         self.vm = vm
         self.buff = vm
@@ -7270,14 +7244,6 @@ class ClassManager:
     def get_string_by_offset(self, offset):
         return self.__strings_off[offset]
 
-    def get_lazy_analysis(self):
-        """
-        .. deprecated:: 3.3.5
-            do not use this function anymore!
-        """
-        warnings.warn("deprecated, this method always returns False!", DeprecationWarning)
-        return False
-
     def set_decompiler(self, decompiler):
         self.decompiler_ob = decompiler
 
@@ -7286,22 +7252,6 @@ class ClassManager:
 
     def get_analysis(self):
         return self.analysis_dex
-
-    def get_engine(self):
-        """
-        .. deprecated:: 3.3.5
-            do not use this function anymore!
-        """
-        warnings.warn("deprecated, this method always returns None!", DeprecationWarning)
-        return None
-
-    def get_all_engine(self):
-        """
-        .. deprecated:: 3.3.5
-            do not use this function anymore!
-        """
-        warnings.warn("deprecated, this method always returns None!", DeprecationWarning)
-        return None
 
     def add_type_item(self, type_item, c_item, item):
         self.__manage_item[type_item] = item
@@ -8332,30 +8282,6 @@ class DEX:
                         j.get_descriptor()))
                     setattr(_class.F, name, j)
 
-    def get_BRANCH_DVM_OPCODES(self):
-        """
-        .. deprecated:: 3.4.0
-            Will be removed!
-        """
-        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-        return BRANCH_DVM_OPCODES
-
-    def get_determineNext(self):
-        """
-        .. deprecated:: 3.4.0
-            Will be removed!
-        """
-        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-        return determineNext
-
-    def get_determineException(self):
-        """
-        .. deprecated:: 3.4.0
-            Will be removed!
-        """
-        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-        return determineException
-
     def set_decompiler(self, decompiler):
         self.CM.set_decompiler(decompiler)
 
@@ -8429,26 +8355,6 @@ class DEX:
 
         return Root
 
-    def print_classes_hierarchy(self):
-        """
-        .. deprecated:: 3.4.0
-            Will be removed!
-        """
-        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-
-        def print_map(node, l, lvl=0):
-            for n in node.children:
-                if lvl == 0:
-                    l.append("%s" % n.title)
-                else:
-                    l.append("{} {}".format('\t' * lvl, n.title))
-                if len(n.children) > 0:
-                    print_map(n, l, lvl + 1)
-
-        l = []
-        print_map(self._get_class_hierarchy(), l)
-        return l
-
     def list_classes_hierarchy(self):
         """
         Get a tree structure of the classes.
@@ -8478,46 +8384,6 @@ class DEX:
         print_map(self._get_class_hierarchy(), l)
 
         return l
-
-    def get_format(self):
-        """
-        .. deprecated:: 3.4.0
-            Will be removed!
-        """
-        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-        objs = self.map_list.get_obj()
-
-        h = {}
-        index = {}
-        self._get_objs(h, index, objs)
-
-        return h, index
-
-    def _get_objs(self, h, index, objs):
-        """
-        .. deprecated:: 3.4.0
-            Will be removed!
-        """
-        warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-        for i in objs:
-            if isinstance(i, list):
-                self._get_objs(h, index, i)
-            else:
-                try:
-                    if i is not None:
-                        h[i] = {}
-                        index[i] = i.offset
-                except AttributeError:
-                    pass
-
-                try:
-                    if not isinstance(i, MapList):
-                        next_objs = i.get_obj()
-                        if isinstance(next_objs, list):
-                            self._get_objs(h[i], index, next_objs)
-                except AttributeError:
-                    pass
-
 
 class OdexHeaderItem:
     """

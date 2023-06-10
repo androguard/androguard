@@ -11,7 +11,7 @@ class AnalysisTest(unittest.TestCase):
     def testDex(self):
         with open("examples/android/TestsAndroguard/bin/classes.dex",
                   "rb") as fd:
-            d = dvm.DalvikVMFormat(fd.read())
+            d = dvm.DEX(fd.read())
             dx = analysis.Analysis(d)
             self.assertIsInstance(dx, analysis.Analysis)
 
@@ -46,7 +46,7 @@ class AnalysisTest(unittest.TestCase):
         h, d, dx = AnalyzeDex("examples/tests/AnalysisTest.dex")
 
         self.assertEqual(h, "4595fc25104f3fcd709163eb70ca476edf116753607ec18f09548968c71910dc")
-        self.assertIsInstance(d, dvm.DalvikVMFormat)
+        self.assertIsInstance(d, dvm.DEX)
         self.assertIsInstance(dx, analysis.Analysis)
 
         cls = ["Ljava/io/PrintStream;", "Ljava/lang/Object;",
@@ -73,8 +73,8 @@ class AnalysisTest(unittest.TestCase):
             c1 = myzip.read("classes.dex")
             c2 = myzip.read("classes2.dex")
 
-        d1 = dvm.DalvikVMFormat(c1)
-        d2 = dvm.DalvikVMFormat(c2)
+        d1 = dvm.DEX(c1)
+        d2 = dvm.DEX(c2)
 
         dx = analysis.Analysis()
 
@@ -129,7 +129,7 @@ class AnalysisTest(unittest.TestCase):
     def testXrefs(self):
         """Test if XREFs produce the correct results"""
         with open("examples/android/TestsAndroguard/bin/classes.dex", "rb") as fd:
-            d = dvm.DalvikVMFormat(fd.read())
+            d = dvm.DEX(fd.read())
             dx = analysis.Analysis(d)
 
         dx.create_xref()

@@ -2,8 +2,10 @@
 import unittest
 from lxml import etree
 
-from androguard.core.bytecodes import apk, axml
-from androguard.core.bytecodes.apk import APK
+import sys
+sys.path.append('.')
+
+from androguard.core import apk, axml
 from operator import itemgetter
 
 TEST_APP_NAME = "TestsAndroguardApplication"
@@ -120,7 +122,7 @@ class ARSCTest(unittest.TestCase):
                          "received unexpected resource types: %s" % unexpected_types)
 
     def testFallback(self):
-        a = APK("examples/tests/com.teleca.jamendo_35.apk")
+        a = apk.APK("examples/tests/com.teleca.jamendo_35.apk")
 
         # Should use the fallback
         self.assertEqual(a.get_app_name(), "Jamendo")

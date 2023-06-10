@@ -14,7 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+
 import struct
 import sys
 from collections import defaultdict
@@ -22,27 +22,27 @@ from collections import defaultdict
 from loguru import logger
 
 import androguard.core.androconf as androconf
-import androguard.decompiler.dad.util as util
+import androguard.decompiler.util as util
 from androguard.core.analysis import analysis
 from androguard.core import apk, dex
-from androguard.decompiler.dad.control_flow import identify_structures
-from androguard.decompiler.dad.dast import (
+from androguard.decompiler.control_flow import identify_structures
+from androguard.decompiler.dast import (
     JSONWriter,
     parse_descriptor,
     literal_string,
     literal_hex_int,
     dummy
 )
-from androguard.decompiler.dad.dataflow import (
+from androguard.decompiler.dataflow import (
     build_def_use,
     place_declarations,
     dead_code_elimination,
     register_propagation,
     split_variables
 )
-from androguard.decompiler.dad.graph import construct, simplify, split_if_nodes
-from androguard.decompiler.dad.instruction import Param, ThisParam
-from androguard.decompiler.dad.writer import Writer
+from androguard.decompiler.graph import construct, simplify, split_if_nodes
+from androguard.decompiler.instruction import Param, ThisParam
+from androguard.decompiler.writer import Writer
 from androguard.util import readFile
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="dad", level="INFO")
@@ -446,7 +446,7 @@ class DvMachine:
     Wrapper class for a Dalvik Object, like a DEX or ODEX file.
 
     The wrapper allows to take a Dalvik file and get a list of Classes out of it.
-    The :class:`~androguard.decompiler.dad.decompile.DvMachine` can take either an APK file directly,
+    The :class:`~androguard.decompiler.decompile.DvMachine` can take either an APK file directly,
     where all DEX files from the multidex are used, or a single DEX or ODEX file as an argument.
 
     At first, :py:attr:`classes` contains only :class:`~androguard.core.bytecodes.dvm.ClassDefItem` as values.
@@ -507,7 +507,7 @@ class DvMachine:
         """
         Process all classes inside the machine.
 
-        This calls :meth:`~androgaurd.decompiler.dad.decompile.DvClass.process` on each :class:`DvClass`.
+        This calls :meth:`~androgaurd.decompiler.decompile.DvClass.process` on each :class:`DvClass`.
         """
         for name, klass in self.classes.items():
             logger.debug('Processing class: %s', name)
@@ -522,7 +522,7 @@ class DvMachine:
         Calls `show_source` on all classes inside the machine.
         This prints the source to stdout.
 
-        This calls :meth:`~androgaurd.decompiler.dad.decompile.DvClass.show_source` on each :class:`DvClass`.
+        This calls :meth:`~androgaurd.decompiler.decompile.DvClass.show_source` on each :class:`DvClass`.
         """
         for klass in self.classes.values():
             klass.show_source()
@@ -554,53 +554,3 @@ class DvMachine:
             cls.process(doAST=True)
             ret[name] = cls.get_ast()
         return ret
-
-
-sys.setrecursionlimit(5000)
-
-
-def main():
-    # logger.setLevel(logging.DEBUG) for debugging output
-    # comment the line to disable the logging.
-    logger.setLevel(logging.INFO)
-    console_hdlr = logging.StreamHandler(sys.stdout)
-    console_hdlr.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
-    logger.addHandler(console_hdlr)
-
-    default_file = 'examples/android/TestsAndroguard/bin/TestActivity.apk'
-    if len(sys.argv) > 1:
-        machine = DvMachine(sys.argv[1])
-    else:
-        machine = DvMachine(default_file)
-
-    logger.info('========================')
-    logger.info('Classes:')
-    for class_name in sorted(machine.get_classes()):
-        logger.info(' %s', class_name)
-    logger.info('========================')
-
-    cls_name = input('Choose a class (* for all classes): ')
-    if cls_name == '*':
-        machine.process_and_show()
-    else:
-        cls = machine.get_class(cls_name)
-        if cls is None:
-            logger.error('%s not found.', cls_name)
-        else:
-            logger.info('======================')
-            for i, method in enumerate(cls.get_methods()):
-                logger.info('%d: %s', i, method.name)
-            logger.info('======================')
-            meth = input('Method (* for all methods): ')
-            if meth == '*':
-                logger.info('CLASS = %s', cls)
-                cls.process()
-            else:
-                cls.process_method(int(meth))
-            logger.info('Source:')
-            logger.info('===========================')
-            cls.show_source()
-
-
-if __name__ == '__main__':
-    main()

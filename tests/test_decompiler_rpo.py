@@ -5,8 +5,8 @@ import sys
 sys.path.append('.')
 
 import unittest
-from androguard.decompiler.dad import graph
-from androguard.decompiler.dad import node
+from androguard.decompiler import graph
+from androguard.decompiler import node
 
 
 class NodeTest(node.Node):

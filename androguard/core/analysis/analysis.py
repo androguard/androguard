@@ -12,7 +12,7 @@ from loguru import logger
 
 
 BasicOPCODES = set()
-for i in dex.BRANCH_DVM_OPCODES:
+for i in dex.BRANCH_DEX_OPCODES:
     p = re.compile(i)
     for op, items in dex.DALVIK_OPCODES_FORMAT.items():
         if p.match(items[1][0]):
@@ -39,9 +39,9 @@ class REF_TYPE(IntEnum):
     INVOKE_INTERFACE_RANGE = 0x78
 
 
-class DVMBasicBlock:
+class DEXBasicBlock:
     """
-    A simple basic block of a dalvik method.
+    A simple basic block of a DEX method.
 
     A basic block consists of a series of :class:`~androguard.core.bytecodes.dvm.Instruction`
     which are not interrupted by branch or jump instructions such as `goto`, `if`, `throw`, `return`, `switch` etc.
@@ -143,7 +143,7 @@ class DVMBasicBlock:
         Get next basic blocks
 
         :returns: a list of the next basic blocks
-        :rtype: DVMBasicBlock
+        :rtype: DEXBasicBlock
         """
         return self.childs
 
@@ -152,7 +152,7 @@ class DVMBasicBlock:
         Get previous basic blocks
 
         :returns: a list of the previous basic blocks
-        :rtype: DVMBasicBlock
+        :rtype: DEXBasicBlock
         """
         return self.fathers
 
@@ -223,7 +223,7 @@ class BasicBlocks:
     """
     This class represents all basic blocks of a method.
 
-    It is a collection of many :class:`DVMBasicBlock`.
+    It is a collection of many :class:`DEXBasicBlock`.
     """
     def __init__(self):
         self.bb = []
@@ -232,7 +232,7 @@ class BasicBlocks:
         """
         Adds another basic block to the collection
 
-        :param DVBMBasicBlock bb: the DVMBasicBlock to add
+        :param DVBMBasicBlock bb: the DEXBasicBlock to add
         """
         self.bb.append(bb)
 
@@ -250,8 +250,8 @@ class BasicBlocks:
 
     def __iter__(self):
         """
-        :returns: yields each basic block (:class:`DVMBasicBlock` object)
-        :rtype: Iterator[DVMBasicBlock]
+        :returns: yields each basic block (:class:`DEXBasicBlock` object)
+        :rtype: Iterator[DEXBasicBlock]
         """
         yield from self.bb
 
@@ -261,13 +261,13 @@ class BasicBlocks:
 
         :param item: index
         :return: The basic block
-        :rtype: DVMBasicBlock
+        :rtype: DEXBasicBlock
         """
         return self.bb[item]
 
     def gets(self):
         """
-        :returns: a list of basic blocks (:class:`DVMBasicBlock` objects)
+        :returns: a list of basic blocks (:class:`DEXBasicBlock` objects)
         """
         return self.bb
 
@@ -336,9 +336,9 @@ class MethodAnalysis:
     """
     This class analyses in details a method of a class/dex file
     It is a wrapper around a :class:`EncodedMethod` and enhances it
-    by using multiple :class:`DVMBasicBlock` encapsulated in a :class:`BasicBlocks` object.
+    by using multiple :class:`DEXBasicBlock` encapsulated in a :class:`BasicBlocks` object.
 
-    :type vm: a :class:`DalvikVMFormat` object
+    :type vm: a :class:`DEX` object
     :type method: a :class:`EncodedMethod` object
     """
     def __init__(self, vm, method):
@@ -417,7 +417,7 @@ class MethodAnalysis:
         Internal Method to create the basic block structure
         Parses all instructions and exceptions.
         """
-        current_basic = DVMBasicBlock(0, self.__vm, self.method, self.basic_blocks)
+        current_basic = DEXBasicBlock(0, self.__vm, self.method, self.basic_blocks)
         self.basic_blocks.push(current_basic)
 
         l = []
@@ -442,14 +442,14 @@ class MethodAnalysis:
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
-                    current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
+                    current_basic = DEXBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                     self.basic_blocks.push(current_basic)
 
             current_basic.push(ins)
 
             # index is a branch instruction
             if idx in h:
-                current_basic = DVMBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
+                current_basic = DEXBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
                 self.basic_blocks.push(current_basic)
 
         if current_basic.get_nb_instructions() == 0:
@@ -646,7 +646,7 @@ class MethodAnalysis:
 
     def get_vm(self):
         """
-        :rtype: androguard.core.bytecodes.dvm.DalvikVMFormat
+        :rtype: androguard.core.bytecodes.dvm.DEX
         :return:
         """
         return self.__vm
@@ -972,13 +972,13 @@ class ExternalMethod:
 class ClassAnalysis:
     """
     ClassAnalysis contains the XREFs from a given Class.
-    It is also used to wrap :class:`~androguard.core.bytecode.dvm.ClassDefItem`, which
+    It is also used to wrap :class:`~androguard.core.dex.ClassDefItem`, which
     contain the actual class content like bytecode.
 
     Also external classes will generate xrefs, obviously only XREF_FROM are
     shown for external classes.
 
-    :param classobj: class:`~androguard.core.bytecode.dvm.ClassDefItem` or :class:`ExternalClass`
+    :param classobj: class:`~androguard.core.dex.ClassDefItem` or :class:`ExternalClass`
     """
 
     def __init__(self, classobj):
@@ -1370,29 +1370,16 @@ class ClassAnalysis:
         return data
 
 
-class MethodClassAnalysis(MethodAnalysis):
-    """
-
-    .. deprecated:: 3.4.0
-
-        Always use MethodAnalysis!
-        This method is just here for compatability
-
-    """
-    def __init__(self, meth):
-        super().__init__(meth.cm.vm, meth)
-
-
 class Analysis:
     """
     Analysis Object
 
-    The Analysis contains a lot of information about (multiple) DalvikVMFormat objects
+    The Analysis contains a lot of information about (multiple) DEX objects
     Features are for example XREFs between Classes, Methods, Fields and Strings.
     Yet another part is the creation of BasicBlocks, which is important in the usage of
     the Androguard Decompiler.
 
-    Multiple DalvikVMFormat Objects can be added using the function :meth:`add`.
+    Multiple DEX Objects can be added using the function :meth:`add`.
 
     XREFs are created for:
     * classes (`ClassAnalysis`)
@@ -1402,12 +1389,12 @@ class Analysis:
 
     The Analysis should be the only object you are using next to the :class:`~androguard.core.bytecodes.apk.APK`.
     It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
-    the functions from :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat` and the related classes.
+    the functions from :class:`~androguard.core.bytecodes.dvm.DEX` and the related classes.
 
-    :param Optional[androguard.core.bytecodes.dvm.DalvikVMFormat] vm: inital DalvikVMFormat object (default None)
+    :param Optional[androguard.core.bytecodes.dvm.DEX] vm: inital DEX object (default None)
     """
     def __init__(self, vm=None):
-        # Contains DalvikVMFormat objects
+        # Contains DEX objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
         self.classes = dict()
@@ -1426,9 +1413,9 @@ class Analysis:
 
     def add(self, vm):
         """
-        Add a DalvikVMFormat to this Analysis.
+        Add a DEX to this Analysis.
 
-        :param androguard.core.bytecodes.dvm.DalvikVMFormat vm: :class:`dvm.DalvikVMFormat` to add to this Analysis
+        :param androguard.core.bytecodes.dvm.DEX vm: :class:`dvm.DEX` to add to this Analysis
         """
         self.vms.append(vm)
 
@@ -1525,7 +1512,7 @@ class Analysis:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
                     type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
-                    if type_info[0] != b'L':
+                    if type_info[0] != 'L':
                         # Need to make sure, that we get class types and not other types
                         continue
 
@@ -1566,7 +1553,7 @@ class Analysis:
                         continue
 
                     class_info = method_info[0].lstrip('[')
-                    if class_info[0] != b'L':
+                    if class_info[0] != 'L':
                         # Need to make sure, that we get class types and not other types
                         # If another type, like int is used, we simply skip it.
                         continue
@@ -1736,7 +1723,7 @@ class Analysis:
     def get_internal_classes(self):
         """
         Returns all external classes, that means all classes that are
-        defined in the given set of :class:`~DalvikVMFormat`.
+        defined in the given set of :class:`~DEX`.
 
         :rtype: Iterator[ClassAnalysis]
         """
@@ -2018,7 +2005,7 @@ def is_ascii_obfuscation(vm):
     Tests if any class inside a DalvikVMObject
     uses ASCII Obfuscation (e.g. UTF-8 Chars in Classnames)
 
-    :param androguard.core.bytecodes.dvm.DalvikVMFormat vm: `DalvikVMObject`
+    :param androguard.core.bytecodes.dvm.DEX vm: `DalvikVMObject`
     :return: True if ascii obfuscation otherwise False
     :rtype: bool
     """

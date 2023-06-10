@@ -1,4 +1,4 @@
-from androguard.core.bytecodes.dvm_types import TypeMapItem
+from androguard.core.bytecodes.dex_types import TypeMapItem
 
 import unittest
 

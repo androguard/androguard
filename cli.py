@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Androguard is a full Python tool to play with Android files."""
-
+"""Androguard is a full Python tool to reverse Android Applications."""
 
 # core modules
 import sys, json
-from loguru import logger
-
 
 # 3rd party modules
 import click
-
-import androguard.core.apk
+from loguru import logger
 
 # local modules
 import androguard
+import androguard.core.apk
 
-from androguard.core.androconf import show_logging
 from main import (androarsc_main,
                   androaxml_main,
                   export_apps_to_format,
                   androsign_main,
                   androlyze_main,
-                  androgui_main,
                   androdis_main,
-                  androstrace_main,
                   androtrace_main,
                   androdump_main,
 )
@@ -47,6 +41,7 @@ def entry_point(verbosity):
        logger.remove(0)
        my_filter = MyFilter("INFO")
        logger.add(sys.stderr, filter=my_filter, level=0)
+    logger.add("androguard.log", retention="10 days")
     
 
 @entry_point.command()
@@ -368,22 +363,6 @@ def apkid(apks):
 
 @entry_point.command()
 @click.option(
-    '--input_file', '-i',
-    help="Specify the inital file to load in the GUI",
-    type=click.Path(exists=True, dir_okay=False, file_okay=True),
-)
-@click.option(
-    '--input_plugin', '-p',
-    help="Additional Plugin (currently unused)",
-    type=click.Path(exists=True),
-)
-def gui(input_file, input_plugin):
-    """Androguard GUI"""
-    androgui_main(input_file, input_plugin)
-
-
-@entry_point.command()
-@click.option(
     '--session',
     help='Previously saved session to load instead of a file',
     type=click.Path(exists=True),
@@ -418,25 +397,6 @@ def disassemble(offset, size, dex):
     """
     androdis_main(offset, size, dex)
 
-
-@entry_point.command()
-@click.argument(
-    'apk',
-    default=None,
-    required=False,
-    type=click.Path(exists=True, dir_okay=False, file_okay=True),
-)
-def strace(apk):
-    """
-    Push an APK on the phone and start to trace all syscalls.
-
-    Example:
-
-    \b
-        $ androguard strace test.APK
-    """
-    androstrace_main(apk)
-
 @entry_point.command()
 @click.argument(
     'apk',
@@ -447,8 +407,12 @@ def strace(apk):
 @click.option("-m", "--modules",
         multiple=True, default=[],
         help="A list of modules to load in frida")
-
-def trace(apk, modules):
+@click.option(
+    '--enable-ui', is_flag=True,
+    default=False,
+    help='Enable UI',
+)
+def trace(apk, modules, enable_ui):
     """
     Push an APK on the phone and start to trace all interesting methods from the modules list
 
@@ -456,8 +420,9 @@ def trace(apk, modules):
 
     \b
         $ androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**"
+        $ androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**" --enable-ui
     """
-    androtrace_main(apk, modules, False)
+    androtrace_main(apk, modules, False, enable_ui)
 
 @entry_point.command()
 @click.argument(
@@ -492,7 +457,7 @@ def dtrace(package_name, modules):
 
 def dump(package_name, modules):
     """
-    Start dynamically an installed APK on the phone and start to trace all interesting methods from the modules list
+    Start and dump dynamically an installed APK on the phone
 
     Example:
 

@@ -14,12 +14,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 from collections import defaultdict
 
-from androguard.decompiler.dad.basic_blocks import (build_node_from_block,
+from androguard.decompiler.basic_blocks import (build_node_from_block,
                                                     StatementBlock, CondBlock)
-from androguard.decompiler.dad.instruction import Variable
+from androguard.decompiler.instruction import Variable
 
 from loguru import logger
 
@@ -62,7 +61,7 @@ class Graph:
         """
         Adds the given node to the graph, without connecting it to anyhting else.
 
-        :param androguard.decompiler.dad.node.Node node: node to add
+        :param androguard.decompiler.node.Node node: node to add
         """
         self.nodes.append(node)
 
@@ -86,7 +85,7 @@ class Graph:
         """
         Remove the node from the graph, removes also all connections.
 
-        :param androguard.decompiler.dad.node.Node node: the node to remove
+        :param androguard.decompiler.node.Node node: the node to remove
         """
         preds = self.reverse_edges.get(node, [])
         for pred in preds:
@@ -146,7 +145,7 @@ class Graph:
 
     def post_order(self):
         """
-        Yields the :class`~androguard.decompiler.dad.node.Node`s of the graph in post-order i.e we visit all the
+        Yields the :class`~androguard.decompiler.node.Node`s of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
         """
         def _visit(n, cnt):
@@ -480,7 +479,7 @@ def construct(start_block, vmap, exceptions):
     """
     Constructs a CFG
 
-    :param androguard.core.analysis.analysis.DVMBasicBlock start_block: The startpoint
+    :param androguard.core.analysis.analysis.DEXBasicBlock start_block: The startpoint
     :param vmap: variable mapping
     :param exceptions: list of androguard.core.analysis.analysis.ExceptionAnalysis
 

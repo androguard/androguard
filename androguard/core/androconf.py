@@ -3,12 +3,11 @@ import os
 import logging
 import tempfile
 from colorama import init, Fore
+from loguru import logger
 
 from androguard import __version__
 from androguard.core.api_specific_resources import load_permission_mappings, load_permissions
 ANDROGUARD_VERSION = __version__
-
-log = logging.getLogger("androguard.default")
 
 
 # initialize colorama, only has an effect on windows
@@ -169,30 +168,6 @@ def is_android_raw(raw):
 
     return val
 
-
-def show_logging(level=logging.INFO):
-    """
-    enable log messages on stdout
-
-    We will catch all messages here! From all loggers...
-    """
-    logger = logging.getLogger()
-
-    h = logging.StreamHandler(stream=sys.stderr)
-    h.setFormatter(logging.Formatter(fmt="[%(levelname)-8s] %(name)s: %(message)s"))
-
-    logger.addHandler(h)
-    logger.setLevel(level)
-
-
-def set_options(key, value):
-    """
-    .. deprecated:: 3.3.5
-        Use :code:`CONF[key] = value` instead
-    """
-    CONF[key] = value
-
-
 def rrmdir(directory):
     """
     Recursivly delete a directory
@@ -300,8 +275,8 @@ def load_api_specific_resource_module(resource_name, api=None):
 
     if ret == {}:
         # No API mapping found, return default
-        log.warning("API mapping for API level {} was not found! "
-                    "Returning default, which is API level {}".format(api, CONF['DEFAULT_API']))
+        logger.warning("API mapping for API level {} was not found! "
+                       "Returning default, which is API level {}".format(api, CONF['DEFAULT_API']))
         ret = loader[resource_name](CONF['DEFAULT_API'])
 
     return ret

@@ -1,10 +1,12 @@
 import unittest
 
-import sys
 from xml.dom import minidom
 from lxml import etree
 
-from androguard.core.bytecodes import axml
+import sys
+sys.path.append("./")
+
+from androguard.core import axml
 from androguard.core import bytecode
 
 def is_valid_manifest(tree):

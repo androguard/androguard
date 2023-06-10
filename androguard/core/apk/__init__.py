@@ -15,19 +15,17 @@ import logging
 from struct import unpack
 import hashlib
 import warnings
-import sys
 
 # External dependecies
-from loguru import logger
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
+from loguru import logger
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{{{}}}'.format(NS_ANDROID_URI)  # Namespace as used by etree
 
-log = logging.getLogger("androguard.apk")
 
 
 def parse_lxml_dom(tree):
@@ -505,7 +503,7 @@ class APK:
                     res_id,
                     ARSCResTableConfig.default_config())[0][1]
             except Exception as e:
-                log.warning("Exception selecting app name: %s" % e)
+                logger.warning("Exception selecting app name: %s" % e)
         return app_name
 
     def get_app_icon(self, max_dpi=65536):
@@ -651,14 +649,14 @@ class APK:
             import magic
         except ImportError:
             self.__no_magic = True
-            log.warning("No Magic library was found on your system.")
+            logger.warning("No Magic library was found on your system.")
             return default
         except TypeError as e:
             self.__no_magic = True
-            log.warning("It looks like you have the magic python package installed but not the magic library itself!")
-            log.warning("Error from magic library: %s", e)
-            log.warning("Please follow the installation instructions at https://github.com/ahupp/python-magic/#installation")
-            log.warning("You can also install the 'python-magic-bin' package on Windows and MacOS")
+            logger.warning("It looks like you have the magic python package installed but not the magic library itself!")
+            logger.warning("Error from magic library: %s", e)
+            logger.warning("Please follow the installation instructions at https://github.com/ahupp/python-magic/#installation")
+            logger.warning("You can also install the 'python-magic-bin' package on Windows and MacOS")
             return default
 
         try:
@@ -669,7 +667,7 @@ class APK:
             getattr(magic, "MagicException")
         except AttributeError:
             self.__no_magic = True
-            log.warning("Not the correct Magic library was found on your "
+            logger.warning("Not the correct Magic library was found on your "
                         "system. Please install python-magic or python-magic-bin!")
             return default
 
@@ -677,7 +675,7 @@ class APK:
             # 1024 byte are usually enough to test the magic
             ftype = magic.from_buffer(buffer[:1024])
         except magic.MagicException as e:
-            log.exception("Error getting the magic type: %s", e)
+            logger.exception("Error getting the magic type: %s", e)
             return default
 
         if not ftype:
@@ -736,7 +734,7 @@ class APK:
         if filename not in self.files_crc32:
             self.files_crc32[filename] = crc32(buffer)
             if self.files_crc32[filename] != self.zip.getinfo(filename).CRC:
-                log.error("File '{}' has different CRC32 after unpacking! "
+                logger.error("File '{}' has different CRC32 after unpacking! "
                           "Declared: {:08x}, Calculated: {:08x}".format(filename,
                                                                         self.zip.getinfo(filename).CRC,
                                                                         self.files_crc32[filename]))
@@ -833,29 +831,6 @@ class APK:
         dexre = re.compile(r"^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
-    def get_elements(self, tag_name, attribute, with_namespace=True):
-        """
-        .. deprecated:: 3.3.5
-            use :meth:`get_all_attribute_value` instead
-
-        Return elements in xml files which match with the tag name and the specific attribute
-
-        :param str tag_name: a string which specify the tag name
-        :param str attribute: a string which specify the attribute
-        """
-        warnings.warn("This method is deprecated since 3.3.5.", DeprecationWarning)
-        for i in self.xml:
-            if self.xml[i] is None:
-                continue
-            for item in self.xml[i].findall('.//' + tag_name):
-                if with_namespace:
-                    value = item.get(self._ns(attribute))
-                else:
-                    value = item.get(attribute)
-                # There might be an attribute without the namespace
-                if value:
-                    yield self._format_value(value)
-
     def _format_value(self, value):
         """
         Format a value with packagename, if not already set.
@@ -876,41 +851,6 @@ class APK:
                 # Not a single dot
                 value = self.package + "." + value
         return value
-
-    def get_element(self, tag_name, attribute, **attribute_filter):
-        """
-        .. deprecated:: 3.3.5
-            use :meth:`get_attribute_value` instead
-
-        Return element in xml files which match with the tag name and the specific attribute
-
-        :param str tag_name: specify the tag name
-        :param str attribute: specify the attribute
-        :rtype: str
-        """
-        warnings.warn("This method is deprecated since 3.3.5.", DeprecationWarning)
-        for i in self.xml:
-            if self.xml[i] is None:
-                continue
-            tag = self.xml[i].findall('.//' + tag_name)
-            if len(tag) == 0:
-                return None
-            for item in tag:
-                skip_this_item = False
-                for attr, val in list(attribute_filter.items()):
-                    attr_val = item.get(self._ns(attr))
-                    if attr_val != val:
-                        skip_this_item = True
-                        break
-
-                if skip_this_item:
-                    continue
-
-                value = item.get(self._ns(attribute))
-
-                if value is not None:
-                    return value
-        return None
 
     def get_all_attribute_value(
         self, tag_name, attribute, format_value=True, **attribute_filter
@@ -987,7 +927,7 @@ class APK:
 
             if value:
                 # If value is still None, the attribute could not be found, thus is not present
-                log.warning("Failed to get the attribute '{}' on tag '{}' with namespace. "
+                logger.warning("Failed to get the attribute '{}' on tag '{}' with namespace. "
                             "But found the same attribute without namespace!".format(attribute, tag.tag))
         return value
 
@@ -1088,7 +1028,7 @@ class APK:
                         if activity is not None:
                             x.add(item.get(self._ns("name")))
                         else:
-                            log.warning('Main activity without name')
+                            logger.warning('Main activity without name')
 
                 for sitem in item.findall(".//category"):
                     val = sitem.get(self._ns("name"))
@@ -1097,7 +1037,7 @@ class APK:
                         if activity is not None:
                             y.add(item.get(self._ns("name")))
                         else:
-                            log.warning('Launcher activity without name')
+                            logger.warning('Launcher activity without name')
 
         return x.intersection(y)
 
@@ -1190,7 +1130,7 @@ class APK:
                 res_id,
                 ARSCResTableConfig.default_config())[0][1]
         except Exception as e:
-            log.warning("Exception get resolved resource id: %s" % e)
+            logger.warning("Exception get resolved resource id: %s" % e)
             return name
 
         return value
@@ -1353,20 +1293,6 @@ class APK:
                 l[i] = ["normal", "Unknown permission from android reference",
                         "Unknown permission from android reference"]
         return self._fill_deprecated_permissions(l)
-
-    def get_requested_permissions(self):
-        """
-        .. deprecated:: 3.1.0
-            use :meth:`get_permissions` instead.
-
-        Returns all requested permissions.
-
-        It has the same result as :meth:`get_permissions` and might be removed in the future
-
-        :rtype: list of str
-        """
-        warnings.warn("This method is deprecated since 3.1.0.", DeprecationWarning)
-        return self.get_permissions()
 
     def get_requested_aosp_permissions(self):
         """
@@ -2093,7 +2019,7 @@ class APK:
                 if "{}.SF".format(i.rsplit(".", 1)[0]) in self.get_files():
                     signatures.append(i)
                 else:
-                    log.warning("v1 signature file {} missing .SF file - Partial signature!".format(i))
+                    logger.warning("v1 signature file {} missing .SF file - Partial signature!".format(i))
 
         return signatures
 

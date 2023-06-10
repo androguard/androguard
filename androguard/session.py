@@ -3,14 +3,10 @@ from androguard.core import dex, apk
 from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.core import androconf
 
-
 import hashlib
-import os
-import sys
 import collections
 import dataset
 
-import datetime
 from loguru import logger
 
 class Session:
@@ -85,7 +81,7 @@ class Session:
         # classes
         self.analyzed_vms = collections.OrderedDict()
 
-        # Dict of digest and DalvikVMFormat/DalvikOdexFormat
+        # Dict of digest and DEX/DalvikOdexFormat
         # Actually not needed, as we have Analysis objects which store the DEX
         # files as well, but we do not remove it here for legacy reasons
         self.analyzed_dex = dict()
@@ -168,7 +164,7 @@ class Session:
         :param data: binary data of the dex file
         :param dx: an existing Analysis Object (optional)
         :param postpone_xref: True if no xref shall be created, and will be called manually
-        :return: A tuple of SHA256 Hash, DalvikVMFormat Object and Analysis object
+        :return: A tuple of SHA256 Hash, DEX Object and Analysis object
         """
         digest = hashlib.sha256(data).hexdigest()
         logger.info("add DEX:{}".format(digest))
@@ -304,7 +300,7 @@ class Session:
 
     def get_format(self, current_class):
         """
-        Returns the :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat` of a
+        Returns the :class:`~androguard.core.bytecodes.dvm.DEX` of a
         given :class:`~androguard.core.bytecodes.dvm.ClassDefItem`.
 
         :param current_class: A ClassDefItem
@@ -374,7 +370,7 @@ class Session:
 
     def get_objects_apk(self, filename=None, digest=None):
         """
-        Returns APK, DalvikVMFormat and Analysis of a specified APK.
+        Returns APK, DEX and Analysis of a specified APK.
 
         You must specify either `filename` or `digest`.
         It is possible to use both, but in this case only `digest` is used.
@@ -394,7 +390,7 @@ class Session:
 
         :param filename: the filename of the APK file, only used of digest is None
         :param digest: the sha256 hash, as returned by :meth:`add` for the APK
-        :returns: a tuple of (APK, [DalvikVMFormat], Analysis)
+        :returns: a tuple of (APK, [DEX], Analysis)
         """
         if not filename and not digest:
             raise ValueError("Must give at least filename or digest!")
@@ -414,7 +410,7 @@ class Session:
         """
         Yields all dex objects inclduing their Analysis objects
 
-        :returns: tuple of (sha256, DalvikVMFormat, Analysis)
+        :returns: tuple of (sha256, DEX, Analysis)
         """
         # TODO: there is no variant like get_objects_apk
         for digest, d in self.analyzed_dex.items():

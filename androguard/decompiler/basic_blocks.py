@@ -15,12 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from collections import defaultdict
-from androguard.decompiler.dad.opcode_ins import INSTRUCTION_SET
-from androguard.decompiler.dad.instruction import MoveExceptionExpression
-from androguard.decompiler.dad.node import Node
-from androguard.decompiler.dad.util import get_type
+from androguard.decompiler.opcode_ins import INSTRUCTION_SET
+from androguard.decompiler.instruction import MoveExceptionExpression
+from androguard.decompiler.node import Node
+from androguard.decompiler.util import get_type
 
 from loguru import logger
 

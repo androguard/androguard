@@ -15,13 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from collections import defaultdict
-from androguard.decompiler.dad.basic_blocks import (
+from androguard.decompiler.basic_blocks import (
     CatchBlock, Condition, LoopBlock, ShortCircuitBlock, TryBlock)
-from androguard.decompiler.dad.graph import Graph
-from androguard.decompiler.dad.node import Interval
-from androguard.decompiler.dad.util import common_dom
+from androguard.decompiler.graph import Graph
+from androguard.decompiler.node import Interval
+from androguard.decompiler.util import common_dom
 
 from loguru import logger
 

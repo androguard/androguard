@@ -1507,13 +1507,13 @@
   <public type="style" name="Theme.Holo.NoActionBar.Fullscreen" id="0x0103006d" />
   <public type="style" name="Theme.Holo.Light" id="0x0103006e" />
   <public type="style" name="Theme.Holo.Dialog" id="0x0103006f" />
-  <public type="style" name="Theme.Holo.Dialog.MinWidth" id="0x01030070" />
-  <public type="style" name="Theme.Holo.Dialog.NoActionBar" id="0x01030071" />
-  <public type="style" name="Theme.Holo.Dialog.NoActionBar.MinWidth" id="0x01030072" />
+  <public type="style" name="Theme.Holo.Dialogger.MinWidth" id="0x01030070" />
+  <public type="style" name="Theme.Holo.Dialogger.NoActionBar" id="0x01030071" />
+  <public type="style" name="Theme.Holo.Dialogger.NoActionBar.MinWidth" id="0x01030072" />
   <public type="style" name="Theme.Holo.Light.Dialog" id="0x01030073" />
-  <public type="style" name="Theme.Holo.Light.Dialog.MinWidth" id="0x01030074" />
-  <public type="style" name="Theme.Holo.Light.Dialog.NoActionBar" id="0x01030075" />
-  <public type="style" name="Theme.Holo.Light.Dialog.NoActionBar.MinWidth" id="0x01030076" />
+  <public type="style" name="Theme.Holo.Light.Dialogger.MinWidth" id="0x01030074" />
+  <public type="style" name="Theme.Holo.Light.Dialogger.NoActionBar" id="0x01030075" />
+  <public type="style" name="Theme.Holo.Light.Dialogger.NoActionBar.MinWidth" id="0x01030076" />
   <public type="style" name="Theme.Holo.DialogWhenLarge" id="0x01030077" />
   <public type="style" name="Theme.Holo.DialogWhenLarge.NoActionBar" id="0x01030078" />
   <public type="style" name="Theme.Holo.Light.DialogWhenLarge" id="0x01030079" />
@@ -1792,13 +1792,13 @@
   <public type="style" name="Theme.DeviceDefault.Light.NoActionBar" id="0x0103012c" />
   <public type="style" name="Theme.DeviceDefault.Light.NoActionBar.Fullscreen" id="0x0103012d" />
   <public type="style" name="Theme.DeviceDefault.Dialog" id="0x0103012e" />
-  <public type="style" name="Theme.DeviceDefault.Dialog.MinWidth" id="0x0103012f" />
-  <public type="style" name="Theme.DeviceDefault.Dialog.NoActionBar" id="0x01030130" />
-  <public type="style" name="Theme.DeviceDefault.Dialog.NoActionBar.MinWidth" id="0x01030131" />
+  <public type="style" name="Theme.DeviceDefault.Dialogger.MinWidth" id="0x0103012f" />
+  <public type="style" name="Theme.DeviceDefault.Dialogger.NoActionBar" id="0x01030130" />
+  <public type="style" name="Theme.DeviceDefault.Dialogger.NoActionBar.MinWidth" id="0x01030131" />
   <public type="style" name="Theme.DeviceDefault.Light.Dialog" id="0x01030132" />
-  <public type="style" name="Theme.DeviceDefault.Light.Dialog.MinWidth" id="0x01030133" />
-  <public type="style" name="Theme.DeviceDefault.Light.Dialog.NoActionBar" id="0x01030134" />
-  <public type="style" name="Theme.DeviceDefault.Light.Dialog.NoActionBar.MinWidth" id="0x01030135" />
+  <public type="style" name="Theme.DeviceDefault.Light.Dialogger.MinWidth" id="0x01030133" />
+  <public type="style" name="Theme.DeviceDefault.Light.Dialogger.NoActionBar" id="0x01030134" />
+  <public type="style" name="Theme.DeviceDefault.Light.Dialogger.NoActionBar.MinWidth" id="0x01030135" />
   <public type="style" name="Theme.DeviceDefault.DialogWhenLarge" id="0x01030136" />
   <public type="style" name="Theme.DeviceDefault.DialogWhenLarge.NoActionBar" id="0x01030137" />
   <public type="style" name="Theme.DeviceDefault.Light.DialogWhenLarge" id="0x01030138" />
@@ -2369,11 +2369,11 @@
 
     <public type="style" name="Theme.Material" id="0x01030224" />
     <public type="style" name="Theme.Material.Dialog" id="0x01030225" />
-    <public type="style" name="Theme.Material.Dialog.Alert" id="0x01030226" />
-    <public type="style" name="Theme.Material.Dialog.MinWidth" id="0x01030227" />
-    <public type="style" name="Theme.Material.Dialog.NoActionBar" id="0x01030228" />
-    <public type="style" name="Theme.Material.Dialog.NoActionBar.MinWidth" id="0x01030229" />
-    <public type="style" name="Theme.Material.Dialog.Presentation" id="0x0103022a" />
+    <public type="style" name="Theme.Material.Dialogger.Alert" id="0x01030226" />
+    <public type="style" name="Theme.Material.Dialogger.MinWidth" id="0x01030227" />
+    <public type="style" name="Theme.Material.Dialogger.NoActionBar" id="0x01030228" />
+    <public type="style" name="Theme.Material.Dialogger.NoActionBar.MinWidth" id="0x01030229" />
+    <public type="style" name="Theme.Material.Dialogger.Presentation" id="0x0103022a" />
     <public type="style" name="Theme.Material.DialogWhenLarge" id="0x0103022b" />
     <public type="style" name="Theme.Material.DialogWhenLarge.NoActionBar" id="0x0103022c" />
     <public type="style" name="Theme.Material.InputMethod" id="0x0103022d" />
@@ -2390,11 +2390,11 @@
     <public type="style" name="Theme.Material.Light" id="0x01030237" />
     <public type="style" name="Theme.Material.Light.DarkActionBar" id="0x01030238" />
     <public type="style" name="Theme.Material.Light.Dialog" id="0x01030239" />
-    <public type="style" name="Theme.Material.Light.Dialog.Alert" id="0x0103023a" />
-    <public type="style" name="Theme.Material.Light.Dialog.MinWidth" id="0x0103023b" />
-    <public type="style" name="Theme.Material.Light.Dialog.NoActionBar" id="0x0103023c" />
-    <public type="style" name="Theme.Material.Light.Dialog.NoActionBar.MinWidth" id="0x0103023d" />
-    <public type="style" name="Theme.Material.Light.Dialog.Presentation" id="0x0103023e" />
+    <public type="style" name="Theme.Material.Light.Dialogger.Alert" id="0x0103023a" />
+    <public type="style" name="Theme.Material.Light.Dialogger.MinWidth" id="0x0103023b" />
+    <public type="style" name="Theme.Material.Light.Dialogger.NoActionBar" id="0x0103023c" />
+    <public type="style" name="Theme.Material.Light.Dialogger.NoActionBar.MinWidth" id="0x0103023d" />
+    <public type="style" name="Theme.Material.Light.Dialogger.Presentation" id="0x0103023e" />
     <public type="style" name="Theme.Material.Light.DialogWhenLarge" id="0x0103023f" />
     <public type="style" name="Theme.Material.Light.DialogWhenLarge.NoActionBar" id="0x01030240" />
     <public type="style" name="Theme.Material.Light.NoActionBar" id="0x01030241" />
@@ -2601,8 +2601,8 @@
     <public type="attr" name="drawableTintMode" id="0x010104d7" />
     <public type="attr" name="fraction" id="0x010104d8" />
 
-    <public type="style" name="Theme.DeviceDefault.Dialog.Alert" id="0x010302d1" />
-    <public type="style" name="Theme.DeviceDefault.Light.Dialog.Alert" id="0x010302d2" />
+    <public type="style" name="Theme.DeviceDefault.Dialogger.Alert" id="0x010302d1" />
+    <public type="style" name="Theme.DeviceDefault.Light.Dialogger.Alert" id="0x010302d2" />
 
   <!-- ===============================================================
        Resources added in version M of the platform
@@ -2639,7 +2639,7 @@
     <public type="style" name="TextAppearance.Material.Widget.Button.Inverse" id="0x010302d4" />
     <public type="style" name="Theme.Material.Light.LightStatusBar" id="0x010302d5" />
     <public type="style" name="ThemeOverlay.Material.Dialog" id="0x010302d6" />
-    <public type="style" name="ThemeOverlay.Material.Dialog.Alert" id="0x010302d7" />
+    <public type="style" name="ThemeOverlay.Material.Dialogger.Alert" id="0x010302d7" />
 
     <public type="id" name="pasteAsPlainText" id="0x01020031" />
     <public type="id" name="undo" id="0x01020032" />

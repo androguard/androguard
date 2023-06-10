@@ -5,7 +5,7 @@ import textwrap
 import json
 
 from androguard.core.androconf import CONF, color_range
-from androguard.core.dex.dvm_types import Kind, Operand
+from androguard.core.dex.dex_types import Kind, Operand
 
 
 def _PrintBanner():
@@ -462,7 +462,7 @@ def method2format(output, _format="png", mx=None, raw=None):
         d = pydot.graph_from_dot_data(buff)
         if len(d) > 1:
             # Not sure what to do in this case?!
-            log.warnig("The graph generated for '{}' has too many subgraphs! "
+            logger.warnig("The graph generated for '{}' has too many subgraphs! "
                        "Only plotting the first one.".format(output))
         for g in d:
             getattr(g, "write_" + _format.lower())(output)
@@ -509,7 +509,7 @@ def vm2json(vm):
     """
     Get a JSON representation of a DEX file
 
-    :param vm: :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat`
+    :param vm: :class:`~androguard.core.bytecodes.dvm.DEX`
     :return:
     """
     d = {"name": "root", "children": []}

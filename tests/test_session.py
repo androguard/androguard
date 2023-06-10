@@ -82,7 +82,7 @@ class SessionTest(unittest.TestCase):
 
     def testSessionClassesDex(self):
         """Test if all classes.dex are added into the session"""
-        from androguard.core.bytecodes.dvm import DalvikVMFormat
+        from androguard.core.bytecodes.dvm import DEX
         from androguard.core.analysis.analysis import Analysis
 
         s = session.Session()
@@ -97,7 +97,7 @@ class SessionTest(unittest.TestCase):
         self.assertEqual(len(dexfiles), 1)
         df = dexfiles[0]
         self.assertEqual(df[0], "0e1aa10d9ecfb1cb3781a3f885195f61505e0a4557026a07bd07bf5bd876c951")
-        self.assertIsInstance(df[1], DalvikVMFormat)
+        self.assertIsInstance(df[1], DEX)
         self.assertIsInstance(df[2], Analysis)
         self.assertIn(df[1], df[2].vms)
 

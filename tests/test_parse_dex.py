@@ -1,12 +1,13 @@
 from struct import pack, unpack
-import sys
 from binascii import hexlify
 
 # This is a very simple DEX parser, to get the bytecodes for each method
 # Output format will be:
 # <class name> <method name> <bytecode as hex string>
+import sys
+sys.path.append('.')
 
-from androguard.core.bytecodes.dvm import readuleb128, readsleb128, DalvikPacker
+from androguard.core.dex import readuleb128, readsleb128, DalvikPacker
 
 
 def read_null_terminated(f):

@@ -1,16 +1,16 @@
 """Tests for def_use."""
 
 import sys
-
 sys.path.append('.')
 
 import collections
 import mock
 import unittest
-from androguard.decompiler.dad import dataflow
-from androguard.decompiler.dad import graph
-from androguard.decompiler.dad import instruction
-from androguard.decompiler.dad import basic_blocks
+
+from androguard.decompiler import dataflow
+from androguard.decompiler import graph
+from androguard.decompiler import instruction
+from androguard.decompiler import basic_blocks
 
 
 class DataflowTest(unittest.TestCase):

@@ -15,10 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from struct import pack, unpack
-import androguard.decompiler.dad.util as util
-from androguard.decompiler.dad.instruction import (
+import androguard.decompiler.util as util
+from androguard.decompiler.instruction import (
     ArrayLengthExpression, ArrayLoadExpression, ArrayStoreInstruction,
     AssignExpression, BaseClass, BinaryCompExpression, BinaryExpression,
     BinaryExpression2Addr, BinaryExpressionLit, CastExpression,

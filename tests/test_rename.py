@@ -1,14 +1,17 @@
 import unittest
-from androguard.core.bytecodes import dvm
-from androguard.core.analysis import analysis
+
 import sys
+sys.path.append('.')
+
+from androguard.core import dex
+from androguard.core.analysis import analysis
 
 class RenameTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(RenameTest, self).__init__(*args, **kwargs)
         with open("examples/android/TestsAndroguard/bin/classes.dex",
                   "rb") as fd:
-            self.d = dvm.DalvikVMFormat(fd.read())
+            self.d = dex.DEX(fd.read())
             self.dx = analysis.Analysis(self.d)
             self.d.set_vmanalysis(self.dx)
 

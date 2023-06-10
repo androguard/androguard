@@ -3,21 +3,20 @@ import os
 import re
 import shutil
 import sys
-import yaml
 
 # 3rd party modules
 from lxml import etree
 from loguru import logger
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.terminal import TerminalFormatter
 
 # internal modules
 from androguard.core import androconf
 from androguard.core import apk
 from androguard.core.axml import AXMLPrinter
 from androguard.util import readFile
-
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters.terminal import TerminalFormatter
+from androguard.ui import DynamicUI
 
 def androaxml_main(inp, outp=None, resource=None):
     ret_type = androconf.is_android(inp)
@@ -81,7 +80,7 @@ def export_apps_to_format(filename,
                           decompiler_type=None,
                           form=None):
     from androguard.misc import clean_file_name
-    from androguard.core.bytecodes import dvm
+    from androguard.core.dex import DEX
     from androguard.core.bytecode import method2dot, method2format
     from androguard.decompiler import decompiler
     print("Dump information {} in {}".format(filename, output))
@@ -171,7 +170,7 @@ def export_apps_to_format(filename,
 
             # Write SMALI like code
             print("bytecodes ...", end=' ')
-            bytecode_buff = dvm.get_bytecodes_method(vm, vmx, method)
+            bytecode_buff = DEX.get_bytecodes_method(vm, vmx, method)
             with open(filename + ".ag", "w") as fd:
                 fd.write(bytecode_buff)
             print()
@@ -188,39 +187,6 @@ def create_directory(pathdir):
         os.makedirs(pathdir)
 
 
-def androgui_main(input_file, input_plugin):
-    # Load pyqt5 after argument processing, so we can collect the arguments
-    # on a system without PyQT5.
-    try:
-        from PyQt5 import QtWidgets, QtGui
-    except ImportError:
-        print("No PyQT5 found! Exiting...", file=sys.stderr)
-        sys.exit(1)
-    try:
-        import pyperclip
-    except ImportError:
-        print("No pyperclip found! Exiting...", file=sys.stderr)
-        sys.exit(1)
-
-    from androguard.gui.mainwindow import MainWindow
-
-    # We need that to save huge sessions when leaving and avoid
-    # RuntimeError: maximum recursion depth exceeded while pickling an object
-    # or
-    # RuntimeError: maximum recursion depth exceeded in cmp
-    # http://stackoverflow.com/questions/2134706/hitting-maximum-recursion-depth-using-pythons-pickle-cpickle
-    sys.setrecursionlimit(50000)
-
-    app = QtWidgets.QApplication(sys.argv)
-
-    window = MainWindow(input_file=input_file,
-                        input_plugin=input_plugin)
-    window.resize(1024, 768)
-    window.show()
-
-    sys.exit(app.exec_())
-
-
 def androlyze_main(session, filename):
     """
     Start an interactive shell
@@ -232,7 +198,8 @@ def androlyze_main(session, filename):
     import colorama
     import atexit
     
-    from IPython.terminal.embed import InteractiveShellEmbed
+    from IPython.terminal.embed import embed
+
     from traitlets.config import Config
     
     from androguard.core.androconf import ANDROGUARD_VERSION, CONF
@@ -240,6 +207,7 @@ def androlyze_main(session, filename):
     from androguard.core import dex, apk
     from androguard.core.analysis.analysis import Analysis
     from androguard.pentest import Pentest
+    from androguard.ui import DynamicUI
     from androguard.misc import AnalyzeAPK
 
     colorama.init()
@@ -316,8 +284,7 @@ def androlyze_main(session, filename):
 
     cfg = Config()
     _version_string = "Androguard version {}".format(ANDROGUARD_VERSION)
-    ipshell = InteractiveShellEmbed(config=cfg, banner1="{} started"
-                                    .format(_version_string))
+    ipshell = embed(config=cfg, banner1="{} started".format(_version_string))
     atexit.register(shutdown_hook)
     ipshell()
 
@@ -436,24 +403,7 @@ def androdis_main(offset, size, dex_file):
 
                 idx += i.get_length()
 
-def androstrace_main(apk_file):
-    from androguard.pentest import Pentest
-    from androguard.session import Session
-
-    s = Session()
-
-    with open(apk_file, "rb") as fp:
-        raw = fp.read()
-
-    h = s.add(apk_file, raw)
-    logger.info("Added file to session: SHA256::{}".format(h))
-
-    p = Pentest()
-    p.print_devices()
-    p.connect_default_usb()
-    p.start_strace(apk_file, s, loop=True)
-
-def androtrace_main(apk_file, list_modules, live=False):
+def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
     from androguard.pentest import Pentest
     from androguard.session import Session
 
@@ -469,7 +419,32 @@ def androtrace_main(apk_file, list_modules, live=False):
     p = Pentest()
     p.print_devices()
     p.connect_default_usb()
-    p.start_trace(apk_file, s, list_modules, loop=True, live=live)
+    p.start_trace(apk_file, s, list_modules, live=live)
+
+    if enable_ui:
+        logger.remove(1)
+        from prompt_toolkit.eventloop.inputhook import InputHookContext, set_eventloop_with_inputhook
+        from prompt_toolkit.application import get_app
+        import time
+
+        time.sleep(1)
+        
+        ui = DynamicUI(p.message_queue)
+        def inputhook(inputhook_context: InputHookContext):
+            while not inputhook_context.input_is_ready():
+                if ui.process_data():
+                    get_app().invalidate()
+                else:
+                    time.sleep(0.1)
+
+        set_eventloop_with_inputhook(inputhook=inputhook)
+
+        ui.run()
+    else:
+        logger.warning("Type 'e' to exit the strace ")
+        s = ""
+        while (s!='e') and (not p.is_detached()):
+            s = input("Type 'e' to exit:")    
 
 
 def androdump_main(package_name, list_modules):
@@ -481,4 +456,4 @@ def androdump_main(package_name, list_modules):
     p = Pentest()
     p.print_devices()
     p.connect_default_usb()
-    p.start_trace(package_name, s, list_modules, loop=True, live=True, dump=True)
+    p.start_trace(package_name, s, list_modules, live=True, dump=True)

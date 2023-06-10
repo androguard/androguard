@@ -15,11 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from collections import defaultdict
-from androguard.decompiler.dad.instruction import (Variable, ThisParam, Param)
-from androguard.decompiler.dad.util import build_path, common_dom
-from androguard.decompiler.dad.node import Node
+from androguard.decompiler.instruction import (Variable, ThisParam, Param)
+from androguard.decompiler.util import build_path, common_dom
+from androguard.decompiler.node import Node
 
 from loguru import logger
 

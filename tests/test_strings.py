@@ -7,7 +7,6 @@ sys.path.append(".")
 
 from androguard.core import mutf8
 from androguard.core import dex
-from androguard.core import analysis
 
 
 class StringTest(unittest.TestCase):

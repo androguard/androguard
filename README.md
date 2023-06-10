@@ -5,7 +5,6 @@
 [![Build Status](https://travis-ci.org/androguard/androguard.svg?branch=master)](https://travis-ci.org/androguard/androguard)
 [![Documentation Status](https://github.com/androguard/androguard/wiki)](https://github.com/androguard/androguard/wiki)
 [![PyPI version](https://badge.fury.io/py/androguard.svg)](https://badge.fury.io/py/androguard)
-[![Codecoverage](https://codecov.io/gh/androguard/androguard/branch/master/graph/badge.svg)](https://codecov.io/gh/androguard/androguard/)
 
 ## Installation
 
@@ -63,7 +62,7 @@ You are using Androguard and are not listed here? Just create a [ticket](https:/
 
 ### Androguard
 
-Copyright (C) 2012 - 2022, Anthony Desnos (desnos at t0t0.fr)
+Copyright (C) 2012 - 2023, Anthony Desnos (desnos at t0t0.fr)
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");

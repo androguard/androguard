@@ -15,12 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from struct import unpack
 from androguard.core import mutf8
-from androguard.decompiler.dad.util import get_type
-from androguard.decompiler.dad.opcode_ins import Op
-from androguard.decompiler.dad.instruction import (
+from androguard.decompiler.util import get_type
+from androguard.decompiler.opcode_ins import Op
+from androguard.decompiler.instruction import (
     Constant, ThisParam, BinaryExpression, BaseClass, InstanceExpression,
     NewInstance, Variable, BinaryCompExpression)
 
@@ -84,7 +83,7 @@ class Writer:
     # (TYPE_STR, MY_STR) such as ('THIS', 'this')
     # where the 2nd field is the actual generated source code
     # We can have more fields, for example:
-    # ('METHOD', 'sendToServer', 'this -> sendToServer', <androguard.decompiler.dad.instruction.ThisParam>)
+    # ('METHOD', 'sendToServer', 'this -> sendToServer', <androguard.decompiler.instruction.ThisParam>)
     def write_ext(self, t):
         if not isinstance(t, tuple):
             raise "Error in write_ext: %s not a tuple" % str(t)

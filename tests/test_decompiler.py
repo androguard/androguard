@@ -4,7 +4,7 @@ from androguard.misc import AnalyzeDex
 import sys
 import re
 from androguard.misc import AnalyzeAPK
-from androguard.decompiler.dad.decompile import DvMethod, DvClass
+from androguard.decompiler.decompile import DvMethod, DvClass
 
 
 class DecompilerTest(unittest.TestCase):

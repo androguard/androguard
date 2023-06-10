@@ -1,11 +1,10 @@
 """Tests for graph."""
 
 import sys
-
 sys.path.append('.')
 
 import unittest
-from androguard.decompiler.dad import graph
+from androguard.decompiler import graph
 
 
 class DominatorTest(unittest.TestCase):

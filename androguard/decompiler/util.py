@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
 from loguru import logger
 
 TYPE_DESCRIPTOR = {
@@ -201,11 +199,11 @@ def get_params_type(descriptor):
 
 def create_png(cls_name, meth_name, graph, dir_name='graphs2'):
     """
-    Creates a PNG from a given :class:`~androguard.decompiler.dad.graph.Graph`.
+    Creates a PNG from a given :class:`~androguard.decompiler.graph.Graph`.
 
     :param str cls_name: name of the class
     :param str meth_name: name of the method
-    :param androguard.decompiler.dad.graph.Graph graph:
+    :param androguard.decompiler.graph.Graph graph:
     :param str dir_name: output directory
     """
     m_name = ''.join(x for x in meth_name if x.isalnum())

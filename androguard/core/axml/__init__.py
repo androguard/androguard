@@ -8,11 +8,9 @@ from collections import defaultdict
 
 from lxml import etree
 from loguru import logger
-import logging
 import re
 import binascii
 import io
-import sys
 
 # Constants for ARSC Files
 # see http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#215

@@ -7,7 +7,6 @@ from androguard.core.analysis.analysis import Analysis
 import hashlib
 import re
 import os
-import warnings
 from loguru import logger
 
 
@@ -37,7 +36,7 @@ def AnalyzeAPK(_file, session=None, raw=False):
     :type _file: string (for filename) or bytes (for raw)
     :param session: A session (default: None)
     :param raw: boolean if raw bytes are supplied instead of a filename
-    :rtype: return the :class:`~androguard.core.bytecodes.apk.APK`, list of :class:`~androguard.core.bytecodes.dvm.DalvikVMFormat`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
+    :rtype: return the :class:`~androguard.core.apk.APK`, list of :class:`~androguard.core.dvm.DEX`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
     """
     logger.debug("AnalyzeAPK")
 
@@ -56,7 +55,7 @@ def AnalyzeAPK(_file, session=None, raw=False):
     else:
         logger.debug("Analysing without session")
         a = apk.APK(_file, raw=raw)
-        # FIXME: probably it is not necessary to keep all DalvikVMFormats, as
+        # FIXME: probably it is not necessary to keep all DEXs, as
         # they are already part of Analysis. But when using sessions, it works
         # this way...
         d = []
@@ -81,7 +80,7 @@ def AnalyzeDex(filename, session=None, raw=False):
     :param session: A session (Default None)
     :param raw: If set, ``filename`` will be used as the odex's data (bytes). Defaults to ``False``
 
-    :rtype: return a tuple of (sha256hash, :class:`DalvikVMFormat`, :class:`Analysis`)
+    :rtype: return a tuple of (sha256hash, :class:`DEX`, :class:`Analysis`)
     """
     logger.debug("AnalyzeDex")
 
@@ -120,69 +119,6 @@ def AnalyzeODex(filename, session=None, raw=False):
             data = fd.read()
 
     return session.addDEY(filename, data)
-
-
-def RunDecompiler(d, dx, decompiler_name):
-    """
-    Run the decompiler on a specific analysis
-
-    :param d: the DalvikVMFormat object
-    :type d: :class:`DalvikVMFormat` object
-    :param dx: the analysis of the format
-    :type dx: :class:`VMAnalysis` object
-    :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
-    :type decompiler: string
-    """
-    if decompiler_name is not None:
-        logger.debug("Decompiler ...")
-        decompiler_name = decompiler_name.lower()
-        # TODO put this into the configuration object and make it more dynamic
-        # e.g. detect new decompilers and so on...
-        if decompiler_name == "dex2jad":
-            d.set_decompiler(decompiler.DecompilerDex2Jad(
-                d,
-                androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["BIN_JAD"],
-                androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler_name == "dex2fernflower":
-            d.set_decompiler(decompiler.DecompilerDex2Fernflower(
-                d,
-                androconf.CONF["BIN_DEX2JAR"],
-                androconf.CONF["BIN_FERNFLOWER"],
-                androconf.CONF["OPTIONS_FERNFLOWER"],
-                androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler_name == "ded":
-            d.set_decompiler(decompiler.DecompilerDed(
-                d,
-                androconf.CONF["BIN_DED"],
-                androconf.CONF["TMP_DIRECTORY"]))
-        elif decompiler_name == "jadx":
-            d.set_decompiler(decompiler.DecompilerJADX(d, dx, jadx=androconf.CONF["BIN_JADX"]))
-        else:
-            d.set_decompiler(decompiler.DecompilerDAD(d, dx))
-
-
-def sign_apk(filename, keystore, storepass):
-    """
-    Use jarsigner to sign an APK file.
-
-
-    .. deprecated:: 3.4.0
-        dont use this function! Use apksigner directly
-
-    :param filename: APK file on disk to sign (path)
-    :param keystore: path to keystore
-    :param storepass: your keystorage passphrase
-    """
-    warnings.warn("deprecated, this method will be removed!", DeprecationWarning)
-    from subprocess import Popen, PIPE, STDOUT
-    # TODO use apksigner instead of jarsigner
-    cmd = Popen([androconf.CONF["BIN_JARSIGNER"], "-sigalg", "MD5withRSA",
-                 "-digestalg", "SHA1", "-storepass", storepass, "-keystore",
-                 keystore, filename, "alias_name"],
-                stdout=PIPE,
-                stderr=STDOUT)
-    stdout, stderr = cmd.communicate()
 
 
 def clean_file_name(filename, unique=True, replace="_", force_nt=False):

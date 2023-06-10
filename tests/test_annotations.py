@@ -6,7 +6,7 @@ from androguard.core.bytecodes import dvm
 class AnnotationTest(unittest.TestCase):
     def testAnnotation(self):
         with open("examples/android/TestsAnnotation/classes.dex", "rb") as f:
-            d = dvm.DalvikVMFormat(f.read())
+            d = dvm.DEX(f.read())
 
         clazz = d.get_class('Landroid/support/v4/widget/SlidingPaneLayout$SlidingPanelLayoutImplJB;')
         annotations = clazz._get_annotation_type_ids()
