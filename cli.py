@@ -13,6 +13,7 @@ from loguru import logger
 # local modules
 import androguard
 import androguard.core.apk
+from androguard import util
 
 from main import (androarsc_main,
                   androaxml_main,
@@ -24,23 +25,13 @@ from main import (androarsc_main,
                   androdump_main,
 )
 
-class MyFilter:
-
-    def __init__(self, level):
-        self.level = level
-
-    def __call__(self, record):
-        levelno = logger.level(self.level).no
-        return record["level"].no >= levelno
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
 @click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
 def entry_point(verbosity):
     if verbosity == None:
-       logger.remove(0)
-       my_filter = MyFilter("INFO")
-       logger.add(sys.stderr, filter=my_filter, level=0)
+       util.set_log("INFO")
     logger.add("androguard.log", retention="10 days")
     
 

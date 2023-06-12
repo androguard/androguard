@@ -1,6 +1,23 @@
 # External dependecies
 import asn1crypto
 
+import sys
+from loguru import logger
+
+
+class MyFilter:
+    def __init__(self, level):
+        self.level = level
+
+    def __call__(self, record):
+        levelno = logger.level(self.level).no
+        return record["level"].no >= levelno
+
+def set_log(level):
+    logger.remove(0)
+    my_filter = MyFilter("INFO")
+    logger.add(sys.stderr, filter=my_filter, level=0)
+
 # Stuff that might be useful
 
 def read_at(buff, offset, size=-1):

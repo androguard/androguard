@@ -383,14 +383,14 @@ class AXMLParser:
 
         # Minimum is a single ARSCHeader, which would be a strange edge case...
         if self.buff_size < 8:
-            logger.error("Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff.size()))
+            logger.error("Filesize is too small to be a valid AXML file! Filesize: {}".format(self.buff_size))
             self._valid = False
             return
 
         # This would be even stranger, if an AXML file is larger than 4GB...
         # But this is not possible as the maximum chunk size is a unsigned 4 byte int.
         if self.buff_size > 0xFFFFFFFF:
-            logger.error("Filesize is too large to be a valid AXML file! Filesize: {}".format(self.buff.size()))
+            logger.error("Filesize is too large to be a valid AXML file! Filesize: {}".format(self.buff_size))
             self._valid = False
             return
 
@@ -415,7 +415,7 @@ class AXMLParser:
             return
 
         if self.filesize > self.buff_size:
-            logger.error("This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff.size()))
+            logger.error("This does not look like an AXML file. Declared filesize does not match real size: {} vs {}".format(self.filesize, self.buff_size))
             self._valid = False
             return
 
@@ -558,7 +558,7 @@ class AXMLParser:
                                 "This might be a packer.".format(s_prefix))
 
                 if (prefix, uri) in self.namespaces:
-                    logger.info("Namespace mapping ({}, {}) already seen! "
+                    logger.debug("Namespace mapping ({}, {}) already seen! "
                              "This is usually not a problem but could indicate packers or broken AXML compilers.".format(prefix, uri))
                 self.namespaces.append((prefix, uri))
 
