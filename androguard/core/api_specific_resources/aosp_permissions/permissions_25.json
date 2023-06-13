@@ -3054,7 +3054,7 @@
       "protectionLevel": "dangerous"
     },
     "android.permission.WRITE_CALL_LOG": {
-      "description": "Allows the app to modify your phone's call log, including data about incoming and outgoing calls.\n        Malicious apps may use this to erase or modify your call log".,
+      "description": "Allows the app to modify your phone's call log, including data about incoming and outgoing calls.\n        Malicious apps may use this to erase or modify your call log.",
       "description_ptr": "permdesc_writeCallLog",
       "label": "write call log",
       "label_ptr": "permlab_writeCallLog",

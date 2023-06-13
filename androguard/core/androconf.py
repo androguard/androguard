@@ -40,19 +40,6 @@ def is_ascii_problem(s):
 default_conf = {
     ## Configuration for executables used by androguard
     # Assume the binary is in $PATH, otherwise give full path
-    "BIN_JADX": "jadx",
-    # Dex2jar binary
-    "BIN_DEX2JAR": "dex2jar.sh",
-
-    # TODO Use apksigner instead
-    "BIN_JARSIGNER": "jarsigner",  # TO BE REMOVED
-
-    "BIN_DED": "ded.sh",  # TO BE REMOVED
-    "BIN_JAD": "jad",  # TO BE REMOVED
-    "BIN_WINEJAD": "jad.exe",  # TO BE REMOVED
-    "BIN_FERNFLOWER": "fernflower.jar",  # TO BE REMOVED
-    "OPTIONS_FERNFLOWER": {"dgs": '1',  # TO BE REMOVED
-                           "asc": '1'},
 
     # Runtime variables
     #
