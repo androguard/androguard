@@ -718,7 +718,7 @@ class APK:
         :param orig: guess by mime libary
         :returns: corrected guess
         """
-        if ("Zip" in orig) or ('(JAR)' in orig) and androconf.is_android_raw(buffer) == 'APK':
+        if (("Zip" in orig) or ('(JAR)' in orig)) and androconf.is_android_raw(buffer) == 'APK':
             return "Android application package file"
 
         return orig
