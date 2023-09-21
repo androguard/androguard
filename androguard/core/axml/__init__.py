@@ -815,18 +815,17 @@ class AXMLParser:
         logger.debug(index)
         offset = self._get_attribute_offset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
+        res = None
 
-        res = self.sb[name]
-        # If the result is a (null) string, we need to look it up.
-        if not res or res == ":":
+        if name <= len(self.m_resourceIDs):
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
+                res = public.SYSTEM_RESOURCES['attributes']['inverse'][attr].replace("_",
+                                                                               ":")
             else:
                 # Attach the HEX Number, so for multiple missing attributes we do not run
                 # into problems.
                 res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
-
         return res
 
     def getAttributeValueType(self, index):
@@ -965,6 +964,8 @@ class AXMLPrinter:
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
                     uri, name = self._fix_name(uri, self.axml.getAttributeName(i))
+                    if not name:
+                        continue
                     value = self._fix_value(self._get_attribute_value(i))
 
                     logger.debug("found an attribute: {}{}='{}'".format(uri, name, value.encode("utf-8")))
@@ -1080,6 +1081,8 @@ class AXMLPrinter:
         :return: a fixed version of prefix and name
         :rtype: tuple
         """
+        if not name:
+            return None, None
         if not name[0].isalpha() and name[0] != "_":
             logger.warning("Invalid start for name '{}'. "
                         "XML name must start with a letter.".format(name))
