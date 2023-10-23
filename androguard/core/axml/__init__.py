@@ -446,9 +446,9 @@ class AXMLParser:
             logger.error("This does not look like an AXML file. String chunk header size does not equal 28! header size = {}".format(header.header_size))
             self._valid = False
             return
-        
+
         self.sb = StringBlock(self.buff, header)
-        
+
         self.buff.seek(axml_header.header_size + header.size)
 
         # Stores resource ID mappings, if any
@@ -815,13 +815,13 @@ class AXMLParser:
         logger.debug(index)
         offset = self._get_attribute_offset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
-        res = None
 
-        if name <= len(self.m_resourceIDs):
+        res = self.sb[name]
+        # If the result is a (null) string, we need to look it up.
+        if not res or res == ":":
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = public.SYSTEM_RESOURCES['attributes']['inverse'][attr].replace("_",
-                                                                               ":")
+                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
             else:
                 # Attach the HEX Number, so for multiple missing attributes we do not run
                 # into problems.
@@ -964,8 +964,6 @@ class AXMLPrinter:
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
                     uri, name = self._fix_name(uri, self.axml.getAttributeName(i))
-                    if not name:
-                        continue
                     value = self._fix_value(self._get_attribute_value(i))
 
                     logger.debug("found an attribute: {}{}='{}'".format(uri, name, value.encode("utf-8")))
@@ -1081,8 +1079,6 @@ class AXMLPrinter:
         :return: a fixed version of prefix and name
         :rtype: tuple
         """
-        if not name:
-            return None, None
         if not name[0].isalpha() and name[0] != "_":
             logger.warning("Invalid start for name '{}'. "
                         "XML name must start with a letter.".format(name))
