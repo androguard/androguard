@@ -9,3 +9,4 @@ mutf8
 dataset
 frida
 loguru
+apkInspector>=1.1.7

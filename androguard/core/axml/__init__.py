@@ -119,6 +119,10 @@ class StringBlock:
         # string_pool_offset
         # The string offset is counted from the beginning of the string section
         self.stringsOffset = unpack('<I', buff.read(4))[0]
+        # check if the stringCount is correct
+        if (self.stringsOffset - 28)/4 != self.stringCount:
+            self.stringCount = int((self.stringsOffset - 28)/4)
+
         # style_pool_offset
         # The styles offset is counted as well from the beginning of the string section
         self.stylesOffset = unpack('<I', buff.read(4))[0]
@@ -495,7 +499,8 @@ class AXMLParser:
 
             # Again, we read an ARSCHeader
             try:
-                h = ARSCHeader(self.buff)
+                possible_types = {256, 257, 258, 259, 260, 384}
+                h = ARSCHeader(self.buff, possible_types=possible_types)
                 logger.debug("NEXT HEADER {}".format(h))
             except ResParserError as e:
                 logger.error("Error parsing resource header: {}".format(e))
@@ -2213,7 +2218,7 @@ class ARSCHeader:
     # This is the minimal size such a header must have. There might be other header data too!
     SIZE = 2 + 2 + 4
 
-    def __init__(self, buff, expected_type=None):
+    def __init__(self, buff, expected_type=None, possible_types=None):
         """
         :param androguard.core.bytecode.BuffHandle buff: the buffer set to the position where the header starts.
         :param int expected_type: the type of the header which is expected.
@@ -2223,7 +2228,20 @@ class ARSCHeader:
         if buff.raw.getbuffer().nbytes < self.start + self.SIZE:
             raise ResParserError("Can not read over the buffer size! Offset={}".format(self.start))
 
-        self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+        # Checking for dummy data between elements
+        if possible_types:
+            while True:
+                cur_pos = buff.tell()
+                self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+
+                if cur_pos == 0 or (
+                        self._type in possible_types and self._header_size >= self.SIZE and self._size > self.SIZE):
+                    break
+                buff.seek(cur_pos)
+                buff.read(1)
+                logger.warning("Appears that dummy data are found between elements!")
+        else:
+            self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
 
         if expected_type and self._type != expected_type:
             raise ResParserError("Header type is not equal the expected type: Got 0x{:04x}, wanted 0x{:04x}".format(self._type, expected_type))
