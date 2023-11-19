@@ -1,6 +1,7 @@
 # Androguard
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string
+from apkInspector.headers import ZipEntry
 
 from androguard.core.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig, AXMLParser, format_value, START_TAG, END_TAG, TEXT, END_DOCUMENT
 
@@ -263,15 +264,14 @@ class APK:
         self.files_crc32 = {}
 
         if raw is True:
-            self.__raw = bytearray(filename)
+            self.__raw = filename
             self._sha256 = hashlib.sha256(self.__raw).hexdigest()
             # Set the filename to something sane
             self.filename = "raw_apk_sha256:{}".format(self._sha256)
-
-            self.zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
+            self.zip = ZipEntry.parse(io.BytesIO(self.__raw), True)
         else:
-            self.__raw = None
-            self.zip = zipfile.ZipFile(filename, mode="r")
+            self.zip = ZipEntry.parse(filename, False)
+            self.__raw = self.zip.zip.getvalue()
 
         if testzip:
             logger.info("Testing zip file integrity, this might take a while...")
@@ -282,7 +282,8 @@ class APK:
             # A short benchmark showed, that testing the zip takes about 10 times longer!
             # e.g. normal zip loading (skip_analysis=True) takes about 0.01s, where
             # testzip takes 0.1s!
-            ret = self.zip.testzip()
+            test_zip = zipfile.ZipFile(io.BytesIO(self.__raw), mode="r")
+            ret = test_zip.testzip()
             if ret is not None:
                 # we could print the filename here, but there are zip which are so broken
                 # That the filename is either very very long or does not make any sense.
@@ -733,10 +734,10 @@ class APK:
         buffer = self.zip.read(filename)
         if filename not in self.files_crc32:
             self.files_crc32[filename] = crc32(buffer)
-            if self.files_crc32[filename] != self.zip.getinfo(filename).CRC:
+            if self.files_crc32[filename] != self.zip.infolist()[filename].crc32_of_uncompressed_data:
                 logger.error("File '{}' has different CRC32 after unpacking! "
                           "Declared: {:08x}, Calculated: {:08x}".format(filename,
-                                                                        self.zip.getinfo(filename).CRC,
+                                                                        self.zip.infolist()[filename].crc32_of_uncompressed_data,
                                                                         self.files_crc32[filename]))
         return buffer
 
