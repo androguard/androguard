@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "androguard-p"
+description = "Androguard is a full python tool to play with Android files."
+authors = ["desnos <desnos@t0t0.fr>"]
+version = "4.1"
+license = "Apache Licence, Version 2.0"
+homepage = "https://github.com/androguard/androguard"
+
+packages = [
+    { include = "androguard" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+pygments = ">=2.3.1"
+lxml = ">=4.3.0"
+colorama = ">=0.4.1"
+asn1crypto = ">=0.24.0"
+click = ">=7.0"
+pydot = ">=1.4.1"
+ipython = ">=5.0.0"
+mutf8 = "*"
+dataset = "*"
+frida = "*"
+loguru = "*"
+apkInspector = ">=1.1.7"
+
+[tool.setuptools.package_data]
+"androguard.core.api_specific_resources" = ["aosp_permissions/*.json", "api_permission_mappings/*.json"]
+"androguard.core.resources" = ["public.xml"]
+
+[tool.poetry.scripts]
+androguard = "androguard.cli.cli:entry_point"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

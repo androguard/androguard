@@ -15,7 +15,7 @@ import androguard
 import androguard.core.apk
 from androguard import util
 
-from main import (androarsc_main,
+from androguard.cli.main import (androarsc_main,
                   androaxml_main,
                   export_apps_to_format,
                   androsign_main,

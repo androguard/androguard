@@ -1,26 +1,40 @@
-name: Upload Python Package
+name: PyPI Upload
 
 on:
-  release:
-    types: [created]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
-    - name: Install dependencies
+        python-version: '3.10'
+
+    - name: Install Poetry
       run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        pip install poetry
+        poetry config virtualenvs.create false
+
+    - name: Install Dependencies
+      run: poetry install
+
+    - name: Run unittest tests
+      run: poetry run python -m unittest discover -s tests -p test_axml.py  # running a test as an example
+
+    - name: Build with Poetry
       run: |
-        python setup.py sdist bdist_wheel
+        poetry build
+
+    - name: Publish
+      run: |
+        pip install twine
         twine upload dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
