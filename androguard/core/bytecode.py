@@ -284,8 +284,7 @@ def method2dot(mx, colors=None):
     method = mx.get_method()
 
     # This is used as a seed to create unique hashes for the nodes
-    sha256 = hashlib.sha256(
-        mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).digest()
+    sha256 = hashlib.sha256((mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).encode("utf-8")).hexdigest()
 
     # Collect all used Registers and create colors
     if method.get_code() and method.get_code().get_registers_size() != 0:
@@ -299,7 +298,7 @@ def method2dot(mx, colors=None):
     # Go through all basic blocks and create the CFG
     for basic_block in mx.basic_blocks:
         ins_idx = basic_block.start
-        block_id = hashlib.md5(sha256 + basic_block.get_name()).hexdigest()
+        block_id = hashlib.md5((sha256 + basic_block.get_name()).encode("utf-8")).hexdigest()
 
         content = link_tpl.format('header')
 
@@ -350,7 +349,7 @@ def method2dot(mx, colors=None):
             if values:
                 label_edge = values.pop(0)
 
-            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild[-1].get_name()).hexdigest()
+            child_id = hashlib.md5((sha256 + DVMBasicMethodBlockChild[-1].get_name()).encode("utf-8")).hexdigest()
             edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(block_id,
                                                                                                        child_id, val,
                                                                                                        label_edge)
@@ -366,7 +365,7 @@ def method2dot(mx, colors=None):
             for exception_elem in exception_analysis.exceptions:
                 exception_block = exception_elem[-1]
                 if exception_block:
-                    exception_id = hashlib.md5(sha256 + exception_block.get_name()).hexdigest()
+                    exception_id = hashlib.md5((sha256 + exception_block.get_name()).encode("utf-8")).hexdigest()
                     edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"{}\"];\n".format(
                         block_id, exception_id, "black", exception_elem[0])
 
@@ -375,8 +374,8 @@ def method2dot(mx, colors=None):
         DVMBasicMethodBlockChild = mx.basic_blocks.get_basic_block(link[2])
 
         if DVMBasicMethodBlockChild:
-            block_id = hashlib.md5(sha256 + basic_block.get_name()).hexdigest()
-            child_id = hashlib.md5(sha256 + DVMBasicMethodBlockChild.get_name()).hexdigest()
+            block_id = hashlib.md5((sha256 + basic_block.get_name()).encode("utf-8")).hexdigest()
+            child_id = hashlib.md5((sha256 + DVMBasicMethodBlockChild.get_name()).encode("utf-8")).hexdigest()
 
             edges_html += "struct_{}:tail -> struct_{}:header  [color=\"{}\", label=\"data(0x{:x}) to @0x{:x}\", style=\"dashed\"];\n".format(
                 block_id, child_id, "yellow", link[1], link[2])
