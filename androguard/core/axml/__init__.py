@@ -120,8 +120,8 @@ class StringBlock:
         # The string offset is counted from the beginning of the string section
         self.stringsOffset = unpack('<I', buff.read(4))[0]
         # check if the stringCount is correct
-        if (self.stringsOffset - 28)/4 != self.stringCount:
-            self.stringCount = int((self.stringsOffset - 28)/4)
+        if (self.stringsOffset - (self.styleCount * 4 + 28)) / 4 != self.stringCount:
+            self.stringCount = int((self.stringsOffset - (self.styleCount * 4 + 28)) / 4)
 
         # style_pool_offset
         # The styles offset is counted as well from the beginning of the string section
@@ -157,10 +157,6 @@ class StringBlock:
 
         if (size % 4) != 0:
             logger.warning("Size of strings is not aligned by four bytes.")
-
-        if self.stringCount * 4 + header.header_size != self.stringsOffset :
-            logger.warning("Offset of strings is not expected. Try fixing it")
-            buff.seek(8 + self.stringsOffset)
 
         self.m_charbuff = buff.read(size)
 
