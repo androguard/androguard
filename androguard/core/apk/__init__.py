@@ -1487,27 +1487,27 @@ class APK:
         for item in self.zip.infolist():
             # Block one: deleted_files, or deleted_files and new_files
             if deleted_files is not None:
-                if re.match(deleted_files, item.filename) is None:
+                if re.match(deleted_files, item) is None:
                     # if the regex of deleted_files doesn't match the filename
                     if new_files is not False:
-                        if item.filename in new_files:
+                        if item in new_files:
                             # and if the filename is in new_files
-                            zout.writestr(item, new_files[item.filename])
+                            zout.writestr(item, new_files[item])
                             continue
                     # Otherwise, write the original file.
-                    buffer = self.zip.read(item.filename)
+                    buffer = self.zip.read(item)
                     zout.writestr(item, buffer)
             # Block two: deleted_files is None, new_files is not empty
             elif new_files is not False:
-                if item.filename in new_files:
-                    zout.writestr(item, new_files[item.filename])
+                if item in new_files:
+                    zout.writestr(item, new_files[item])
                 else:
-                    buffer = self.zip.read(item.filename)
+                    buffer = self.zip.read(item)
                     zout.writestr(item, buffer)
             # Block three: deleted_files is None, new_files is empty.
             # Just write out the default zip
             else:
-                buffer = self.zip.read(item.filename)
+                buffer = self.zip.read(item)
                 zout.writestr(item, buffer)
         zout.close()
 
@@ -2162,34 +2162,34 @@ def get_apkid(apkfile):
     appid = None
     versionCode = None
     versionName = None
-    with zipfile.ZipFile(apkfile) as apk:
-        with apk.open('AndroidManifest.xml') as manifest:
-            axml = AXMLParser(manifest.read())
-            count = 0
-            while axml.is_valid():
-                _type = next(axml)
-                count += 1
-                if _type == START_TAG:
-                    for i in range(0, axml.getAttributeCount()):
-                        name = axml.getAttributeName(i)
-                        _type = axml.getAttributeValueType(i)
-                        _data = axml.getAttributeValueData(i)
-                        value = format_value(_type, _data, lambda _: axml.getAttributeValue(i))
-                        if appid is None and name == 'package':
-                            appid = value
-                        elif versionCode is None and name == 'versionCode':
-                            if value.startswith('0x'):
-                                versionCode = str(int(value, 16))
-                            else:
-                                versionCode = value
-                        elif versionName is None and name == 'versionName':
-                            versionName = value
+    apk = ZipEntry.parse(apkfile, False)
+    manifest = apk.read('AndroidManifest.xml')
+    axml = AXMLParser(manifest)
+    count = 0
+    while axml.is_valid():
+        _type = next(axml)
+        count += 1
+        if _type == START_TAG:
+            for i in range(0, axml.getAttributeCount()):
+                name = axml.getAttributeName(i)
+                _type = axml.getAttributeValueType(i)
+                _data = axml.getAttributeValueData(i)
+                value = format_value(_type, _data, lambda _: axml.getAttributeValue(i))
+                if appid is None and name == 'package':
+                    appid = value
+                elif versionCode is None and name == 'versionCode':
+                    if value.startswith('0x'):
+                        versionCode = str(int(value, 16))
+                    else:
+                        versionCode = value
+                elif versionName is None and name == 'versionName':
+                    versionName = value
 
-                    if axml.name == 'manifest':
-                        break
-                elif _type == END_TAG or _type == TEXT or _type == END_DOCUMENT:
-                    raise RuntimeError('{path}: <manifest> must be the first element in AndroidManifest.xml'
-                                       .format(path=apkfile))
+            if axml.name == 'manifest':
+                break
+        elif _type == END_TAG or _type == TEXT or _type == END_DOCUMENT:
+            raise RuntimeError('{path}: <manifest> must be the first element in AndroidManifest.xml'
+                               .format(path=apkfile))
 
     if not versionName or versionName[0] == '@':
         a = APK(apkfile)
