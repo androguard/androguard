@@ -1,4 +1,4 @@
-# External dependecies
+#  External dependecies
 import asn1crypto
 
 import sys
@@ -13,10 +13,16 @@ class MyFilter:
         levelno = logger.level(self.level).no
         return record["level"].no >= levelno
 
+
 def set_log(level):
+    """
+    Sets the log for loguru based on the level being passed.
+    The possible values are TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+    """
     logger.remove(0)
-    my_filter = MyFilter("INFO")
+    my_filter = MyFilter(level)
     logger.add(sys.stderr, filter=my_filter, level=0)
+
 
 # Stuff that might be useful
 
@@ -27,6 +33,7 @@ def read_at(buff, offset, size=-1):
     buff.seek(idx)
     return d
 
+
 def readFile(filename, binary=True):
     """
     Open and read a file
@@ -36,6 +43,7 @@ def readFile(filename, binary=True):
     """
     with open(filename, 'rb' if binary else 'r') as f:
         return f.read()
+
 
 def get_certificate_name_string(name, short=False, delimiter=', '):
     """
