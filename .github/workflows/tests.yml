@@ -1,0 +1,34 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: Install Poetry
+      run: |
+        pip install poetry
+        poetry config virtualenvs.create false
+
+    - name: Install Dependencies
+      run: poetry install
+
+    - name: Run unittest tests
+      run: poetry run python -m unittest tests/test_apk.py tests/test_axml.py
+
+    - name: Build with Poetry
+      run: |
+        poetry build
