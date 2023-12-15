@@ -1,16 +1,26 @@
-![banner](https://raw.githubusercontent.com/androguard/androguard/master/assets/web/androguard.jpeg)
+![banner](https://raw.githubusercontent.com/androguard/androguard/master/assets/web/androguardwithname.jpeg)
 
 # Androguard
 
-[![Build Status](https://travis-ci.org/androguard/androguard.svg?branch=master)](https://travis-ci.org/androguard/androguard)
-[![Documentation Status](https://github.com/androguard/androguard/wiki)](https://github.com/androguard/androguard/wiki)
-[![PyPI version](https://badge.fury.io/py/androguard.svg)](https://badge.fury.io/py/androguard)
+[![PyPI Upload](https://github.com/androguard/androguard/actions/workflows/pythonpublish.yml/badge.svg)](https://github.com/androguard/androguard/actions/workflows/pythonpublish.yml)
+![PyPI - Version](https://img.shields.io/pypi/v/androguard)
+![Static Badge](https://img.shields.io/badge/Documentation-InProgress-red)
+
 
 ## Installation
+Quick installation:
+~~~~
+pip install androguard
+~~~~
 
-Please see the [wiki](https://github.com/androguard/androguard/wiki)
+**Notes**: Version 4.0.0 is a new release after a long time, where the project has substantial differences from the previous version 3.3.5 from 2019. This means that certain functionalities have been removed. If you notice an issue with your project using tha latest version, please open up an [issue](https://github.com/androguard/androguard/issues).
 
-... let's start reversing!
+## Documentation
+**Documentation contains outdated information - In progress of updating**
+
+Find the documentation for master on [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
+
+There is also a [wiki](https://github.com/androguard/androguard/wiki) page.
 
 ## Features
 
@@ -30,12 +40,6 @@ Androguard is a full python tool to play with Android files.
 Androguard + tools: Anthony Desnos (desnos at t0t0.fr).
 
 DAD (DAD is A Decompiler): Geoffroy Gueguen (geoffroy dot gueguen at gmail dot com)
-
-## Documentation
-
-Find the documentation for master on [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
-
-There are some (probably broken/outdated) examples and demos in the folders [demos](https://github.com/androguard/androguard/tree/master/demos) and [examples](https://github.com/androguard/androguard/tree/master/examples).
 
 ## Projects using Androguard
 In alphabetical order
