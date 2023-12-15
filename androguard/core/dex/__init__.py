@@ -3138,7 +3138,7 @@ class EncodedMethod:
     @property
     def full_name(self):
         """Return class_name + name + descriptor, separated by spaces (no access flags"""
-        return ''.join([self.class_name, self.name, self.get_descriptor()], spacing=b' ')
+        return ' '.join([self.class_name, self.name, self.get_descriptor()])
 
     @property
     def descriptor(self):
