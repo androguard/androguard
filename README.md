@@ -1,4 +1,4 @@
-![banner](https://raw.githubusercontent.com/androguard/androguard/master/assets/web/androguardwithname.jpeg)
+![banner](https://raw.githubusercontent.com/androguard/androguard/master/assets/web/androguardwithname.jpg)
 
 # Androguard
 
