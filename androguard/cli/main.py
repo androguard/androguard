@@ -15,6 +15,7 @@ from pygments.formatters.terminal import TerminalFormatter
 from androguard.core import androconf
 from androguard.core import apk
 from androguard.core.axml import AXMLPrinter
+from androguard.core.dex import get_bytecodes_method
 from androguard.util import readFile
 from androguard.ui import DynamicUI
 
@@ -170,7 +171,7 @@ def export_apps_to_format(filename,
 
             # Write SMALI like code
             print("bytecodes ...", end=' ')
-            bytecode_buff = DEX.get_bytecodes_method(vm, vmx, method)
+            bytecode_buff = get_bytecodes_method(vm, vmx, method)
             with open(filename + ".ag", "w") as fd:
                 fd.write(bytecode_buff)
             print()
