@@ -46,7 +46,7 @@ ATTRIBUTE_IX_NAME = 1
 ATTRIBUTE_IX_VALUE_STRING = 2
 ATTRIBUTE_IX_VALUE_TYPE = 3
 ATTRIBUTE_IX_VALUE_DATA = 4
-ATTRIBUTE_LENGHT = 5
+ATTRIBUTE_LENGTH = 5
 
 # Internally used state variables for AXMLParser
 START_DOCUMENT = 0
@@ -598,8 +598,7 @@ class AXMLParser:
                 self.m_namespaceUri, = unpack('<L', self.buff.read(4))
                 # Name of the Tag (String ID)
                 self.m_name, = unpack('<L', self.buff.read(4))
-                # FIXME: Flags
-                _ = self.buff.read(4)
+                self.at_start, self.at_size = unpack('<HH', self.buff.read(4))
                 # Attribute Count
                 attributeCount, = unpack('<L', self.buff.read(4))
                 # Class Attribute
@@ -612,7 +611,7 @@ class AXMLParser:
 
                 # Now, we parse the attributes.
                 # Each attribute has 5 fields of 4 byte
-                for i in range(0, self.m_attribute_count * ATTRIBUTE_LENGHT):
+                for i in range(0, self.m_attribute_count):
                     # Each field is linearly parsed into the array
                     # Each Attribute contains:
                     # * Namespace URI (String ID)
@@ -620,10 +619,13 @@ class AXMLParser:
                     # * Value
                     # * Type
                     # * Data
-                    self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
+                    for j in range(0, ATTRIBUTE_LENGTH):
+                        self.m_attributes.append(unpack('<L', self.buff.read(4))[0])
+                    if self.at_size != 20:
+                        self.buff.read(self.at_size - 20)
 
                 # Then there are class_attributes
-                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGHT):
+                for i in range(ATTRIBUTE_IX_VALUE_TYPE, len(self.m_attributes), ATTRIBUTE_LENGTH):
                     self.m_attributes[i] = self.m_attributes[i] >> 24
 
                 self.m_event = START_TAG
@@ -768,7 +770,7 @@ class AXMLParser:
         if self.m_event != START_TAG:
             logger.warning("Current event is not START_TAG.")
 
-        offset = index * ATTRIBUTE_LENGHT
+        offset = index * ATTRIBUTE_LENGTH
         if offset >= len(self.m_attributes):
             logger.warning("Invalid attribute index")
 
