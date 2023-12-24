@@ -4,8 +4,8 @@ description = "Androguard is a full python tool to play with Android files."
 authors = ["desnos <desnos@t0t0.fr>"]
 version = "4.0.1"
 license = "Apache Licence, Version 2.0"
+readme = "README.md"
 homepage = "https://github.com/androguard/androguard"
-repository = "https://github.com/androguard/androguard"
 
 packages = [
     { include = "androguard" },
