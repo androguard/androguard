@@ -25,7 +25,7 @@ jobs:
       run: poetry install
 
     - name: Run unittest tests
-      run: poetry run python -m unittest discover -s tests -p test_axml.py  # running a test as an example
+      run: poetry run python -m unittest tests/test_apk.py tests/test_axml.py
 
     - name: Build with Poetry
       run: |
