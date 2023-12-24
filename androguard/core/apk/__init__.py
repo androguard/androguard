@@ -423,7 +423,7 @@ class APK:
         try:
             maxSdkVersion = int(self.get_value_from_tag(item, "maxSdkVersion"))
         except ValueError:
-            logger.warning(self.get_max_sdk_version() + 'is not a valid value for <uses-permission> maxSdkVersion')
+            logger.warning(str(maxSdkVersion) + ' is not a valid value for <uses-permission> maxSdkVersion')
         except TypeError:
             pass
         return maxSdkVersion
