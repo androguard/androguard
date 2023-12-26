@@ -4201,7 +4201,7 @@ def get_kind(cm, kind, value):
         return "{}->{}{}".format(class_name, name, descriptor)
 
     elif kind == Kind.STRING:
-        return repr(cm.get_string(value))
+        return cm.get_string(value)
 
     # TODO: unused?
     elif kind == Kind.RAW_STRING:
