@@ -2,72 +2,8 @@ import unittest
 
 import random
 import binascii
-from loguru import logger
-
-import sys
-sys.path.append("./")
 
 from androguard.core import dex
-
-class DexTest(unittest.TestCase):
-    def testBrokenDex(self):
-        """Test various broken DEX headers"""
-        # really not a dex file
-        with self.assertRaises(ValueError) as cnx:
-            dex.DEX(b'\x00\x00\x00\x00\x00\x00\x00\x00')
-        self.assertIn('Header too small', str(cnx.exception))
-
-        # Adler32 will not match, zeroed out file
-        data_dex = binascii.unhexlify('6465780A303335001F6C4D5A6ACF889AF588F3237FC9F20B41F56A2408749D1B'
-                                 'C81E000070000000785634120000000000000000341E00009400000070000000'
-                                 '2E000000C0020000310000007803000011000000C4050000590000004C060000'
-                                 '090000001409000094140000340A0000' + ('00' * (7880 - 0x70)))
-
-        with self.assertRaises(ValueError) as cnx:
-            dex.DEX(data_dex)
-        self.assertIn("Adler32", str(cnx.exception))
-
-        # A very very basic dex file (without a map)
-        # But should parse...
-        data_dex = binascii.unhexlify('6465780A30333500460A4882696E76616C6964696E76616C6964696E76616C69'
-                                 '7000000070000000785634120000000000000000000000000000000000000000'
-                                 '0000000000000000000000000000000000000000000000000000000000000000'
-                                 '00000000000000000000000000000000')
-        self.assertIsNotNone(dex.DEX(data_dex))
-
-        # Wrong header size
-        data_dex = binascii.unhexlify('6465780A30333500480A2C8D696E76616C6964696E76616C6964696E76616C69'
-                                 '7100000071000000785634120000000000000000000000000000000000000000'
-                                 '0000000000000000000000000000000000000000000000000000000000000000'
-                                 '0000000000000000000000000000000000')
-        with self.assertRaises(ValueError) as cnx:
-            dex.DEX(data_dex)
-        self.assertIn("Wrong header size", str(cnx.exception))
-
-        # Non integer version, but parse it
-        data_dex = binascii.unhexlify('6465780AFF00AB00460A4882696E76616C6964696E76616C6964696E76616C69'
-                                 '7000000070000000785634120000000000000000000000000000000000000000'
-                                 '0000000000000000000000000000000000000000000000000000000000000000'
-                                 '00000000000000000000000000000000')
-        self.assertIsNotNone(dex.DEX(data_dex))
-
-        # Big Endian file
-        data_dex = binascii.unhexlify('6465780A30333500460AF480696E76616C6964696E76616C6964696E76616C69'
-                                 '7000000070000000123456780000000000000000000000000000000000000000'
-                                 '0000000000000000000000000000000000000000000000000000000000000000'
-                                 '00000000000000000000000000000000')
-        with self.assertRaises(NotImplementedError) as cnx:
-            dex.DEX(data_dex)
-        self.assertIn("swapped endian tag", str(cnx.exception))
-
-        # Weird endian file
-        data_dex = binascii.unhexlify('6465780A30333500AB0BC3E4696E76616C6964696E76616C6964696E76616C69'
-                                 '7000000070000000ABCDEF120000000000000000000000000000000000000000'
-                                 '0000000000000000000000000000000000000000000000000000000000000000'
-                                 '00000000000000000000000000000000')
-        with self.assertRaises(ValueError) as cnx:
-            dex.DEX(data_dex)
-        self.assertIn("Wrong endian tag", str(cnx.exception))
 
 
 class MockClassManager():
@@ -111,7 +47,8 @@ class InstructionTest(unittest.TestCase):
             self.assertEqual(instruction.get_raw(), bytecode)
 
             # Test with some pseudorandom stuff
-            if ins.__name__ in ['Instruction10x', 'Instruction20t', 'Instruction30t', 'Instruction32x', 'Instruction45cc']:
+            if ins.__name__ in ['Instruction10x', 'Instruction20t', 'Instruction30t', 'Instruction32x',
+                                'Instruction45cc']:
                 # note this only works for certain opcode (which are not forced to 0 in certain places)
                 # Thus we need to make sure these places are zero.
                 # Instruction45cc: Has constrained regarding the parameter AA
@@ -268,15 +205,16 @@ class InstructionTest(unittest.TestCase):
             ins = list(dex.LinearSweepAlgorithm.get_instructions(MockClassManager(), 2, bytearray(b"\x00\x00"
                                                                                                   b"\xff\xab"), 0))
 
-
     def testIncompleteInstruction(self):
         """Test if incomplete bytecode log an error"""
         # Test if instruction can be parsed
         self.assertIsInstance(dex.Instruction51l(MockClassManager(),
-                                                 bytearray(b'\x18\x01\x23\x23\x00\xff\x99\x11\x22\x22')), dex.Instruction51l)
+                                                 bytearray(b'\x18\x01\x23\x23\x00\xff\x99\x11\x22\x22')),
+                              dex.Instruction51l)
 
         with self.assertRaises(dex.InvalidInstruction):
-            ins = list(dex.LinearSweepAlgorithm.get_instructions(MockClassManager(), 5, bytearray(b"\x18\x01\xff\xff"), 0))
+            ins = list(
+                dex.LinearSweepAlgorithm.get_instructions(MockClassManager(), 5, bytearray(b"\x18\x01\xff\xff"), 0))
 
     def testInstruction21h(self):
         """Test function of Instruction 21h used for const{,-wide}/high16"""
@@ -306,7 +244,8 @@ class InstructionTest(unittest.TestCase):
 
     def testInstruction51l(self):
         """test the functionality of const-wide"""
-        ins = dex.Instruction51l(MockClassManager(), bytearray([0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        ins = dex.Instruction51l(MockClassManager(),
+                                 bytearray([0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
         self.assertEqual(ins.get_op_value(), 0x18)
         self.assertEqual(ins.get_literals(), [0])
         self.assertEqual(ins.get_operands(), [(dex.Operand.REGISTER, 0x00), (dex.Operand.LITERAL, 0)])
@@ -327,7 +266,8 @@ class InstructionTest(unittest.TestCase):
         ins = dex.Instruction51l(MockClassManager(), bytecode)
         self.assertEqual(ins.get_op_value(), 0x18)
         self.assertEqual(ins.get_literals(), [-8085107642740388882])
-        self.assertEqual(ins.get_operands(), [(dex.Operand.REGISTER, 0x00), (dex.Operand.LITERAL, -8085107642740388882)])
+        self.assertEqual(ins.get_operands(),
+                         [(dex.Operand.REGISTER, 0x00), (dex.Operand.LITERAL, -8085107642740388882)])
         self.assertEqual(ins.get_name(), 'const-wide')
         self.assertEqual(ins.get_output(), 'v0, -8085107642740388882')
         self.assertEqual(ins.get_raw(), bytecode)
@@ -416,6 +356,65 @@ class InstructionTest(unittest.TestCase):
             self.assertEqual(ins.get_raw(), bytecode)
             self.assertEqual(ins.get_operands(), [(dex.Operand.REGISTER, reg), (dex.Operand.LITERAL, lit)])
             self.assertEqual(ins.get_output(), 'v{}, {}'.format(reg, lit))
+
+    def testBrokenDex(self):
+        """Test various broken DEX headers"""
+        # really not a dex file
+        with self.assertRaises(ValueError) as cnx:
+            dex.DEX(b'\x00\x00\x00\x00\x00\x00\x00\x00')
+        self.assertIn('Header too small', str(cnx.exception))
+
+        # Adler32 will not match, zeroed out file
+        data_dex = binascii.unhexlify('6465780A303335001F6C4D5A6ACF889AF588F3237FC9F20B41F56A2408749D1B'
+                                      'C81E000070000000785634120000000000000000341E00009400000070000000'
+                                      '2E000000C0020000310000007803000011000000C4050000590000004C060000'
+                                      '090000001409000094140000340A0000' + ('00' * (7880 - 0x70)))
+
+        with self.assertRaises(ValueError) as cnx:
+            dex.DEX(data_dex)
+        self.assertIn("Adler32", str(cnx.exception))
+
+        # A very very basic dex file (without a map)
+        # But should parse...
+        data_dex = binascii.unhexlify('6465780A30333500460A4882696E76616C6964696E76616C6964696E76616C69'
+                                      '7000000070000000785634120000000000000000000000000000000000000000'
+                                      '0000000000000000000000000000000000000000000000000000000000000000'
+                                      '00000000000000000000000000000000')
+        self.assertIsNotNone(dex.DEX(data_dex))
+
+        # Wrong header size
+        data_dex = binascii.unhexlify('6465780A30333500480A2C8D696E76616C6964696E76616C6964696E76616C69'
+                                      '7100000071000000785634120000000000000000000000000000000000000000'
+                                      '0000000000000000000000000000000000000000000000000000000000000000'
+                                      '0000000000000000000000000000000000')
+        with self.assertRaises(ValueError) as cnx:
+            dex.DEX(data_dex)
+        self.assertIn("Wrong header size", str(cnx.exception))
+
+        # Non integer version, but parse it
+        data_dex = binascii.unhexlify('6465780AFF00AB00460A4882696E76616C6964696E76616C6964696E76616C69'
+                                      '7000000070000000785634120000000000000000000000000000000000000000'
+                                      '0000000000000000000000000000000000000000000000000000000000000000'
+                                      '00000000000000000000000000000000')
+        self.assertIsNotNone(dex.DEX(data_dex))
+
+        # Big Endian file
+        data_dex = binascii.unhexlify('6465780A30333500460AF480696E76616C6964696E76616C6964696E76616C69'
+                                      '7000000070000000123456780000000000000000000000000000000000000000'
+                                      '0000000000000000000000000000000000000000000000000000000000000000'
+                                      '00000000000000000000000000000000')
+        with self.assertRaises(NotImplementedError) as cnx:
+            dex.DEX(data_dex)
+        self.assertIn("swapped endian tag", str(cnx.exception))
+
+        # Weird endian file
+        data_dex = binascii.unhexlify('6465780A30333500AB0BC3E4696E76616C6964696E76616C6964696E76616C69'
+                                      '7000000070000000ABCDEF120000000000000000000000000000000000000000'
+                                      '0000000000000000000000000000000000000000000000000000000000000000'
+                                      '00000000000000000000000000000000')
+        with self.assertRaises(ValueError) as cnx:
+            dex.DEX(data_dex)
+        self.assertIn("Wrong endian tag", str(cnx.exception))
 
 
 if __name__ == '__main__':

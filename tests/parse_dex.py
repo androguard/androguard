@@ -5,6 +5,7 @@ from binascii import hexlify
 # Output format will be:
 # <class name> <method name> <bytecode as hex string>
 import sys
+
 sys.path.append('.')
 
 from androguard.core.dex import readuleb128, readsleb128, DalvikPacker
@@ -19,12 +20,15 @@ def read_null_terminated(f):
         else:
             x.append(ord(z))
 
+
 class MockClassManager():
     @property
     def packer(self):
         return DalvikPacker(0x12345678)
 
+
 cm = MockClassManager()
+
 
 class read_dex:
 
@@ -33,17 +37,17 @@ class read_dex:
 
         with open(fname, "rb") as f:
             magic, checksum, signature, file_size, header_size, endian_tag, link_size, \
-            link_off, map_off, self.string_ids_size, string_ids_off, type_ids_size, \
-            type_ids_off, proto_ids_size, proto_ids_off, field_ids_size, field_ids_off, \
-            method_ids_size, method_ids_off, class_defs_size, class_defs_off, data_size, \
-            data_off = unpack("<8sI20s20I", f.read(112))
+                link_off, map_off, self.string_ids_size, string_ids_off, type_ids_size, \
+                type_ids_off, proto_ids_size, proto_ids_off, field_ids_size, field_ids_off, \
+                method_ids_size, method_ids_off, class_defs_size, class_defs_off, data_size, \
+                data_off = unpack("<8sI20s20I", f.read(112))
 
             # print("class_defs_size", class_defs_size, "class_defs_off", class_defs_off)
             for i in range(class_defs_size):
                 # class_def_item
                 f.seek(class_defs_off + i * 8 * 4)
                 class_idx, access_flags, superclass_idx, interfaces_off, source_file_idx, \
-                annotations_off, class_data_off, static_values_off = unpack("<8I", f.read(8 * 4))
+                    annotations_off, class_data_off, static_values_off = unpack("<8I", f.read(8 * 4))
 
                 # Now parse the class_data_item
                 if class_data_off == 0:
@@ -53,7 +57,7 @@ class read_dex:
                 instance_fields_size = readuleb128(cm, f)
                 direct_methods_size = readuleb128(cm, f)
                 virtual_methods_size = readuleb128(cm, f)
-                #print("class_data_item:", static_fields_size, instance_fields_size, direct_methods_size, virtual_methods_size)
+                # print("class_data_item:", static_fields_size, instance_fields_size, direct_methods_size, virtual_methods_size)
 
                 # We do not need the fields...
                 for _ in range(static_fields_size + instance_fields_size):
@@ -83,7 +87,6 @@ class read_dex:
                     method_idx += method_idx_diff
                     methods.append([method_idx, code_off])
 
-
             # Read the string section
             strings = dict()
             self.str_raw = dict()
@@ -111,8 +114,6 @@ class read_dex:
                 f.seek(method_ids_off + i * 8)
                 class_idx, proto_idx, name_idx = unpack("<HHI", f.read(8))
                 method_ids[i] = [strings[self.types[class_idx]], strings[name_idx]]
-
-
 
             # Now parse the found methods and print to stdout
             mres = dict()
@@ -158,6 +159,4 @@ class read_dex:
 if __name__ == "__main__":
     for midx, buff in read_dex(sys.argv[1]).methods.items():
         pass
-        #print(midx, buff)
-
-
+        # print(midx, buff)

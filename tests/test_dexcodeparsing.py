@@ -1,13 +1,13 @@
-import sys
-
-sys.path.append(".")
+import os
 
 from androguard.core import dex
+import parse_dex
 
 from binascii import hexlify
-import parse_dex
 import unittest
 from difflib import Differ
+
+test_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 class TestDexCodeParsing(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestDexCodeParsing(unittest.TestCase):
     def testcode(self):
         skipped_methods = []
 
-        fname = "examples/android/TestsAndroguard/bin/classes.dex"
+        fname = os.path.join(test_dir, 'data/APK/classes.dex')
 
         parsed = parse_dex.read_dex(fname)
 
@@ -37,22 +37,27 @@ class TestDexCodeParsing(unittest.TestCase):
                              "incorrect code for "
                              "[{}]: {} --> {}:\n"
                              "{}\ntries_size: {}, insns_size: {}\nSHOULD BE {}\n{}\n{}".format(m.get_method_idx(),
-                                         m.get_class_name(),
-                                         m.get_name(),
-                                         "".join(dif.compare(parsed.methods[m.get_method_idx()],
-                                         code)),
-                                         m.get_code().tries_size,
-                                         m.get_code().insns_size,
-                                         hexlify(m.get_code().get_raw()),
-                                         parsed.methods[m.get_method_idx()],
-                                         hexlify(m.get_code().code.get_raw())))
+                                                                                               m.get_class_name(),
+                                                                                               m.get_name(),
+                                                                                               "".join(dif.compare(
+                                                                                                   parsed.methods[
+                                                                                                       m.get_method_idx()],
+                                                                                                   code)),
+                                                                                               m.get_code().tries_size,
+                                                                                               m.get_code().insns_size,
+                                                                                               hexlify(
+                                                                                                   m.get_code().get_raw()),
+                                                                                               parsed.methods[
+                                                                                                   m.get_method_idx()],
+                                                                                               hexlify(
+                                                                                                   m.get_code().code.get_raw())))
 
     def testClassManager(self):
         """Test if the classmanager has the same items"""
 
         from androguard.core.mutf8 import decode
 
-        fname = "examples/android/TestsAndroguard/bin/classes.dex"
+        fname = os.path.join(test_dir, 'data/APK/classes.dex')
 
         parsed = parse_dex.read_dex(fname)
 
@@ -76,7 +81,6 @@ class TestDexCodeParsing(unittest.TestCase):
 
         self.assertEqual(cm.get_string(parsed.string_ids_size + 100), ERR_STR)
         self.assertEqual(cm.get_raw_string(parsed.string_ids_size + 100), ERR_STR)
-
 
 
 if __name__ == '__main__':
