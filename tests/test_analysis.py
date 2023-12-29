@@ -1,22 +1,25 @@
+import os
 import unittest
 
 from operator import itemgetter
 
-from androguard.core.bytecodes import dvm
 from androguard.core.analysis import analysis
+from androguard.core.dex import DEX, EncodedMethod, HiddenApiClassDataItem
 from androguard.misc import AnalyzeAPK, AnalyzeDex
+from androguard.util import set_log
+
+test_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 class AnalysisTest(unittest.TestCase):
     def testDex(self):
-        with open("examples/android/TestsAndroguard/bin/classes.dex",
-                  "rb") as fd:
-            d = dvm.DEX(fd.read())
+        with open(os.path.join(test_dir, "data/APK/classes.dex"), "rb") as fd:
+            d = DEX(fd.read())
             dx = analysis.Analysis(d)
             self.assertIsInstance(dx, analysis.Analysis)
 
     def testAPK(self):
-        a, d, dx = AnalyzeAPK("examples/tests/a2dp.Vol_137.apk")
+        a, d, dx = AnalyzeAPK(os.path.join(test_dir, "data/APK/a2dp.Vol_137.apk"))
 
         self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
         self.assertEqual(len(dx.get_strings()), 1564)
@@ -33,31 +36,36 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.find_classes("^(?!Landroid/support).*;$", no_external=True))), 124)
 
         # Find all constructors by method name
-        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor=r"^\(.+\).*$"))), 138)
-        self.assertEqual(len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor=r"^\(.+\).*$", no_external=True))), 94)
+        self.assertEqual(
+            len(list(dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor=r"^\(.+\).*$"))),
+            138)
+        self.assertEqual(len(list(
+            dx.find_methods(classname="^(?!Landroid).*;$", methodname="<init>", descriptor=r"^\(.+\).*$",
+                            no_external=True))), 94)
 
         # Find url like strings
         self.assertEqual(len(list(dx.find_strings(r".*:\/\/.*"))), 15)
 
         # find String fields
-        self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype=r"Ljava\/lang\/String;"))), 63)
+        self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype=r"Ljava\/lang\/String;"))),
+                         63)
 
     def testAnalysis(self):
-        h, d, dx = AnalyzeDex("examples/tests/AnalysisTest.dex")
+        h, d, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/AnalysisTest.dex"))
 
         self.assertEqual(h, "4595fc25104f3fcd709163eb70ca476edf116753607ec18f09548968c71910dc")
-        self.assertIsInstance(d, dvm.DEX)
+        self.assertIsInstance(d, DEX)
         self.assertIsInstance(dx, analysis.Analysis)
 
         cls = ["Ljava/io/PrintStream;", "Ljava/lang/Object;",
-                "Ljava/math/BigDecimal;", "Ljava/math/BigInteger;"]
+               "Ljava/math/BigDecimal;", "Ljava/math/BigInteger;"]
 
         for c in cls:
             self.assertIn(c, map(lambda x: x.orig_class.get_name(),
-                dx.get_external_classes()))
+                                 dx.get_external_classes()))
 
     def testMultidex(self):
-        a, d, dx = AnalyzeAPK("examples/tests/multidex/multidex.apk")
+        a, d, dx = AnalyzeAPK(os.path.join(test_dir, "data/APK/multidex.apk"))
 
         cls = list(map(lambda x: x.get_vm_class().get_name(), dx.get_classes()))
         self.assertIn('Lcom/foobar/foo/Foobar;', cls)
@@ -69,12 +77,12 @@ class AnalysisTest(unittest.TestCase):
         """
         from zipfile import ZipFile
 
-        with ZipFile("examples/tests/multidex/multidex.apk") as myzip:
+        with ZipFile(os.path.join(test_dir, "data/APK/multidex.apk")) as myzip:
             c1 = myzip.read("classes.dex")
             c2 = myzip.read("classes2.dex")
 
-        d1 = dvm.DEX(c1)
-        d2 = dvm.DEX(c2)
+        d1 = DEX(c1)
+        d2 = DEX(c2)
 
         dx = analysis.Analysis()
 
@@ -106,14 +114,14 @@ class AnalysisTest(unittest.TestCase):
         self.assertFalse(dx.classes["Lcom/foobar/foo/Foobar;"].is_external())
 
     def testInterfaces(self):
-        h, d, dx = AnalyzeDex('examples/tests/InterfaceCls.dex')
+        h, d, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/InterfaceCls.dex"))
 
         cls = dx.classes['LInterfaceCls;']
         self.assertIn('Ljavax/net/ssl/X509TrustManager;', cls.implements)
         self.assertEqual(cls.name, 'LInterfaceCls;')
 
     def testExtends(self):
-        h, d, dx = AnalyzeDex('examples/tests/ExceptionHandling.dex')
+        h, d, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/ExceptionHandling.dex"))
 
         cls = dx.classes['LSomeException;']
         self.assertEqual(cls.extends, 'Ljava/lang/Exception;')
@@ -128,8 +136,8 @@ class AnalysisTest(unittest.TestCase):
 
     def testXrefs(self):
         """Test if XREFs produce the correct results"""
-        with open("examples/android/TestsAndroguard/bin/classes.dex", "rb") as fd:
-            d = dvm.DEX(fd.read())
+        with open(os.path.join(test_dir, "data/APK/classes.dex"), "rb") as fd:
+            d = DEX(fd.read())
             dx = analysis.Analysis(d)
 
         dx.create_xref()
@@ -144,7 +152,7 @@ class AnalysisTest(unittest.TestCase):
 
         self.assertIsInstance(testmeth, analysis.MethodAnalysis)
         self.assertFalse(testmeth.is_external())
-        self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
+        self.assertIsInstance(testmeth.method, EncodedMethod)
         self.assertEqual(testmeth.name, 'onCreate')
 
         xrefs = list(map(lambda x: x.full_name, map(itemgetter(1), sorted(testmeth.get_xref_to(), key=itemgetter(2)))))
@@ -155,9 +163,11 @@ class AnalysisTest(unittest.TestCase):
         # then setContentView (which is in the current class but the method is external)
         self.assertEqual(xrefs.pop(0), 'Ltests/androguard/TestActivity; setContentView (I)V')
         # then getApplicationContext (inside the Toast)
-        self.assertEqual(xrefs.pop(0), 'Ltests/androguard/TestActivity; getApplicationContext ()Landroid/content/Context;')
+        self.assertEqual(xrefs.pop(0),
+                         'Ltests/androguard/TestActivity; getApplicationContext ()Landroid/content/Context;')
         # then Toast.makeText
-        self.assertEqual(xrefs.pop(0), 'Landroid/widget/Toast; makeText (Landroid/content/Context; Ljava/lang/CharSequence; I)Landroid/widget/Toast;')
+        self.assertEqual(xrefs.pop(0),
+                         'Landroid/widget/Toast; makeText (Landroid/content/Context; Ljava/lang/CharSequence; I)Landroid/widget/Toast;')
         # then show()
         self.assertEqual(xrefs.pop(0), 'Landroid/widget/Toast; show ()V')
 
@@ -208,7 +218,7 @@ class AnalysisTest(unittest.TestCase):
 
         self.assertIsInstance(testmeth, analysis.MethodAnalysis)
         self.assertFalse(testmeth.is_external())
-        self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
+        self.assertIsInstance(testmeth.method, EncodedMethod)
         self.assertEqual(testmeth.name, 'testCalls')
 
         xrefs = list(map(lambda x: x.full_name, map(itemgetter(1), sorted(testmeth.get_xref_to(), key=itemgetter(2)))))
@@ -244,7 +254,7 @@ class AnalysisTest(unittest.TestCase):
         testmeth = list(filter(lambda x: x.name == 'testString', testcls.get_methods()))[0]
         self.assertIsInstance(testmeth, analysis.MethodAnalysis)
         self.assertFalse(testmeth.is_external())
-        self.assertIsInstance(testmeth.method, dvm.EncodedMethod)
+        self.assertIsInstance(testmeth.method, EncodedMethod)
         self.assertEqual(testmeth.name, 'testString')
 
         stringcls = dx.classes['Ljava/lang/String;']
@@ -257,7 +267,7 @@ class AnalysisTest(unittest.TestCase):
 
     def testXrefOffsets(self):
         """Tests if String offsets in bytecode are correctly stored"""
-        _, _, dx = AnalyzeDex('examples/tests/AnalysisTest.dex')
+        _, _, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/AnalysisTest.dex"))
 
         self.assertEqual(len(dx.get_strings()), 1)
         self.assertIsInstance(dx.strings['Hello world'], analysis.StringAnalysis)
@@ -270,7 +280,7 @@ class AnalysisTest(unittest.TestCase):
 
     def testXrefOffsetsFields(self):
         """Tests if Field offsets in bytecode are correctly stored"""
-        _, _, dx = AnalyzeDex('examples/tests/FieldsTest.dex')
+        _, _, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/FieldsTest.dex"))
 
         self.assertEqual(len(dx.get_strings()), 4)
         self.assertIn('hello world', dx.strings.keys())
@@ -284,24 +294,28 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(afield.get_xref_read(withoffset=True)), 2)
         self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_read(withoffset=True)))), [4, 40])
         self.assertListEqual(list(map(lambda x: x.name, map(itemgetter(1),
-            afield.get_xref_read(withoffset=True)))), ["foonbar", "foonbar"])
+                                                            afield.get_xref_read(withoffset=True)))),
+                             ["foonbar", "foonbar"])
 
         self.assertEqual(len(afield.get_xref_write()), 2)
         self.assertEqual(len(afield.get_xref_write(withoffset=True)), 2)
         self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_write(withoffset=True)))), [10, 32])
         self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
-            afield.get_xref_write(withoffset=True))))), sorted(["<init>", "foonbar"]))
+                                                                   afield.get_xref_write(withoffset=True))))),
+                             sorted(["<init>", "foonbar"]))
 
         cfield = next(dx.find_fields(fieldname='cfield'))
         # this one is static, hence it must have a write in <clinit>
         self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
-            cfield.get_xref_write(withoffset=True))))), sorted(["<clinit>"]))
+                                                                   cfield.get_xref_write(withoffset=True))))),
+                             sorted(["<clinit>"]))
         self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
-            cfield.get_xref_read(withoffset=True))))), sorted(["foonbar"]))
+                                                                   cfield.get_xref_read(withoffset=True))))),
+                             sorted(["foonbar"]))
 
     def testPermissions(self):
         """Test the get_permissions and get_permission_usage methods"""
-        a, _, dx = AnalyzeAPK("examples/android/TestsAndroguard/bin/TestActivity.apk")
+        a, _, dx = AnalyzeAPK(os.path.join(test_dir, "data/APK/TestActivity.apk"))
 
         api_level = a.get_effective_target_sdk_version()
         used_permissions = ['android.permission.BROADCAST_STICKY', 'android.permission.ACCESS_NETWORK_STATE']
@@ -326,15 +340,15 @@ class AnalysisTest(unittest.TestCase):
         self.assertListEqual(sorted(meths), sorted(network_meths))
 
     def testHiddenAnnotation(self):
-        a, d, dx = AnalyzeAPK("examples/android/TestsAnnotation/OPCommonTelephony.jar")
+        a, d, dx = AnalyzeAPK(os.path.join(test_dir, "data/APK/OPCommonTelephony.jar"))
 
         class1 = dx.classes["Lvendor/mediatek/hardware/radio_op/V1_2/IRadioIndicationOp$Stub;"]
-        self.assertEqual(class1.restriction_flag, dvm.HiddenApiClassDataItem.RestrictionApiFlag.WHITELIST)
-        self.assertEqual(class1.domain_flag, dvm.HiddenApiClassDataItem.DomapiApiFlag.CORE_PLATFORM_API)
+        self.assertEqual(class1.restriction_flag, HiddenApiClassDataItem.RestrictionApiFlag.WHITELIST)
+        self.assertEqual(class1.domain_flag, HiddenApiClassDataItem.DomapiApiFlag.CORE_PLATFORM_API)
 
         class1 = dx.classes["Lcom/mediatek/opcommon/telephony/MtkRILConstantsOp;"]
-        self.assertEqual(class1.restriction_flag, dvm.HiddenApiClassDataItem.RestrictionApiFlag.BLACKLIST)
-        self.assertEqual(class1.domain_flag, dvm.HiddenApiClassDataItem.DomapiApiFlag.NONE)
+        self.assertEqual(class1.restriction_flag, HiddenApiClassDataItem.RestrictionApiFlag.BLACKLIST)
+        self.assertEqual(class1.domain_flag, HiddenApiClassDataItem.DomapiApiFlag.NONE)
 
 
 if __name__ == '__main__':
