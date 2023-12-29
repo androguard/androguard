@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
 import unittest
 from lxml import etree
 
-import sys
-sys.path.append('.')
+test_dir = os.path.dirname(os.path.abspath(__file__))
 
 from androguard.core import apk, axml
 from operator import itemgetter
@@ -29,8 +29,7 @@ TEST_CONFIGS = {
 class ARSCTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open("examples/android/TestsAndroguard/bin/TestActivity.apk",
-                  "rb") as fd:
+        with open(os.path.join(test_dir, 'data/APK/TestActivity.apk'), "rb") as fd:
             cls.apk = apk.APK(fd.read(), True)
 
     def testARSC(self):
@@ -79,7 +78,8 @@ class ARSCTest(unittest.TestCase):
         """
         Test if the resolving of different string locales works
         """
-        a = APK("examples/tests/a2dp.Vol_137.apk")
+        a = apk.APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'))
+
         arsc = a.get_android_resources()
 
         p = arsc.get_packages_names()[0]
@@ -122,7 +122,7 @@ class ARSCTest(unittest.TestCase):
                          "received unexpected resource types: %s" % unexpected_types)
 
     def testFallback(self):
-        a = apk.APK("examples/tests/com.teleca.jamendo_35.apk")
+        a = apk.APK(os.path.join(test_dir, 'data/APK/com.teleca.jamendo_35.apk'))
 
         # Should use the fallback
         self.assertEqual(a.get_app_name(), "Jamendo")
@@ -135,11 +135,15 @@ class ARSCTest(unittest.TestCase):
         # With default config, but fallback
         self.assertEqual(len(res_parser.get_res_configs(res_id, axml.ARSCResTableConfig.default_config())), 1)
         # With default config but no fallback
-        self.assertEqual(len(res_parser.get_res_configs(res_id, axml.ARSCResTableConfig.default_config(), fallback=False)), 0)
+        self.assertEqual(
+            len(res_parser.get_res_configs(res_id, axml.ARSCResTableConfig.default_config(), fallback=False)), 0)
 
         # Also test on resolver:
-        self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id))), ["Jamendo", "Jamendo"])
-        self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id, axml.ARSCResTableConfig.default_config()))), ["Jamendo"])
+        self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id))),
+                             ["Jamendo", "Jamendo"])
+        self.assertListEqual(list(
+            map(itemgetter(1), res_parser.get_resolved_res_configs(res_id, axml.ARSCResTableConfig.default_config()))),
+            ["Jamendo"])
 
     def testIDParsing(self):
         parser = axml.ARSCParser.parse_id

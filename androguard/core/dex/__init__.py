@@ -7982,7 +7982,6 @@ class DEX:
         :rtype: a list with all :class:`EncodedMethod` objects
         """
         # TODO could use a generator here
-        name = bytes(name)
         prog = re.compile(name)
         l = []
         for i in self.get_classes():
@@ -8000,7 +7999,6 @@ class DEX:
         :rtype: a list with all :class:`EncodedField` objects
         """
         # TODO could use a generator here
-        name = bytes(name)
         prog = re.compile(name)
         l = []
         for i in self.get_classes():

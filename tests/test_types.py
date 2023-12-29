@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-import sys
+import os
 import unittest
 from struct import pack, unpack, calcsize
 
 from androguard.session import Session
 
-TEST_CASE = 'examples/android/TestsAndroguard/bin/classes.dex'
+
+test_dir = os.path.dirname(os.path.abspath(__file__))
+TEST_CASE = os.path.join(test_dir, 'data/APK/classes.dex')
 
 VALUES = {
     'Ltests/androguard/TestActivity; testDouble ()V': [
@@ -133,11 +135,9 @@ def format_value(literal, ins, to):
 
     # Need to calculate for extra padding bytes
     # if the number is negative, trailing \xff are added (sign extension)
-    print(calcsize(to), calcsize(formats[char]))
     packed = pack('<{}'.format(formats[char]), literal)
     padding = bytearray()
     trailing = bytearray()
-    print(packed)
     if to == '<l' and packed[-1] & 0x80 == 0x80:
         # Sign extension
         trailing = bytearray([0xff] * (calcsize(to) - calcsize(formats[char])))
@@ -147,7 +147,7 @@ def format_value(literal, ins, to):
     else:
         padding = bytearray([0] * (calcsize(to) - calcsize(formats[char])))
 
-    print(ins.__class__.__name__, char, formats[char], to, padding, trailing, literal)
+    # print(ins.__class__.__name__, char, formats[char], to, padding, trailing, literal)
     return unpack(to, padding + packed + trailing)[0]
 
 
@@ -159,7 +159,7 @@ class TypesTest(unittest.TestCase):
             digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
         for method in filter(lambda x: x.full_name in VALUES, d.get_methods()):
-            print("METHOD", method.full_name)
+            # print("METHOD", method.full_name)
 
             for i in filter(lambda x: 'const' in x.get_name(), method.get_instructions()):
                 i.show(0)
@@ -168,9 +168,9 @@ class TypesTest(unittest.TestCase):
 
                 fmt, value = VALUES[method.full_name].pop(0)
                 converted = format_value(i.get_literals()[0], i, fmt)
-                print(i.get_literals(), fmt, value, converted)
+                # print(i.get_literals(), fmt, value, converted)
                 self.assertEqual(converted, value)
-                print()
+                # print()
 
 
 if __name__ == '__main__':

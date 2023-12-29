@@ -1,19 +1,21 @@
 import unittest
 
-import sys
-sys.path.append('.')
+import os
 
 from androguard.core import dex
 from androguard.core.analysis import analysis
 
+test_dir = os.path.dirname(os.path.abspath(__file__))
+
+
 class RenameTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(RenameTest, self).__init__(*args, **kwargs)
-        with open("examples/android/TestsAndroguard/bin/classes.dex",
+        with open(os.path.join(test_dir, 'data/APK/classes.dex'),
                   "rb") as fd:
             self.d = dex.DEX(fd.read())
             self.dx = analysis.Analysis(self.d)
-            self.d.set_vmanalysis(self.dx)
+            # self.d.set_vmanalysis(self.dx)
 
     def testMethodRename(self):
         meth, = self.d.get_method("testDouble")

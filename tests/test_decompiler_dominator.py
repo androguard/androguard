@@ -1,8 +1,5 @@
 """Tests for graph."""
 
-import sys
-sys.path.append('.')
-
 import unittest
 from androguard.decompiler import graph
 

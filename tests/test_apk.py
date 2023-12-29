@@ -294,7 +294,6 @@ class APKTest(unittest.TestCase):
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
 
                 if a.is_signed_v3():
-                    print(apath)
                     if apath == "weird-compression-method.apk":
                         with self.assertRaises(NotImplementedError):
                             a.get_certificates_der_v3()

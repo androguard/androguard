@@ -1,9 +1,5 @@
 """Tests for rpo."""
 
-import sys
-
-sys.path.append('.')
-
 import unittest
 from androguard.decompiler import graph
 from androguard.decompiler import node

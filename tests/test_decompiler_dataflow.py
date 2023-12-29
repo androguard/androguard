@@ -1,10 +1,9 @@
 """Tests for def_use."""
 
-import sys
-sys.path.append('.')
+import os
+from unittest import mock
 
 import collections
-import mock
 import unittest
 
 from androguard.decompiler import dataflow
@@ -12,19 +11,10 @@ from androguard.decompiler import graph
 from androguard.decompiler import instruction
 from androguard.decompiler import basic_blocks
 
+test_dir = os.path.dirname(os.path.abspath(__file__))
+
 
 class DataflowTest(unittest.TestCase):
-    def assertItemsEqual(self, a, b):
-        """
-        This method was renamed in python3.
-        To provide compability with python2,
-        we added this wrapper.
-        """
-        try:
-            return super().assertItemsEqual(a, b)
-        except AttributeError as e:
-            return self.assertCountEqual(a, b)
-
     def _CreateMockIns(self, uses, lhs=None):
         mock_ins = mock.create_autospec(instruction.IRForm)
         mock_ins.get_used_vars.return_value = uses
@@ -162,7 +152,7 @@ class DataflowTest(unittest.TestCase):
         }
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
-        self.assertItemsEqual(analysis.def_to_loc, expected_def_to_loc)
+        self.assertCountEqual(analysis.def_to_loc, expected_def_to_loc)
 
     @mock.patch.object(dataflow, 'reach_def_analysis')
     def testDefUseGCD(self, mock_reach_def):
@@ -237,12 +227,12 @@ class DataflowTest(unittest.TestCase):
         }
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
-        self.assertItemsEqual(du, expected_du)
+        self.assertCountEqual(du, expected_du)
         for entry in du:
-            self.assertItemsEqual(du[entry], expected_du[entry])
-        self.assertItemsEqual(ud, expected_ud)
+            self.assertCountEqual(du[entry], expected_du[entry])
+        self.assertCountEqual(ud, expected_ud)
         for entry in ud:
-            self.assertItemsEqual(ud[entry], expected_ud[entry])
+            self.assertCountEqual(ud[entry], expected_ud[entry])
 
     @mock.patch.object(dataflow, 'reach_def_analysis')
     def testDefUseIfBool(self, mock_reach_def):
@@ -307,7 +297,7 @@ class DataflowTest(unittest.TestCase):
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
         self.assertEqual(ud, expected_ud)
-        self.assertItemsEqual(du, expected_du)
+        self.assertCountEqual(du, expected_du)
 
     def testGroupVariablesGCD(self):
         du = {
@@ -342,7 +332,7 @@ class DataflowTest(unittest.TestCase):
             'ret': [([3, 8], [9])]
         }
         groups = dataflow.group_variables(['a', 'b', 'c', 'd', 'ret'], du, ud)
-        self.assertItemsEqual(groups, expected_groups)
+        self.assertCountEqual(groups, expected_groups)
 
     def testGroupVariablesIfBool(self):
         du = {
@@ -371,9 +361,9 @@ class DataflowTest(unittest.TestCase):
             2: [([-1], [1, 6])],
             3: [([-2], [2, 3])]
         }
-        self.assertItemsEqual(groups, expected_groups)
+        self.assertCountEqual(groups, expected_groups)
         for entry in groups:
-            self.assertItemsEqual(groups[entry], expected_groups[entry])
+            self.assertCountEqual(groups[entry], expected_groups[entry])
 
     @mock.patch.object(dataflow, 'group_variables')
     def testSplitVariablesGCD(self, group_variables_mock):
