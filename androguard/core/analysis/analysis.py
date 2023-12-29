@@ -1633,7 +1633,7 @@ class Analysis:
                 self.classes[class_name] = ClassAnalysis(ExternalClass(class_name))
 
             # Create external method
-            meth = ExternalMethod(class_name, method_name, method_descriptor)
+            meth = ExternalMethod(class_name, method_name, ''.join(method_descriptor))
             meth_analysis = MethodAnalysis(None, meth)
 
             # add to all the collections we have
@@ -1786,7 +1786,6 @@ class Analysis:
         :param no_external: Remove external classes from the output (default False)
         :rtype: Iterator[ClassAnalysis]
         """
-        name = bytes(name)
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
                 continue
@@ -1807,9 +1806,6 @@ class Analysis:
         :param no_external: Remove external method from the output (default False)
         :rtype: Iterator[MethodAnalysis]
         """
-        classname = bytes(classname)
-        methodname = bytes(methodname)
-        descriptor = bytes(descriptor)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for m in c.get_methods():
@@ -1845,9 +1841,6 @@ class Analysis:
         :param accessflags: regular expression of the access flags
         :rtype: Iterator[FieldAnalysis]
         """
-        classname = bytes(classname)
-        fieldname = bytes(fieldname)
-        fieldtype = bytes(fieldtype)
         for cname, c in self.classes.items():
             if re.match(classname, cname):
                 for f in c.get_fields():
