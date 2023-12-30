@@ -1811,16 +1811,6 @@ class Analysis:
                 for m in c.get_methods():
                     z = m.get_method()
 
-                    # logger.info(z.get_descriptor())
-                    # if 'TestInnerClass' in z.get_descriptor():
-                    #     logger.info(z.get_descriptor())
-                    # if isinstance(z, ExternalMethod):
-                    #     print('external method')
-                    #     print(f'is list: {isinstance(z.get_descriptor(), list)}')
-                    # else:
-                    #     print('internal method')
-                    #     print(f'is str: {isinstance(z.get_descriptor(), str)}')
-
                     # TODO is it even possible that an internal class has
                     # external methods? Maybe we should check for ExternalClass
                     # instead...
