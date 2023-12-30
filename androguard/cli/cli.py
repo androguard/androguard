@@ -540,11 +540,7 @@ def cg(
     #                      yaml=nx.write_yaml,
     #                      net=nx.write_pajek,
     #                      )
-    # for u,v,d in callgraph.edges(data=True):
-    #     print("edge")
-    #     print(u)
-    #     print(v)
-    #     print(d)
+
         
 
     if show:
@@ -584,20 +580,14 @@ def cg(
                                 labels={n: f"{n.get_class_name()} {n.name} {n.descriptor}"
                                         for n in callgraph.nodes})
 
-        # matplotlib
         print("Showing")
-        # plt.margins(x=0.4, y=0.4)
         # plt.savefig("graph.png", dpi=1000)
-
-        # plt.tight_layout()
-        # plt.figure(figsize=(20,14))
         plt.draw()
         plt.show()
 
     else:
         # TODO: save various format too
         pass
-    # end matplotlib
         
     # else:
     #     writer = output.rsplit(".", 1)[1]
