@@ -25,6 +25,8 @@ dataset = "*"
 frida = "*"
 loguru = "*"
 apkInspector = ">=1.1.7"
+networkx = ">=3.2.1"
+PyQt5 = ">=5.15.10"
 
 [tool.setuptools.package_data]
 "androguard.core.api_specific_resources" = ["aosp_permissions/*.json", "api_permission_mappings/*.json"]

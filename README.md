@@ -12,6 +12,12 @@ Quick installation:
 ~~~~
 pip install androguard
 ~~~~
+
+For visualizing callgraphs generated with 'androguard cg', install additional dependencies:
+~~~~
+apt-get install libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev libxcb-shape0-dev libxcb-xkb-dev
+~~~~
+
 > [!IMPORTANT]
 > Versions >= 4.0.0 are new releases after a long time, where the project has substantial differences from the previous stable version 3.3.5 from 2019. This means that certain functionalities have been removed. If you notice an issue with your project using tha latest version, please open up an [issue](https://github.com/androguard/androguard/issues).
 

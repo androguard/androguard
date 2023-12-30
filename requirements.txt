@@ -10,3 +10,5 @@ dataset
 frida
 loguru
 apkInspector>=1.1.7
+networkx>=3.2.1
+PyQt5>=5.15.10

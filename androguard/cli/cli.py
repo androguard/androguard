@@ -455,6 +455,160 @@ def dump(package_name, modules):
     """
     androdump_main(package_name, modules)
 
+@entry_point.command()
+@click.argument(
+    'file_',
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    required=True,
+)
+@click.option(
+    '--output', '-o',
+    default='callgraph.gml',
+    help='Filename of the output file, the extension is used to decide which format to use (default callgraph.gml)',
+)
+@click.option(
+    '--show', '-s',
+    default=False,
+    is_flag=True,
+    help='instead of saving the graph, print it with matplotlib (you might not see anything!',
+)
+@click.option(
+    '--classname',
+    default='.*',
+    help='Regex to filter by classname',
+)
+@click.option(
+    '--methodname',
+    default='.*',
+    help='Regex to filter by methodname',
+)
+@click.option(
+    '--descriptor',
+    default='.*',
+    help='Regex to filter by descriptor',
+)
+@click.option(
+    '--accessflag',
+    default='.*',
+    help='Regex to filter by accessflag',
+)
+@click.option(
+    '--no-isolated',
+    default=False,
+    is_flag=True,
+    help='Do not store methods which has no xrefs',
+)
+def cg(
+    file_,
+    output,
+    show,
+    classname,
+    methodname,
+    descriptor,
+    accessflag,
+    no_isolated):
+    """
+    Create a call graph based on the data of Analysis and export it into a graph format.
+    """
+    from androguard.core.bytecode import FormatClassToJava
+    from androguard.misc import AnalyzeAPK
+    from androguard.core.analysis.analysis import ExternalMethod
+
+    import matplotlib.pyplot as plt
+    import networkx as nx
+
+    a, d, dx = AnalyzeAPK(file_)
+
+    entry_points = map(FormatClassToJava,
+                       a.get_activities() + a.get_providers() +
+                       a.get_services() + a.get_receivers())
+    entry_points = list(entry_points)
+
+    callgraph = dx.get_call_graph(
+        classname,
+        methodname,
+        descriptor,
+        accessflag,
+        no_isolated,
+        entry_points
+    )
+
+    # write_methods = dict(gml=_write_gml,
+    #                      gexf=nx.write_gexf,
+    #                      gpickle=nx.write_gpickle,
+    #                      graphml=nx.write_graphml,
+    #                      yaml=nx.write_yaml,
+    #                      net=nx.write_pajek,
+    #                      )
+    # for u,v,d in callgraph.edges(data=True):
+    #     print("edge")
+    #     print(u)
+    #     print(v)
+    #     print(d)
+        
+
+    if show:
+        pos = nx.spring_layout(callgraph)
+        internal = []
+        external = []
+
+        for n in callgraph:
+            if isinstance(n, ExternalMethod):
+                external.append(n)
+            else:
+                internal.append(n)
+
+        print("Drawing nodes and edges")
+        nx.draw_networkx_nodes(
+            callgraph,
+            # node_size=100,
+            pos=pos, node_color='r',
+            nodelist=internal)
+
+        nx.draw_networkx_nodes(
+            callgraph,
+            # node_size=100,
+            pos=pos,
+            node_color='b',
+            nodelist=external)
+
+        nx.draw_networkx_edges(
+            callgraph,
+            pos,
+            width=0.5,
+            arrows=True)
+
+        nx.draw_networkx_labels(callgraph,
+                                pos=pos,
+                                font_size=6,
+                                labels={n: f"{n.get_class_name()} {n.name} {n.descriptor}"
+                                        for n in callgraph.nodes})
+
+        # matplotlib
+        print("Showing")
+        # plt.margins(x=0.4, y=0.4)
+        # plt.savefig("graph.png", dpi=1000)
+
+        # plt.tight_layout()
+        # plt.figure(figsize=(20,14))
+        plt.draw()
+        plt.show()
+
+    else:
+        # TODO: save various format too
+        pass
+    # end matplotlib
+        
+    # else:
+    #     writer = output.rsplit(".", 1)[1]
+    #     if writer in ["bz2", "gz"]:
+    #         writer = output.rsplit(".", 2)[1]
+    #     if writer not in write_methods:
+    #         print("Could not find a method to export files to {}!"
+    #               .format(writer))
+    #         sys.exit(1)
+
+    #     write_methods[writer](CG, output)
 
 if __name__ == '__main__':
     entry_point()
