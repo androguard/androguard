@@ -2,38 +2,35 @@
 # -*- coding: utf-8 -*-
 
 """Androguard is a full Python tool to reverse Android Applications."""
+import json
+import sys
 
-# core modules
-import sys, json
-
-# 3rd party modules
 import click
 from loguru import logger
 
-# local modules
-import androguard
 import androguard.core.apk
 from androguard import util
-
 from androguard.cli.main import (androarsc_main,
-                  androaxml_main,
-                  export_apps_to_format,
-                  androsign_main,
-                  androlyze_main,
-                  androdis_main,
-                  androtrace_main,
-                  androdump_main,
-)
+                                 androaxml_main,
+                                 export_apps_to_format,
+                                 androsign_main,
+                                 androlyze_main,
+                                 androdis_main,
+                                 androtrace_main,
+                                 androdump_main,
+                                 )
 
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
 @click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
 def entry_point(verbosity):
-    if verbosity == None:
-       util.set_log("INFO")
+    if verbosity is None:
+        util.set_log("ERROR")
+    else:
+        util.set_log("INFO")
     logger.add("androguard.log", retention="10 days")
-    
+
 
 @entry_point.command()
 @click.option(
@@ -46,8 +43,8 @@ def entry_point(verbosity):
     help='filename to save the decoded AndroidManifest.xml to, default stdout',
 )
 @click.option("--resource", "-r",
-        help="Resource (any binary XML file) inside the APK to parse instead of AndroidManifest.xml"
-)
+              help="Resource (any binary XML file) inside the APK to parse instead of AndroidManifest.xml"
+              )
 @click.argument(
     'file_',
     required=False,
@@ -215,9 +212,9 @@ def arsc(input_,
         for p in arscobj.get_packages_names():
             print("In Package:", p)
             print("\n".join(map(lambda x: "  \\x00\\x00"
-                                if x == "\x00\x00"
-                                else "  {}".format(x),
-                                     sorted(arscobj.get_locales(p)))))
+            if x == "\x00\x00"
+            else "  {}".format(x),
+                                sorted(arscobj.get_locales(p)))))
         sys.exit(0)
 
     if list_types:
@@ -225,7 +222,7 @@ def arsc(input_,
             print("In Package:", p)
             for locale in sorted(arscobj.get_locales(p)):
                 print("  In Locale: {}".format("\\x00\\x00"
-                      if locale == "\x00\x00" else locale))
+                                               if locale == "\x00\x00" else locale))
                 print("\n".join(map("    {}".format,
                                     sorted(arscobj.get_types(p, locale)))))
         sys.exit(0)
@@ -371,22 +368,23 @@ def analyze(session, apk):
 
 @entry_point.command()
 @click.option("-o", "--offset",
-        default=0,
-        type=int,
-        help="Offset to start dissassembly inside the file")
+              default=0,
+              type=int,
+              help="Offset to start dissassembly inside the file")
 @click.option("-s", "--size",
-        default=0,
-        type=int,
-        help="Number of bytes from offset to disassemble, 0 for whole file")
+              default=0,
+              type=int,
+              help="Number of bytes from offset to disassemble, 0 for whole file")
 @click.argument(
-        "DEX",
-        type=click.Path(exists=True, dir_okay=False, file_okay=True),
-        )
+    "DEX",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+)
 def disassemble(offset, size, dex):
     """
     Disassemble Dalvik Code with size SIZE starting from an offset
     """
     androdis_main(offset, size, dex)
+
 
 @entry_point.command()
 @click.argument(
@@ -396,8 +394,8 @@ def disassemble(offset, size, dex):
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 @click.option("-m", "--modules",
-        multiple=True, default=[],
-        help="A list of modules to load in frida")
+              multiple=True, default=[],
+              help="A list of modules to load in frida")
 @click.option(
     '--enable-ui', is_flag=True,
     default=False,
@@ -415,6 +413,7 @@ def trace(apk, modules, enable_ui):
     """
     androtrace_main(apk, modules, False, enable_ui)
 
+
 @entry_point.command()
 @click.argument(
     'package_name',
@@ -422,9 +421,8 @@ def trace(apk, modules, enable_ui):
     required=False,
 )
 @click.option("-m", "--modules",
-        multiple=True, default=[],
-        help="A list of modules to load in frida")
-
+              multiple=True, default=[],
+              help="A list of modules to load in frida")
 def dtrace(package_name, modules):
     """
     Start dynamically an installed APK on the phone and start to trace all interesting methods from the modules list
@@ -436,6 +434,7 @@ def dtrace(package_name, modules):
     """
     androtrace_main(package_name, modules, True)
 
+
 @entry_point.command()
 @click.argument(
     'package_name',
@@ -443,9 +442,8 @@ def dtrace(package_name, modules):
     required=False,
 )
 @click.option("-m", "--modules",
-        multiple=True, default=["androguard/pentest/modules/helpers/dump/dexdump.js"],
-        help="A list of modules to load in frida")
-
+              multiple=True, default=["androguard/pentest/modules/helpers/dump/dexdump.js"],
+              help="A list of modules to load in frida")
 def dump(package_name, modules):
     """
     Start and dump dynamically an installed APK on the phone
@@ -457,6 +455,6 @@ def dump(package_name, modules):
     """
     androdump_main(package_name, modules)
 
+
 if __name__ == '__main__':
     entry_point()
-
