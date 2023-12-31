@@ -696,6 +696,11 @@ class MethodAnalysis:
 
         return data
 
+    # def __str__(self):
+    #     return "{}->{} {} [access_flags={}]\n".format(
+    #         self.get_class_name(), self.method.get_name(), self.get_descriptor(),
+    #         self.method.get_access_flags_string())
+
     def __repr__(self):
         return "<analysis.MethodAnalysis {}>".format(self.method)
 
@@ -1899,7 +1904,14 @@ class Analysis:
                 else:
                     is_entry_point = False
 
-                G.add_node(method, external=is_external, entrypoint=is_entry_point)
+                G.add_node(
+                    method,
+                    external=is_external,
+                    entrypoint=is_entry_point,
+                    descriptor=method.get_descriptor(),
+                    accessflags=method.get_access_flags_string(),
+                    classname=method.get_class_name()
+                    )
 
         CG = nx.DiGraph()
 
@@ -1920,14 +1932,16 @@ class Analysis:
 
             _add_node(CG, orig_method, entry_points)
 
-            for other_class, callee, offset in m.get_xref_to():
-                _add_node(CG, callee, entry_points)
+            # callee_method actually seems to be a MethodAnalysis, which is
+            # not consistent with the documentation of m.get_xref_to()
+            for callee_class, callee_method, offset in m.get_xref_to():
+                _add_node(CG, callee_method.method, entry_points)
 
                 # As this is a DiGraph and we are not interested in duplicate edges,
                 # check if the edge is already in the edge set.
                 # If you need all calls, you probably want to check out MultiDiGraph
-                if not CG.has_edge(orig_method, callee):
-                    CG.add_edge(orig_method, callee)
+                if not CG.has_edge(orig_method, callee_method.method):
+                    CG.add_edge(orig_method, callee_method.method)
 
         return CG
 
