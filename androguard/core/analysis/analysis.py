@@ -525,7 +525,6 @@ class MethodAnalysis:
         :param methodobj: :class:`~MethodAnalysis`
         :param offset: integer where in the method the call happens
         """
-        logger.info(type(methodobj))
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
@@ -696,11 +695,6 @@ class MethodAnalysis:
             data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
 
         return data
-
-    # def __str__(self):
-    #     return "{}->{} {} [access_flags={}]\n".format(
-    #         self.get_class_name(), self.method.get_name(), self.get_descriptor(),
-    #         self.method.get_access_flags_string())
 
     def __repr__(self):
         return "<analysis.MethodAnalysis {}>".format(self.method)
