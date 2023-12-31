@@ -20,6 +20,7 @@ from androguard.cli.main import (androarsc_main,
                                  androdump_main,
                                  )
 
+import networkx as nx
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
@@ -455,6 +456,32 @@ def dump(package_name, modules):
     """
     androdump_main(package_name, modules)
 
+# callgraph exporting utility functions
+def _write_gml(G, path):
+    """Wrapper around nx.write_gml"""
+    return nx.write_gml(G, path, stringizer=str)
+
+def _write_gpickle(G, path):
+    """Wrapper around pickle dump"""
+    import pickle
+    with open(path, 'wb') as f:
+        pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
+
+def _write_yaml(G, path):
+    """Wrapper around yaml dump"""
+    import yaml
+    with open(path, 'w') as f:
+        yaml.dump(G, f)
+
+# mapping of types to their respective exporting functions
+write_methods = dict(
+    gml=_write_gml,
+    gexf=nx.write_gexf,
+    # gpickle=_write_gpickle,   # Pickling can't be done due to BufferedReader attributes (e.g. EncodedMethod.buff) not being serializable
+    graphml=nx.write_graphml,
+    # yaml=_write_yaml,         # Same limitation as gpickle
+    net=nx.write_pajek)
+
 @entry_point.command()
 @click.argument(
     'file_',
@@ -464,13 +491,21 @@ def dump(package_name, modules):
 @click.option(
     '--output', '-o',
     default='callgraph.gml',
-    help='Filename of the output file, the extension is used to decide which format to use (default callgraph.gml)',
+    help='Filename of the output graph file',
+)
+@click.option(
+    '--output-type',
+    type=click.Choice(
+        list(write_methods.keys()),
+        case_sensitive=False),
+    default='gml',
+    help='Type of the graph to output '
 )
 @click.option(
     '--show', '-s',
     default=False,
     is_flag=True,
-    help='instead of saving the graph, print it with matplotlib (you might not see anything!',
+    help='instead of saving the graph file, render it with matplotlib',
 )
 @click.option(
     '--classname',
@@ -501,6 +536,7 @@ def dump(package_name, modules):
 def cg(
     file_,
     output,
+    output_type,
     show,
     classname,
     methodname,
@@ -532,17 +568,7 @@ def cg(
         no_isolated,
         entry_points
     )
-
-    # write_methods = dict(gml=_write_gml,
-    #                      gexf=nx.write_gexf,
-    #                      gpickle=nx.write_gpickle,
-    #                      graphml=nx.write_graphml,
-    #                      yaml=nx.write_yaml,
-    #                      net=nx.write_pajek,
-    #                      )
-
         
-
     if show:
         pos = nx.spring_layout(callgraph)
         internal = []
@@ -586,19 +612,13 @@ def cg(
         plt.show()
 
     else:
-        # TODO: save various format too
-        pass
-        
-    # else:
-    #     writer = output.rsplit(".", 1)[1]
-    #     if writer in ["bz2", "gz"]:
-    #         writer = output.rsplit(".", 2)[1]
-    #     if writer not in write_methods:
-    #         print("Could not find a method to export files to {}!"
-    #               .format(writer))
-    #         sys.exit(1)
+        output_type_lower = output_type.lower()
+        if output_type_lower not in write_methods:
+            print(f"Could not find a method to export files to {output_type_lower}!")
+            sys.exit(1)
 
-    #     write_methods[writer](CG, output)
+        write_methods[output_type_lower](callgraph, output)
+
 
 if __name__ == '__main__':
     entry_point()
