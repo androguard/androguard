@@ -511,7 +511,7 @@ class MethodAnalysis:
         (this method calls another method)
 
         :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param methodobj:  :class:`~MethodAnalysis`
         :param offset: integer where in the method the call happens
         """
         self.xrefto.add((classobj, methodobj, offset))
@@ -546,8 +546,8 @@ class MethodAnalysis:
 
         The list of tuples has the form:
         (:class:`~ClassAnalysis`,
-        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
-        :class:`~ExternalMethod`, :class:`int`)
+        :class:`~MethodAnalysis`,
+        :class:`int`)
         """
         return self.xrefto
 
