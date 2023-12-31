@@ -580,16 +580,13 @@ def cg(
             else:
                 internal.append(n)
 
-        print("Drawing nodes and edges")
         nx.draw_networkx_nodes(
             callgraph,
-            # node_size=100,
             pos=pos, node_color='r',
             nodelist=internal)
 
         nx.draw_networkx_nodes(
             callgraph,
-            # node_size=100,
             pos=pos,
             node_color='b',
             nodelist=external)
@@ -606,8 +603,6 @@ def cg(
                                 labels={n: f"{n.get_class_name()} {n.name} {n.descriptor}"
                                         for n in callgraph.nodes})
 
-        print("Showing")
-        # plt.savefig("graph.png", dpi=1000)
         plt.draw()
         plt.show()
 
