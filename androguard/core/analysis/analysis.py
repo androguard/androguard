@@ -1814,6 +1814,9 @@ class Analysis:
                     # TODO is it even possible that an internal class has
                     # external methods? Maybe we should check for ExternalClass
                     # instead...
+                    # Above: Yes, it is possible.  Internal classes that inherit from
+                    # an External class and call inherited methods will show as
+                    # external calls
                     if no_external and isinstance(z, ExternalMethod):
                         continue
                     if re.match(methodname, z.get_name()) and \
