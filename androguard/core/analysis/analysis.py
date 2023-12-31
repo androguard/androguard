@@ -522,9 +522,10 @@ class MethodAnalysis:
         (this method is called by another method)
 
         :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param methodobj: :class:`~MethodAnalysis`
         :param offset: integer where in the method the call happens
         """
+        logger.info(type(methodobj))
         self.xreffrom.add((classobj, methodobj, offset))
 
     def get_xref_from(self):
@@ -534,8 +535,8 @@ class MethodAnalysis:
 
         The list of tuples has the form:
         (:class:`~ClassAnalysis`,
-        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
-        :class:`~ExternalMethod`, :class:`int`)
+        :class:`~MethodAnalysis`,
+        :class:`int`)
         """
         return self.xreffrom
 
