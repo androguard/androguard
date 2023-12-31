@@ -1933,8 +1933,6 @@ class Analysis:
 
             _add_node(CG, orig_method, entry_points)
 
-            # callee_method actually seems to be a MethodAnalysis, which is
-            # not consistent with the documentation of m.get_xref_to()
             for callee_class, callee_method, offset in m.get_xref_to():
                 _add_node(CG, callee_method.method, entry_points)
 
