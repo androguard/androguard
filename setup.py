@@ -22,14 +22,13 @@ setup(
         'console_scripts': [
             'androguard = androguard.cli.cli:entry_point'] },
     setup_requires=['setuptools'],
-    python_requires='>=3.6',
+    python_requires='>=3.9',
     classifiers=[
                  'License :: OSI Approved :: Apache Software License',
                  'Programming Language :: Python',
                  'Programming Language :: Python :: 3',
-                 'Programming Language :: Python :: 3.6',
-                 'Programming Language :: Python :: 3.7',
-                 'Programming Language :: Python :: 3.8',
+                 'Programming Language :: Python :: 3.9',
+                 'Programming Language :: Python :: 3.10',
                  'Programming Language :: Python :: 3 :: Only',
                  'Topic :: Security',
                  'Topic :: Software Development',
