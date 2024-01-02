@@ -1903,6 +1903,7 @@ class Analysis:
                     method,
                     external=is_external,
                     entrypoint=is_entry_point,
+                    methodname=method.get_name(),
                     descriptor=method.get_descriptor(),
                     accessflags=method.get_access_flags_string(),
                     classname=method.get_class_name()
