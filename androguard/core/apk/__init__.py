@@ -811,7 +811,7 @@ class APK:
 
         :rtype: a list of str
         """
-        dexre = re.compile(r"classes(\d*).dex")
+        dexre = re.compile(r"^classes(\d*).dex$")
         return filter(lambda x: dexre.match(x), self.get_files())
 
     def get_all_dex(self):
