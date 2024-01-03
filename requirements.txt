@@ -10,3 +10,7 @@ dataset
 frida
 loguru
 apkInspector>=1.2.1
+matplotlib
+networkx
+PyQt5
+pyyaml

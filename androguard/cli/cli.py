@@ -20,6 +20,7 @@ from androguard.cli.main import (androarsc_main,
                                  androdump_main,
                                  )
 
+import networkx as nx
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
@@ -454,6 +455,164 @@ def dump(package_name, modules):
         $ androguard dump package_name
     """
     androdump_main(package_name, modules)
+
+# callgraph exporting utility functions
+def _write_gml(G, path):
+    """Wrapper around nx.write_gml"""
+    return nx.write_gml(G, path, stringizer=str)
+
+def _write_gpickle(G, path):
+    """Wrapper around pickle dump"""
+    import pickle
+    with open(path, 'wb') as f:
+        pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
+
+def _write_yaml(G, path):
+    """Wrapper around yaml dump"""
+    import yaml
+    with open(path, 'w') as f:
+        yaml.dump(G, f)
+
+# mapping of types to their respective exporting functions
+write_methods = dict(
+    gml=_write_gml,
+    gexf=nx.write_gexf,
+    # gpickle=_write_gpickle,   # Pickling can't be done due to BufferedReader attributes (e.g. EncodedMethod.buff) not being serializable
+    graphml=nx.write_graphml,
+    # yaml=_write_yaml,         # Same limitation as gpickle
+    net=nx.write_pajek)
+
+@entry_point.command()
+@click.argument(
+    'file_',
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    required=True,
+)
+@click.option(
+    '--output', '-o',
+    default='callgraph.gml',
+    help='Filename of the output graph file',
+)
+@click.option(
+    '--output-type',
+    type=click.Choice(
+        list(write_methods.keys()),
+        case_sensitive=False),
+    default='gml',
+    help='Type of the graph to output '
+)
+@click.option(
+    '--show', '-s',
+    default=False,
+    is_flag=True,
+    help='instead of saving the graph file, render it with matplotlib',
+)
+@click.option(
+    '--classname',
+    default='.*',
+    help='Regex to filter by classname',
+)
+@click.option(
+    '--methodname',
+    default='.*',
+    help='Regex to filter by methodname',
+)
+@click.option(
+    '--descriptor',
+    default='.*',
+    help='Regex to filter by descriptor',
+)
+@click.option(
+    '--accessflag',
+    default='.*',
+    help='Regex to filter by accessflag',
+)
+@click.option(
+    '--no-isolated',
+    default=False,
+    is_flag=True,
+    help='Do not store methods which has no xrefs',
+)
+def cg(
+    file_,
+    output,
+    output_type,
+    show,
+    classname,
+    methodname,
+    descriptor,
+    accessflag,
+    no_isolated):
+    """
+    Create a call graph based on the data of Analysis and export it into a graph format.
+    """
+    from androguard.core.bytecode import FormatClassToJava
+    from androguard.misc import AnalyzeAPK
+    from androguard.core.analysis.analysis import ExternalMethod
+
+    import matplotlib.pyplot as plt
+    import networkx as nx
+
+    a, d, dx = AnalyzeAPK(file_)
+
+    entry_points = map(FormatClassToJava,
+                       a.get_activities() + a.get_providers() +
+                       a.get_services() + a.get_receivers())
+    entry_points = list(entry_points)
+
+    callgraph = dx.get_call_graph(
+        classname,
+        methodname,
+        descriptor,
+        accessflag,
+        no_isolated,
+        entry_points
+    )
+        
+    if show:
+        pos = nx.spring_layout(callgraph)
+        internal = []
+        external = []
+
+        for n in callgraph:
+            if isinstance(n, ExternalMethod):
+                external.append(n)
+            else:
+                internal.append(n)
+
+        nx.draw_networkx_nodes(
+            callgraph,
+            pos=pos, node_color='r',
+            nodelist=internal)
+
+        nx.draw_networkx_nodes(
+            callgraph,
+            pos=pos,
+            node_color='b',
+            nodelist=external)
+
+        nx.draw_networkx_edges(
+            callgraph,
+            pos,
+            width=0.5,
+            arrows=True)
+
+        nx.draw_networkx_labels(callgraph,
+                                pos=pos,
+                                font_size=6,
+                                labels={n: f"{n.get_class_name()} {n.name} {n.descriptor}"
+                                        for n in callgraph.nodes})
+
+        plt.draw()
+        plt.show()
+
+    else:
+        output_type_lower = output_type.lower()
+        if output_type_lower not in write_methods:
+            print(f"Could not find a method to export files to {output_type_lower}!")
+            sys.exit(1)
+
+        write_methods[output_type_lower](callgraph, output)
 
 
 if __name__ == '__main__':

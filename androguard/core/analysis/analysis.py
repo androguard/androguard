@@ -9,7 +9,7 @@ import time
 from enum import IntEnum
 
 from loguru import logger
-
+import networkx as nx
 
 BasicOPCODES = set()
 for i in dex.BRANCH_DEX_OPCODES:
@@ -511,7 +511,7 @@ class MethodAnalysis:
         (this method calls another method)
 
         :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param methodobj:  :class:`~MethodAnalysis`
         :param offset: integer where in the method the call happens
         """
         self.xrefto.add((classobj, methodobj, offset))
@@ -522,7 +522,7 @@ class MethodAnalysis:
         (this method is called by another method)
 
         :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+        :param methodobj: :class:`~MethodAnalysis`
         :param offset: integer where in the method the call happens
         """
         self.xreffrom.add((classobj, methodobj, offset))
@@ -534,8 +534,8 @@ class MethodAnalysis:
 
         The list of tuples has the form:
         (:class:`~ClassAnalysis`,
-        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
-        :class:`~ExternalMethod`, :class:`int`)
+        :class:`~MethodAnalysis`,
+        :class:`int`)
         """
         return self.xreffrom
 
@@ -546,8 +546,8 @@ class MethodAnalysis:
 
         The list of tuples has the form:
         (:class:`~ClassAnalysis`,
-        :class:`~androguard.core.bytecodes.dvm.EncodedMethod` or
-        :class:`~ExternalMethod`, :class:`int`)
+        :class:`~MethodAnalysis`,
+        :class:`int`)
         """
         return self.xrefto
 
@@ -1810,9 +1810,13 @@ class Analysis:
             if re.match(classname, cname):
                 for m in c.get_methods():
                     z = m.get_method()
+
                     # TODO is it even possible that an internal class has
                     # external methods? Maybe we should check for ExternalClass
                     # instead...
+                    # Above: Yes, it is possible.  Internal classes that inherit from
+                    # an External class and call inherited methods will show as
+                    # external calls
                     if no_external and isinstance(z, ExternalMethod):
                         continue
                     if re.match(methodname, z.get_name()) and \
@@ -1852,6 +1856,88 @@ class Analysis:
 
     def __repr__(self):
         return "<analysis.Analysis VMs: {}, Classes: {}, Methods: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.methods), len(self.strings))
+
+    def get_call_graph(
+        self,
+        classname=".*",
+        methodname=".*",
+        descriptor=".*",
+        accessflags=".*",
+        no_isolated=False,
+        entry_points=[]):
+        """
+        Generate a directed graph based on the methods found by the filters applied.
+        The filters are the same as in
+        :meth:`~androguard.core.analysis.analysis.Analysis.find_methods`
+
+        A networkx.DiGraph is returned, containing all edges only once!
+        that means, if a method calls some method twice or more often, there will
+        only be a single connection.
+
+        :param classname: regular expression of the classname (default: ".*")
+        :param fieldname: regular expression of the fieldname (default: ".*")
+        :param fieldtype: regular expression of the fieldtype (default: ".*")
+        :param accessflags: regular expression of the access flags (default: ".*")
+        :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
+        :param entry_points: A list of classes that are marked as entry point
+
+        :rtype: DiGraph
+        """
+
+        def _add_node(G, method, _entry_points):
+            """
+            Wrapper to add methods to a graph
+            """
+            if method not in G:
+                if isinstance(method, ExternalMethod):
+                    is_external = True
+                else:
+                    is_external = False
+
+                if method.get_class_name() in _entry_points:
+                    is_entry_point = True
+                else:
+                    is_entry_point = False
+
+                G.add_node(
+                    method,
+                    external=is_external,
+                    entrypoint=is_entry_point,
+                    methodname=method.get_name(),
+                    descriptor=method.get_descriptor(),
+                    accessflags=method.get_access_flags_string(),
+                    classname=method.get_class_name()
+                    )
+
+        CG = nx.DiGraph()
+
+        # Note: If you create the CG from many classes at the same time, the drawing
+        # will be a total mess...
+        for m in self.find_methods(
+            classname=classname,
+            methodname=methodname,
+            descriptor=descriptor,
+            accessflags=accessflags):
+            
+            orig_method = m.get_method()
+            logger.info("Found Method --> {}".format(orig_method))
+
+            if no_isolated and len(m.get_xref_to()) == 0:
+                logger.info("Skipped {}, because if has no xrefs".format(orig_method))
+                continue
+
+            _add_node(CG, orig_method, entry_points)
+
+            for callee_class, callee_method, offset in m.get_xref_to():
+                _add_node(CG, callee_method.method, entry_points)
+
+                # As this is a DiGraph and we are not interested in duplicate edges,
+                # check if the edge is already in the edge set.
+                # If you need all calls, you probably want to check out MultiDiGraph
+                if not CG.has_edge(orig_method, callee_method.method):
+                    CG.add_edge(orig_method, callee_method.method)
+
+        return CG
 
     def create_ipython_exports(self):
         """
