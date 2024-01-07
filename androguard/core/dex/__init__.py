@@ -7570,7 +7570,7 @@ class MapList:
         """
         Get a particular item type
 
-        :param ttype: a string which represents the desired type
+        :param ttype: a :class:`~TypeMapItem` enum which represents the desired type
 
         :rtype: None or the item object
         """
