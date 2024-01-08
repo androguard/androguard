@@ -1,10 +1,13 @@
 import unittest
 
+import os
 import random
 import binascii
 
 from androguard.core import dex
+from androguard.misc import AnalyzeAPK
 
+test_dir = os.path.dirname(os.path.abspath(__file__))
 
 class MockClassManager():
     @property
@@ -14,6 +17,83 @@ class MockClassManager():
     def get_odex_format(self):
         return False
 
+class accessflagsTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        test_apk_path = os.path.join(test_dir, 'data/APK/TestActivity.apk')
+        cls.a, cls.d, cls.dx = AnalyzeAPK(test_apk_path)
+    
+    def testAccessflags(self):
+        
+        
+        class_name_accessflag_map = {
+            'Ltests/androguard/TestLoops;': {
+                'access_flag': 0x1,                         # public
+                'methods': {
+                    '<init>':               0x1 | 0x10000,  # public | constructor
+                    'testBreak':            0x1,            # public
+                    'testBreak2':           0x1,
+                    'testBreak3':           0x1,
+                    'testBreak4':           0x1,
+                    'testBreakDoWhile':     0x1,
+                    'testBreakMid':         0x1,
+                    'testBreakbis':         0x1,
+                    'testDiffWhileDoWhile': 0x1,
+                    'testDoWhile':          0x1,
+                    'testDoWhileTrue':      0x1,
+                    'testFor':              0x1,
+                    'testIrreducible':      0x1,
+                    'testMultipleLoops':    0x1,
+                    'testNestedLoops':      0x1,
+                    'testReducible':        0x1,
+                    'testWhile':            0x1,
+                    'testWhile2':           0x1,
+                    'testWhile3':           0x1,
+                    'testWhile4':           0x1,
+                    'testWhile5':           0x1,
+                    'testWhileTrue':        0x1,
+                },
+                'fields': {
+                    
+                }
+            },
+            'Ltests/androguard/TestIfs;':   {
+                'access_flag': 0x1,                         # public
+                'methods': {
+                    '<init>':               0x1 | 0x10000,  # public | constructor
+                    'testIF':               0x1 | 0x8,      # public | static
+                    'testIF2':              0x1 | 0x8,
+                    'testIF3':              0x1 | 0x8,
+                    'testIF4':              0x1 | 0x8,
+                    'testIF5':              0x1 | 0x8,
+                    'testIfBool':           0x1 | 0x8,
+                    'testShortCircuit':     0x1 | 0x8,
+                    'testShortCircuit2':    0x1 | 0x8,
+                    'testShortCircuit3':    0x1 | 0x8,
+                    'testShortCircuit4':    0x1 | 0x8,
+                    'testCFG':              0x1,            # public
+                    'testCFG2':             0x1
+                }
+            }
+        }
+
+        # test access flags for classes
+        for expected_class_name, class_data in class_name_accessflag_map.items():
+            class_analysis = self.dx.get_class_analysis(expected_class_name)
+            class_access_flags = class_analysis.get_vm_class().get_access_flags()
+            self.assertEqual(class_access_flags, class_data['access_flag'])
+
+            # test access flags for methods
+            for method_analysis in class_analysis.get_methods():
+                method = method_analysis.get_method()
+                for expected_method_name, expected_access_flag in class_data['methods'].items():
+                    if method.name == expected_method_name:
+                        method_access_flags = method.get_access_flags()
+                        self.assertEqual(method_access_flags, expected_access_flag)
+
+            # test access flags for fields
+
+        # TODO: fields
 
 class InstructionTest(unittest.TestCase):
     def testInstructions(self):
