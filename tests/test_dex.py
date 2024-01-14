@@ -54,7 +54,16 @@ class accessflagsTest(unittest.TestCase):
                     'testWhileTrue':        0x1,
                 },
                 'fields': {
-                    
+                }
+            },
+            'Ltests/androguard/TestLoops$Loop;': {
+                'access_flag': 0x1,                         # public
+                'methods': {
+                    '<init>':               0x4 | 0x10000   # protected | constructor
+                },
+                'fields': {
+                    'i':                    0x1 | 0x8,      # public | static
+                    'j':                    0x1 | 0x8      # public | static
                 }
             },
             'Ltests/androguard/TestIfs;':   {
@@ -73,9 +82,19 @@ class accessflagsTest(unittest.TestCase):
                     'testShortCircuit4':    0x1 | 0x8,
                     'testCFG':              0x1,            # public
                     'testCFG2':             0x1
+                },
+                'fields': {
+                    'P':                    0x2,            # private
+                    'Q':                    0x2,
+                    'R':                    0x2,
+                    'S':                    0x2
                 }
             }
         }
+
+        # ensure these classes exist in the Analysis
+        for expected_class_name in class_name_accessflag_map.keys():
+            self.assertTrue(self.dx.is_class_present(expected_class_name))
 
         # test access flags for classes
         for expected_class_name, class_data in class_name_accessflag_map.items():
@@ -84,16 +103,26 @@ class accessflagsTest(unittest.TestCase):
             self.assertEqual(class_access_flags, class_data['access_flag'])
 
             # test access flags for methods
-            for method_analysis in class_analysis.get_methods():
-                method = method_analysis.get_method()
-                for expected_method_name, expected_access_flag in class_data['methods'].items():
+            method_analyses = class_analysis.get_methods()
+            for expected_method_name, expected_access_flags in class_data['methods'].items():
+                # ensure this method is in the class
+                self.assertIn(expected_method_name, [method.name for method in method_analyses])
+                
+                # ensure access flags match
+                for method in method_analyses:
                     if method.name == expected_method_name:
-                        method_access_flags = method.get_access_flags()
-                        self.assertEqual(method_access_flags, expected_access_flag)
+                        self.assertEqual(method.method.get_access_flags(), expected_access_flags)
 
             # test access flags for fields
+            field_analyses = class_analysis.get_fields()
+            for expected_field_name, expected_access_flags in class_data['fields'].items():
+                # ensure this field is in the class
+                self.assertIn(expected_field_name, [field.name for field in field_analyses])
 
-        # TODO: fields
+                # ensure access flags match
+                for field in field_analyses:
+                    if field.name == expected_field_name:
+                        self.assertEqual(field.field.get_access_flags(), expected_access_flags)
 
 class InstructionTest(unittest.TestCase):
     def testInstructions(self):
