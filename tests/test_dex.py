@@ -103,26 +103,26 @@ class accessflagsTest(unittest.TestCase):
             self.assertEqual(class_access_flags, class_data['access_flag'])
 
             # test access flags for methods
-            method_analyses = class_analysis.get_methods()
+            encoded_methods = class_analysis.get_vm_class().get_methods()
             for expected_method_name, expected_access_flags in class_data['methods'].items():
                 # ensure this method is in the class
-                self.assertIn(expected_method_name, [method.name for method in method_analyses])
+                self.assertIn(expected_method_name, [method.name for method in encoded_methods])
                 
                 # ensure access flags match
-                for method in method_analyses:
+                for method in encoded_methods:
                     if method.name == expected_method_name:
-                        self.assertEqual(method.method.get_access_flags(), expected_access_flags)
+                        self.assertEqual(method.get_access_flags(), expected_access_flags)
 
             # test access flags for fields
-            field_analyses = class_analysis.get_fields()
+            encoded_fields = class_analysis.get_vm_class().get_fields()
             for expected_field_name, expected_access_flags in class_data['fields'].items():
                 # ensure this field is in the class
-                self.assertIn(expected_field_name, [field.name for field in field_analyses])
+                self.assertIn(expected_field_name, [field.name for field in encoded_fields])
 
                 # ensure access flags match
-                for field in field_analyses:
+                for field in encoded_fields:
                     if field.name == expected_field_name:
-                        self.assertEqual(field.field.get_access_flags(), expected_access_flags)
+                        self.assertEqual(field.get_access_flags(), expected_access_flags)
 
 class InstructionTest(unittest.TestCase):
     def testInstructions(self):
