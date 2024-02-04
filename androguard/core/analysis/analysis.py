@@ -1118,6 +1118,18 @@ class ClassAnalysis:
     def get_field_analysis(self, field):
         return self._fields.get(field)
 
+    def add_field(self, field_analysis):
+        """
+        Add the given field to this analyis.
+        usually only called during Analysis.add and Analysis._resolve_method
+
+        :param FieldAnalysis field_analysis:
+        """
+        self._fields[field_analysis.get_field()] = field_analysis
+        # if self.external:
+        #     # Propagate ExternalField to ExternalClass
+        #     self.orig_class.add_method(field_analysis.get_field())
+
     def add_field_xref_read(self, method, classobj, field, off):
         """
         Add a Field Read to this class
@@ -1391,7 +1403,7 @@ class Analysis:
     It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
     the functions from :class:`~androguard.core.bytecodes.dvm.DEX` and the related classes.
 
-    :param Optional[androguard.core.bytecodes.dvm.DEX] vm: inital DEX object (default None)
+    :param Optional[androguard.core.dex.DEX] vm: inital DEX object (default None)
     """
     def __init__(self, vm=None):
         # Contains DEX objects
@@ -1402,6 +1414,8 @@ class Analysis:
         self.strings = dict()
         # A dict of {EncodedMethod: MethodAnalysis}, populated on add(vm)
         self.methods = dict()
+        # A dict of {EncodedField: FieldAnalysis}, populated on add(vm)
+        self.fields = dict()
 
         # Used to quickly look up methods
         self.__method_hashes = dict()
@@ -1415,7 +1429,7 @@ class Analysis:
         """
         Add a DEX to this Analysis.
 
-        :param androguard.core.bytecodes.dvm.DEX vm: :class:`dvm.DEX` to add to this Analysis
+        :param androguard.core.dex.DEX vm: :class:`androguard.core.dex.DEX` to add to this Analysis
         """
         self.vms.append(vm)
 
@@ -1441,6 +1455,10 @@ class Analysis:
                 # Store for faster lookup during create_xrefs
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
                 self.__method_hashes[m_hash] = self.methods[method]
+
+            for field in current_class.get_fields():
+                self.fields[field] = FieldAnalysis(field)
+                new_class.add_field(self.fields[field])
 
         logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
@@ -1493,7 +1511,7 @@ class Analysis:
 
         Note that this might be quite slow, as all instructions are parsed.
 
-        :param androguard.core.bytecodes.dvm.ClassDefItem current_class: The class to create xrefs for
+        :param androguard.core.dex.ClassDefItem current_class: The class to create xrefs for
         """
         cur_cls_name = current_class.get_name()
 
@@ -1772,9 +1790,10 @@ class Analysis:
 
         :rtype: Iterator[FieldAnalysis]
         """
-        for c in self.classes.values():
-            for f in c.get_fields():
-                yield f
+        # for c in self.classes.values():
+        #     for f in c.get_fields():
+        #         yield f
+        yield from self.fields.values()
 
     def find_classes(self, name=".*", no_external=False):
         """
