@@ -1014,6 +1014,8 @@ class ClassAnalysis:
             # Propagate ExternalMethod to ExternalClass
             self.orig_class.add_method(method_analysis.get_method())
 
+
+
     @property
     def implements(self):
         """
@@ -1414,8 +1416,6 @@ class Analysis:
         self.strings = dict()
         # A dict of {EncodedMethod: MethodAnalysis}, populated on add(vm)
         self.methods = dict()
-        # A dict of {EncodedField: FieldAnalysis}, populated on add(vm)
-        self.fields = dict()
 
         # Used to quickly look up methods
         self.__method_hashes = dict()
@@ -1424,6 +1424,11 @@ class Analysis:
             self.add(vm)
 
         self.__created_xrefs = False
+
+    @property
+    def fields(self):
+        """Returns FieldAnalysis list"""
+        return self.get_fields()
 
     def add(self, vm):
         """
@@ -1447,6 +1452,7 @@ class Analysis:
                 new_class.set_restriction_flag(rf)
                 new_class.set_domain_flag(df)
 
+            # seed MethodAnalysis objects into new class analysis
             for method in current_class.get_methods():
                 self.methods[method] = MethodAnalysis(vm, method)
 
@@ -1456,9 +1462,10 @@ class Analysis:
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
                 self.__method_hashes[m_hash] = self.methods[method]
 
+            # seed FieldAnalysis objects into new class analysis
             for field in current_class.get_fields():
-                self.fields[field] = FieldAnalysis(field)
-                new_class.add_field(self.fields[field])
+                new_field_analysis = FieldAnalysis(field)
+                new_class.add_field(new_field_analysis)
 
         logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
@@ -1790,10 +1797,9 @@ class Analysis:
 
         :rtype: Iterator[FieldAnalysis]
         """
-        # for c in self.classes.values():
-        #     for f in c.get_fields():
-        #         yield f
-        yield from self.fields.values()
+        for c in self.classes.values():
+            for f in c.get_fields():
+                yield f
 
     def find_classes(self, name=".*", no_external=False):
         """
