@@ -19,6 +19,7 @@ from androguard.core.dex import get_bytecodes_method
 from androguard.util import readFile
 from androguard.ui import DynamicUI
 
+
 def androaxml_main(inp, outp=None, resource=None):
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":
@@ -81,7 +82,6 @@ def export_apps_to_format(filename,
                           decompiler_type=None,
                           form=None):
     from androguard.misc import clean_file_name
-    from androguard.core.dex import DEX
     from androguard.core.bytecode import method2dot, method2format
     from androguard.decompiler import decompiler
     print("Dump information {} in {}".format(filename, output))
@@ -90,9 +90,19 @@ def export_apps_to_format(filename,
         print("Create directory %s" % output)
         os.makedirs(output)
     else:
-        print("Clean directory %s" % output)
-        androconf.rrmdir(output)
-        os.makedirs(output)
+        while True:
+            user_input = input(f"Do you want to clean the directory {output}? (Y/N): ").strip().lower()
+
+            if user_input == 'y':
+                print("Deleting...")
+                androconf.rrmdir(output)
+                os.makedirs(output)
+                break
+            elif user_input == 'n':
+                print("Not deleting.")
+                break
+            else:
+                print("Invalid input. Please enter Y or N.")
 
     methods_filter_expr = None
     if methods_filter:
@@ -137,7 +147,7 @@ def export_apps_to_format(filename,
         for method in vm.get_methods():
             if methods_filter_expr:
                 msig = "{}{}{}".format(method.get_class_name(), method.get_name(),
-                                   method.get_descriptor())
+                                       method.get_descriptor())
                 if not methods_filter_expr.search(msig):
                     continue
 
@@ -147,8 +157,8 @@ def export_apps_to_format(filename,
             create_directory(filename_class)
 
             print("Dump {} {} {} ...".format(method.get_class_name(),
-                                         method.get_name(),
-                                         method.get_descriptor()), end=' ')
+                                             method.get_name(),
+                                             method.get_descriptor()), end=' ')
 
             filename = clean_file_name(os.path.join(filename_class, method.get_short_string()))
 
@@ -198,26 +208,21 @@ def androlyze_main(session, filename):
     from colorama import Fore
     import colorama
     import atexit
-    
+
     from IPython.terminal.embed import embed
 
     from traitlets.config import Config
-    
+
     from androguard.core.androconf import ANDROGUARD_VERSION, CONF
     from androguard.session import Session
-    from androguard.core import dex, apk
-    from androguard.core.analysis.analysis import Analysis
-    from androguard.pentest import Pentest
-    from androguard.ui import DynamicUI
-    from androguard.misc import AnalyzeAPK
 
     colorama.init()
 
     if session:
-        logger.info("Restoring session '{}'...".format(session))
-        s = CONF['SESSION'] = Load(session)
-        logger.info("Successfully restored {}".format(s))
-        # TODO Restore a, d, dx etc...
+        logger.info("TODO: Restoring session '{}'...".format(session))
+        # s = CONF['SESSION'] = Load(session)
+        # logger.info("Successfully restored {}".format(s))
+        # TODO actually restore the session a, d, dx etc...
     else:
         s = CONF["SESSION"] = Session(export_ipython=True)
 
@@ -230,7 +235,9 @@ def androlyze_main(session, filename):
         logger.info("Found the provided file is of type '{}'".format(filetype))
 
         if filetype not in ['DEX', 'DEY', 'APK']:
-            logger.error(Fore.RED + "This file type is not supported by androlyze for auto loading right now!" + Fore.RESET, file=sys.stderr)
+            logger.error(
+                Fore.RED + "This file type is not supported by androlyze for auto loading right now!" + Fore.RESET,
+                file=sys.stderr)
             logger.error("But your file is still available:")
             logger.error(">>> filename")
             logger.error(repr(filename))
@@ -323,7 +330,8 @@ def androsign_main(args_apk, args_hash, args_all, show):
             print("Is signed v2: {}".format(a.is_signed_v2()))
             print("Is signed v3: {}".format(a.is_signed_v3()))
 
-            certs = set(a.get_certificates_der_v3() + a.get_certificates_der_v2() + [a.get_certificate_der(x) for x in a.get_signature_names()])
+            certs = set(a.get_certificates_der_v3() + a.get_certificates_der_v2() + [a.get_certificate_der(x) for x in
+                                                                                     a.get_signature_names()])
             pkeys = set(a.get_public_keys_der_v3() + a.get_public_keys_der_v2())
 
             if len(certs) > 0:
@@ -377,7 +385,7 @@ def androdis_main(offset, size, dex_file):
 
     with open(dex_file, "rb") as fp:
         buf = fp.read()
-    
+
     d = DEX(buf)
 
     if size == 0 and offset == 0:
@@ -404,6 +412,7 @@ def androdis_main(offset, size, dex_file):
 
                 idx += i.get_length()
 
+
 def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
     from androguard.pentest import Pentest
     from androguard.session import Session
@@ -429,8 +438,9 @@ def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
         import time
 
         time.sleep(1)
-        
+
         ui = DynamicUI(p.message_queue)
+
         def inputhook(inputhook_context: InputHookContext):
             while not inputhook_context.input_is_ready():
                 if ui.process_data():
@@ -444,8 +454,8 @@ def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
     else:
         logger.warning("Type 'e' to exit the strace ")
         s = ""
-        while (s!='e') and (not p.is_detached()):
-            s = input("Type 'e' to exit:")    
+        while (s != 'e') and (not p.is_detached()):
+            s = input("Type 'e' to exit:")
 
 
 def androdump_main(package_name, list_modules):
