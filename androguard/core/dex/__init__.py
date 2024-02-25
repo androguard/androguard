@@ -2479,7 +2479,7 @@ class FieldHIdItem:
     def __init__(self, size, buff, cm):
         self.offset = buff.tell()
 
-        self.elem = [FieldIdItem(buff, cm) for i in range(0, size)]
+        self.field_id_items = [FieldIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -2488,30 +2488,30 @@ class FieldHIdItem:
         return self.offset
 
     def gets(self):
-        return self.elem
+        return self.field_id_items
 
     def get(self, idx):
         try:
-            return self.elem[idx]
+            return self.field_id_items[idx]
         except IndexError:
             return FieldIdItemInvalid()
 
     def show(self):
         nb = 0
-        for i in self.elem:
+        for i in self.field_id_items:
             print(nb, end=' ')
             i.show()
             nb = nb + 1
 
     def get_obj(self):
-        return [i for i in self.elem]
+        return [i for i in self.field_id_items]
 
     def get_raw(self):
-        return b''.join(i.get_raw() for i in self.elem)
+        return b''.join(i.get_raw() for i in self.field_id_items)
 
     def get_length(self):
         length = 0
-        for i in self.elem:
+        for i in self.field_id_items:
             length += i.get_length()
         return length
 
@@ -2658,7 +2658,7 @@ class MethodHIdItem:
 
         self.offset = buff.tell()
 
-        self.methods = [MethodIdItem(buff, cm) for i in range(0, size)]
+        self.method_id_items = [MethodIdItem(buff, cm) for i in range(0, size)]
 
     def set_off(self, off):
         self.offset = off
@@ -2666,33 +2666,36 @@ class MethodHIdItem:
     def get_off(self):
         return self.offset
 
+    def gets(self):
+        return self.method_id_items
+
     def get(self, idx):
         try:
-            return self.methods[idx]
+            return self.method_id_items[idx]
         except IndexError:
             return MethodIdItemInvalid()
 
     def reload(self):
-        for i in self.methods:
+        for i in self.method_id_items:
             i.reload()
 
     def show(self):
         print("METHOD_ID_ITEM")
         nb = 0
-        for i in self.methods:
+        for i in self.method_id_items:
             print(nb, end=' ')
             i.show()
             nb = nb + 1
 
     def get_obj(self):
-        return [i for i in self.methods]
+        return [i for i in self.method_id_items]
 
     def get_raw(self):
-        return b''.join(i.get_raw() for i in self.methods)
+        return b''.join(i.get_raw() for i in self.method_id_items)
 
     def get_length(self):
         length = 0
-        for i in self.methods:
+        for i in self.method_id_items:
             length += i.get_length()
         return length
 
@@ -3678,7 +3681,7 @@ class ClassDefItem:
 
     def get_methods(self):
         """
-        Return all methods of this class
+        Return all EncodedMethods of this class
 
         :rtype: a list of :class:`EncodedMethod` objects
         """
@@ -3688,7 +3691,7 @@ class ClassDefItem:
 
     def get_fields(self):
         """
-        Return all fields of this class
+        Return all EncodedFields of this class
 
         :rtype: a list of :class:`EncodedField` objects
         """
@@ -7960,6 +7963,14 @@ class DEX:
             # There is a rare case that the DEX has no classes
             return []
 
+    def get_len_classes(self):
+        """
+        Return the number of classes
+
+        :rtype: int
+        """
+        return len(self.get_classes())
+
     def get_class(self, name):
         """
         Return a specific class
@@ -7973,41 +7984,23 @@ class DEX:
                 return i
         return None
 
-    def get_method(self, name):
-        """
-        Return a list all methods which corresponds to the regexp
-
-        :param name: the name of the method (a python regexp)
-
-        :rtype: a list with all :class:`EncodedMethod` objects
-        """
-        # TODO could use a generator here
-        prog = re.compile(name)
-        l = []
-        for i in self.get_classes():
-            for j in i.get_methods():
-                if prog.match(j.get_name()):
-                    l.append(j)
-        return l
-
     def get_field(self, name):
-        """
-        Return a list all fields which corresponds to the regexp
+        """get field id item by name
 
         :param name: the name of the field (a python regexp)
-
-        :rtype: a list with all :class:`EncodedField` objects
+        :type name: str
+        :return: the list of matching :class:`FieldIdItem` objects
+        :rtype: list
         """
-        # TODO could use a generator here
+
         prog = re.compile(name)
         l = []
-        for i in self.get_classes():
-            for j in i.get_fields():
-                if prog.match(j.get_name()):
-                    l.append(j)
+        for i in self.get_fields():
+            if prog.match(i.name):
+                l.append(i)
         return l
 
-    def get_all_fields(self):
+    def get_fields(self):
         """
         Return a list of field items
 
@@ -8018,7 +8011,31 @@ class DEX:
         except AttributeError:
             return []
 
-    def get_fields(self):
+    def get_len_fields(self):
+        """
+        Return the number of fields
+
+        :rtype: int
+        """
+        return len(self.get_fields())
+
+    def get_encoded_field(self, name):
+        """
+        Return a list all fields which corresponds to the regexp
+
+        :param name: the name of the field (a python regexp)
+
+        :rtype: a list with all :class:`EncodedField` objects
+        """
+        # TODO could use a generator here
+        prog = re.compile(name)
+        l = []
+        for i in self.get_encoded_fields():
+            if prog.match(i.get_name()):
+                l.append(i)
+        return l
+
+    def get_encoded_fields(self):
         """
         Return all field objects
 
@@ -8031,9 +8048,76 @@ class DEX:
                     self.__cache_all_fields.append(j)
         return self.__cache_all_fields
 
+    def get_len_encoded_fields(self):
+        return len(self.get_encoded_fields())
+
+    def get_field(self, name):
+        """get field id item by name
+
+        :param name: the name of the field (a python regexp)
+        :type name: str
+        :return: the list of matching :class:`FieldIdItem` objects
+        :rtype: list
+        """
+        prog = re.compile(name)
+        l = []
+        for i in self.get_fields():
+            if prog.match(i.name):
+                l.append(i)
+        return l
+
+    def get_method(self, name):
+        """get method id item by name
+
+        :param name: the name of the field (a python regexp)
+        :type name: str
+        :return: the list of matching :class:`MethodIdItem` objects
+        :rtype: list
+        """
+        prog = re.compile(name)
+        l = []
+        for i in self.get_methods():
+            if prog.match(i.name):
+                l.append(i)
+        return l
+
     def get_methods(self):
         """
-        Return all method objects
+        Return a list of method items
+
+        :rtype: a list of :class:`MethodIdItem` objects
+        """
+        try:
+            return self.methods.gets()
+        except AttributeError:
+            return []
+
+    def get_len_methods(self):
+        """
+        Return the number of methods
+
+        :rtype: int
+        """
+        return len(self.get_methods())
+
+    def get_encoded_method(self, name):
+        """
+        Return a list all encoded methods whose name corresponds to the regexp
+
+        :param name: the name of the method (a python regexp)
+
+        :rtype: a list with all :class:`EncodedMethod` objects
+        """
+        prog = re.compile(name)
+        l = []
+        for i in self.get_encoded_methods():
+            if prog.match(i.name):
+                l.append(i)
+        return l
+
+    def get_encoded_methods(self):
+        """
+        Return all encoded method objects
 
         :rtype: a list of :class:`EncodedMethod` objects
         """
@@ -8044,17 +8128,17 @@ class DEX:
                     self.__cache_all_methods.append(j)
         return self.__cache_all_methods
 
-    def get_len_methods(self):
+    def get_len_encoded_methods(self):
         """
-        Return the number of methods
+        Return the number of encoded methods
 
         :rtype: int
         """
-        return len(self.get_methods())
+        return len(self.get_encoded_methods())
 
-    def get_method_by_idx(self, idx):
+    def get_encoded_method_by_idx(self, idx):
         """
-        Return a specific method by using an index
+        Return a specific encoded method by using an index
         :param idx: the index of the method
         :type idx: int
 
@@ -8071,9 +8155,9 @@ class DEX:
         except KeyError:
             return None
 
-    def get_method_descriptor(self, class_name, method_name, descriptor):
+    def get_encoded_method_descriptor(self, class_name, method_name, descriptor):
         """
-        Return the specific method
+        Return the specific encoded method given a class name, method name, and descriptor
 
         :param class_name: the class name of the method
         :type class_name: string
@@ -8095,9 +8179,9 @@ class DEX:
 
         return self.__cache_methods.get(key)
 
-    def get_methods_descriptor(self, class_name, method_name):
+    def get_encoded_methods_class_method(self, class_name, method_name):
         """
-        Return the specific methods of the class
+        Return the specific encoded methods of the class
 
         :param class_name: the class name of the method
         :type class_name: string
@@ -8106,18 +8190,14 @@ class DEX:
 
         :rtype: None or a :class:`EncodedMethod` object
         """
-        l = []
-        for i in self.get_classes():
-            if i.get_name() == class_name:
-                for j in i.get_methods():
-                    if j.get_name() == method_name:
-                        l.append(j)
+        for i in self.get_encoded_methods():
+            if i.get_name() == method_name and i.get_class_name() == class_name:
+                return i
+        return None
 
-        return l
-
-    def get_methods_class(self, class_name):
+    def get_encoded_methods_class(self, class_name):
         """
-        Return all methods of a specific class
+        Return all encoded methods of a specific class by class name
 
         :param class_name: the class name
         :type class_name: string
@@ -8125,16 +8205,14 @@ class DEX:
         :rtype: a list with :class:`EncodedMethod` objects
         """
         l = []
-        for i in self.get_classes():
-            for j in i.get_methods():
-                if class_name == j.get_class_name():
-                    l.append(j)
-
+        for i in self.get_encoded_methods():
+            if class_name == i.get_class_name():
+                l.append(i)
         return l
 
-    def get_fields_class(self, class_name):
+    def get_encoded_fields_class(self, class_name):
         """
-        Return all fields of a specific class
+        Return all encoded fields of a specific class by class name
 
         :param class_name: the class name
         :type class_name: string
@@ -8142,16 +8220,14 @@ class DEX:
         :rtype: a list with :class:`EncodedField` objects
         """
         l = []
-        for i in self.get_classes():
-            for j in i.get_fields():
-                if class_name == j.get_class_name():
-                    l.append(j)
-
+        for i in self.get_encoded_fields():
+            if class_name == i.get_class_name():
+                l.append(i)
         return l
 
-    def get_field_descriptor(self, class_name, field_name, descriptor):
+    def get_encoded_field_descriptor(self, class_name, field_name, descriptor):
         """
-        Return the specific field
+        Return the specific encoded field given a class name, field name, and descriptor
 
         :param class_name: the class name of the field
         :type class_name: string
@@ -8184,6 +8260,14 @@ class DEX:
         :rtype: a list with all strings used in the format (types, names ...)
         """
         return [i.get() for i in self.strings]
+
+    def get_len_strings(self):
+        """
+        Return the number of strings
+
+        :rtype: int
+        """
+        return len(self.get_strings())
 
     def get_regex_strings(self, regular_expressions):
         """

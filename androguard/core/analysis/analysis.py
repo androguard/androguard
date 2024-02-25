@@ -1610,7 +1610,7 @@ class Analysis:
                 elif 0x52 <= op_value <= 0x6d:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
-                    field_item = instruction.cm.vm.get_field_descriptor(field_info[0], field_info[2], field_info[1])
+                    field_item = instruction.cm.vm.get_encoded_field_descriptor(field_info[0], field_info[2], field_info[1])
                     if not field_item:
                         continue
 
