@@ -17,15 +17,49 @@ class MockClassManager():
     def get_odex_format(self):
         return False
 
-class accessflagsTest(unittest.TestCase):
+class VMClassTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         test_apk_path = os.path.join(test_dir, 'data/APK/TestActivity.apk')
         cls.a, cls.d, cls.dx = AnalyzeAPK(test_apk_path)
     
+    def testVMClass(self):
+        """test number of ClassDefItems, StringDataItems, FieldIdItems, and MethodIdItems"""
+        
+        num_class_def_items = 0
+        num_strings_data_items = 0
+        num_field_id_items = 0
+        num_method_id_items = 0
+
+        # the below field exists in the fieldIds list, but
+        # their class doesnt exist, this is bc its loaded at runtime
+        # 19 [FieldIdItem]: class_idx=0x13 type_idx=0x242 name_idx=0x1099
+        # classIdx = 0x13 = 19
+        # typeIdx = 0x242 = 578
+        # nameIdx = 0x1099 = 4249
+        # className = Landroid/app/Notification;
+        # typeName = [J
+        # fieldName = vibrate
+
+        # see DEX format spec https://source.android.com/docs/core/runtime/dex-format
+        # https://reverseengineering.stackexchange.com/questions/21767/dex-file-referenced-type-is-not-defined-in-file
+        # field ids, type ids, and method ids references
+        # are not required to be defined in the dex since they can be resolved at runtime via shared library
+        for vm in self.dx.vms:
+            num_class_def_items += vm.get_len_classes()             # ClassDefItems
+            num_strings_data_items += vm.get_len_strings()          # StringDataItems
+            num_field_id_items += vm.get_len_fields()               # FieldIdItems
+            num_method_id_items += vm.get_len_methods()             # MethodIdItems
+
+
+
+        self.assertEqual(len(self.dx.vms), 1)
+        self.assertEqual(num_class_def_items, 340)
+        self.assertEqual(num_strings_data_items, 4329)
+        self.assertEqual(num_field_id_items, 865)
+        self.assertEqual(num_method_id_items, 3602)
+
     def testAccessflags(self):
-        
-        
         class_name_accessflag_map = {
             'Ltests/androguard/TestLoops;': {
                 'access_flag': 0x1,                         # public

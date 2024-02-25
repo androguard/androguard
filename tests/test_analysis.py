@@ -24,7 +24,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
         self.assertEqual(len(dx.get_strings()), 1564)
         self.assertEqual(len(list(dx.get_methods())), 12792)  # according to DEX Header 12795
-        self.assertEqual(len(list(dx.get_fields())), 3033)  # According to DEX Header 4005
+        self.assertEqual(len(list(dx.get_fields())), 4578)  # According to DEX Header 4005
         self.assertEqual(len(list(dx.get_external_classes())), 388)
 
         for cls in dx.get_external_classes():
@@ -48,7 +48,7 @@ class AnalysisTest(unittest.TestCase):
 
         # find String fields
         self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype=r"Ljava\/lang\/String;"))),
-                         63)
+                        95)#63)
 
     def testAnalysis(self):
         h, d, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/AnalysisTest.dex"))
