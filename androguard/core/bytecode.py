@@ -3,6 +3,7 @@ from xml.sax.saxutils import escape
 from struct import pack
 import textwrap
 import json
+from loguru import logger
 
 from androguard.core.androconf import CONF, color_range
 from androguard.core.dex.dex_types import Kind, Operand
@@ -461,7 +462,7 @@ def method2format(output, _format="png", mx=None, raw=None):
         d = pydot.graph_from_dot_data(buff)
         if len(d) > 1:
             # Not sure what to do in this case?!
-            logger.warnig("The graph generated for '{}' has too many subgraphs! "
+            logger.warning("The graph generated for '{}' has too many subgraphs! "
                        "Only plotting the first one.".format(output))
         for g in d:
             getattr(g, "write_" + _format.lower())(output)

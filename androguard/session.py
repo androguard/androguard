@@ -9,37 +9,19 @@ import dataset
 
 from loguru import logger
 
+
 class Session:
     """
-    A Session is able to store multiple APK, DEX or ODEX files and can be pickled
-    to disk in order to resume work later.
+    A Session is able to store in a database, basic information about APK, DEX or ODEX files.
+    Additionally, it offers the possibility to store actions done when using the 'pentest' module.
 
-    The main function used in Sessions is probably :meth:`add`, which adds files
-    to the session and performs analysis on them.
+    NOTE: an attempt to move from pickling to dataset was started here:
+    https://github.com/androguard/androguard/commit/4dd0dc8c4b55605af863925faf16e8eb35f13e45
+    but is NOT finished!
 
-    Afterwards, the files can be gathered using methods such as
-    :meth:`get_objects_apk`, :meth:`get_objects_dex` or :meth:`get_classes`.
-
-    example::
-
-        s = Session()
-        digest = s.add("some.apk")
-
-        print("SHA256 of the file: {}".format(digest))
-
-        a, d, dx = s.get_objects_apk("some.apk", digest)
-        print(a.get_package())
-
-        # Reset the Session for a fresh set of files
-        s.reset()
-
-        digest2 = s.add("classes.dex")
-        print("SHA256 of the file: {}".format(digest2))
-        for h, d, dx in s.get_objects_dex():
-            print("SHA256 of the DEX file: {}".format(h))
-
-
+    >>> Should we go back to pickling or proceed further with the dataset ?<<<
     """
+
     def __init__(self, export_ipython=False):
         """
         Create a new Session object
@@ -61,7 +43,6 @@ class Session:
 
         self.table_session.insert(dict(id=self.session_id))
         logger.info("Creating new session [{}]".format(self.session_id))
-
 
     def save(self, filename=None):
         """
@@ -118,11 +99,13 @@ class Session:
             print("\t{}: {}".format(d, a))
 
     def insert_event(self, call, callee, params, ret):
-        self.table_pentest.insert(dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
+        self.table_pentest.insert(
+            dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
 
     def insert_system_event(self, call, callee, information, params):
-        self.table_system.insert(dict(session_id=str(self.session_id), call=call, callee=callee, information=information, params=params))
-        
+        self.table_system.insert(
+            dict(session_id=str(self.session_id), call=call, callee=callee, information=information, params=params))
+
     def addAPK(self, filename, data):
         """
         Add an APK file to the Session and run analysis on it.
@@ -134,8 +117,8 @@ class Session:
         digest = hashlib.sha256(data).hexdigest()
 
         logger.info("add APK {}:{}".format(filename, digest))
-        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="APK"))
-
+        self.table_information.insert(
+            dict(session_id=str(self.session_id), filename=filename, digest=digest, type="APK"))
 
         newapk = apk.APK(data, True)
         self.analyzed_apk[digest] = [newapk]
@@ -169,7 +152,8 @@ class Session:
         digest = hashlib.sha256(data).hexdigest()
         logger.info("add DEX:{}".format(digest))
 
-        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="DEX"))
+        self.table_information.insert(
+            dict(session_id=str(self.session_id), filename=filename, digest=digest, type="DEX"))
 
         logger.debug("Parsing format ...")
         d = dex.DEX(data)
@@ -207,7 +191,8 @@ class Session:
         digest = hashlib.sha256(data).hexdigest()
         logger.info("add ODEX:%s" % digest)
 
-        self.table_information.insert(dict(session_id=str(self.session_id), filename=filename, digest=digest, type="ODEX"))
+        self.table_information.insert(
+            dict(session_id=str(self.session_id), filename=filename, digest=digest, type="ODEX"))
 
         d = dex.ODEX(data)
         logger.debug("added ODEX:%s" % digest)
@@ -415,4 +400,3 @@ class Session:
         # TODO: there is no variant like get_objects_apk
         for digest, d in self.analyzed_dex.items():
             yield digest, d, self.analyzed_vms[digest]
-
