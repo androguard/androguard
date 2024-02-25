@@ -2,7 +2,7 @@
 name = "androguard"
 description = "Androguard is a full python tool to play with Android files."
 authors = ["desnos <desnos@t0t0.fr>"]
-version = "4.0.2"
+version = "4.1.0"
 license = "Apache Licence, Version 2.0"
 readme = "README.md"
 homepage = "https://github.com/androguard/androguard"

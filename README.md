@@ -19,9 +19,10 @@ pip install androguard
 ## Documentation
 **Documentation contains outdated information - In progress of updating**
 
-Find the documentation for master on [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
+The [wiki](https://github.com/androguard/androguard/wiki) page is the most recently updated source.
 
-There is also a [wiki](https://github.com/androguard/androguard/wiki) page.
+Additional documentation that contains outdated information is available at [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
+
 
 ## Features
 
