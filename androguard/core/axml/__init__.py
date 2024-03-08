@@ -2333,16 +2333,18 @@ class ARSCResTypeSpec:
         self.id = unpack('<B', buff.read(1))[0]
         self.res0 = unpack('<B', buff.read(1))[0]
         self.res1 = unpack('<H', buff.read(2))[0]
-        if self.res0 != 0:
-            raise ResParserError("res0 must be zero!")
-        if self.res1 != 0:
-            raise ResParserError("res1 must be zero!")
-        self.entryCount = unpack('<I', buff.read(4))[0]
+        try:
+            if self.res0 != 0:
+                raise ResParserError("res0 must be zero!")
+            if self.res1 != 0:
+                raise ResParserError("res1 must be zero!")
+            self.entryCount = unpack('<I', buff.read(4))[0]
 
-        self.typespec_entries = []
-        for i in range(0, self.entryCount):
-            self.typespec_entries.append(unpack('<I', buff.read(4))[0])
-
+            self.typespec_entries = []
+            for i in range(0, self.entryCount):
+                self.typespec_entries.append(unpack('<I', buff.read(4))[0])
+        except ResParserError as e:
+            logger.warning(e)
 
 class ARSCResType:
     """
@@ -2935,11 +2937,14 @@ class ARSCResStringPoolRef:
 
         self.size, = unpack("<H", buff.read(2))
         self.res0, = unpack("<B", buff.read(1))
-        if self.res0 != 0:
-            raise ResParserError("res0 must be always zero!")
-        self.data_type = unpack('<B', buff.read(1))[0]
-        # data is interpreted according to data_type
-        self.data = unpack('<I', buff.read(4))[0]
+        try:
+            if self.res0 != 0:
+                raise ResParserError("res0 must be always zero!")
+            self.data_type = unpack('<B', buff.read(1))[0]
+            # data is interpreted according to data_type
+            self.data = unpack('<I', buff.read(4))[0]
+        except ResParserError as e:
+            logger.warning(e)
 
     def get_data_value(self):
         return self.parent.stringpool_main.getString(self.data)
