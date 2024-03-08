@@ -376,7 +376,8 @@ def determineNext(i, cur_idx, m):
         # "the instructions must be located on even-numbered bytecode offsets (that is, 4-byte aligned).
         # In order to meet this requirement, dex generation tools must
         # emit an extra nop instruction as a spacer if such an instruction would otherwise be unaligned."
-        padding = (off + cur_idx) % 4
+        remaining = (off + cur_idx) % 4
+        padding = 0 if remaining == 0 else (4 - remaining)
         if padding != 0:
             logger.warning("Switch payload not aligned, assume stuff and add {} bytes...".format(padding))
         data = code.get_ins_off(off + cur_idx + padding)
