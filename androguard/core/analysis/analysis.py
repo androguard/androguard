@@ -681,7 +681,9 @@ class MethodAnalysis:
               self.method.get_access_flags_string(),
               self.method.get_name(),
               ", ".join(args), ret))
-        bytecode.PrettyShow(self.basic_blocks.gets(), self.method.notes)
+        
+        if not self.is_external():
+            bytecode.PrettyShow(self.basic_blocks.gets(), self.method.notes)
 
     def show_xrefs(self):
         data = "XREFto for %s\n" % self.method
@@ -982,6 +984,7 @@ class ClassAnalysis:
     """
 
     def __init__(self, classobj):
+        logger.info(f"Adding new ClassAnalysis: {classobj}")
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
 
@@ -1013,8 +1016,6 @@ class ClassAnalysis:
         if self.external:
             # Propagate ExternalMethod to ExternalClass
             self.orig_class.add_method(method_analysis.get_method())
-
-
 
     @property
     def implements(self):
@@ -1123,7 +1124,7 @@ class ClassAnalysis:
     def add_field(self, field_analysis):
         """
         Add the given field to this analyis.
-        usually only called during Analysis.add and Analysis._resolve_method
+        usually only called during Analysis.add
 
         :param FieldAnalysis field_analysis:
         """
@@ -1412,7 +1413,7 @@ class Analysis:
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
         self.classes = dict()
-        # A dict of {string: StringAnalysis}, populated on create_xref()
+        # A dict of {string: StringAnalysis}, populated on add(vm) and create_xref()
         self.strings = dict()
         # A dict of {EncodedMethod: MethodAnalysis}, populated on add(vm)
         self.methods = dict()
@@ -1436,6 +1437,7 @@ class Analysis:
 
         :param androguard.core.dex.DEX vm: :class:`androguard.core.dex.DEX` to add to this Analysis
         """
+        
         self.vms.append(vm)
 
         logger.info("Adding DEX file version {}".format(vm.version))
@@ -1443,8 +1445,10 @@ class Analysis:
         # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
         tic = time.time()
         for i, current_class in enumerate(vm.get_classes()):
+            # seed ClassAnalysis objects into classes attribute and add as new class
             self.classes[current_class.get_name()] = ClassAnalysis(current_class)
             new_class = self.classes[current_class.get_name()]
+
             # Fix up the hidden api annotations (Android 10)
             hidden_api = vm.get_hidden_api()
             if hidden_api:
@@ -1452,20 +1456,25 @@ class Analysis:
                 new_class.set_restriction_flag(rf)
                 new_class.set_domain_flag(df)
 
-            # seed MethodAnalysis objects into new class analysis
+            # seed MethodAnalysis objects into methods attribute and add to new class analysis
             for method in current_class.get_methods():
                 self.methods[method] = MethodAnalysis(vm, method)
-
                 new_class.add_method(self.methods[method])
 
                 # Store for faster lookup during create_xrefs
                 m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
                 self.__method_hashes[m_hash] = self.methods[method]
 
-            # seed FieldAnalysis objects into new class analysis
+            # seed FieldAnalysis objects into to new class analysis
+            # since we access methods through a class property,
+            # which returns what's within a ClassAnalysis
+            # we don't have to track it internally in this class
             for field in current_class.get_fields():
-                new_field_analysis = FieldAnalysis(field)
-                new_class.add_field(new_field_analysis)
+                new_class.add_field(FieldAnalysis(field))
+
+        # seed StringAnalysis objects into strings attribute - connect alter using xrefs
+        for string_value in vm.get_strings():
+            self.strings[string_value] = StringAnalysis(string_value)
 
         logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
@@ -1755,6 +1764,28 @@ class Analysis:
         for cls in self.classes.values():
             if not cls.is_external():
                 yield cls
+
+    def get_internal_methods(self):
+        """
+        Returns all internal methods, that means all methods that are
+        defined in the given set of :class:`~DEX`.
+
+        :rtype: Iterator[MethodAnalysis]
+        """
+        for m in self.methods.values():
+            if not m.is_external():
+                yield m
+
+    def get_external_methods(self):
+        """
+        Returns all external methods, that means all methods that are not
+        defined in the given set of :class:`~DEX`.
+
+        :rtype: Iterator[MethodAnalysis]
+        """
+        for m in self.methods.values():
+            if m.is_external():
+                yield m
 
     def get_strings_analysis(self):
         """

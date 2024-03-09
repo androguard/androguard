@@ -21,11 +21,28 @@ class AnalysisTest(unittest.TestCase):
     def testAPK(self):
         a, d, dx = AnalyzeAPK(os.path.join(test_dir, "data/APK/a2dp.Vol_137.apk"))
 
-        self.assertEqual(len(list(dx.get_internal_classes())), 1353)  # checked by reading the dex header
-        self.assertEqual(len(dx.get_strings()), 1564)
-        self.assertEqual(len(list(dx.get_methods())), 12792)  # according to DEX Header 12795
-        self.assertEqual(len(list(dx.get_fields())), 4578)  # According to DEX Header 4005
-        self.assertEqual(len(list(dx.get_external_classes())), 388)
+        # internal+external classes should sum up to header->headerItem->classIdsSize
+        self.assertEqual(len(list(dx.get_internal_classes())), 1353)    # dex header header->headerItem->classDefsSize
+        self.assertEqual(len(list(dx.get_external_classes())), 388)     # difficult to check, cannot find using JADX
+        self.assertEqual(len(list(dx.get_classes())), 1741)             # dex header header->headerItem->classDefsSize
+
+        self.assertEqual(len(dx.get_strings()), 13523)                  # dex header header->headerItem->stringsIdsSize
+
+        # don't have a way to discern external vs internal fields currently,
+        # header->headerItemFieldIdsSize is 4005, but there must be 573 more external added
+        # so this is difficult to derive. Even JADX seems to disagree with 4005 number?
+        self.assertEqual(len(list(dx.get_fields())), 4005 + 573)
+
+        # internal+external methods should sum up to header->headerItem->methodIdsSize
+        self.assertEqual(len(list(dx.get_internal_methods())), 9676)    # difficult to check, can use jadx-gui and see summary
+        self.assertEqual(len(list(dx.get_external_methods())), 3116)    # difficult to check
+
+        # TODO: the DEX header says 12795 here, but 9676 + 3116 adds up to 12792
+        # JADX corroborates 9676, so I think 3116 is off, and a few unncessary
+        # ExternalMethods are added somewhere
+        self.assertEqual(len(list(dx.get_methods())), 12792)            # dex header header->headerItem->methodIdsSize
+        
+    
 
         for cls in dx.get_external_classes():
             self.assertEqual(cls.name[0], 'L')
@@ -44,14 +61,22 @@ class AnalysisTest(unittest.TestCase):
                             no_external=True))), 94)
 
         # Find url like strings
-        self.assertEqual(len(list(dx.find_strings(r".*:\/\/.*"))), 15)
+        self.assertEqual(len(list(dx.find_strings(r".*:\/\/.*"))), 16)
 
         # find String fields
         self.assertEqual(len(list(dx.find_fields(classname="^(?!Landroid).*;$", fieldtype=r"Ljava\/lang\/String;"))),
                         95)#63)
 
     def testAnalysis(self):
+        import sys
         h, d, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/AnalysisTest.dex"))
+
+        self.assertEqual(len(list(dx.get_internal_classes())), 1)
+        self.assertEqual(len(list(dx.get_internal_methods())), 4)
+        self.assertEqual(len(list(dx.get_external_methods())), 4)
+        self.assertEqual(len(list(dx.get_methods())), 8)
+        self.assertEqual(len(dx.get_strings()), 21)
+        self.assertEqual(len(list(dx.get_fields())), 0)
 
         self.assertEqual(h, "4595fc25104f3fcd709163eb70ca476edf116753607ec18f09548968c71910dc")
         self.assertIsInstance(d, DEX)
@@ -269,7 +294,7 @@ class AnalysisTest(unittest.TestCase):
         """Tests if String offsets in bytecode are correctly stored"""
         _, _, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/AnalysisTest.dex"))
 
-        self.assertEqual(len(dx.get_strings()), 1)
+        self.assertEqual(len(dx.get_strings()), 21)
         self.assertIsInstance(dx.strings['Hello world'], analysis.StringAnalysis)
 
         sa = dx.strings['Hello world']
@@ -282,7 +307,7 @@ class AnalysisTest(unittest.TestCase):
         """Tests if Field offsets in bytecode are correctly stored"""
         _, _, dx = AnalyzeDex(os.path.join(test_dir, "data/APK/FieldsTest.dex"))
 
-        self.assertEqual(len(dx.get_strings()), 4)
+        self.assertEqual(len(dx.get_strings()), 20)
         self.assertIn('hello world', dx.strings.keys())
         self.assertIn('sdf', dx.strings.keys())
         self.assertIn('hello mars', dx.strings.keys())
@@ -349,7 +374,6 @@ class AnalysisTest(unittest.TestCase):
         class1 = dx.classes["Lcom/mediatek/opcommon/telephony/MtkRILConstantsOp;"]
         self.assertEqual(class1.restriction_flag, HiddenApiClassDataItem.RestrictionApiFlag.BLACKLIST)
         self.assertEqual(class1.domain_flag, HiddenApiClassDataItem.DomapiApiFlag.NONE)
-
 
 if __name__ == '__main__':
     unittest.main()

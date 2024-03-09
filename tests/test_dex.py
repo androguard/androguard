@@ -25,7 +25,7 @@ class VMClassTest(unittest.TestCase):
     
     def testVMClass(self):
         """test number of ClassDefItems, StringDataItems, FieldIdItems, and MethodIdItems"""
-        
+
         num_class_def_items = 0
         num_strings_data_items = 0
         num_field_id_items = 0
@@ -50,8 +50,6 @@ class VMClassTest(unittest.TestCase):
             num_strings_data_items += vm.get_len_strings()          # StringDataItems
             num_field_id_items += vm.get_len_fields()               # FieldIdItems
             num_method_id_items += vm.get_len_methods()             # MethodIdItems
-
-
 
         self.assertEqual(len(self.dx.vms), 1)
         self.assertEqual(num_class_def_items, 340)
