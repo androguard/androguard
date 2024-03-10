@@ -24,7 +24,7 @@ class TestDexCodeParsing(unittest.TestCase):
 
         dif = Differ()
 
-        for m in d.get_methods():
+        for m in d.get_encoded_methods():
             if not m.get_code():
                 continue
 

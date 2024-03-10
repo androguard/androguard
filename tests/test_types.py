@@ -158,7 +158,7 @@ class TypesTest(unittest.TestCase):
         with open(TEST_CASE, "rb") as fd:
             digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
-        for method in filter(lambda x: x.full_name in VALUES, d.get_methods()):
+        for method in filter(lambda x: x.full_name in VALUES, d.get_encoded_methods()):
             # print("METHOD", method.full_name)
 
             for i in filter(lambda x: 'const' in x.get_name(), method.get_instructions()):
