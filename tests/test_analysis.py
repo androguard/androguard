@@ -21,10 +21,9 @@ class AnalysisTest(unittest.TestCase):
     def testAPK(self):
         a, d, dx = AnalyzeAPK(os.path.join(test_dir, "data/APK/a2dp.Vol_137.apk"))
 
-        # internal+external classes should sum up to header->headerItem->classIdsSize
         self.assertEqual(len(list(dx.get_internal_classes())), 1353)    # dex header header->headerItem->classDefsSize
         self.assertEqual(len(list(dx.get_external_classes())), 388)     # difficult to check, cannot find using JADX
-        self.assertEqual(len(list(dx.get_classes())), 1741)             # dex header header->headerItem->classDefsSize
+        self.assertEqual(len(list(dx.get_classes())), 1741)             # sum of internal and external classes
 
         self.assertEqual(len(dx.get_strings()), 13523)                  # dex header header->headerItem->stringsIdsSize
 
