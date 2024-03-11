@@ -2230,10 +2230,11 @@ class ARSCHeader:
         if possible_types:
             while True:
                 cur_pos = buff.tell()
-                if buff.raw.getbuffer().nbytes < cur_pos + self.SIZE:
-                    # reached end of the file, cases where packers set the EndNamespace with zero size require that
-                    return
                 self._type, self._header_size, self._size = unpack('<HHL', buff.read(self.SIZE))
+
+                # cases where packers set the EndNamespace with zero size: check we are the end and add the prefix + uri
+                if self._size < self.SIZE and (buff.raw.getbuffer().nbytes == cur_pos + self._header_size + 4 + 4):
+                    self._size = 24
 
                 if cur_pos == 0 or (
                         self._type in possible_types and self._header_size >= self.SIZE and self._size > self.SIZE):
