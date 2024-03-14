@@ -2337,18 +2337,19 @@ class ARSCResTypeSpec:
         self.id = unpack('<B', buff.read(1))[0]
         self.res0 = unpack('<B', buff.read(1))[0]
         self.res1 = unpack('<H', buff.read(2))[0]
+        # TODO: https://github.com/androguard/androguard/issues/1014 | Properly account for the cases where res0/1 are not zero
         try:
             if self.res0 != 0:
-                raise ResParserError("res0 must be zero!")
+                logger.warning("res0 must be zero!")
             if self.res1 != 0:
-                raise ResParserError("res1 must be zero!")
+                logger.warning("res1 must be zero!")
             self.entryCount = unpack('<I', buff.read(4))[0]
 
             self.typespec_entries = []
             for i in range(0, self.entryCount):
                 self.typespec_entries.append(unpack('<I', buff.read(4))[0])
-        except ResParserError as e:
-            logger.warning(e)
+        except Exception as e:
+            logger.error(e)
 
 class ARSCResType:
     """
@@ -2943,12 +2944,12 @@ class ARSCResStringPoolRef:
         self.res0, = unpack("<B", buff.read(1))
         try:
             if self.res0 != 0:
-                raise ResParserError("res0 must be always zero!")
+                logger.warning("res0 must be always zero!")
             self.data_type = unpack('<B', buff.read(1))[0]
             # data is interpreted according to data_type
             self.data = unpack('<I', buff.read(4))[0]
-        except ResParserError as e:
-            logger.warning(e)
+        except Exception as e:
+            logger.error(e)
 
     def get_data_value(self):
         return self.parent.stringpool_main.getString(self.data)
