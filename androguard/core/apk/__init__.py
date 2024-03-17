@@ -1061,7 +1061,7 @@ class APK:
                 main_activities.intersection(self.get_activities()))
             if good_main_activities:
                 return good_main_activities[0]
-            return main_activities[0]
+            return sorted(main_activities)[0]
         return None
 
     def get_activities(self):
