@@ -2433,22 +2433,34 @@ class ARSCResTableConfig:
             # uint16_t density
             self.screenType = unpack('<I', buff.read(4))[0]
 
-            # struct of
-            # uint8_t keyboard
-            # uint8_t navigation
-            # uint8_t inputFlags
-            # uint8_t inputPad0
-            self.input = unpack('<I', buff.read(4))[0]
+            if self.size >= 20:
+                # struct of
+                # uint8_t keyboard
+                # uint8_t navigation
+                # uint8_t inputFlags
+                # uint8_t inputPad0
+                self.input = unpack('<I', buff.read(4))[0]
+            else:
+                logger.debug("This file does not have input flags! size={}".format(self.size))
+                self.input = 0
 
-            # struct of
-            # uint16_t screenWidth
-            # uint16_t screenHeight
-            self.screenSize = unpack('<I', buff.read(4))[0]
+            if self.size >= 24:
+                # struct of
+                # uint16_t screenWidth
+                # uint16_t screenHeight
+                self.screenSize = unpack('<I', buff.read(4))[0]
+            else:
+                logger.debug("This file does not have screenSize! size={}".format(self.size))
+                self.screenSize = 0
 
-            # struct of
-            # uint16_t sdkVersion
-            # uint16_t minorVersion  which should be always 0, as the meaning is not defined
-            self.version = unpack('<I', buff.read(4))[0]
+            if self.size >= 28:
+                # struct of
+                # uint16_t sdkVersion
+                # uint16_t minorVersion  which should be always 0, as the meaning is not defined
+                self.version = unpack('<I', buff.read(4))[0]
+            else:
+                logger.debug("This file does not have version! size={}".format(self.size))
+                self.version = 0
 
             # The next three fields seems to be optional
             if self.size >= 32:
