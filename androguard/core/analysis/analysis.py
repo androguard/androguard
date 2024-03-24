@@ -1,16 +1,22 @@
 from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
 from androguard.core import bytecode, mutf8, dex
 
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+
 import re
 import sys
 import collections
 from operator import itemgetter
 import time
-from typing import Any, Generator, Optional
+from typing import Any, Generator, Optional, Union
 from enum import IntEnum
 
 from loguru import logger
 import networkx as nx
+from typing_extensions import Self
 
 BasicOPCODES = set()
 for i in dex.BRANCH_DEX_OPCODES:
@@ -18,7 +24,6 @@ for i in dex.BRANCH_DEX_OPCODES:
     for op, items in dex.DALVIK_OPCODES_FORMAT.items():
         if p.match(items[1][0]):
             BasicOPCODES.add(op)
-
 
 class REF_TYPE(IntEnum):
     """
@@ -40,16 +45,16 @@ class REF_TYPE(IntEnum):
     INVOKE_INTERFACE_RANGE = 0x78
 
 class ExceptionAnalysis:
-    def __init__(self, exception, bb):
+    def __init__(self, exception: tuple[int, int, tuple[str,int]], basic_blocks: BasicBlocks):
         self.start = exception[0]
         self.end = exception[1]
 
         self.exceptions = exception[2:]
 
         for i in self.exceptions:
-            i.append(bb.get_basic_block(i[1]))
+            i.append(basic_blocks.get_basic_block(i[1]))
 
-    def show_buff(self):
+    def show_buff(self) -> str:
         buff = "{:x}:{:x}\n".format(self.start, self.end)
 
         for i in self.exceptions:
@@ -60,24 +65,24 @@ class ExceptionAnalysis:
 
         return buff[:-1]
 
-    def get(self):
+    def get(self) -> dict[str, Union[int, list[dict[str, Union[str, int]]]]]:
         d = {"start": self.start, "end": self.end, "list": []}
 
         for i in self.exceptions:
-            d["list"].append({"name": i[0], "idx": i[1], "bb": i[2].get_name()})
+            d["list"].append({"name": i[0], "idx": i[1], "basic_block": i[2].get_name()})
 
         return d
 
 
 class Exceptions:
-    def __init__(self):
+    def __init__(self) -> None:
         self.exceptions = []
 
-    def add(self, exceptions, basic_blocks):
+    def add(self, exceptions: list[tuple[int,int,tuple[str,int]]], basic_blocks: BasicBlocks) -> None:
         for i in exceptions:
             self.exceptions.append(ExceptionAnalysis(i, basic_blocks))
 
-    def get_exception(self, addr_start, addr_end):
+    def get_exception(self, addr_start: int, addr_end: int) -> ExceptionAnalysis|None:
         for i in self.exceptions:
             if i.start >= addr_start and i.end <= addr_end:
                 return i
@@ -87,10 +92,10 @@ class Exceptions:
 
         return None
 
-    def gets(self):
+    def gets(self) -> list[tuple[int,int,tuple[str,int]]]:
         return self.exceptions
 
-    def get(self):
+    def get(self) -> Generator[tuple[int,int,tuple[str,int]]]:
         for i in self.exceptions:
             yield i
 
@@ -100,21 +105,21 @@ class BasicBlocks:
 
     It is a collection of many :class:`DEXBasicBlock`.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.bb = []
 
-    def push(self, bb):
+    def push(self, bb: DEXBasicBlock) -> None:
         """
         Adds another basic block to the collection
 
-        :param DVBMBasicBlock bb: the DEXBasicBlock to add
+        :param :class:`DEXBasicBlock` bb: the DEXBasicBlock to add
         """
         self.bb.append(bb)
 
-    def pop(self, idx):
+    def pop(self, idx: int) -> DEXBasicBlock:
         return self.bb.pop(idx)
 
-    def get_basic_block(self, idx):
+    def get_basic_block(self, idx: int) -> DEXBasicBlock|None:
         for i in self.bb:
             if i.get_start() <= idx < i.get_end():
                 return i
@@ -130,7 +135,7 @@ class BasicBlocks:
         """
         yield from self.bb
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int):
         """
         Get the basic block at the index
 
@@ -140,7 +145,7 @@ class BasicBlocks:
         """
         return self.bb[item]
 
-    def gets(self):
+    def gets(self) -> list[DEXBasicBlock]:
         """
         :returns: a list of basic blocks (:class:`DEXBasicBlock` objects)
         """
@@ -256,13 +261,11 @@ class DEXBasicBlock:
         """
         Get the last instruction in the basic block
 
-        :return: androguard.core.bytecodes.dvm.Instruction
+        :return: androguard.core.dex.Instruction
         """
         return list(self.get_instructions())[-1]
-
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow return to be Any
-    def get_next(self) -> Any:
+    
+    def get_next(self) -> Self:
         """
         Get next basic blocks
 
@@ -271,9 +274,7 @@ class DEXBasicBlock:
         """
         return self.childs
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow return to be Any
-    def get_prev(self) -> Any:
+    def get_prev(self) -> Self:
         """
         Get previous basic blocks
 
@@ -282,9 +283,7 @@ class DEXBasicBlock:
         """
         return self.fathers
     
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow return to be Any
-    def set_fathers(self, f: Any) -> None:
+    def set_fathers(self, f: Self) -> None:
         self.fathers.append(f)
 
     def get_last_length(self) -> int:
@@ -309,9 +308,7 @@ class DEXBasicBlock:
             if c[2] is not None:
                 c[2].set_fathers((c[1], c[0], self))
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow i to be Any
-    def push(self, i: Any) -> None:
+    def push(self, i: Self) -> None:
         self.nb_instructions += 1
         idx = self.end
         self.last_length = i.get_length()
@@ -494,7 +491,7 @@ class MethodAnalysis:
         """
         self.xrefread.add((classobj, fieldobj, offset))
 
-    def add_xref_write(self, classobj, fieldobj, offset):
+    def add_xref_write(self, classobj: ClassAnalysis, fieldobj: FieldAnalysis, offset: int) -> None:
         """
         :param ClassAnalysis classobj:
         :param FieldAnalysis fieldobj:
@@ -502,7 +499,7 @@ class MethodAnalysis:
         """
         self.xrefwrite.add((classobj, fieldobj, offset))
 
-    def get_xref_read(self):
+    def get_xref_read(self) -> list[tuple[ClassAnalysis, FieldAnalysis]]:
         """
         Returns a list of xrefs where a field is read by this method.
 
@@ -512,7 +509,7 @@ class MethodAnalysis:
         """
         return self.xrefread
 
-    def get_xref_write(self):
+    def get_xref_write(self) -> list[tuple[ClassAnalysis, FieldAnalysis]]:
         """
         Returns a list of xrefs where a field is written to by this method.
 
@@ -522,7 +519,7 @@ class MethodAnalysis:
         """
         return self.xrefwrite
 
-    def add_xref_to(self, classobj, methodobj, offset):
+    def add_xref_to(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
         """
         Add a crossreference to another method
         (this method calls another method)
@@ -533,7 +530,7 @@ class MethodAnalysis:
         """
         self.xrefto.add((classobj, methodobj, offset))
 
-    def add_xref_from(self, classobj, methodobj, offset):
+    def add_xref_from(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
         """
         Add a crossrefernece from another method
         (this method is called by another method)
@@ -544,7 +541,7 @@ class MethodAnalysis:
         """
         self.xreffrom.add((classobj, methodobj, offset))
 
-    def get_xref_from(self):
+    def get_xref_from(self) -> list[tuple[ClassAnalysis, MethodAnalysis, int]]:
         """
         Returns a list of tuples containing the class, method and offset of
         the call, from where this object was called.
@@ -556,7 +553,7 @@ class MethodAnalysis:
         """
         return self.xreffrom
 
-    def get_xref_to(self):
+    def get_xref_to(self) -> list[tuple[ClassAnalysis, MethodAnalysis, int]]:
         """
         Returns a list of tuples containing the class, method and offset of
         the call, which are called by this method.
@@ -568,7 +565,7 @@ class MethodAnalysis:
         """
         return self.xrefto
 
-    def add_xref_new_instance(self, classobj, offset):
+    def add_xref_new_instance(self, classobj: ClassAnalysis, offset: int) -> None:
         """
         Add a crossreference to another class that is
         instanced within this method.
@@ -578,7 +575,7 @@ class MethodAnalysis:
         """
         self.xrefnewinstance.add((classobj, offset))
 
-    def get_xref_new_instance(self):
+    def get_xref_new_instance(self) -> list[tuple[ClassAnalysis, int]]:
         """
         Returns a list of tuples containing the class and offset of
         the creation of a new instance of a class by this method.
@@ -589,7 +586,7 @@ class MethodAnalysis:
         """
         return self.xrefnewinstance
 
-    def add_xref_const_class(self, classobj, offset):
+    def add_xref_const_class(self, classobj: ClassAnalysis, offset: int) -> None:
         """
         Add a crossreference to another classtype.
 
@@ -598,7 +595,7 @@ class MethodAnalysis:
         """
         self.xrefconstclass.add((classobj, offset))
 
-    def get_xref_const_class(self):
+    def get_xref_const_class(self) -> list[tuple[ClassAnalysis, int]]:
         """
         Returns a list of tuples containing the class and offset of
         the references to another classtype by this method.
@@ -609,7 +606,7 @@ class MethodAnalysis:
         """
         return self.xrefconstclass
 
-    def is_external(self):
+    def is_external(self) -> bool:
         """
         Returns True if the underlying method is external
 
@@ -617,7 +614,7 @@ class MethodAnalysis:
         """
         return isinstance(self.method, ExternalMethod)
 
-    def is_android_api(self):
+    def is_android_api(self) -> bool:
         """
         Returns True if the method seems to be an Android API method.
 
@@ -645,7 +642,7 @@ class MethodAnalysis:
 
         return False
 
-    def get_basic_blocks(self):
+    def get_basic_blocks(self) -> BasicBlocks:
         """
         Returns the :class:`BasicBlocks` generated for this method.
         The :class:`BasicBlocks` can be used to get a control flow graph (CFG) of the method.
@@ -654,29 +651,29 @@ class MethodAnalysis:
         """
         return self.basic_blocks
 
-    def get_length(self):
+    def get_length(self) -> int:
         """
         :returns: an integer which is the length of the code
         :rtype: int
         """
         return self.code.get_length() if self.code else 0
 
-    def get_vm(self):
+    def get_vm(self) -> dex.DEX:
         """
-        :rtype: androguard.core.bytecodes.dvm.DEX
+        :rtype: androguard.core.dex.DEX
         :return:
         """
         return self.__vm
 
-    def get_method(self):
+    def get_method(self) -> dex.EncodedMethod:
         """
 
-        :rtype: androguard.core.bytecodes.dvm.EncodedMethod
+        :rtype: androguard.core.dex.EncodedMethod
         :return:
         """
         return self.method
 
-    def show(self):
+    def show(self) -> None:
         """
         Prints the content of this method to stdout.
 
@@ -702,7 +699,7 @@ class MethodAnalysis:
         if not self.is_external():
             bytecode.PrettyShow(self.basic_blocks.gets(), self.method.notes)
 
-    def show_xrefs(self):
+    def show_xrefs(self) -> None:
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
@@ -728,7 +725,7 @@ class StringAnalysis:
 
     This Array stores the information in which method the String is used.
     """
-    def __init__(self, value):
+    def __init__(self, value: str) -> None:
         """
 
         :param str value: the original string value
@@ -737,7 +734,7 @@ class StringAnalysis:
         self.orig_value = value
         self.xreffrom = set()
 
-    def add_xref_from(self, classobj, methodobj, off):
+    def add_xref_from(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, off: int) -> None:
         """
         Adds a xref from the given method to this string
 
@@ -747,7 +744,7 @@ class StringAnalysis:
         """
         self.xreffrom.add((classobj, methodobj, off))
 
-    def get_xref_from(self, withoffset=False):
+    def get_xref_from(self, with_offset:bool = False) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
         """
         Returns a list of xrefs accessing the String.
 
@@ -755,11 +752,11 @@ class StringAnalysis:
         where the class is represented as a :class:`ClassAnalysis`,
         while the method is a :class:`MethodAnalysis`.
         """
-        if withoffset:
+        if with_offset:
             return self.xreffrom
         return set(map(itemgetter(slice(0, 2)), self.xreffrom))
 
-    def set_value(self, value):
+    def set_value(self, value: str) -> None:
         """
         Overwrite the current value of the String with a new value.
         The original value is not lost and can still be retrieved using :meth:`get_orig_value`.
@@ -768,7 +765,7 @@ class StringAnalysis:
         """
         self.value = value
 
-    def get_value(self):
+    def get_value(self) -> str:
         """
         Return the (possible overwritten) value of the String
 
@@ -776,7 +773,7 @@ class StringAnalysis:
         """
         return self.value
 
-    def get_orig_value(self):
+    def get_orig_value(self) -> str:
         """
         Return the original, read only, value of the String
 
@@ -784,7 +781,7 @@ class StringAnalysis:
         """
         return self.orig_value
 
-    def is_overwritten(self):
+    def is_overwritten(self) -> bool:
         """
         Returns True if the string was overwritten
         :return:
@@ -815,18 +812,18 @@ class FieldAnalysis:
 
     That means, that it will show you, where the field is read or written.
 
-    :param androguard.core.bytecodes.dvm.EncodedField field: `dvm.EncodedField`
+    :param androguard.core.dex.EncodedField field: `dvm.EncodedField`
     """
-    def __init__(self, field):
+    def __init__(self, field: dex.EncodedField) -> None:
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.field.get_name()
 
-    def add_xref_read(self, classobj, methodobj, offset):
+    def add_xref_read(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
         """
         :param ClassAnalysis classobj:
         :param MethodAnalysis methodobj:
@@ -834,7 +831,7 @@ class FieldAnalysis:
         """
         self.xrefread.add((classobj, methodobj, offset))
 
-    def add_xref_write(self, classobj, methodobj, offset):
+    def add_xref_write(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
         """
         :param ClassAnalysis classobj:
         :param MethodAnalysis methodobj:
@@ -842,7 +839,7 @@ class FieldAnalysis:
         """
         self.xrefwrite.add((classobj, methodobj, offset))
 
-    def get_xref_read(self, withoffset=False):
+    def get_xref_read(self, with_offset:bool = False) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
         """
         Returns a list of xrefs where the field is read.
 
@@ -850,14 +847,14 @@ class FieldAnalysis:
         where the class is represented as a :class:`ClassAnalysis`,
         while the method is a :class:`MethodAnalysis`.
 
-        :param bool withoffset: return the xrefs including the offset
+        :param bool with_offset: return the xrefs including the offset
         """
-        if withoffset:
+        if with_offset:
             return self.xrefread
         # Legacy option, might be removed in the future
         return set(map(itemgetter(slice(0, 2)), self.xrefread))
 
-    def get_xref_write(self, withoffset=False):
+    def get_xref_write(self, with_offset:bool = False) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
         """
         Returns a list of xrefs where the field is written to.
 
@@ -865,18 +862,18 @@ class FieldAnalysis:
         where the class is represented as a :class:`ClassAnalysis`,
         while the method is a :class:`MethodAnalysis`.
 
-        :param bool withoffset: return the xrefs including the offset
+        :param bool with_offset: return the xrefs including the offset
         """
-        if withoffset:
+        if with_offset:
             return self.xrefwrite
         # Legacy option, might be removed in the future
         return set(map(itemgetter(slice(0, 2)), self.xrefwrite))
 
-    def get_field(self):
+    def get_field(self) -> dex.EncodedField:
         """
         Returns the actual field object
 
-        :rtype: androguard.core.bytecodes.dvm.EncodedField
+        :rtype: androguard.core.dex.EncodedField
         """
         return self.field
 
@@ -904,21 +901,21 @@ class ExternalClass:
 
     :param name: Name of the external class
     """
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self.name = name
         self.methods = []
 
-    def get_methods(self):
+    def get_methods(self) -> list[MethodAnalysis]:
         """
         Return the stored methods for this external class
         :return:
         """
         return self.methods
 
-    def add_method(self, method):
+    def add_method(self, method: MethodAnalysis) -> None:
         self.methods.append(method)
 
-    def get_name(self):
+    def get_name(self) -> str:
         """
         Returns the name of the ExternalClass object
         """
@@ -936,39 +933,39 @@ class ExternalMethod:
     1) The method is defined inside another DEX file which was not loaded into the Analysis
     2) The method is an API method, hence it is defined in the Android system
 
-    External methods should have a similar API to :class:`~androguard.core.bytecodes.dvm.EncodedMethod`
+    External methods should have a similar API to :class:`~androguard.core.dex.EncodedMethod`
     but obviously they have no code attached.
     The only known information about such methods are the class name, the method name and its descriptor.
 
     :param str class_name: name of the class
     :param str name: name of the method
-    :param List[str] descriptor: descriptor string
+    :param str descriptor: descriptor string
     """
-    def __init__(self, class_name, name, descriptor):
+    def __init__(self, class_name: str, name: str, descriptor: str) -> None:
         self.class_name = class_name
         self.name = name
         self.descriptor = descriptor
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
-    def get_class_name(self):
+    def get_class_name(self) -> str:
         return self.class_name
 
-    def get_descriptor(self):
+    def get_descriptor(self) -> str:
         return self.descriptor
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         """Returns classname + name + descriptor, separated by spaces (no access flags)"""
         return self.class_name + " " + self.name + " " + str(self.get_descriptor())
 
     @property
-    def permission_api_name(self):
+    def permission_api_name(self) -> str:
         """Returns a name which can be used to look up in the permission maps"""
         return self.class_name + "-" + self.name + "-" + str(self.get_descriptor())
 
-    def get_access_flags_string(self):
+    def get_access_flags_string(self) -> str:
         """
         Returns the access flags string.
 
@@ -1158,9 +1155,7 @@ class ClassAnalysis:
         #     # Propagate ExternalField to ExternalClass
         #     self.orig_class.add_method(field_analysis.get_field())
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow classobj to be Any
-    def add_field_xref_read(self, method: MethodAnalysis, classobj: Any, field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_read(self, method: MethodAnalysis, classobj: Self, field: dex.EncodedField, off: int) -> None:
         """
         Add a Field Read to this class
 
@@ -1174,15 +1169,13 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_read(classobj, method, off)
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow classobj to be Any
-    def add_field_xref_write(self, method: MethodAnalysis, classobj: Any, field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_write(self, method: MethodAnalysis, classobj: Self, field: dex.EncodedField, off: int) -> None:
         """
         Add a Field Write to this class in a given method
 
         :param MethodAnalysis method:
         :param ClassAnalysis classobj:
-        :param androguard.core.bytecodes.dvm.EncodedField field:
+        :param androguard.core.dex.EncodedField field:
         :param int off:
         :return:
         """
@@ -1190,7 +1183,7 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_write(classobj, method, off)
 
-    def add_method_xref_to(self, method1: MethodAnalysis, classobj: Any, method2: MethodAnalysis, offset: int) -> None:
+    def add_method_xref_to(self, method1: MethodAnalysis, classobj: Self, method2: MethodAnalysis, offset: int) -> None:
         """
 
         :param MethodAnalysis method1: the calling method
@@ -1206,7 +1199,7 @@ class ClassAnalysis:
 
         self._methods[method1.get_method()].add_xref_to(classobj, method2, offset)
 
-    def add_method_xref_from(self, method1: MethodAnalysis, classobj: Any, method2: MethodAnalysis, offset: int) -> None:
+    def add_method_xref_from(self, method1: MethodAnalysis, classobj: Self, method2: MethodAnalysis, offset: int) -> None:
         """
 
         :param MethodAnalysis method1:
@@ -1221,9 +1214,7 @@ class ClassAnalysis:
 
         self._methods[method1.get_method()].add_xref_from(classobj, method2, offset)
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow classobj to be Any
-    def add_xref_to(self, ref_kind: REF_TYPE, classobj: Any, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_to(self, ref_kind: REF_TYPE, classobj: Self, methodobj: MethodAnalysis, offset: int) -> None:
         """
         Creates a crossreference to another class.
         XrefTo means, that the current class calls another class.
@@ -1242,9 +1233,7 @@ class ClassAnalysis:
         """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow classobj to be Any
-    def add_xref_from(self, ref_kind: REF_TYPE, classobj: Any, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_from(self, ref_kind: REF_TYPE, classobj: Self, methodobj: MethodAnalysis, offset: int) -> None:
         """
         Creates a crossreference from this class.
         XrefFrom means, that the current class is called by another class.
@@ -1257,9 +1246,7 @@ class ClassAnalysis:
         """
         self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow classobj to be Any
-    def get_xref_from(self) -> dict[Any, tuple[REF_TYPE, MethodAnalysis, int]]:
+    def get_xref_from(self) -> dict[Self, tuple[REF_TYPE, MethodAnalysis, int]]:
         """
         Returns a dictionary of all classes calling the current class.
         This dictionary contains also information from which method the class is accessed.
@@ -1285,9 +1272,7 @@ class ClassAnalysis:
         """
         return self.xreffrom
 
-    # NOTE: typing.Self for self-referential type annotation is only available in Python3.11+
-    # and Androguard currently only requires 3.9+.  So for now, allow classobj to be Any
-    def get_xref_to(self) -> dict[Any, tuple[REF_TYPE, MethodAnalysis, int]]:
+    def get_xref_to(self) -> dict[Self, tuple[REF_TYPE, MethodAnalysis, int]]:
         """
         Returns a dictionary of all classes which are called by the current class.
         This dictionary contains also information about the method which is called.
@@ -1369,7 +1354,7 @@ class ClassAnalysis:
         (only applicable to internal classes)
 
         :param flag: The flag to set to
-        :type flag: androguard.core.bytecodes.dvm.HiddenApiClassDataItem.RestrictionApiFlag
+        :type flag: androguard.core.dex.HiddenApiClassDataItem.RestrictionApiFlag
         """
         if self.is_external():
             raise RuntimeError(
@@ -1383,7 +1368,7 @@ class ClassAnalysis:
         (only applicable to internal classes)
 
         :param flag: The flag to set to
-        :type flag: androguard.core.bytecodes.dvm.HiddenApiClassDataItem.DomainApiFlag
+        :type flag: androguard.core.dex.HiddenApiClassDataItem.DomainApiFlag
         """
         if self.is_external():
             raise RuntimeError(
@@ -1439,9 +1424,9 @@ class Analysis:
     * strings (`StringAnalyis`)
     * fields (`FieldAnalysis`)
 
-    The Analysis should be the only object you are using next to the :class:`~androguard.core.bytecodes.apk.APK`.
+    The Analysis should be the only object you are using next to the :class:`~androguard.core.apk.APK`.
     It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
-    the functions from :class:`~androguard.core.bytecodes.dvm.DEX` and the related classes.
+    the functions from :class:`~androguard.core.dex.DEX` and the related classes.
 
     :param Optional[androguard.core.dex.DEX] vm: inital DEX object (default None)
     """
@@ -1515,7 +1500,7 @@ class Analysis:
 
         logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
-    def create_xref(self):
+    def create_xref(self) -> None:
         """
         Create Class, Method, String and Field crossreferences
         for all classes in the Analysis.
@@ -1550,7 +1535,7 @@ class Analysis:
         logger.info("End of creating cross references (XREF) "
                  "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
-    def _create_xref(self, current_class):
+    def _create_xref(self, current_class: dex.ClassDefItem) -> None:
         """
         Create the xref for `current_class`
 
@@ -1669,7 +1654,7 @@ class Analysis:
                         self.classes[cur_cls_name].add_field_xref_write(cur_meth, cur_cls, field_item, off)
                         cur_meth.add_xref_write(cur_cls, field_item, off)
 
-    def get_method(self, method):
+    def get_method(self, method: dex.EncodedMethod) -> MethodAnalysis|None :
         """
         Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
         This Analysis object is used to enhance EncodedMethods.
@@ -1685,7 +1670,7 @@ class Analysis:
     # Alias
     get_method_analysis = get_method
 
-    def _resolve_method(self, class_name, method_name, method_descriptor):
+    def _resolve_method(self, class_name: str, method_name: str, method_descriptor: list[str]) -> MethodAnalysis:
         """
         Resolves the Method and returns MethodAnalysis.
         Will automatically create ExternalMethods if can not resolve and add to the ClassAnalysis etc
@@ -1714,7 +1699,7 @@ class Analysis:
 
         return self.__method_hashes[m_hash]
 
-    def get_method_by_name(self, class_name, method_name, method_descriptor):
+    def get_method_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> dex.EncodedMethod|None:
         """
         Search for a :class:`EncodedMethod` in all classes in this analysis
 
@@ -1722,14 +1707,14 @@ class Analysis:
         :param method_name: name of the method, for example 'onCreate'
         :param method_descriptor: descriptor, for example '(I I Ljava/lang/String)V
         :return: :class:`EncodedMethod` or None if method was not found
-        :rtype: androguard.core.bytecodes.dvm.EncodedMethod
+        :rtype: androguard.core.dex.EncodedMethod
         """
         m_a = self.get_method_analysis_by_name(class_name, method_name, method_descriptor)
         if m_a and not m_a.is_external():
             return m_a.get_method()
         return None
 
-    def get_method_analysis_by_name(self, class_name, method_name, method_descriptor):
+    def get_method_analysis_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> MethodAnalysis|None:
         """
         Returns the crossreferencing object for a given method.
 
@@ -1747,11 +1732,11 @@ class Analysis:
             return None
         return self.__method_hashes[m_hash]
 
-    def get_field_analysis(self, field):
+    def get_field_analysis(self, field: dex.EncodedField) -> FieldAnalysis|None:
         """
         Get the FieldAnalysis for a given fieldname
 
-        :param androguard.core.bytecodes.dvm.EncodedField field: the field
+        :param androguard.core.dex.EncodedField field: the field
         :return: :class:`FieldAnalysis`
         :rtype: FieldAnalysis
         """
@@ -1760,7 +1745,7 @@ class Analysis:
             return class_analysis.get_field_analysis(field)
         return None
 
-    def is_class_present(self, class_name: str):
+    def is_class_present(self, class_name: str) -> bool:
         """
         Checks if a given class name is part of this Analysis.
 
@@ -1869,7 +1854,7 @@ class Analysis:
             for f in c.get_fields():
                 yield f
 
-    def find_classes(self, name=".*", no_external=False):
+    def find_classes(self, name:str = ".*", no_external:bool = False) -> Generator[ClassAnalysis]:
         """
         Find classes by name, using regular expression
         This method will return all ClassAnalysis Object that match the name of
@@ -1885,8 +1870,13 @@ class Analysis:
             if re.match(name, cname):
                 yield c
 
-    def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
-            accessflags=".*", no_external=False):
+    def find_methods(
+        self,
+        classname:str=".*", 
+        methodname:str=".*", 
+        descriptor:str=".*",
+        accessflags:str=".*", 
+        no_external:bool=False) -> Generator[MethodAnalysis]:
         """
         Find a method by name using regular expression.
         This method will return all MethodAnalysis objects, which match the
@@ -1917,7 +1907,7 @@ class Analysis:
                        re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
-    def find_strings(self, string=".*"):
+    def find_strings(self, string:str=".*") -> Generator[StringAnalysis]:
         """
         Find strings by regex
 
@@ -1928,7 +1918,12 @@ class Analysis:
             if re.match(string, s):
                 yield sa
 
-    def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*", accessflags=".*"):
+    def find_fields(
+        self,
+        classname:str=".*",
+        fieldname:str=".*",
+        fieldtype:str=".*",
+        accessflags:str=".*") -> Generator[FieldAnalysis]:
         """
         find fields by regex
 
@@ -1952,12 +1947,12 @@ class Analysis:
 
     def get_call_graph(
         self,
-        classname=".*",
-        methodname=".*",
-        descriptor=".*",
-        accessflags=".*",
-        no_isolated=False,
-        entry_points=[]):
+        classname:str=".*",
+        methodname:str=".*",
+        descriptor:str=".*",
+        accessflags:str=".*",
+        no_isolated:bool=False,
+        entry_points:list=[]) -> nx.DiGraph:
         """
         Generate a directed graph based on the methods found by the filters applied.
         The filters are the same as in
@@ -2032,7 +2027,7 @@ class Analysis:
 
         return CG
 
-    def create_ipython_exports(self):
+    def create_ipython_exports(self) -> None:
         """
         .. warning:: this feature is experimental and is currently not enabled by default! Use with caution!
 
@@ -2075,11 +2070,11 @@ class Analysis:
                     logger.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
 
-    def get_permissions(self, apilevel=None):
+    def get_permissions(self, apilevel:str|int=None) -> Generator[MethodAnalysis, list[str]]:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
-        Should be used in combination with an :class:`~androguard.core.bytecodes.apk.APK`.
+        Should be used in combination with an :class:`~androguard.core.apk.APK`.
 
         The returned permissions are a list, as some API methods require multiple permissions at once.
 
@@ -2120,7 +2115,7 @@ class Analysis:
                 if meth.permission_api_name in permmap:
                     yield meth_analysis, permmap[meth.permission_api_name]
 
-    def get_permission_usage(self, permission, apilevel=None):
+    def get_permission_usage(self, permission:str, apilevel:str|int=None) -> Generator[MethodAnalysis]:
         """
         Find the usage of a permission inside the Analysis.
 
@@ -2159,7 +2154,7 @@ class Analysis:
                 if meth.permission_api_name in apis:
                     yield meth_analysis
 
-    def get_android_api_usage(self):
+    def get_android_api_usage(self) -> Generator[MethodAnalysis]:
         """
         Get all usage of the Android APIs inside the Analysis.
 
@@ -2172,12 +2167,12 @@ class Analysis:
                     yield meth_analysis
 
 
-def is_ascii_obfuscation(vm):
+def is_ascii_obfuscation(vm: dex.DEX) -> bool:
     """
     Tests if any class inside a DalvikVMObject
     uses ASCII Obfuscation (e.g. UTF-8 Chars in Classnames)
 
-    :param androguard.core.bytecodes.dvm.DEX vm: `DalvikVMObject`
+    :param androguard.core.dex.DEX vm: `DalvikVMObject`
     :return: True if ascii obfuscation otherwise False
     :rtype: bool
     """
