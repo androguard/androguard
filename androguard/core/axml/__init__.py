@@ -728,7 +728,7 @@ class AXMLParser:
             # Solve 2) & 4) by not including
             if s_uri != "" and s_prefix != "":
                 # solve 1) by using the last one in the list
-                NSMAP[s_prefix] = s_uri
+                NSMAP[s_prefix] = s_uri.strip()
 
         return NSMAP
 
