@@ -15,22 +15,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from struct import pack, unpack
-import androguard.decompiler.util as util
-from androguard.decompiler.instruction import (
-    ArrayLengthExpression, ArrayLoadExpression, ArrayStoreInstruction,
-    AssignExpression, BaseClass, BinaryCompExpression, BinaryExpression,
-    BinaryExpression2Addr, BinaryExpressionLit, CastExpression,
-    CheckCastExpression, ConditionalExpression, ConditionalZExpression,
-    Constant, FillArrayExpression, FilledArrayExpression, InstanceExpression,
-    InstanceInstruction, InvokeInstruction, InvokeDirectInstruction,
-    InvokeRangeInstruction, InvokeStaticInstruction, MonitorEnterExpression,
-    MonitorExitExpression, MoveExceptionExpression, MoveExpression,
-    MoveResultExpression, NewArrayExpression, NewInstance, NopExpression,
-    ThrowExpression, Variable, ReturnInstruction, StaticExpression,
-    StaticInstruction, SwitchExpression, ThisParam, UnaryExpression)
+from typing import TYPE_CHECKING, Any, DefaultDict, List, Union
 
 from loguru import logger
+
+import androguard.decompiler.util as util
+from androguard.decompiler.instruction import (
+    ArrayLengthExpression,
+    ArrayLoadExpression,
+    ArrayStoreInstruction,
+    AssignExpression,
+    BaseClass,
+    BinaryCompExpression,
+    BinaryExpression,
+    BinaryExpression2Addr,
+    BinaryExpressionLit,
+    CastExpression,
+    CheckCastExpression,
+    ConditionalExpression,
+    ConditionalZExpression,
+    Constant,
+    FillArrayExpression,
+    FilledArrayExpression,
+    InstanceExpression,
+    InstanceInstruction,
+    InvokeDirectInstruction,
+    InvokeInstruction,
+    InvokeRangeInstruction,
+    InvokeStaticInstruction,
+    MonitorEnterExpression,
+    MonitorExitExpression,
+    MoveExceptionExpression,
+    MoveExpression,
+    MoveResultExpression,
+    NewArrayExpression,
+    NewInstance,
+    NopExpression,
+    ReturnInstruction,
+    StaticExpression,
+    StaticInstruction,
+    SwitchExpression,
+    ThisParam,
+    ThrowExpression,
+    UnaryExpression,
+    Variable,
+)
+
+if TYPE_CHECKING:
+    from androguard.core.dex import (
+        FillArrayData,
+        Instruction10x,
+        Instruction11n,
+        Instruction11x,
+        Instruction12x,
+        Instruction21c,
+        Instruction21s,
+        Instruction22b,
+        Instruction22c,
+        Instruction23x,
+        Instruction31t,
+        Instruction35c,
+    )
+    from androguard.decompiler.graph import GenInvokeRetName
+    from androguard.decompiler.instruction import Param
 
 
 class Op:
@@ -57,7 +107,7 @@ class Op:
     LONGSHR = '>>'  # '(%s >> ( %s & 0x3f ))'
 
 
-def get_variables(vmap, *variables):
+def get_variables(vmap: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, Union[ThisParam, Param]], DefaultDict[int, Union[ThisParam, Param, Variable]], DefaultDict[int, ThisParam]], *variables) -> Union[List[Union[Variable, Param]], Variable, List[Union[Variable, ThisParam]], List[Variable], ThisParam]:
     res = []
     for variable in variables:
         res.append(vmap.setdefault(variable, Variable(variable)))
@@ -66,7 +116,7 @@ def get_variables(vmap, *variables):
     return res
 
 
-def assign_const(dest_reg, cst, vmap):
+def assign_const(dest_reg: int, cst: Constant, vmap: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, Union[ThisParam, Param]], DefaultDict[int, ThisParam]]) -> AssignExpression:
     return AssignExpression(get_variables(vmap, dest_reg), cst)
 
 
@@ -81,7 +131,7 @@ def load_array_exp(val_a, val_b, val_c, ar_type, vmap):
     return AssignExpression(reg_a, ArrayLoadExpression(reg_b, reg_c, ar_type))
 
 
-def store_array_inst(val_a, val_b, val_c, ar_type, vmap):
+def store_array_inst(val_a: int, val_b: int, val_c: int, ar_type: str, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> ArrayStoreInstruction:
     reg_a, reg_b, reg_c = get_variables(vmap, val_a, val_b, val_c)
     return ArrayStoreInstruction(reg_a, reg_b, reg_c, ar_type)
 
@@ -97,13 +147,13 @@ def assign_binary_exp(ins, val_op, op_type, vmap):
                                                     op_type))
 
 
-def assign_binary_2addr_exp(ins, val_op, op_type, vmap):
+def assign_binary_2addr_exp(ins: Instruction12x, val_op: str, op_type: str, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b,
                                                          op_type))
 
 
-def assign_lit(op_type, val_cst, val_a, val_b, vmap):
+def assign_lit(op_type: str, val_cst: int, val_a: int, val_b: int, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
     cst = Constant(val_cst, 'I')
     var_a, var_b = get_variables(vmap, val_a, val_b)
     return AssignExpression(var_a, BinaryExpressionLit(op_type, var_b, cst))
@@ -204,13 +254,13 @@ def moveexception(ins, vmap, _type):
 
 
 # return-void
-def returnvoid(ins, vmap):
+def returnvoid(ins: Instruction10x, vmap: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, ThisParam]]) -> ReturnInstruction:
     logger.debug('ReturnVoid')
     return ReturnInstruction(None)
 
 
 # return vAA ( 8b )
-def return_reg(ins, vmap):
+def return_reg(ins: Instruction11x, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> ReturnInstruction:
     logger.debug('Return : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
@@ -228,14 +278,14 @@ def returnobject(ins, vmap):
 
 
 # const/4 vA, #+B ( 4b, 4b )
-def const4(ins, vmap):
+def const4(ins: Instruction11n, vmap: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, ThisParam]]) -> AssignExpression:
     logger.debug('Const4 : %s', ins.get_output())
     cst = Constant(ins.B, 'I')
     return assign_const(ins.A, cst, vmap)
 
 
 # const/16 vAA, #+BBBB ( 8b, 16b )
-def const16(ins, vmap):
+def const16(ins: Instruction21s, vmap: DefaultDict[int, Union[ThisParam, Param]]) -> AssignExpression:
     logger.debug('Const16 : %s', ins.get_output())
     cst = Constant(ins.BBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
@@ -284,7 +334,7 @@ def constwidehigh16(ins, vmap):
 
 
 # const-string vAA ( 8b )
-def conststring(ins, vmap):
+def conststring(ins: Instruction21c, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> AssignExpression:
     logger.debug('ConstString : %s', ins.get_output())
     cst = Constant(ins.get_raw_string(), 'Ljava/lang/String;')
     return assign_const(ins.AA, cst, vmap)
@@ -356,7 +406,7 @@ def newinstance(ins, vmap):
 
 
 # new-array vA, vB ( 8b, size )
-def newarray(ins, vmap):
+def newarray(ins: Instruction22c, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> AssignExpression:
     logger.debug('NewArray : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = NewArrayExpression(b, ins.cm.get_type(ins.CCCC))
@@ -382,7 +432,7 @@ def fillednewarrayrange(ins, vmap, ret):
 
 
 # fill-array-data vAA, +BBBBBBBB ( 8b, 32b )
-def fillarraydata(ins, vmap, value):
+def fillarraydata(ins: Instruction31t, vmap: DefaultDict[int, Union[ThisParam, Variable]], value: FillArrayData) -> FillArrayExpression:
     logger.debug('FillArrayData : %s', ins.get_output())
     return FillArrayExpression(get_variables(vmap, ins.AA), value)
 
@@ -592,7 +642,7 @@ def aputwide(ins, vmap):
 
 
 # aput-object vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputobject(ins, vmap):
+def aputobject(ins: Instruction23x, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> ArrayStoreInstruction:
     logger.debug('APutObject : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
@@ -701,7 +751,7 @@ def iputwide(ins, vmap):
 
 
 # iput-object vA, vB ( 4b, 4b )
-def iputobject(ins, vmap):
+def iputobject(ins: Instruction22c, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> InstanceInstruction:
     logger.debug('IPutObject %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -859,7 +909,7 @@ def sputshort(ins, vmap):
     return StaticInstruction(a, klass, ftype, name)
 
 
-def get_args(vmap, param_type, largs):
+def get_args(vmap: DefaultDict[int, ThisParam], param_type: List[Any], largs: List[int]) -> List[Any]:
     num_param = 0
     args = []
     if len(param_type) > len(largs):
@@ -910,7 +960,7 @@ def invokesuper(ins, vmap, ret):
 
 
 # invoke-direct {vD, vE, vF, vG, vA} ( 4b each )
-def invokedirect(ins, vmap, ret):
+def invokedirect(ins: Instruction35c, vmap: DefaultDict[int, ThisParam], ret: GenInvokeRetName) -> AssignExpression:
     logger.debug('InvokeDirect : %s', ins.get_output())
     method = ins.cm.get_method_ref(ins.BBBB)
     cls_name = util.get_type(method.get_class_name())
@@ -1399,7 +1449,7 @@ def addint2addr(ins, vmap):
 
 
 # sub-int/2addr vA, vB ( 4b, 4b )
-def subint2addr(ins, vmap):
+def subint2addr(ins: Instruction12x, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
     logger.debug('SubInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'I', vmap)
 
@@ -1429,7 +1479,7 @@ def andint2addr(ins, vmap):
 
 
 # or-int/2addr vA, vB ( 4b, 4b )
-def orint2addr(ins, vmap):
+def orint2addr(ins: Instruction12x, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
     logger.debug('OrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.OR, 'I', vmap)
 
@@ -1635,7 +1685,7 @@ def xorintlit16(ins, vmap):
 
 
 # add-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def addintlit8(ins, vmap):
+def addintlit8(ins: Instruction22b, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
     logger.debug('AddIntLit8 : %s', ins.get_output())
     literal, op = [(ins.CC, Op.ADD), (-ins.CC, Op.SUB)][ins.CC < 0]
     return assign_lit(op, literal, ins.AA, ins.BB, vmap)
@@ -1668,7 +1718,7 @@ def remintlit8(ins, vmap):
 
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def andintlit8(ins, vmap):
+def andintlit8(ins: Instruction22b, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
     logger.debug('AndIntLit8 : %s', ins.get_output())
     return assign_lit(Op.AND, ins.CC, ins.AA, ins.BB, vmap)
 

@@ -15,7 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import TYPE_CHECKING, DefaultDict, List, Tuple, Union
 
 from loguru import logger
 
@@ -23,6 +26,20 @@ from androguard.decompiler.instruction import MoveExceptionExpression
 from androguard.decompiler.node import Node
 from androguard.decompiler.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.util import get_type
+
+if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import DEXBasicBlock
+    from androguard.decompiler.graph import GenInvokeRetName
+    from androguard.decompiler.instruction import (
+        ArrayStoreInstruction,
+        AssignExpression,
+        FillArrayExpression,
+        InstanceInstruction,
+        Param,
+        ReturnInstruction,
+        ThisParam,
+    )
+    from androguard.decompiler.writer import Writer
 
 
 class BasicBlock(Node):
@@ -40,15 +57,15 @@ class BasicBlock(Node):
         self.var_to_declare = set()
         self.catch_type = None
 
-    def get_ins(self):
+    def get_ins(self) -> List[Union[AssignExpression, FillArrayExpression, InstanceInstruction, ArrayStoreInstruction, ReturnInstruction]]:
         return self.ins
 
-    def get_loc_with_ins(self):
+    def get_loc_with_ins(self) -> List[Union[Tuple[int, AssignExpression], Tuple[int, FillArrayExpression], Tuple[int, InstanceInstruction], Tuple[int, ArrayStoreInstruction], Tuple[int, ReturnInstruction]]]:
         if self.loc_ins is None:
             self.loc_ins = list(zip(range(*self.ins_range), self.ins))
         return self.loc_ins
 
-    def remove_ins(self, loc, ins):
+    def remove_ins(self, loc: int, ins: AssignExpression):
         self.ins.remove(ins)
         self.loc_ins.remove((loc, ins))
 
@@ -59,7 +76,7 @@ class BasicBlock(Node):
     def add_variable_declaration(self, variable):
         self.var_to_declare.add(variable)
 
-    def number_ins(self, num: int):
+    def number_ins(self, num: int) -> int:
         last_ins_num = num + len(self.ins)
         self.ins_range = (num, last_ins_num)
         self.loc_ins = None
@@ -82,11 +99,11 @@ class StatementBlock(BasicBlock):
 
 
 class ReturnBlock(BasicBlock):
-    def __init__(self, name, block_ins):
+    def __init__(self, name: str, block_ins: List[Union[AssignExpression, FillArrayExpression, InstanceInstruction, ArrayStoreInstruction, ReturnInstruction]]):
         super().__init__(name, block_ins)
         self.type.is_return = True
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_return_node(self)
 
     def __str__(self):
@@ -314,7 +331,7 @@ class CatchBlock(BasicBlock):
         return 'Catch(%s)' % self.name
 
 
-def build_node_from_block(block, vmap, gen_ret, exception_type=None):
+def build_node_from_block(block: DEXBasicBlock, vmap: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Param]]], gen_ret: GenInvokeRetName, exception_type: None=None) -> ReturnBlock:
     ins, lins = None, []
     idx = block.get_start()
     for ins in block.get_instructions():

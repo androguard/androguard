@@ -14,8 +14,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 from collections import defaultdict
-from typing import TYPE_CHECKING, Iterator
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+)
 
 from loguru import logger
 
@@ -27,6 +38,9 @@ from androguard.decompiler.basic_blocks import (
 from androguard.decompiler.instruction import Variable
 
 if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import DEXBasicBlock
+    from androguard.decompiler.basic_blocks import ReturnBlock
+    from androguard.decompiler.instruction import Param, ThisParam
     from androguard.decompiler.node import Node
 
 
@@ -136,15 +150,15 @@ class Graph:
             self.loc_to_ins.update(node.get_loc_with_ins())
             self.loc_to_node[start_node, end_node] = node
 
-    def get_ins_from_loc(self, loc):
+    def get_ins_from_loc(self, loc: int) -> Any:
         return self.loc_to_ins.get(loc)
 
-    def get_node_from_loc(self, loc):
+    def get_node_from_loc(self, loc: int) -> ReturnBlock:
         for (start, end), node in self.loc_to_node.items():
             if start <= loc <= end:
                 return node
 
-    def remove_ins(self, loc):
+    def remove_ins(self, loc: int):
         ins = self.get_ins_from_loc(loc)
         self.get_node_from_loc(loc).remove_ins(loc, ins)
         self.loc_to_ins.pop(loc)
@@ -212,7 +226,7 @@ class Graph:
 
         g.write(os.path.join(dname, '%s.png' % name), format='png')
 
-    def immediate_dominators(self):
+    def immediate_dominators(self) -> Union[Dict[ReturnBlock, None], Dict[str, Optional[str]]]:
         return dom_lt(self)
 
     def __len__(self) -> int:
@@ -226,7 +240,7 @@ class Graph:
             yield node
 
 
-def split_if_nodes(graph):
+def split_if_nodes(graph: Graph):
     """
     Split IfNodes in two nodes, the first node is the header node, the
     second one is only composed of the jump condition.
@@ -289,7 +303,7 @@ def split_if_nodes(graph):
         node.update_attribute_with(node_map)
 
 
-def simplify(graph):
+def simplify(graph: Graph):
     """
     Simplify the CFG by merging/deleting statement nodes when possible:
     If statement B follows statement A and if B has no other predecessor
@@ -346,7 +360,7 @@ def simplify(graph):
             node.update_attribute_with(node_map)
 
 
-def dom_lt(graph):
+def dom_lt(graph: Graph) -> Union[Dict[ReturnBlock, None], Dict[str, Optional[str]]]:
     """Dominator algorithm from Lengauer-Tarjan"""
 
     def _dfs(v, n):
@@ -409,7 +423,7 @@ def dom_lt(graph):
     return dom
 
 
-def bfs(start) -> Iterator:
+def bfs(start: DEXBasicBlock) -> Iterator:
     """
     Breadth first search
 
@@ -450,7 +464,7 @@ class GenInvokeRetName:
         return self.ret
 
 
-def make_node(graph, block, block_to_node, vmap, gen_ret):
+def make_node(graph: Graph, block: DEXBasicBlock, block_to_node: Dict[Any, Any], vmap: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Param]]], gen_ret: GenInvokeRetName) -> ReturnBlock:
     node = block_to_node.get(block)
     if node is None:
         node = build_node_from_block(block, vmap, gen_ret)
@@ -493,7 +507,7 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
     return node
 
 
-def construct(start_block, vmap, exceptions):
+def construct(start_block: DEXBasicBlock, vmap: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Param]]], exceptions: List[Any]) -> Graph:
     """
     Constructs a CFG
 

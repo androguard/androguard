@@ -15,16 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from collections import defaultdict
-from androguard.decompiler.instruction import (Variable, ThisParam, Param)
-from androguard.decompiler.util import build_path, common_dom
-from androguard.decompiler.node import Node
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Tuple, Union
 
 from loguru import logger
 
+from androguard.decompiler.instruction import Param, ThisParam, Variable
+from androguard.decompiler.node import Node
+from androguard.decompiler.util import build_path, common_dom
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock, Mock, _Sentinel
+
+    from androguard.decompiler.graph import Graph
+
 
 class BasicReachDef:
-    def __init__(self, graph, params):
+    def __init__(self, graph: Union[Graph, MagicMock], params: List[Union[int, str]]):
         self.g = graph
         self.A = defaultdict(set)
         self.R = defaultdict(set)
@@ -112,7 +121,7 @@ def update_chain(graph, loc, du, ud):
                     graph.remove_ins(def_loc)
 
 
-def dead_code_elimination(graph, du, ud):
+def dead_code_elimination(graph: Graph, du: DefaultDict[Tuple[int, int], List[int]], ud: DefaultDict[Tuple[int, int], List[int]]):
     """
     Run a dead code elimination pass.
     Instructions are checked to be dead. If it is the case, we remove them and
@@ -144,7 +153,7 @@ def dead_code_elimination(graph, du, ud):
                         graph.remove_ins(i)
 
 
-def clear_path_node(graph, reg, loc1, loc2):
+def clear_path_node(graph: Graph, reg: int, loc1: int, loc2: int):
     for loc in range(loc1, loc2):
         ins = graph.get_ins_from_loc(loc)
         logger.debug('  treat loc: %d, ins: %s', loc, ins)
@@ -157,7 +166,7 @@ def clear_path_node(graph, reg, loc1, loc2):
     return True
 
 
-def clear_path(graph, reg, loc1, loc2):
+def clear_path(graph: Graph, reg: int, loc1: int, loc2: int) -> bool:
     """
     Check that the path from loc1 to loc2 is clear.
     We have to check that there is no side effect between the two location
@@ -185,7 +194,7 @@ def clear_path(graph, reg, loc1, loc2):
     return True
 
 
-def register_propagation(graph, du, ud):
+def register_propagation(graph: Graph, du: DefaultDict[Tuple[int, int], List[int]], ud: DefaultDict[Tuple[int, int], List[int]]):
     """
     Propagate the temporary registers between instructions and remove them if
     necessary.
@@ -309,10 +318,10 @@ def register_propagation(graph, du, ud):
 
 
 class DummyNode(Node):
-    def __init__(self, name):
+    def __init__(self, name: str):
         super().__init__(name)
 
-    def get_loc_with_ins(self):
+    def get_loc_with_ins(self) -> List[Any]:
         return []
 
     def __repr__(self):
@@ -322,7 +331,7 @@ class DummyNode(Node):
         return '%s-dummynode' % self.name
 
 
-def group_variables(lvars, DU, UD):
+def group_variables(lvars: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, ThisParam], List[int], DefaultDict[int, Union[ThisParam, Param, Variable]], List[str]], DU: Union[DefaultDict[Tuple[int, int], List[int]], Dict[Tuple[str, int], List[int]], Dict[Tuple[int, int], List[int]]], UD: Union[DefaultDict[Tuple[int, int], List[int]], Dict[Tuple[str, int], List[int]], Dict[Tuple[int, int], List[int]]]) -> Union[DefaultDict[int, List[Tuple[List[int], List[int]]]], DefaultDict[str, List[Tuple[List[int], List[int]]]]]:
     treated = defaultdict(list)
     variables = defaultdict(list)
     # FIXME
@@ -353,7 +362,7 @@ def group_variables(lvars, DU, UD):
     return variables
 
 
-def split_variables(graph, lvars, DU, UD):
+def split_variables(graph: Union[Graph, _Sentinel, Mock], lvars: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Variable]], Dict[int, Mock], List[int], DefaultDict[int, Union[ThisParam, Param, Variable]]], DU: Union[DefaultDict[Tuple[int, int], List[int]], _Sentinel, Dict[Tuple[int, int], List[int]]], UD: Union[DefaultDict[Tuple[int, int], List[int]], _Sentinel, Dict[Tuple[int, int], List[int]]]):
     variables = group_variables(lvars, DU, UD)
 
     if lvars:
@@ -391,7 +400,7 @@ def split_variables(graph, lvars, DU, UD):
                 UD[(new_version.value(), loc)] = UD.pop((var, loc))
 
 
-def reach_def_analysis(graph, lparams):
+def reach_def_analysis(graph: Union[Graph, MagicMock], lparams: List[Union[int, str]]) -> BasicReachDef:
     # We insert two special nodes : entry & exit, to the graph.
     # This is done to simplify the reaching definition analysis.
     old_entry = graph.entry
@@ -417,7 +426,7 @@ def reach_def_analysis(graph, lparams):
     return analysis
 
 
-def build_def_use(graph, lparams):
+def build_def_use(graph: Union[Graph, MagicMock], lparams: Union[_Sentinel, List[int]]) -> Union[Tuple[DefaultDict[Tuple[int, int], List[int]], DefaultDict[Tuple[int, int], List[int]]], Tuple[DefaultDict[Tuple[str, int], List[int]], DefaultDict[Tuple[str, int], List[int]]]]:
     """
     Builds the Def-Use and Use-Def (DU/UD) chains of the variables of the
     method.
@@ -455,7 +464,7 @@ def build_def_use(graph, lparams):
     return UD, DU
 
 
-def place_declarations(graph, dvars, du, ud):
+def place_declarations(graph: Graph, dvars: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, Union[ThisParam, Param, Variable]]], du: DefaultDict[Tuple[int, int], List[int]], ud: DefaultDict[Tuple[int, int], List[int]]):
     idom = graph.immediate_dominators()
     for node in graph.post_order():
         for loc, ins in node.get_loc_with_ins():

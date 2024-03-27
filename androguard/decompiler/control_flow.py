@@ -15,7 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Tuple
 
 from loguru import logger
 
@@ -26,9 +29,12 @@ from androguard.decompiler.basic_blocks import (
     ShortCircuitBlock,
     TryBlock,
 )
-from androguard.decompiler.util import common_dom
 from androguard.decompiler.graph import Graph
 from androguard.decompiler.node import Interval
+from androguard.decompiler.util import common_dom
+
+if TYPE_CHECKING:
+    from androguard.decompiler.basic_blocks import ReturnBlock
 
 
 def intervals(graph: Graph) -> tuple:
@@ -88,7 +94,7 @@ def intervals(graph: Graph) -> tuple:
     return interval_graph, interv_heads
 
 
-def derived_sequence(graph):
+def derived_sequence(graph: Graph) -> Tuple[List[Graph], List[Dict[ReturnBlock, Interval]]]:
     """
     Compute the derived sequence of the graph G
     The intervals of G are collapsed into nodes, intervals of these nodes are
@@ -184,7 +190,7 @@ def loop_follow(start, end, nodes_in_loop):
     logger.debug('Follow of loop: %s', start.follow['loop'])
 
 
-def loop_struct(graphs_list, intervals_list):
+def loop_struct(graphs_list: List[Graph], intervals_list: List[Dict[ReturnBlock, Interval]]):
     first_graph = graphs_list[0]
     for i, graph in enumerate(graphs_list):
         interval = intervals_list[i]
@@ -199,7 +205,7 @@ def loop_struct(graphs_list, intervals_list):
             head.get_head().loop_nodes = loop_nodes
 
 
-def if_struct(graph, idoms):
+def if_struct(graph: Graph, idoms: Dict[ReturnBlock, None]) -> Set[Any]:
     unresolved = set()
     for node in graph.post_order():
         if node.type.is_cond:
@@ -219,7 +225,7 @@ def if_struct(graph, idoms):
     return unresolved
 
 
-def switch_struct(graph, idoms):
+def switch_struct(graph: Graph, idoms: Dict[ReturnBlock, None]):
     unresolved = set()
     for node in graph.post_order():
         if node.type.is_switch:
@@ -243,7 +249,7 @@ def switch_struct(graph, idoms):
 
 
 # TODO: deal with preds which are in catch
-def short_circuit_struct(graph, idom, node_map):
+def short_circuit_struct(graph: Graph, idom: Dict[ReturnBlock, None], node_map: Dict[Any, Any]):
     def MergeNodes(node1, node2, is_and, is_not):
         lpreds = set()
         ldests = set()
@@ -323,7 +329,7 @@ def short_circuit_struct(graph, idom, node_map):
             graph.compute_rpo()
 
 
-def while_block_struct(graph, node_map):
+def while_block_struct(graph: Graph, node_map: Dict[Any, Any]):
     change = False
     for node in graph.rpo[:]:
         if node.startloop:
@@ -355,7 +361,7 @@ def while_block_struct(graph, node_map):
         graph.compute_rpo()
 
 
-def catch_struct(graph, idoms):
+def catch_struct(graph: Graph, idoms: Dict[ReturnBlock, None]):
     block_try_nodes = {}
     node_map = {}
     for catch_block in graph.reverse_catch_edges:
@@ -400,12 +406,12 @@ def catch_struct(graph, idoms):
         graph.entry = node_map[graph.entry]
 
 
-def update_dom(idoms, node_map):
+def update_dom(idoms: Dict[ReturnBlock, None], node_map: Dict[Any, Any]):
     for n, dom in idoms.items():
         idoms[n] = node_map.get(dom, dom)
 
 
-def identify_structures(graph, idoms):
+def identify_structures(graph: Graph, idoms: Dict[ReturnBlock, None]):
     Gi, Li = derived_sequence(graph)
     switch_struct(graph, idoms)
     loop_struct(Gi, Li)

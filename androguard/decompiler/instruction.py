@@ -15,11 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import androguard.decompiler.util as util
 
 if TYPE_CHECKING:
+    from androguard.core.dex import FillArrayData
     from androguard.decompiler.writer import Writer
 
 
@@ -81,7 +84,7 @@ class IRForm:
 
 
 class Constant(IRForm):
-    def __init__(self, value, atype, int_value=None, descriptor=None):
+    def __init__(self, value: Union[str, int], atype: str, int_value: None=None, descriptor: None=None):
         """
 
         :param value:
@@ -99,7 +102,7 @@ class Constant(IRForm):
 
         self.clsdesc = descriptor
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[Any]:
         return []
 
     def is_const(self):
@@ -108,10 +111,10 @@ class Constant(IRForm):
     def get_int_value(self):
         return self.cst2
 
-    def get_type(self):
+    def get_type(self) -> str:
         return self.type
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         if self.type == 'Z':
             if self.cst == 0:
                 return visitor.visit_constant('false')
@@ -201,7 +204,7 @@ class ThisParam(Param):
     this: bool
     super: bool
 
-    def __init__(self, value, atype):
+    def __init__(self, value: int, atype: str):
         super().__init__(value, atype)
         self.this = True
         self.super = False
@@ -216,7 +219,7 @@ class ThisParam(Param):
 
 
 class AssignExpression(IRForm):
-    def __init__(self, lhs, rhs):
+    def __init__(self, lhs: Optional[Variable], rhs: Union[Constant, BinaryExpressionLit, NewArrayExpression, InvokeDirectInstruction, BinaryExpression2Addr]):
         super().__init__()
         if lhs:
             self.lhs = lhs.v
@@ -226,35 +229,35 @@ class AssignExpression(IRForm):
             self.lhs = None
         self.rhs = rhs
 
-    def is_propagable(self):
+    def is_propagable(self) -> bool:
         return self.rhs.is_propagable()
 
     def is_call(self):
         return self.rhs.is_call()
 
-    def has_side_effect(self):
+    def has_side_effect(self) -> bool:
         return self.rhs.has_side_effect()
 
-    def get_rhs(self):
+    def get_rhs(self) -> Union[Constant, BinaryExpressionLit, BinaryExpression2Addr]:
         return self.rhs
 
-    def get_lhs(self):
+    def get_lhs(self) -> Optional[int]:
         return self.lhs
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[Union[int, Any]]:
         return self.rhs.get_used_vars()
 
     def remove_defined_var(self):
         self.lhs = None
 
-    def replace(self, old, new):
+    def replace(self, old: int, new: Union[Constant, BinaryExpressionLit]):
         self.rhs.replace(old, new)
 
-    def replace_lhs(self, new):
+    def replace_lhs(self, new: Variable):
         self.lhs = new.v
         self.var_map[new.v] = new
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         self.rhs.replace_var(old, new)
 
     def visit(self, visitor: "Writer") -> None:
@@ -340,7 +343,7 @@ class MoveResultExpression(MoveExpression):
 
 
 class ArrayStoreInstruction(IRForm):
-    def __init__(self, rhs, array, index, _type):
+    def __init__(self, rhs: Variable, array: Variable, index: Variable, _type: str):
         super().__init__()
         self.rhs = rhs.v
         self.array = array.v
@@ -351,21 +354,21 @@ class ArrayStoreInstruction(IRForm):
     def has_side_effect(self):
         return True
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[int]:
         v_m = self.var_map
         lused_vars = v_m[self.array].get_used_vars()
         lused_vars.extend(v_m[self.index].get_used_vars())
         lused_vars.extend(v_m[self.rhs].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         v_m = self.var_map
         return visitor.visit_astore(v_m[self.array],
                                     v_m[self.index],
                                     v_m[self.rhs],
                                     data=self)
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         if self.rhs == old:
             self.rhs = new.v
         if self.array == old:
@@ -375,7 +378,7 @@ class ArrayStoreInstruction(IRForm):
         self.var_map.pop(old)
         self.var_map[new.v] = new
 
-    def replace(self, old, new):
+    def replace(self, old: int, new: Constant):
         v_m = self.var_map
         if old in v_m:
             arg = v_m[old]
@@ -448,7 +451,7 @@ class StaticInstruction(IRForm):
 
 
 class InstanceInstruction(IRForm):
-    def __init__(self, rhs, lhs, klass, atype, name):
+    def __init__(self, rhs: Variable, lhs: ThisParam, klass: str, atype: str, name: str):
         super().__init__()
         self.lhs = lhs.v
         self.rhs = rhs.v
@@ -462,7 +465,7 @@ class InstanceInstruction(IRForm):
     def has_side_effect(self):
         return True
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[int]:
         v_m = self.var_map
         lused_vars = v_m[self.lhs].get_used_vars()
         lused_vars.extend(v_m[self.rhs].get_used_vars())
@@ -471,7 +474,7 @@ class InstanceInstruction(IRForm):
     def get_lhs(self):
         return None
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         v_m = self.var_map
         return visitor.visit_put_instance(
             v_m[self.lhs],
@@ -479,7 +482,7 @@ class InstanceInstruction(IRForm):
             v_m[self.rhs],
             data=self.atype)
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         if self.lhs == old:
             self.lhs = new.v
         if self.rhs == old:
@@ -534,7 +537,7 @@ class NewInstance(IRForm):
 
 
 class InvokeInstruction(IRForm):
-    def __init__(self, clsname, name, base, rtype, ptype, args, triple):
+    def __init__(self, clsname: str, name: str, base: ThisParam, rtype: str, ptype: List[Any], args: List[Any], triple: Tuple[str, str, str]):
         super().__init__()
         self.cls = clsname
         self.name = name
@@ -602,7 +605,7 @@ class InvokeInstruction(IRForm):
                 if not (cnt.is_ident() or cnt.is_const()):
                     cnt.replace(old, new)
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[int]:
         v_m = self.var_map
         lused_vars = []
         for arg in self.args:
@@ -610,7 +613,7 @@ class InvokeInstruction(IRForm):
         lused_vars.extend(v_m[self.base].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         v_m = self.var_map
         largs = [v_m[arg] for arg in self.args]
         return visitor.visit_invoke(self.name, v_m[self.base], self.ptype,
@@ -630,7 +633,7 @@ class InvokeRangeInstruction(InvokeInstruction):
 
 
 class InvokeDirectInstruction(InvokeInstruction):
-    def __init__(self, clsname, name, base, rtype, ptype, args, triple):
+    def __init__(self, clsname: str, name: str, base: ThisParam, rtype: str, ptype: List[Any], args: List[Any], triple: Tuple[str, str, str]):
         super().__init__(
             clsname, name, base, rtype, ptype, args, triple)
 
@@ -649,14 +652,14 @@ class InvokeStaticInstruction(InvokeInstruction):
 
 
 class ReturnInstruction(IRForm):
-    def __init__(self, arg):
+    def __init__(self, arg: Optional[Variable]):
         super().__init__()
         self.arg = arg
         if arg is not None:
             self.var_map[arg.v] = arg
             self.arg = arg.v
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[Union[int, Any]]:
         if self.arg is None:
             return []
         return self.var_map[self.arg].get_used_vars()
@@ -664,18 +667,18 @@ class ReturnInstruction(IRForm):
     def get_lhs(self):
         return None
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         if self.arg is None:
             return visitor.visit_return_void()
         else:
             return visitor.visit_return(self.var_map[self.arg])
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         self.arg = new.v
         self.var_map.pop(old)
         self.var_map[new.v] = new
 
-    def replace(self, old, new):
+    def replace(self, old: int, new: Union[BinaryExpressionLit, BinaryExpression2Addr]):
         v_m = self.var_map
         arg = v_m[self.arg]
         if not (arg.is_const() or arg.is_ident()):
@@ -878,7 +881,7 @@ class ArrayLengthExpression(ArrayExpression):
 
 
 class NewArrayExpression(ArrayExpression):
-    def __init__(self, asize, atype):
+    def __init__(self, asize: Variable, atype: str):
         super().__init__()
         self.size = asize.v
         self.type = atype
@@ -887,18 +890,18 @@ class NewArrayExpression(ArrayExpression):
     def is_propagable(self):
         return False
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[Union[int, Any]]:
         return self.var_map[self.size].get_used_vars()
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         return visitor.visit_new_array(self.type, self.var_map[self.size])
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         self.size = new.v
         self.var_map.pop(old)
         self.var_map[new.v] = new
 
-    def replace(self, old, new):
+    def replace(self, old: int, new: Constant):
         v_m = self.var_map
         size = v_m[self.size]
         if not (size.is_const() or size.is_ident()):
@@ -972,7 +975,7 @@ class FilledArrayExpression(ArrayExpression):
 
 
 class FillArrayExpression(ArrayExpression):
-    def __init__(self, reg, value):
+    def __init__(self, reg: Variable, value: FillArrayData):
         super().__init__()
         self.reg = reg.v
         self.var_map[reg.v] = reg
@@ -984,7 +987,7 @@ class FillArrayExpression(ArrayExpression):
     def get_rhs(self):
         return self.reg
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         self.reg = new.v
         self.var_map.pop(old)
         self.var_map[new.v] = new
@@ -1001,10 +1004,10 @@ class FillArrayExpression(ArrayExpression):
             else:
                 v_m[old] = new
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[int]:
         return self.var_map[self.reg].get_used_vars()
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         return visitor.visit_fill_array(self.var_map[self.reg], self.value)
 
 
@@ -1093,7 +1096,7 @@ class ThrowExpression(RefExpression):
 
 
 class BinaryExpression(IRForm):
-    def __init__(self, op, arg1, arg2, _type):
+    def __init__(self, op: str, arg1: Union[Variable, Param], arg2: Union[Constant, Variable, Param], _type: str):
         super().__init__()
         self.op = op
         self.arg1 = arg1.v
@@ -1101,23 +1104,23 @@ class BinaryExpression(IRForm):
         self.var_map.update([(arg1.v, arg1), (arg2.v, arg2)])
         self.type = _type
 
-    def has_side_effect(self):
+    def has_side_effect(self) -> bool:
         v_m = self.var_map
         return (v_m[self.arg1].has_side_effect() or
                 v_m[self.arg2].has_side_effect())
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> List[int]:
         v_m = self.var_map
         lused_vars = v_m[self.arg1].get_used_vars()
         lused_vars.extend(v_m[self.arg2].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor: "Writer"):
+    def visit(self, visitor: "Writer") -> None:
         v_m = self.var_map
         return visitor.visit_binary_expression(self.op, v_m[self.arg1],
                                                v_m[self.arg2])
 
-    def replace_var(self, old, new):
+    def replace_var(self, old: int, new: Variable):
         if self.arg1 == old:
             self.arg1 = new.v
         if self.arg2 == old:
@@ -1125,7 +1128,7 @@ class BinaryExpression(IRForm):
         self.var_map.pop(old)
         self.var_map[new.v] = new
 
-    def replace(self, old, new):
+    def replace(self, old: int, new: Union[Constant, BinaryExpressionLit, BinaryExpression2Addr]):
         v_m = self.var_map
         if old in v_m:
             arg = v_m[old]
@@ -1161,12 +1164,12 @@ class BinaryCompExpression(BinaryExpression):
 
 
 class BinaryExpression2Addr(BinaryExpression):
-    def __init__(self, op, dest, arg, _type):
+    def __init__(self, op: str, dest: Variable, arg: Union[Variable, Param], _type: str):
         super().__init__(op, dest, arg, _type)
 
 
 class BinaryExpressionLit(BinaryExpression):
-    def __init__(self, op, arg1, arg2):
+    def __init__(self, op: str, arg1: Union[Variable, Param], arg2: Constant):
         super().__init__(op, arg1, arg2, 'I')
 
 

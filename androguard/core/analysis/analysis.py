@@ -1,26 +1,44 @@
+from __future__ import annotations
+
 import collections
 import re
 import time
 from enum import IntEnum
 from operator import itemgetter
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Set, Tuple, Union
 
 import networkx as nx
 from loguru import logger
 
-from androguard.core import bytecode, dex
+from androguard.core import bytecode
 from androguard.core.androconf import (
     is_ascii_problem,
     load_api_specific_resource_module,
 )
+from androguard.core.dex import (
+    BRANCH_DEX_OPCODES,
+    DALVIK_OPCODES_FORMAT,
+    determineException,
+    determineNext,
+)
 
 if TYPE_CHECKING:
+    from networkx.classes.digraph import DiGraph
+
+    from androguard.core.dex import (
+        DEX,
+        ClassDefItem,
+        EncodedField,
+        EncodedMethod,
+        HiddenApiClassDataItem,
+        Instruction,
+    )
     from androguard.decompiler.basic_blocks import BasicBlock
 
 BasicOPCODES: set[int] = set()
-for i in dex.BRANCH_DEX_OPCODES:
+for i in BRANCH_DEX_OPCODES:
     p = re.compile(i)
-    for op, items in dex.DALVIK_OPCODES_FORMAT.items():
+    for op, items in DALVIK_OPCODES_FORMAT.items():
         if p.match(items[1][0]):
             BasicOPCODES.add(op)
 
@@ -52,8 +70,8 @@ class DEXBasicBlock:
     A basic block consists of a series of :class:`~androguard.core.bytecodes.dvm.Instruction`
     which are not interrupted by branch or jump instructions such as `goto`, `if`, `throw`, `return`, `switch` etc.
     """
-    __vm: dex.DEX
-    method: dex.EncodedMethod
+    __vm: DEX
+    method: EncodedMethod
     context: "BasicBlocks"
     last_length: int
     nb_instructions: int
@@ -61,13 +79,13 @@ class DEXBasicBlock:
     childs: list[tuple[int, int, "BasicBlock | DEXBasicBlock | None"]]
     start: int
     end: int
-    special_ins: dict[int, dex.Instruction]
+    special_ins: dict[int, Instruction]
     name: str
     exception_analysis: "ExceptionAnalysis | None"
     notes: list[str]
     __cached_instructions: None
 
-    def __init__(self, start: int, vm: dex.DEX, method: dex.EncodedMethod, context: "BasicBlocks"):
+    def __init__(self, start: int, vm: DEX, method: EncodedMethod, context: "BasicBlocks"):
         self.__vm = vm
         self.method = method
         self.context = context
@@ -106,7 +124,7 @@ class DEXBasicBlock:
     def clear_notes(self) -> None:
         self.notes = []
 
-    def get_instructions(self) -> Iterator[dex.Instruction]:
+    def get_instructions(self) -> Iterator[Instruction]:
         """
         Get all instructions from a basic block.
 
@@ -121,7 +139,7 @@ class DEXBasicBlock:
     def get_nb_instructions(self) -> int:
         return self.nb_instructions
 
-    def get_method(self) -> dex.EncodedMethod:
+    def get_method(self) -> EncodedMethod:
         """
         Returns the originiating method
 
@@ -151,7 +169,7 @@ class DEXBasicBlock:
         """
         return self.end
 
-    def get_last(self) -> dex.Instruction:
+    def get_last(self) -> Instruction:
         """
         Get the last instruction in the basic block
 
@@ -200,7 +218,7 @@ class DEXBasicBlock:
             if next_block is not None:
                 next_block.set_fathers((end, start, self))
 
-    def push(self, i: dex.Instruction):
+    def push(self, i: Instruction):
         self.nb_instructions += 1
         idx = self.end
         self.last_length = i.get_length()
@@ -214,7 +232,7 @@ class DEXBasicBlock:
             code = dalvik_code.get_bc()
             self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
 
-    def get_special_ins(self, idx: int) -> dex.Instruction | None:
+    def get_special_ins(self, idx: int) -> Instruction | None:
         """
         Return the associated instruction to a specific instruction (for example a packed/sparse switch)
 
@@ -230,7 +248,7 @@ class DEXBasicBlock:
     def get_exception_analysis(self):
         return self.exception_analysis
 
-    def set_exception_analysis(self, exception_analysis) -> None:
+    def set_exception_analysis(self, exception_analysis: Optional[ExceptionAnalysis]) -> None:
         self.exception_analysis = exception_analysis
 
     def show(self) -> None:
@@ -271,7 +289,7 @@ class BasicBlocks:
     def __len__(self) -> int:
         return len(self.bb)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[DEXBasicBlock]:
         """
         :returns: yields each basic block (:class:`DEXBasicBlock` object)
         :rtype: Iterator[DEXBasicBlock]
@@ -339,7 +357,7 @@ class Exceptions:
     def __init__(self):
         self.exceptions = []
 
-    def add(self, exceptions, basic_blocks: BasicBlocks) -> None:
+    def add(self, exceptions: List[Union[List[Union[int, List[Union[str, int]]]], Any]], basic_blocks: BasicBlocks) -> None:
         for i in exceptions:
             self.exceptions.append(ExceptionAnalysis(i, basic_blocks))
 
@@ -362,8 +380,8 @@ class Exceptions:
 
 
 class MethodAnalysis:
-    __vm: dex.DEX | None
-    method: "dex.EncodedMethod | ExternalMethod"
+    __vm: DEX | None
+    method: "EncodedMethod | ExternalMethod"
     basic_blocks: BasicBlocks
     exceptions: Exceptions
     xrefto: set[tuple["ClassAnalysis", "MethodAnalysis", int]]
@@ -372,10 +390,10 @@ class MethodAnalysis:
     xrefwrite: set[tuple["ClassAnalysis", "MethodAnalysis", int]]
     xrefnewinstance: set[tuple["MethodAnalysis", int]]
     xrefconstclass: set[tuple["MethodAnalysis", int]]
-    restriction_flag: dex.HiddenApiClassDataItem.RestrictionApiFlag | None
-    domain_flag: dex.HiddenApiClassDataItem.DomapiApiFlag | None
+    restriction_flag: HiddenApiClassDataItem.RestrictionApiFlag | None
+    domain_flag: HiddenApiClassDataItem.DomapiApiFlag | None
     apilist: list[str] | None
-    code: dex.DalvikCode | None
+    code: DalvikCode | None
 
     """
     This class analyses in details a method of a class/dex file
@@ -385,7 +403,7 @@ class MethodAnalysis:
     :type vm: a :class:`DEX` object
     :type method: a :class:`EncodedMethod` object
     """
-    def __init__(self, vm: dex.DEX | None, method: "dex.EncodedMethod | ExternalMethod"):
+    def __init__(self, vm: DEX | None, method: "EncodedMethod | ExternalMethod"):
         logger.debug("Adding new method {} {}".format(method.get_class_name(), method.get_name()))
 
         self.__vm = vm
@@ -470,12 +488,12 @@ class MethodAnalysis:
         logger.debug("Parsing instructions for method at @0x{:08x}".format(self.method.get_code_off()))
         for idx, ins in self.method.get_instructions_idx():
             if ins.get_op_value() in BasicOPCODES:
-                v = dex.determineNext(ins, idx, self.method)
+                v = determineNext(ins, idx, self.method)
                 h[idx] = v
                 l.extend(v)
 
         logger.debug("Parsing exceptions")
-        excepts = dex.determineException(self.__vm, self.method)
+        excepts = determineException(self.__vm, self.method)
         for i in excepts:
             l.extend([i[0]])
             for handler in i[2:]:
@@ -513,7 +531,7 @@ class MethodAnalysis:
             # setup exception by basic block
             i.set_exception_analysis(self.exceptions.get_exception(i.start, i.end - 1))
 
-    def add_xref_read(self, classobj, fieldobj, offset: int) -> None:
+    def add_xref_read(self, classobj: "ClassAnalysis", fieldobj: EncodedField, offset: int) -> None:
         """
         :param ClassAnalysis classobj:
         :param FieldAnalysis fieldobj:
@@ -521,7 +539,7 @@ class MethodAnalysis:
         """
         self.xrefread.add((classobj, fieldobj, offset))
 
-    def add_xref_write(self, classobj, fieldobj, offset):
+    def add_xref_write(self, classobj: "ClassAnalysis", fieldobj: EncodedField, offset: int):
         """
         :param ClassAnalysis classobj:
         :param FieldAnalysis fieldobj:
@@ -571,7 +589,7 @@ class MethodAnalysis:
         """
         self.xreffrom.add((classobj, methodobj, offset))
 
-    def get_xref_from(self):
+    def get_xref_from(self) -> Set[Tuple[ClassAnalysis, MethodAnalysis, int]]:
         """
         Returns a list of tuples containing the class, method and offset of
         the call, from where this object was called.
@@ -583,7 +601,7 @@ class MethodAnalysis:
         """
         return self.xreffrom
 
-    def get_xref_to(self):
+    def get_xref_to(self) -> Set[Tuple[ClassAnalysis, MethodAnalysis, int]]:
         """
         Returns a list of tuples containing the class, method and offset of
         the call, which are called by this method.
@@ -595,7 +613,7 @@ class MethodAnalysis:
         """
         return self.xrefto
 
-    def add_xref_new_instance(self, classobj, offset):
+    def add_xref_new_instance(self, classobj: "ClassAnalysis", offset: int):
         """
         Add a crossreference to another class that is
         instanced within this method.
@@ -605,7 +623,7 @@ class MethodAnalysis:
         """
         self.xrefnewinstance.add((classobj, offset))
 
-    def get_xref_new_instance(self):
+    def get_xref_new_instance(self) -> Set[Tuple[ClassAnalysis, int]]:
         """
         Returns a list of tuples containing the class and offset of
         the creation of a new instance of a class by this method.
@@ -616,7 +634,7 @@ class MethodAnalysis:
         """
         return self.xrefnewinstance
 
-    def add_xref_const_class(self, classobj, offset):
+    def add_xref_const_class(self, classobj: "ClassAnalysis", offset: int):
         """
         Add a crossreference to another classtype.
 
@@ -636,7 +654,7 @@ class MethodAnalysis:
         """
         return self.xrefconstclass
 
-    def is_external(self):
+    def is_external(self) -> bool:
         """
         Returns True if the underlying method is external
 
@@ -672,7 +690,7 @@ class MethodAnalysis:
 
         return False
 
-    def get_basic_blocks(self):
+    def get_basic_blocks(self) -> BasicBlocks:
         """
         Returns the :class:`BasicBlocks` generated for this method.
         The :class:`BasicBlocks` can be used to get a control flow graph (CFG) of the method.
@@ -695,7 +713,7 @@ class MethodAnalysis:
         """
         return self.__vm
 
-    def get_method(self):
+    def get_method(self) -> Union[EncodedMethod, ExternalMethod]:
         """
 
         :rtype: androguard.core.bytecodes.dvm.EncodedMethod
@@ -755,7 +773,7 @@ class StringAnalysis:
 
     This Array stores the information in which method the String is used.
     """
-    def __init__(self, value):
+    def __init__(self, value: str):
         """
 
         :param str value: the original string value
@@ -764,7 +782,7 @@ class StringAnalysis:
         self.orig_value = value
         self.xreffrom = set()
 
-    def add_xref_from(self, classobj, methodobj, off):
+    def add_xref_from(self, classobj: "ClassAnalysis", methodobj: MethodAnalysis, off: int):
         """
         Adds a xref from the given method to this string
 
@@ -774,7 +792,7 @@ class StringAnalysis:
         """
         self.xreffrom.add((classobj, methodobj, off))
 
-    def get_xref_from(self, withoffset=False):
+    def get_xref_from(self, withoffset: bool=False) -> Union[Set[Tuple[ClassAnalysis, MethodAnalysis, int]], Set[Tuple[ClassAnalysis, MethodAnalysis]]]:
         """
         Returns a list of xrefs accessing the String.
 
@@ -844,11 +862,11 @@ class FieldAnalysis:
 
     :param androguard.core.bytecodes.dvm.EncodedField field: `dvm.EncodedField`
     """
-    field: dex.EncodedField
+    field: EncodedField
     xrefread: set[tuple["ClassAnalysis", MethodAnalysis, int]]
     xrefwrite: set[tuple["ClassAnalysis", MethodAnalysis, int]]
 
-    def __init__(self, field: dex.EncodedField):
+    def __init__(self, field: EncodedField):
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
@@ -903,7 +921,7 @@ class FieldAnalysis:
         # Legacy option, might be removed in the future
         return set(map(itemgetter(slice(0, 2)), self.xrefwrite))
 
-    def get_field(self) -> dex.EncodedField:
+    def get_field(self) -> EncodedField:
         """
         Returns the actual field object
 
@@ -936,20 +954,20 @@ class ExternalClass:
     :param name: Name of the external class
     """
     name: str
-    methods: list[dex.EncodedMethod]
+    methods: list[EncodedMethod]
 
     def __init__(self, name: str):
         self.name = name
         self.methods = []
 
-    def get_methods(self) -> list[dex.EncodedMethod]:
+    def get_methods(self) -> list[EncodedMethod]:
         """
         Return the stored methods for this external class
         :return:
         """
         return self.methods
 
-    def add_method(self, method: dex.EncodedMethod) -> None:
+    def add_method(self, method: EncodedMethod) -> None:
         self.methods.append(method)
 
     def get_name(self) -> str:
@@ -1038,16 +1056,16 @@ class ClassAnalysis:
     :param classobj: class:`~androguard.core.dex.ClassDefItem` or :class:`ExternalClass`
     """
     external: bool
-    orig_class: dex.ClassDefItem | ExternalClass
-    _methods: dict[dex.EncodedMethod, MethodAnalysis]
-    _fields: dict[dex.EncodedField, FieldAnalysis]
+    orig_class: ClassDefItem | ExternalClass
+    _methods: dict[EncodedMethod, MethodAnalysis]
+    _fields: dict[EncodedField, FieldAnalysis]
     xrefto: dict["ClassAnalysis", set[tuple[REF_TYPE, MethodAnalysis, int]]]
     xreffrom: dict["ClassAnalysis", set[tuple[REF_TYPE, MethodAnalysis, int]]]
     xrefnewinstance: set[tuple["MethodAnalysis", int]]
     xrefconstclass: set[tuple["MethodAnalysis", int]]
     apilist: None
 
-    def __init__(self, classobj: dex.ClassDefItem | ExternalClass):
+    def __init__(self, classobj: ClassDefItem | ExternalClass):
         logger.info(f"Adding new ClassAnalysis: {classobj}")
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
@@ -1172,7 +1190,7 @@ class ClassAnalysis:
         """
         return len(self._methods)
 
-    def get_method_analysis(self, method: dex.EncodedMethod) -> MethodAnalysis | None:
+    def get_method_analysis(self, method: EncodedMethod) -> MethodAnalysis | None:
         """
         Return the MethodAnalysis object for a given EncodedMethod
 
@@ -1182,7 +1200,7 @@ class ClassAnalysis:
         """
         return self._methods.get(method)
 
-    def get_field_analysis(self, field: dex.EncodedField) -> FieldAnalysis | None:
+    def get_field_analysis(self, field: EncodedField) -> FieldAnalysis | None:
         return self._fields.get(field)
 
     def add_field(self, field_analysis: FieldAnalysis) -> None:
@@ -1197,7 +1215,7 @@ class ClassAnalysis:
         #     # Propagate ExternalField to ExternalClass
         #     self.orig_class.add_method(field_analysis.get_field())
 
-    def add_field_xref_read(self, method: MethodAnalysis, classobj: "ClassAnalysis", field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_read(self, method: MethodAnalysis, classobj: "ClassAnalysis", field: EncodedField, off: int) -> None:
         """
         Add a Field Read to this class
 
@@ -1211,7 +1229,7 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_read(classobj, method, off)
 
-    def add_field_xref_write(self, method: MethodAnalysis, classobj: "ClassAnalysis", field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_write(self, method: MethodAnalysis, classobj: "ClassAnalysis", field: EncodedField, off: int) -> None:
         """
         Add a Field Write to this class in a given method
 
@@ -1381,7 +1399,7 @@ class ClassAnalysis:
         """
         return self.xrefconstclass
 
-    def get_vm_class(self) -> dex.ClassDefItem | ExternalClass:
+    def get_vm_class(self) -> ClassDefItem | ExternalClass:
         """
         Returns the original Dalvik VM class or the external class object.
 
@@ -1390,7 +1408,7 @@ class ClassAnalysis:
         """
         return self.orig_class
 
-    def set_restriction_flag(self, flag: dex.HiddenApiClassDataItem.RestrictionApiFlag) -> None:
+    def set_restriction_flag(self, flag: HiddenApiClassDataItem.RestrictionApiFlag) -> None:
         """
         Set the level of restriction for this class (hidden level, from Android 10)
         (only applicable to internal classes)
@@ -1404,7 +1422,7 @@ class ClassAnalysis:
                 % (self.orig_class.name,))
         self.restriction_flag = flag
 
-    def set_domain_flag(self, flag: dex.HiddenApiClassDataItem.DomapiApiFlag) -> None:
+    def set_domain_flag(self, flag: HiddenApiClassDataItem.DomapiApiFlag) -> None:
         """
         Set the api domain for this class (hidden level, from Android 10)
         (only applicable to internal classes)
@@ -1472,14 +1490,14 @@ class Analysis:
 
     :param Optional[androguard.core.dex.DEX] vm: inital DEX object (default None)
     """
-    vms: list[dex.DEX]
+    vms: list[DEX]
     classes: dict[str, ClassAnalysis]
     strings: dict[str, StringAnalysis]
-    methods: dict[dex.EncodedMethod, MethodAnalysis]
+    methods: dict[EncodedMethod, MethodAnalysis]
     __method_hashes: dict[tuple[str, str, str], MethodAnalysis]
     __created_xrefs: bool
 
-    def __init__(self, vm: dex.DEX | None = None):
+    def __init__(self, vm: DEX | None = None):
         # Contains DEX objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
@@ -1502,7 +1520,7 @@ class Analysis:
         """Returns FieldAnalysis list"""
         return self.get_fields()
 
-    def add(self, vm: dex.DEX) -> None:
+    def add(self, vm: DEX) -> None:
         """
         Add a DEX to this Analysis.
 
@@ -1584,7 +1602,7 @@ class Analysis:
         logger.info("End of creating cross references (XREF) "
                  "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
 
-    def _create_xref(self, current_class: dex.ClassDefItem) -> None:
+    def _create_xref(self, current_class: ClassDefItem) -> None:
         """
         Create the xref for `current_class`
 
@@ -1704,7 +1722,7 @@ class Analysis:
                         self.classes[cur_cls_name].add_field_xref_write(cur_meth, cur_cls, field_item, off)
                         cur_meth.add_xref_write(cur_cls, field_item, off)
 
-    def get_method(self, method: dex.EncodedMethod) -> MethodAnalysis | None:
+    def get_method(self, method: EncodedMethod) -> MethodAnalysis | None:
         """
         Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
         This Analysis object is used to enhance EncodedMethods.
@@ -1805,7 +1823,7 @@ class Analysis:
         """
         return class_name in self.classes
 
-    def get_class_analysis(self, class_name):
+    def get_class_analysis(self, class_name: str) -> ClassAnalysis:
         """
         Returns the :class:`ClassAnalysis` object for a given classname.
 
@@ -1815,7 +1833,7 @@ class Analysis:
         """
         return self.classes.get(class_name)
 
-    def get_external_classes(self):
+    def get_external_classes(self) -> Iterator[ClassAnalysis]:
         """
         Returns all external classes, that means all classes that are not
         defined in the given set of `DalvikVMObjects`.
@@ -1826,7 +1844,7 @@ class Analysis:
             if cls.is_external():
                 yield cls
 
-    def get_internal_classes(self):
+    def get_internal_classes(self) -> Iterator[ClassAnalysis]:
         """
         Returns all external classes, that means all classes that are
         defined in the given set of :class:`~DEX`.
@@ -1837,7 +1855,7 @@ class Analysis:
             if not cls.is_external():
                 yield cls
 
-    def get_internal_methods(self):
+    def get_internal_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns all internal methods, that means all methods that are
         defined in the given set of :class:`~DEX`.
@@ -1848,7 +1866,7 @@ class Analysis:
             if not m.is_external():
                 yield m
 
-    def get_external_methods(self):
+    def get_external_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns all external methods, that means all methods that are not
         defined in the given set of :class:`~DEX`.
@@ -1885,7 +1903,7 @@ class Analysis:
         """
         return self.classes.values()
 
-    def get_methods(self):
+    def get_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns a list of `MethodAnalysis` objects
 
@@ -1894,7 +1912,7 @@ class Analysis:
         """
         yield from self.methods.values()
 
-    def get_fields(self):
+    def get_fields(self) -> Iterator[FieldAnalysis]:
         """
         Returns a list of `FieldAnalysis` objects
 
@@ -1904,7 +1922,7 @@ class Analysis:
             for f in c.get_fields():
                 yield f
 
-    def find_classes(self, name=".*", no_external=False):
+    def find_classes(self, name: str=".*", no_external: bool=False) -> Iterator[ClassAnalysis]:
         """
         Find classes by name, using regular expression
         This method will return all ClassAnalysis Object that match the name of
@@ -1920,8 +1938,8 @@ class Analysis:
             if re.match(name, cname):
                 yield c
 
-    def find_methods(self, classname=".*", methodname=".*", descriptor=".*",
-            accessflags=".*", no_external=False):
+    def find_methods(self, classname: str=".*", methodname: str=".*", descriptor: str=".*",
+            accessflags: str=".*", no_external: bool=False) -> Iterator[MethodAnalysis]:
         """
         Find a method by name using regular expression.
         This method will return all MethodAnalysis objects, which match the
@@ -1952,7 +1970,7 @@ class Analysis:
                        re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
-    def find_strings(self, string=".*"):
+    def find_strings(self, string: str=".*") -> Iterator[StringAnalysis]:
         """
         Find strings by regex
 
@@ -1963,7 +1981,7 @@ class Analysis:
             if re.match(string, s):
                 yield sa
 
-    def find_fields(self, classname=".*", fieldname=".*", fieldtype=".*", accessflags=".*"):
+    def find_fields(self, classname: str=".*", fieldname: str=".*", fieldtype: str=".*", accessflags: str=".*") -> Iterator[FieldAnalysis]:
         """
         find fields by regex
 
@@ -1987,12 +2005,12 @@ class Analysis:
 
     def get_call_graph(
         self,
-        classname=".*",
-        methodname=".*",
-        descriptor=".*",
-        accessflags=".*",
-        no_isolated=False,
-        entry_points=[]):
+        classname: str=".*",
+        methodname: str=".*",
+        descriptor: str=".*",
+        accessflags: str=".*",
+        no_isolated: bool=False,
+        entry_points: List[Any]=[]) -> DiGraph:
         """
         Generate a directed graph based on the methods found by the filters applied.
         The filters are the same as in
@@ -2110,7 +2128,7 @@ class Analysis:
                     logger.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
 
-    def get_permissions(self, apilevel=None):
+    def get_permissions(self, apilevel: Optional[int]=None) -> Iterator[Tuple[MethodAnalysis, List[str]]]:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
@@ -2155,7 +2173,7 @@ class Analysis:
                 if meth.permission_api_name in permmap:
                     yield meth_analysis, permmap[meth.permission_api_name]
 
-    def get_permission_usage(self, permission, apilevel=None):
+    def get_permission_usage(self, permission: str, apilevel: Optional[int]=None) -> Iterator[MethodAnalysis]:
         """
         Find the usage of a permission inside the Analysis.
 

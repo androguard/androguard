@@ -15,8 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from struct import unpack
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from loguru import logger
 
@@ -36,8 +38,22 @@ from androguard.decompiler.opcode_ins import Op
 from androguard.decompiler.util import get_type
 
 if TYPE_CHECKING:
+    from androguard.core.dex import FillArrayData
+    from androguard.decompiler.basic_blocks import ReturnBlock
     from androguard.decompiler.decompile import DvMethod
     from androguard.decompiler.graph import Graph
+    from androguard.decompiler.instruction import (
+        ArrayStoreInstruction,
+        AssignExpression,
+        BinaryExpression2Addr,
+        BinaryExpressionLit,
+        FillArrayExpression,
+        InstanceInstruction,
+        InvokeDirectInstruction,
+        NewArrayExpression,
+        Param,
+        ReturnInstruction,
+    )
 
 
 class Writer:
@@ -156,7 +172,7 @@ class Writer:
                 data=rhs)
         return self.write_ind_visit_end(lhs, ' = ', rhs, data=rhs)
 
-    def visit_ins(self, ins):
+    def visit_ins(self, ins: Union[FillArrayExpression, AssignExpression, InstanceInstruction, ArrayStoreInstruction, ReturnInstruction]):
         ins.visit(self)
 
     def write_method(self):
@@ -215,7 +231,7 @@ class Writer:
         self.write('%s}\n' % self.space())
         self.write_ext(('METHOD_END', '%s}\n' % self.space()))
 
-    def visit_node(self, node):
+    def visit_node(self, node: ReturnBlock):
         if node in (self.if_follow[-1], self.switch_follow[-1],
                     self.loop_follow[-1], self.latch_node[-1],
                     self.try_follow[-1]):
@@ -428,7 +444,7 @@ class Writer:
         self.dec_ind()
         self.write('%s}' % self.space(), data="CATCH_END")
 
-    def visit_return_node(self, ret):
+    def visit_return_node(self, ret: ReturnBlock):
         self.need_break = False
         for ins in ret.get_ins():
             self.visit_ins(ins)
@@ -445,7 +461,7 @@ class Writer:
                        data="DECLARATION")
             self.end_ins()
 
-    def visit_constant(self, cst):
+    def visit_constant(self, cst: Union[str, int]) -> None:
         if isinstance(cst, str):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst,
@@ -476,7 +492,7 @@ class Writer:
     def visit_super(self):
         self.write('super')
 
-    def visit_assign(self, lhs, rhs) -> None:
+    def visit_assign(self, lhs: Optional[Variable], rhs: Union[InvokeDirectInstruction, NewArrayExpression]) -> None:
         if lhs is not None:
             return self.write_inplace_if_possible(lhs, rhs)
         self.write_ind()
@@ -491,7 +507,7 @@ class Writer:
         if lhs is not rhs:
             self.write_inplace_if_possible(lhs, rhs)
 
-    def visit_astore(self, array, index, rhs, data=None):
+    def visit_astore(self, array: Variable, index: Constant, rhs: Constant, data: Optional[ArrayStoreInstruction]=None):
         self.write_ind()
         array.visit(self)
         self.write('[', data=("ASTORE_START", data))
@@ -506,7 +522,7 @@ class Writer:
         rhs.visit(self)
         self.end_ins()
 
-    def visit_put_instance(self, lhs, name, rhs, data=None):
+    def visit_put_instance(self, lhs: ThisParam, name: str, rhs: Variable, data: Optional[str]=None):
         self.write_ind_visit_end_ext(
             lhs,
             '.',
@@ -522,7 +538,7 @@ class Writer:
         self.write_ext(
             ('NAME_CLASS_NEW', '%s' % get_type(atype), data.type, data))
 
-    def visit_invoke(self, name, base, ptype, rtype, args, invokeInstr):
+    def visit_invoke(self, name: str, base: ThisParam, ptype: List[Any], rtype: str, args: List[Any], invokeInstr: InvokeDirectInstruction):
         if isinstance(base, ThisParam):
             if name == '<init>':
                 if self.constructor and len(args) == 0:
@@ -574,7 +590,7 @@ class Writer:
         self.write('return', data="RETURN")
         self.end_ins()
 
-    def visit_return(self, arg):
+    def visit_return(self, arg: BinaryExpression2Addr):
         self.write_ind()
         self.write('return ', data="RETURN")
         arg.visit(self)
@@ -601,7 +617,7 @@ class Writer:
         array.visit(self)
         self.write('.length', data="ARRAY_LENGTH")
 
-    def visit_new_array(self, atype, size):
+    def visit_new_array(self, atype: str, size: Constant):
         self.write('new %s[' % get_type(atype[1:]), data="NEW_ARRAY")
         size.visit(self)
         self.write(']', data="NEW_ARRAY_END")
@@ -614,7 +630,7 @@ class Writer:
                 self.write(', ', data="COMMA")
         self.write('})', data="NEW_ARRAY_FILLED_END")
 
-    def visit_fill_array(self, array, value):
+    def visit_fill_array(self, array: Variable, value: FillArrayData):
         self.write_ind()
         array.visit(self)
         self.write(' = {', data="ARRAY_FILLED")
@@ -666,7 +682,7 @@ class Writer:
         ref.visit(self)
         self.end_ins()
 
-    def visit_binary_expression(self, op, arg1, arg2):
+    def visit_binary_expression(self, op: str, arg1: Union[BinaryExpression2Addr, Constant, BinaryExpressionLit, Param], arg2: Union[Constant, BinaryExpressionLit, Param]):
         self.write('(', data="BINARY_EXPRESSION_START")
         arg1.visit(self)
         self.write(' %s ' % op, data="TODO58")
@@ -718,7 +734,7 @@ class Writer:
         self.write('{}.{}'.format(cls, name), data="GET_STATIC")
 
 
-def string(s):
+def string(s: str) -> str:
     """
     Convert a string to a escaped ASCII representation including quotation marks
     :param s: a string

@@ -1,5 +1,6 @@
-from enum import IntEnum
 from collections import OrderedDict
+from enum import IntEnum
+from typing import TYPE_CHECKING
 
 # This file contains dictionaries used in the Dalvik Format.
 

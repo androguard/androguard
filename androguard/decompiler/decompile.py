@@ -15,35 +15,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import struct
 import sys
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 import androguard.core.androconf as androconf
 import androguard.decompiler.util as util
-from androguard.core.analysis import analysis
 from androguard.core import apk, dex
+from androguard.core.analysis.analysis import Analysis
 from androguard.decompiler.control_flow import identify_structures
 from androguard.decompiler.dast import (
     JSONWriter,
-    parse_descriptor,
-    literal_string,
+    dummy,
     literal_hex_int,
-    dummy
+    literal_string,
+    parse_descriptor,
 )
 from androguard.decompiler.dataflow import (
     build_def_use,
-    place_declarations,
     dead_code_elimination,
+    place_declarations,
     register_propagation,
-    split_variables
+    split_variables,
 )
 from androguard.decompiler.graph import construct, simplify, split_if_nodes
 from androguard.decompiler.instruction import Param, ThisParam
 from androguard.decompiler.writer import Writer
 from androguard.util import readFile
+
+if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import MethodAnalysis
+    from androguard.core.dex import ClassDefItem
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="dad", level="INFO")
 
@@ -77,7 +84,7 @@ class DvMethod:
 
     :param androguard.core.analysis.analysis.MethodAnalysis methanalysis:
     """
-    def __init__(self, methanalysis):
+    def __init__(self, methanalysis: MethodAnalysis):
         method = methanalysis.get_method()
         self.method = method
         self.start_block = next(methanalysis.get_basic_blocks().get(), None)
@@ -119,7 +126,7 @@ class DvMethod:
             # TODO: use tempfile to create a correct tempfile (cross platform compatible)
             bytecode.method2png('/tmp/dad/graphs/{}#{}.png'.format(self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
-    def process(self, doAST=False):
+    def process(self, doAST: bool=False):
         """
         Processes the method and decompile the code.
 
@@ -215,7 +222,7 @@ class DvMethod:
     def show_source(self):
         print(self.get_source())
 
-    def get_source(self):
+    def get_source(self) -> str:
         if self.writer:
             return str(self.writer)
         return ''
@@ -240,7 +247,7 @@ class DvClass:
     :param androguard.core.bytecodes.dvm.ClassDefItem dvclass: the class item
     :param androguard.core.analysis.analysis.Analysis vma: an Analysis object
     """
-    def __init__(self, dvclass, vma):
+    def __init__(self, dvclass: ClassDefItem, vma: Analysis):
         name = dvclass.get_name()
         if name.find('/') > 0:
             pckg, name = name.rsplit('/', 1)
@@ -280,7 +287,7 @@ class DvClass:
     def get_methods(self):
         return self.methods
 
-    def process_method(self, num, doAST=False):
+    def process_method(self, num: int, doAST: bool=False):
         method = self.methods[num]
         if not isinstance(method, DvMethod):
             self.methods[num] = DvMethod(self.vma.get_method(method))
@@ -288,7 +295,7 @@ class DvClass:
         else:
             method.process(doAST=doAST)
 
-    def process(self, doAST=False):
+    def process(self, doAST: bool=False):
         for i in range(len(self.methods)):
             try:
                 self.process_method(i, doAST=doAST)
@@ -314,7 +321,7 @@ class DvClass:
             'methods': methods,
         }
 
-    def get_source(self):
+    def get_source(self) -> str:
         source = []
         if not self.inner and self.package:
             source.append('package %s;\n' % self.package)
@@ -457,7 +464,7 @@ class DvMachine:
 
         :param name: filename to load
         """
-        self.vma = analysis.Analysis()
+        self.vma = Analysis()
 
         # Proper detection which supports multidex inside APK
         ftype = androconf.is_android(name)

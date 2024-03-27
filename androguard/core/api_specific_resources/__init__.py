@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
