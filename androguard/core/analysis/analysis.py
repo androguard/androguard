@@ -1654,7 +1654,7 @@ class Analysis:
                         self.classes[cur_cls_name].add_field_xref_write(cur_meth, cur_cls, field_item, off)
                         cur_meth.add_xref_write(cur_cls, field_item, off)
 
-    def get_method(self, method: dex.EncodedMethod) -> MethodAnalysis|None :
+    def get_method(self, method: dex.EncodedMethod) -> MethodAnalysis|None:
         """
         Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
         This Analysis object is used to enhance EncodedMethods.

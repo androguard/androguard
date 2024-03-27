@@ -9,7 +9,7 @@ class APILevelNotFoundError(Exception):
     pass
 
 
-def load_permissions(apilevel, permtype='permissions'):
+def load_permissions(apilevel:str|int, permtype='permissions'):
     """
     Load the Permissions for the given apilevel.
 
@@ -64,7 +64,7 @@ def load_permissions(apilevel, permtype='permissions'):
         return json.load(fp)[permtype]
 
 
-def load_permission_mappings(apilevel):
+def load_permission_mappings(apilevel:str|int):
     """
     Load the API/Permission mapping for the requested API level.
     If the requetsed level was not found, None is returned.

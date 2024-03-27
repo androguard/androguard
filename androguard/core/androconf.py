@@ -238,7 +238,7 @@ def color_range(startcolor, goalcolor, steps):
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name, api=None):
+def load_api_specific_resource_module(resource_name, api:str|int=None):
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.

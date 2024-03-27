@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from androguard.core.analysis.analysis import MethodAnalysis
 from androguard.decompiler import decompile
 
 from pygments import highlight
@@ -41,13 +42,13 @@ class DecompilerDAD:
         self.vm = vm
         self.vmx = vmx
 
-    def get_source_method(self, m):
+    def get_source_method(self, m: MethodAnalysis) -> str:
         mx = self.vmx.get_method(m)
         z = decompile.DvMethod(mx)
         z.process()
         return z.get_source()
 
-    def get_ast_method(self, m):
+    def get_ast_method(self, m: MethodAnalysis):
         mx = self.vmx.get_method(m)
         z = decompile.DvMethod(mx)
         z.process(doAST=True)

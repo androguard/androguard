@@ -212,10 +212,10 @@ class DvMethod:
         """
         return self.ast
 
-    def show_source(self):
+    def show_source(self) -> None:
         print(self.get_source())
 
-    def get_source(self):
+    def get_source(self) -> str:
         if self.writer:
             return str(self.writer)
         return ''
