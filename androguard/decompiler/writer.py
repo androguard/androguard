@@ -16,22 +16,50 @@
 # limitations under the License.
 
 from struct import unpack
-from androguard.core import mutf8
-from androguard.decompiler.util import get_type
-from androguard.decompiler.opcode_ins import Op
-from androguard.decompiler.instruction import (
-    Constant, ThisParam, BinaryExpression, BaseClass, InstanceExpression,
-    NewInstance, Variable, BinaryCompExpression)
+from typing import TYPE_CHECKING
 
 from loguru import logger
+
+from androguard.decompiler.instruction import (
+    BaseClass,
+    BinaryCompExpression,
+    BinaryExpression,
+    Constant,
+    InstanceExpression,
+    IRForm,
+    NewInstance,
+    ThisParam,
+    Variable,
+)
+from androguard.decompiler.node import Node
+from androguard.decompiler.opcode_ins import Op
+from androguard.decompiler.util import get_type
+
+if TYPE_CHECKING:
+    from androguard.decompiler.decompile import DvMethod
+    from androguard.decompiler.graph import Graph
 
 
 class Writer:
     """
     Transforms a method into Java code.
-
     """
-    def __init__(self, graph, method):
+    graph: "Graph"
+    method: "DvMethod"
+    visited_nodes: set[Node]
+    ind: int
+    buffer: list[str]
+    buffer2: list[tuple[str, ...]]
+    loop_follow: list
+    if_follow: list
+    switch_follow: list
+    latch_node: list
+    try_follow: list
+    next_case: None
+    skip: bool
+    need_break: bool
+
+    def __init__(self, graph: "Graph", method: "DvMethod") -> None:
         self.graph = graph
         self.method = method
         self.visited_nodes = set()
@@ -47,32 +75,32 @@ class Writer:
         self.skip = False
         self.need_break = True
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ''.join([str(i) for i in self.buffer])
 
-    def str_ext(self):
+    def str_ext(self) -> list[tuple[str, ...]]:
         return self.buffer2
 
-    def inc_ind(self, i=1):
+    def inc_ind(self, i: int = 1) -> None:
         self.ind += (4 * i)
 
-    def dec_ind(self, i=1):
+    def dec_ind(self, i: int = 1) -> None:
         self.ind -= (4 * i)
 
-    def space(self):
+    def space(self) -> str:
         if self.skip:
             self.skip = False
             return ''
         return ' ' * self.ind
 
-    def write_ind(self):
+    def write_ind(self) -> None:
         if self.skip:
             self.skip = False
         else:
             self.write(self.space())
             self.write_ext(('INDENTATION', self.space()))
 
-    def write(self, s, data=None):
+    def write(self, s: str, data: str | None = None) -> None:
         self.buffer.append(s)
         # old method, still used
         # TODO: clean?
@@ -84,45 +112,38 @@ class Writer:
     # where the 2nd field is the actual generated source code
     # We can have more fields, for example:
     # ('METHOD', 'sendToServer', 'this -> sendToServer', <androguard.decompiler.instruction.ThisParam>)
-    def write_ext(self, t):
+    def write_ext(self, t: tuple[str, ...]) -> None:
         if not isinstance(t, tuple):
-            raise "Error in write_ext: %s not a tuple" % str(t)
+            raise Exception("Error in write_ext: %s not a tuple" % str(t))
         self.buffer2.append(t)
 
-    def end_ins(self):
+    def end_ins(self) -> None:
         self.write(';\n')
         self.write_ext(('END_INSTRUCTION', ';\n'))
 
-    def write_ind_visit_end(self, lhs, s, rhs=None, data=None):
+    def write_ind_visit_end(self, lhs: IRForm, s: str, rhs: IRForm | None = None, data: str | None = None) -> None:
         self.write_ind()
         lhs.visit(self)
         self.write(s)
-        self.write_ext(('TODO_4343', s, data))
+        self.write_ext(('TODO_4343', s, data) if data is not None else ('TODO_4343', s))
         if rhs is not None:
             rhs.visit(self)
         self.end_ins()
 
     # TODO: prefer this class as write_ind_visit_end that should be deprecated
     # at the end
-    def write_ind_visit_end_ext(self,
-                                lhs,
-                                before,
-                                s,
-                                after,
-                                rhs=None,
-                                data=None,
-                                subsection='UNKNOWN_SUBSECTION'):
+    def write_ind_visit_end_ext(self, lhs: IRForm, before: str, s: str, after: str, rhs: IRForm | None = None, data: str | None = None, subsection: str = 'UNKNOWN_SUBSECTION') -> None:
         self.write_ind()
         lhs.visit(self)
         self.write(before + s + after)
         self.write_ext(('BEFORE', before))
-        self.write_ext((subsection, s, data))
+        self.write_ext((subsection, s, data) if data is not None else (subsection, s))
         self.write_ext(('AFTER', after))
         if rhs is not None:
             rhs.visit(self)
         self.end_ins()
 
-    def write_inplace_if_possible(self, lhs, rhs):
+    def write_inplace_if_possible(self, lhs: IRForm, rhs: IRForm) -> None:
         if isinstance(rhs, BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
             exp_rhs = rhs.var_map[rhs.arg2]
             if rhs.op in '+-' and isinstance(exp_rhs, Constant) and \
@@ -416,7 +437,7 @@ class Writer:
         for ins in throw.get_ins():
             self.visit_ins(ins)
 
-    def visit_decl(self, var):
+    def visit_decl(self, var: Variable) -> None:
         if not var.declared:
             var_type = var.get_type() or 'unknownType'
             self.write('{}{} v{}'.format(
@@ -434,7 +455,7 @@ class Writer:
         self.write(cls)
         self.write_ext(('NAME_BASE_CLASS', cls, data))
 
-    def visit_variable(self, var):
+    def visit_variable(self, var: Variable) -> None:
         var_type = var.get_type() or 'unknownType'
         if not var.declared:
             self.write('%s ' % get_type(var_type))
@@ -445,7 +466,7 @@ class Writer:
         self.write('v%s' % var.name)
         self.write_ext(('NAME_VARIABLE', 'v%s' % var.name, var, var_type))
 
-    def visit_param(self, param, data=None):
+    def visit_param(self, param: str, data: str = None) -> None:
         self.write('p%s' % param)
         self.write_ext(('NAME_PARAM', 'p%s' % param, data))
 
@@ -455,7 +476,7 @@ class Writer:
     def visit_super(self):
         self.write('super')
 
-    def visit_assign(self, lhs, rhs):
+    def visit_assign(self, lhs, rhs) -> None:
         if lhs is not None:
             return self.write_inplace_if_possible(lhs, rhs)
         self.write_ind()

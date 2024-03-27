@@ -15,7 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import TYPE_CHECKING
+
 from loguru import logger
+
+if TYPE_CHECKING:
+    from androguard.decompiler.graph import Graph
+    from androguard.decompiler.node import Node
 
 TYPE_DESCRIPTOR = {
     'V': 'void',
@@ -77,25 +83,22 @@ ACCESS_ORDER = [0x1, 0x4, 0x2, 0x400, 0x8, 0x10, 0x80, 0x40, 0x20, 0x100, 0x800,
 TYPE_LEN = {'J': 2, 'D': 2, }
 
 
-def get_access_class(access):
+def get_access_class(access: int) -> list[str]:
     sorted_access = [i for i in ACCESS_ORDER if i & access]
-    return [ACCESS_FLAGS_CLASSES.get(flag, 'unkn_%d' % flag)
-            for flag in sorted_access]
+    return [ACCESS_FLAGS_CLASSES.get(flag, 'unkn_%d' % flag) for flag in sorted_access]
 
 
-def get_access_method(access):
+def get_access_method(access: int) -> list[str]:
     sorted_access = [i for i in ACCESS_ORDER if i & access]
-    return [ACCESS_FLAGS_METHODS.get(flag, 'unkn_%d' % flag)
-            for flag in sorted_access]
+    return [ACCESS_FLAGS_METHODS.get(flag, 'unkn_%d' % flag) for flag in sorted_access]
 
 
-def get_access_field(access):
+def get_access_field(access: int) -> list[str]:
     sorted_access = [i for i in ACCESS_ORDER if i & access]
-    return [ACCESS_FLAGS_FIELDS.get(flag, 'unkn_%d' % flag)
-            for flag in sorted_access]
+    return [ACCESS_FLAGS_FIELDS.get(flag, 'unkn_%d' % flag) for flag in sorted_access]
 
 
-def build_path(graph, node1, node2, path=None):
+def build_path(graph: "Graph", node1: "Node", node2: "Node", path: list["Node"] | None = None) -> list["Node"]:
     """
     Build the path from node1 to node2.
     The path is composed of all the nodes between node1 and node2,
@@ -158,14 +161,14 @@ def merge_inner(clsdict):
                     samelist = False
 
 
-def get_type_size(param):
+def get_type_size(param: str) -> int:
     """
     Return the number of register needed by the type @param
     """
     return TYPE_LEN.get(param, 1)
 
 
-def get_type(atype, size=None):
+def get_type(atype: str, size: int | None = None) -> str:
     """
     Retrieve the java type of a descriptor (e.g : I)
     """
@@ -187,7 +190,7 @@ def get_type(atype, size=None):
     return res
 
 
-def get_params_type(descriptor):
+def get_params_type(descriptor: str) -> list[str]:
     """
     Return the parameters type of a descriptor (e.g (IC)V)
     """
@@ -197,7 +200,7 @@ def get_params_type(descriptor):
     return []
 
 
-def create_png(cls_name, meth_name, graph, dir_name='graphs2'):
+def create_png(cls_name: str, meth_name: str, graph: "Graph", dir_name: str = 'graphs2') -> None:
     """
     Creates a PNG from a given :class:`~androguard.decompiler.graph.Graph`.
 

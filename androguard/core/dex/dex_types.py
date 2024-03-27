@@ -75,7 +75,7 @@ class TypeMapItem(IntEnum):
     HIDDENAPI_CLASS_DATA_ITEM = 0xf000
 
     @staticmethod
-    def _get_dependencies():
+    def _get_dependencies() -> OrderedDict["TypeMapItem", set["TypeMapItem"]]:
         return OrderedDict([
             (TypeMapItem.HEADER_ITEM, set()),
             (TypeMapItem.STRING_ID_ITEM, {TypeMapItem.STRING_DATA_ITEM}),
@@ -112,9 +112,9 @@ class TypeMapItem(IntEnum):
         ])
 
     @staticmethod
-    def determine_load_order():
+    def determine_load_order() -> dict["TypeMapItem", int]:
         dependencies = TypeMapItem._get_dependencies()
-        ordered = dict()
+        ordered: dict["TypeMapItem", int] = dict()
         while dependencies:
             found_next = False
             for type_name, unloaded in dependencies.items():

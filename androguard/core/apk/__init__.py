@@ -1,28 +1,39 @@
 # Androguard
-from androguard.core import androconf
-from androguard.util import get_certificate_name_string
-from apkInspector.headers import ZipEntry
-
-from androguard.core.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig, AXMLParser, format_value, START_TAG, END_TAG, TEXT, END_DOCUMENT
+import binascii
+import hashlib
 
 # Python core
 import io
-from zlib import crc32
 import os
 import re
-import binascii
 import zipfile
-import logging
+from lxml import etree
 from struct import unpack
-import hashlib
-import warnings
+from typing import Any, Iterator, cast
+from xml.dom.pulldom import SAX2DOM
+from zlib import crc32
 
 # External dependecies
 import lxml.sax
-from xml.dom.pulldom import SAX2DOM
+from apkInspector.headers import ZipEntry
+
 # Used for reading Certificates
-from asn1crypto import cms, x509, keys
+from asn1crypto import cms, keys, x509
 from loguru import logger
+
+from androguard.core import androconf
+from androguard.core.axml import (
+    END_DOCUMENT,
+    END_TAG,
+    START_TAG,
+    TEXT,
+    ARSCParser,
+    ARSCResTableConfig,
+    AXMLParser,
+    AXMLPrinter,
+    format_value,
+)
+from androguard.util import get_certificate_name_string
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{{{}}}'.format(NS_ANDROID_URI)  # Namespace as used by etree
@@ -70,11 +81,9 @@ def _dump_additional_attributes(additional_attributes):
     return "stripping protection set, scheme %d" % scheme_id
 
 
-def _dump_digests_or_signatures(digests_or_sigs):
-
+def _dump_digests_or_signatures(digests_or_sigs) -> str:
     infos = ""
-    for i,dos in enumerate(digests_or_sigs):
-
+    for i, dos in enumerate(digests_or_sigs):
         infos += "\n"
         infos += " [%d]\n" % i
         infos += "  - Signature Id : %s\n" % APK._APK_SIG_ALGO_IDS.get(dos[0], hex(dos[0]))
@@ -88,19 +97,22 @@ class APKV2SignedData:
     This class holds all data associated with an APK V3 SigningBlock signed data.
     source : https://source.android.com/security/apksigning/v2.html
     """
+    _bytes: bytes | None
+    digests: list[tuple[int, bytes]] | None
+    certificates: list[bytes] | None
+    additional_attributes: bytes | None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._bytes = None
         self.digests = None
         self.certificates =  None
         self.additional_attributes = None
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         certs_infos = ""
 
-        for i,cert in enumerate(self.certificates):
-            x509_cert = x509.Certificate.load(cert)
+        for i, cert in enumerate(self.certificates):
+            x509_cert = cast(x509.Certificate, x509.Certificate.load(cert))
 
             certs_infos += "\n"
             certs_infos += " [%d]\n" % i
@@ -124,17 +136,19 @@ class APKV3SignedData(APKV2SignedData):
     This class holds all data associated with an APK V3 SigningBlock signed data.
     source : https://source.android.com/security/apksigning/v3.html
     """
+    minSDK: int | None
+    maxSDK: int | None
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.minSDK = None
         self.maxSDK = None
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         base_str = super().__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
+        assert self.maxSDK is not None
         max_sdk_str = "%d" % self.maxSDK
         if self.maxSDK >= 0x7fffffff:
             max_sdk_str = "0x%x" % self.maxSDK
@@ -151,14 +165,19 @@ class APKV2Signer:
     This class holds all data associated with an APK V2 SigningBlock signer.
     source : https://source.android.com/security/apksigning/v2.html
     """
+    _bytes: bytes | None
+    signed_data: APKV3SignedData | None
+    signatures: list[tuple[int, bytes]] | None
+    public_key: bytes | None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._bytes = None
         self.signed_data = None
         self.signatures = None
         self.public_key = None
 
-    def __str__(self):
+    def __str__(self) -> str:
+        assert self.public_key is not None
         return "\n".join([
             '{:s}'.format(str(self.signed_data)),
             'signatures : {}'.format(_dump_digests_or_signatures(self.signatures)),
@@ -171,17 +190,19 @@ class APKV3Signer(APKV2Signer):
     This class holds all data associated with an APK V3 SigningBlock signer.
     source : https://source.android.com/security/apksigning/v3.html
     """
+    minSDK: int | None
+    maxSDK: int | None
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.minSDK = None
         self.maxSDK = None
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         base_str = super().__str__()
 
         # maxSDK is set to a negative value if there is no upper bound on the sdk targeted
+        assert self.maxSDK is not None
         max_sdk_str = "%d" % self.maxSDK
         if self.maxSDK >= 0x7fffffff:
             max_sdk_str = "0x%x" % self.maxSDK
@@ -216,7 +237,27 @@ class APK:
 
     __no_magic = False
 
-    def __init__(self, filename, raw=False, magic_file=None, skip_analysis=False, testzip=False):
+    filename: str | bytes
+    xml: dict[str, etree._Element]
+    axml: dict[str, AXMLPrinter]
+    arsc: dict
+    package: str
+    androidversion: dict
+    permissions: list
+    uses_permissions: list
+    declared_permissions: dict
+    valid_apk: bool
+    _is_signed_v2: bool | None
+    _is_signed_v3: bool | None
+    _v2_blocks: dict
+    _v2_signing_data: list | None
+    _v3_signing_data: list | None
+    _files: dict
+    files_crc32: dict
+    __raw: bytes
+    zip: ZipEntry
+
+    def __init__(self, filename: str | bytes, raw: bool = False, magic_file: str | None = None, skip_analysis: bool = False, testzip: bool = False) -> None:
         """
         This class can access to all elements in an APK file
 
@@ -264,14 +305,16 @@ class APK:
         self.files_crc32 = {}
 
         if raw is True:
+            assert isinstance(filename, bytes)
             self.__raw = filename
             self._sha256 = hashlib.sha256(self.__raw).hexdigest()
             # Set the filename to something sane
             self.filename = "raw_apk_sha256:{}".format(self._sha256)
             self.zip = ZipEntry.parse(io.BytesIO(self.__raw), True)
         else:
+            assert isinstance(filename, str)
             self.zip = ZipEntry.parse(filename, False)
-            self.__raw = self.zip.zip.getvalue()
+            self.__raw = cast(io.BytesIO, self.zip.zip).getvalue()
 
         if testzip:
             logger.info("Testing zip file integrity, this might take a while...")
@@ -294,13 +337,13 @@ class APK:
             self._apk_analysis()
 
     @staticmethod
-    def _ns(name):
+    def _ns(name: str) -> str:
         """
         return the name including the Android namespace URI
         """
         return NS_ANDROID + name
 
-    def _apk_analysis(self):
+    def _apk_analysis(self) -> None:
         """
         Run analysis on the APK file.
 
@@ -311,7 +354,7 @@ class APK:
         i = "AndroidManifest.xml"
         logger.info("Starting analysis on {}".format(i))
         try:
-            manifest_data = self.zip.read(i)
+            manifest_data = cast(bytes, self.zip.read(i))
         except KeyError:
             logger.warning("Missing AndroidManifest.xml. Is this an APK file?")
         else:
@@ -814,7 +857,7 @@ class APK:
         dexre = re.compile(r"^classes(\d*).dex$")
         return filter(lambda x: dexre.match(x), self.get_files())
 
-    def get_all_dex(self):
+    def get_all_dex(self) -> Iterator[bytes]:
         """
         Return the raw data of all classes dex files
 
@@ -832,7 +875,7 @@ class APK:
         dexre = re.compile(r"^classes(\d+)?.dex$")
         return len([instance for instance in self.get_files() if dexre.search(instance)]) > 1
 
-    def _format_value(self, value):
+    def _format_value(self, value: str) -> str:
         """
         Format a value with packagename, if not already set.
         For example, the name :code:`'.foobar'` will be transformed into :code:`'package.name.foobar'`.
@@ -853,9 +896,7 @@ class APK:
                 value = self.package + "." + value
         return value
 
-    def get_all_attribute_value(
-        self, tag_name, attribute, format_value=True, **attribute_filter
-    ):
+    def get_all_attribute_value(self, tag_name: str, attribute: str, format_value: bool = True, **attribute_filter: dict[str, Any]) -> Iterator[Any]:
         """
         Yields all the attribute values in xml files which match with the tag name and the specific attribute
 
@@ -865,16 +906,14 @@ class APK:
         """
         tags = self.find_tags(tag_name, **attribute_filter)
         for tag in tags:
-            value = tag.get(self._ns(attribute)) or tag.get(attribute)
+            value: Any = tag.get(self._ns(attribute)) or tag.get(attribute)
             if value is not None:
                 if format_value:
                     yield self._format_value(value)
                 else:
                     yield value
 
-    def get_attribute_value(
-        self, tag_name, attribute, format_value=False, **attribute_filter
-    ):
+    def get_attribute_value(self, tag_name: str, attribute: str, format_value: bool = False, **attribute_filter: dict[str, Any]) -> Any:
         """
         Return the attribute value in xml files which matches the tag name and the specific attribute
 
@@ -882,13 +921,11 @@ class APK:
         :param str attribute: specify the attribute
         :param bool format_value: specify if the value needs to be formatted with packagename
         """
-
-        for value in self.get_all_attribute_value(
-                tag_name, attribute, format_value, **attribute_filter):
+        for value in self.get_all_attribute_value(tag_name, attribute, format_value, **attribute_filter):
             if value is not None:
                 return value
 
-    def get_value_from_tag(self, tag, attribute):
+    def get_value_from_tag(self, tag: etree._Element, attribute: str) -> Any | None:
         """
         Return the value of the android prefixed attribute in a specific tag.
 
@@ -922,7 +959,7 @@ class APK:
 
         # TODO: figure out if both android:name and name tag exist which one to give preference:
         # currently we give preference for the namespace one and fallback to the un-namespaced
-        value = tag.get(self._ns(attribute))
+        value: Any = tag.get(self._ns(attribute))
         if value is None:
             value = tag.get(attribute)
 
@@ -932,46 +969,33 @@ class APK:
                             "But found the same attribute without namespace!".format(attribute, tag.tag))
         return value
 
-    def find_tags(self, tag_name, **attribute_filter):
+    def find_tags(self, tag_name: str, **attribute_filter: dict[str, Any]) -> list[etree._Element]:
         """
         Return a list of all the matched tags in all available xml
 
         :param str tag: specify the tag name
         """
-        all_tags = [
-            self.find_tags_from_xml(
-                i, tag_name, **attribute_filter
-            )
-            for i in self.xml
-        ]
+        all_tags = [self.find_tags_from_xml(i, tag_name, **attribute_filter) for i in self.xml]
         return [tag for tag_list in all_tags for tag in tag_list]
 
-    def find_tags_from_xml(
-        self, xml_name, tag_name, **attribute_filter
-    ):
+    def find_tags_from_xml(self, xml_name: str, tag_name: str, **attribute_filter: dict[str, Any]) -> list[etree._Element]:
         """
         Return a list of all the matched tags in a specific xml
         w
         :param str xml_name: specify from which xml to pick the tag from
         :param str tag_name: specify the tag name
         """
-        xml = self.xml[xml_name]
+        xml = self.xml.get(xml_name)
         if xml is None:
             return []
         if xml.tag == tag_name:
-            if self.is_tag_matched(
-                xml.tag, **attribute_filter
-            ):
+            if self.is_tag_matched(xml.tag, **attribute_filter):
                 return [xml]
             return []
-        tags = xml.findall(".//" + tag_name)
-        return [
-            tag for tag in tags if self.is_tag_matched(
-                tag, **attribute_filter
-            )
-        ]
+        tags = cast(etree._Element, xml.findall(".//" + tag_name))
+        return [tag for tag in tags if self.is_tag_matched(tag, **attribute_filter)]
 
-    def is_tag_matched(self, tag, **attribute_filter):
+    def is_tag_matched(self, tag: etree._Element, **attribute_filter: dict[str, Any]) -> bool:
         r"""
         Return true if the attributes matches in attribute filter.
 
@@ -998,7 +1022,7 @@ class APK:
                 return False
         return True
 
-    def get_main_activities(self):
+    def get_main_activities(self) -> set[str]:
         """
         Return names of the main activities
 
@@ -1006,11 +1030,11 @@ class APK:
 
         :rtype: a set of str
         """
-        x = set()
-        y = set()
+        x: set[str] = set()
+        y: set[str] = set()
 
         for i in self.xml:
-            if self.xml[i] is None:
+            if i not in self.xml:
                 continue
             activities_and_aliases = self.xml[i].findall(".//activity") + \
                                      self.xml[i].findall(".//activity-alias")

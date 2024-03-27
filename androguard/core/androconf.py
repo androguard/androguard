@@ -1,12 +1,17 @@
-import sys
 import os
-import logging
+import sys
 import tempfile
-from colorama import init, Fore
+from typing import Any, Literal, cast
+
+from colorama import Fore, init
 from loguru import logger
 
 from androguard import __version__
-from androguard.core.api_specific_resources import load_permission_mappings, load_permissions
+from androguard.core.api_specific_resources import (
+    load_permission_mappings,
+    load_permissions,
+)
+
 ANDROGUARD_VERSION = __version__
 
 
@@ -21,7 +26,7 @@ class InvalidResourceError(Exception):
     pass
 
 
-def is_ascii_problem(s):
+def is_ascii_problem(s: bytes) -> bool:
     """
     Test if a string contains other chars than ASCII
 
@@ -37,7 +42,7 @@ def is_ascii_problem(s):
         return True
 
 
-default_conf = {
+default_conf: dict[str, Any] = {
     ## Configuration for executables used by androguard
     # Assume the binary is in $PATH, otherwise give full path
 
@@ -83,9 +88,9 @@ default_conf = {
 
 
 class Configuration:
-    instance = None
+    instance: dict[str, Any] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         A Wrapper for the CONF object
         This creates a singleton, which has the same attributes everywhere.
@@ -93,26 +98,26 @@ class Configuration:
         if not Configuration.instance:
             Configuration.instance = default_conf
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         return getattr(self.instance, item)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> Any:
         return self.instance[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: str) -> None:
         self.instance[key] = value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.instance)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.instance)
 
 
 CONF = Configuration()
 
 
-def is_android(filename):
+def is_android(filename: str) -> Literal["APK", "DEX", "DEY", "AXML", "ARSC"] | None:
     """
     Return the type of the file
 
@@ -127,7 +132,7 @@ def is_android(filename):
         return is_android_raw(f_bytes)
 
 
-def is_android_raw(raw):
+def is_android_raw(raw: bytes) -> Literal["APK", "DEX", "DEY", "AXML", "ARSC"] | None:
     """
     Returns a string that describes the type of file, for common Android
     specific formats
@@ -155,7 +160,7 @@ def is_android_raw(raw):
 
     return val
 
-def rrmdir(directory):
+def rrmdir(directory: str) -> None:
     """
     Recursivly delete a directory
 
@@ -169,46 +174,46 @@ def rrmdir(directory):
     os.rmdir(directory)
 
 
-def make_color_tuple(color):
+def make_color_tuple(color: str) -> tuple[int, int, int]:
     """
     turn something like "#000000" into 0,0,0
     or "#FFFFFF into "255,255,255"
     """
-    R = color[1:3]
-    G = color[3:5]
-    B = color[5:7]
+    r = color[1:3]
+    g = color[3:5]
+    b = color[5:7]
 
-    R = int(R, 16)
-    G = int(G, 16)
-    B = int(B, 16)
+    r = int(r, 16)
+    g = int(g, 16)
+    b = int(b, 16)
 
-    return R, G, B
+    return r, g, b
 
 
-def interpolate_tuple(startcolor, goalcolor, steps):
+def interpolate_tuple(startcolor: tuple[int, int, int], goalcolor: tuple[int, int, int], steps: int) -> list[str]:
     """
     Take two RGB color sets and mix them over a specified number of steps.  Return the list
     """
     # white
 
-    R = startcolor[0]
-    G = startcolor[1]
-    B = startcolor[2]
+    r = startcolor[0]
+    g = startcolor[1]
+    b = startcolor[2]
 
     targetR = goalcolor[0]
     targetG = goalcolor[1]
     targetB = goalcolor[2]
 
-    DiffR = targetR - R
-    DiffG = targetG - G
-    DiffB = targetB - B
+    DiffR = targetR - r
+    DiffG = targetG - g
+    DiffB = targetB - b
 
-    buffer = []
+    buffer: list[str] = []
 
     for i in range(0, steps + 1):
-        iR = R + (DiffR * i // steps)
-        iG = G + (DiffG * i // steps)
-        iB = B + (DiffB * i // steps)
+        iR = r + (DiffR * i // steps)
+        iG = g + (DiffG * i // steps)
+        iB = b + (DiffB * i // steps)
 
         hR = str.replace(hex(iR), "0x", "")
         hG = str.replace(hex(iG), "0x", "")
@@ -228,7 +233,7 @@ def interpolate_tuple(startcolor, goalcolor, steps):
     return buffer
 
 
-def color_range(startcolor, goalcolor, steps):
+def color_range(startcolor: str, goalcolor: str, steps: int) -> list[str]:
     """
     wrapper for interpolate_tuple that accepts colors as html ("#CCCCC" and such)
     """
@@ -238,7 +243,7 @@ def color_range(startcolor, goalcolor, steps):
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name, api=None):
+def load_api_specific_resource_module(resource_name: str, api: int | None = None):
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.
@@ -256,7 +261,7 @@ def load_api_specific_resource_module(resource_name, api=None):
         raise InvalidResourceError("Invalid Resource '{}', not in [{}]".format(resource_name, ", ".join(loader.keys())))
 
     if not api:
-        api = CONF["DEFAULT_API"]
+        api = cast(int, CONF["DEFAULT_API"])
 
     ret = loader[resource_name](api)
 

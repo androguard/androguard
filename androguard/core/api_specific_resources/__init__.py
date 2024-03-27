@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from typing import Any
 
 from loguru import logger
 
@@ -9,7 +10,7 @@ class APILevelNotFoundError(Exception):
     pass
 
 
-def load_permissions(apilevel, permtype='permissions'):
+def load_permissions(apilevelstr: str | int, permtype: str = 'permissions') -> dict[str, Any]:
     """
     Load the Permissions for the given apilevel.
 
@@ -23,7 +24,7 @@ def load_permissions(apilevel, permtype='permissions'):
     the lower level is returned. For example, if 5,6,7,10 is available and 8 is
     requested, 7 is returned instead.
 
-    :param apilevel:  integer value of the API level
+    :param apilevelstr:  integer value of the API level
     :param permtype: either load permissions (:code:`'permissions'`) or
     permission groups (:code:`'groups'`)
     :return: a dictionary of {Permission Name: {Permission info}
@@ -33,7 +34,7 @@ def load_permissions(apilevel, permtype='permissions'):
         raise ValueError("The type of permission list is not known.")
 
     # Usually apilevel is supplied as string...
-    apilevel = int(apilevel)
+    apilevel = int(apilevelstr)
 
     root = os.path.dirname(os.path.realpath(__file__))
     permissions_file = os.path.join(root, "aosp_permissions", "permissions_{}.json".format(apilevel))
@@ -64,7 +65,7 @@ def load_permissions(apilevel, permtype='permissions'):
         return json.load(fp)[permtype]
 
 
-def load_permission_mappings(apilevel):
+def load_permission_mappings(apilevel: str | int) -> dict[str, list[str]]:
     """
     Load the API/Permission mapping for the requested API level.
     If the requetsed level was not found, None is returned.

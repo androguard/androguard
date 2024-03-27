@@ -16,8 +16,14 @@
 # limitations under the License.
 
 
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from androguard.decompiler.graph import Graph
+
+
 class MakeProperties(type):
-    def __init__(cls, name, bases, dct):
+    def __init__(cls, name: str, bases, dct) -> None:
 
         def _wrap_set(names, name):
 
@@ -79,7 +85,19 @@ class NodeType(metaclass=MakeProperties):
 
 
 class Node:
-    def __init__(self, name):
+    name: str
+    num: int
+    follow: dict[str, Any]
+    looptype: LoopType
+    type: NodeType
+    in_catch: bool
+    interval: "Interval | None"
+    startloop: bool
+    latch: None
+    loop_nodes: list[set["Node"]]
+    po: int | None
+
+    def __init__(self, name: str) -> None:
         self.name = name
         self.num = 0
         self.follow = {'if': None, 'loop': None, 'switch': None}
@@ -91,7 +109,7 @@ class Node:
         self.latch = None
         self.loop_nodes = []
 
-    def copy_from(self, node):
+    def copy_from(self, node: "Node") -> None:
         self.num = node.num
         self.looptype = node.looptype.copy()
         self.interval = node.interval
@@ -102,24 +120,31 @@ class Node:
         self.loop_nodes = node.loop_nodes
         self.in_catch = node.in_catch
 
-    def update_attribute_with(self, n_map):
+    def update_attribute_with(self, n_map: dict[Any, "Node"]) -> None:
         self.latch = n_map.get(self.latch, self.latch)
         for follow_type, value in self.follow.items():
             self.follow[follow_type] = n_map.get(value, value)
         self.loop_nodes = list({n_map.get(n, n) for n in self.loop_nodes})
 
-    def get_head(self):
+    def get_head(self) -> "Node":
         return self
 
-    def get_end(self):
+    def get_end(self) -> "Node":
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s' % self
 
 
 class Interval:
-    def __init__(self, head):
+    name: str
+    content: set[Node]
+    end: Node | None
+    head: Node
+    in_catch: bool
+    interval: "Interval"
+
+    def __init__(self, head: Node) -> None:
         self.name = 'Interval-%s' % head.name
         self.content = {head}
         self.end = None
@@ -127,7 +152,7 @@ class Interval:
         self.in_catch = head.in_catch
         head.interval = self
 
-    def __contains__(self, item):
+    def __contains__(self, item: Node) -> bool:
         # If the interval contains nodes, check if the item is one of them
         if item in self.content:
             return True
@@ -135,27 +160,28 @@ class Interval:
         return any(item in node for node in self.content
                    if isinstance(node, Interval))
 
-    def add_node(self, node):
+    def add_node(self, node: Node):
         if node in self.content:
             return False
         self.content.add(node)
         node.interval = self
         return True
 
-    def compute_end(self, graph):
+    def compute_end(self, graph: "Graph"):
         for node in self.content:
             for suc in graph.sucs(node):
                 if suc not in self.content:
                     self.end = node
 
-    def get_end(self):
+    def get_end(self) -> Node:
+        assert self.end is not None
         return self.end.get_end()
 
     def get_head(self):
         return self.head.get_head()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.content)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}({})'.format(self.name, self.content)

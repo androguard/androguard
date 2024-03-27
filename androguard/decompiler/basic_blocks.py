@@ -16,16 +16,23 @@
 # limitations under the License.
 
 from collections import defaultdict
-from androguard.decompiler.opcode_ins import INSTRUCTION_SET
-from androguard.decompiler.instruction import MoveExceptionExpression
-from androguard.decompiler.node import Node
-from androguard.decompiler.util import get_type
 
 from loguru import logger
 
+from androguard.decompiler.instruction import MoveExceptionExpression
+from androguard.decompiler.node import Node
+from androguard.decompiler.opcode_ins import INSTRUCTION_SET
+from androguard.decompiler.util import get_type
+
 
 class BasicBlock(Node):
-    def __init__(self, name, block_ins):
+    ins: list | None
+    ins_range: tuple[int, int] | None
+    loc_ins: None
+    var_to_declare: set
+    catch_type: None
+
+    def __init__(self, name: str, block_ins: list | None):
         super().__init__(name)
         self.ins = block_ins
         self.ins_range = None
@@ -52,9 +59,9 @@ class BasicBlock(Node):
     def add_variable_declaration(self, variable):
         self.var_to_declare.add(variable)
 
-    def number_ins(self, num):
+    def number_ins(self, num: int):
         last_ins_num = num + len(self.ins)
-        self.ins_range = [num, last_ins_num]
+        self.ins_range = (num, last_ins_num)
         self.loc_ins = None
         return last_ins_num
 

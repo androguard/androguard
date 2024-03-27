@@ -15,60 +15,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import TYPE_CHECKING
+
 import androguard.decompiler.util as util
+
+if TYPE_CHECKING:
+    from androguard.decompiler.writer import Writer
 
 
 class IRForm:
-    def __init__(self):
+    var_map: dict
+    type: None
+
+    def __init__(self) -> None:
         self.var_map = {}
         self.type = None
 
-    def is_call(self):
+    def is_call(self) -> bool:
         return False
 
-    def is_cond(self):
+    def is_cond(self) -> bool:
         return False
 
-    def is_const(self):
+    def is_const(self) -> bool:
         return False
 
-    def is_ident(self):
+    def is_ident(self) -> bool:
         return False
 
-    def is_propagable(self):
+    def is_propagable(self) -> bool:
         return True
 
-    def get_type(self):
+    def get_type(self) -> None:
         return self.type
 
-    def set_type(self, _type):
+    def set_type(self, _type: None) -> None:
         self.type = _type
 
-    def has_side_effect(self):
+    def has_side_effect(self) -> bool:
         return False
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> list[None]:
         return []
 
-    def replace(self, old, new):
+    def replace(self, old, new) -> None:
         raise NotImplementedError('replace not implemented in %r' % self)
 
-    def replace_lhs(self, new):
+    def replace_lhs(self, new) -> None:
         raise NotImplementedError('replace_lhs not implemented in %r' % self)
 
-    def replace_var(self, old, new):
+    def replace_var(self, old, new) -> None:
         raise NotImplementedError('replace_var not implemented in %r' % self)
 
     def remove_defined_var(self):
         pass
 
-    def get_rhs(self):
+    def get_rhs(self) -> list[None]:
         return []
 
-    def get_lhs(self):
+    def get_lhs(self) -> None:
         return None
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer") -> None:
         pass
 
 
@@ -103,7 +111,7 @@ class Constant(IRForm):
     def get_type(self):
         return self.type
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         if self.type == 'Z':
             if self.cst == 0:
                 return visitor.visit_constant('false')
@@ -130,7 +138,7 @@ class BaseClass(IRForm):
     def is_const(self):
         return True
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_base_class(self.cls, data=self.cls)
 
     def __str__(self):
@@ -138,60 +146,72 @@ class BaseClass(IRForm):
 
 
 class Variable(IRForm):
-    def __init__(self, value):
+    v: str
+    declared: bool
+    type: str | None
+    name: str
+
+    def __init__(self, value: str) -> None:
         self.v = value
         self.declared = False
         self.type = None
         self.name = value
 
-    def get_used_vars(self):
+    def get_used_vars(self) -> list[str]:
         return [self.v]
 
-    def is_ident(self):
+    def is_ident(self) -> bool:
         return True
 
-    def value(self):
+    def value(self) -> str:
         return self.v
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer") -> None:
         return visitor.visit_variable(self)
 
-    def visit_decl(self, visitor):
+    def visit_decl(self, visitor: "Writer") -> None:
         return visitor.visit_decl(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'VAR_%s' % self.name
 
 
 class Param(Variable):
-    def __init__(self, value, atype):
+    declared: bool
+    type: str
+    this: bool
+
+    def __init__(self, value: str, atype: str) -> None:
         super().__init__(value)
         self.declared = True
         self.type = atype
         self.this = False
 
-    def is_const(self):
+    def is_const(self) -> bool:
         return True
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer") -> None:
         return visitor.visit_param(self.v, data=self.type)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'PARAM_%s' % self.name
 
 
 class ThisParam(Param):
+    this: bool
+    super: bool
+
     def __init__(self, value, atype):
         super().__init__(value, atype)
         self.this = True
         self.super = False
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer") -> None:
         if self.super:
             return visitor.visit_super()
         return visitor.visit_this()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'THIS'
 
 
@@ -237,7 +257,7 @@ class AssignExpression(IRForm):
     def replace_var(self, old, new):
         self.rhs.replace_var(old, new)
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer") -> None:
         return visitor.visit_assign(self.var_map.get(self.lhs), self.rhs)
 
     def __str__(self):
@@ -267,7 +287,7 @@ class MoveExpression(IRForm):
     def get_lhs(self):
         return self.lhs
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_move(v_m[self.lhs], v_m[self.rhs])
 
@@ -310,7 +330,7 @@ class MoveResultExpression(MoveExpression):
     def has_side_effect(self):
         return self.var_map[self.rhs].has_side_effect()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_move_result(v_m[self.lhs], v_m[self.rhs])
 
@@ -338,7 +358,7 @@ class ArrayStoreInstruction(IRForm):
         lused_vars.extend(v_m[self.rhs].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_astore(v_m[self.array],
                                     v_m[self.index],
@@ -402,7 +422,7 @@ class StaticInstruction(IRForm):
     def get_lhs(self):
         return None
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_put_static(
             self.cls, self.name, self.var_map[self.rhs])
 
@@ -451,7 +471,7 @@ class InstanceInstruction(IRForm):
     def get_lhs(self):
         return None
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_put_instance(
             v_m[self.lhs],
@@ -503,7 +523,7 @@ class NewInstance(IRForm):
     def get_used_vars(self):
         return []
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_new(self.type, data=self)
 
     def replace(self, old, new):
@@ -590,7 +610,7 @@ class InvokeInstruction(IRForm):
         lused_vars.extend(v_m[self.base].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         largs = [v_m[arg] for arg in self.args]
         return visitor.visit_invoke(self.name, v_m[self.base], self.ptype,
@@ -644,7 +664,7 @@ class ReturnInstruction(IRForm):
     def get_lhs(self):
         return None
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         if self.arg is None:
             return visitor.visit_return_void()
         else:
@@ -683,7 +703,7 @@ class NopExpression(IRForm):
     def get_lhs(self):
         return None
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_nop()
 
 
@@ -697,7 +717,7 @@ class SwitchExpression(IRForm):
     def get_used_vars(self):
         return self.var_map[self.src].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_switch(self.var_map[self.src])
 
     def replace_var(self, old, new):
@@ -736,7 +756,7 @@ class CheckCastExpression(IRForm):
     def get_used_vars(self):
         return self.var_map[self.arg].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_check_cast(self.var_map[self.arg],
                                         util.get_type(self.type))
 
@@ -780,7 +800,7 @@ class ArrayLoadExpression(ArrayExpression):
         lused_vars.extend(v_m[self.idx].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_aload(v_m[self.array], v_m[self.idx])
 
@@ -833,7 +853,7 @@ class ArrayLengthExpression(ArrayExpression):
     def get_used_vars(self):
         return self.var_map[self.array].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_alength(self.var_map[self.array])
 
     def replace_var(self, old, new):
@@ -870,7 +890,7 @@ class NewArrayExpression(ArrayExpression):
     def get_used_vars(self):
         return self.var_map[self.size].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_new_array(self.type, self.var_map[self.size])
 
     def replace_var(self, old, new):
@@ -945,7 +965,7 @@ class FilledArrayExpression(ArrayExpression):
                 if not (cnt.is_ident() or cnt.is_const()):
                     cnt.replace(old, new)
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         largs = [v_m[arg] for arg in self.args]
         return visitor.visit_filled_new_array(self.type, self.size, largs)
@@ -984,7 +1004,7 @@ class FillArrayExpression(ArrayExpression):
     def get_used_vars(self):
         return self.var_map[self.reg].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_fill_array(self.var_map[self.reg], self.value)
 
 
@@ -1038,7 +1058,7 @@ class MoveExceptionExpression(RefExpression):
         self.ref = new.v
         self.var_map[new.v] = new
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_move_exception(self.var_map[self.ref], data=self)
 
     def __str__(self):
@@ -1049,7 +1069,7 @@ class MonitorEnterExpression(RefExpression):
     def __init__(self, ref):
         super().__init__(ref)
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_monitor_enter(self.var_map[self.ref])
 
 
@@ -1057,7 +1077,7 @@ class MonitorExitExpression(RefExpression):
     def __init__(self, ref):
         super().__init__(ref)
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_monitor_exit(self.var_map[self.ref])
 
 
@@ -1065,7 +1085,7 @@ class ThrowExpression(RefExpression):
     def __init__(self, ref):
         super().__init__(ref)
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_throw(self.var_map[self.ref])
 
     def __str__(self):
@@ -1092,7 +1112,7 @@ class BinaryExpression(IRForm):
         lused_vars.extend(v_m[self.arg2].get_used_vars())
         return list(set(lused_vars))
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_binary_expression(self.op, v_m[self.arg1],
                                                v_m[self.arg2])
@@ -1134,7 +1154,7 @@ class BinaryCompExpression(BinaryExpression):
     def __init__(self, op, arg1, arg2, _type):
         super().__init__(op, arg1, arg2, _type)
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_cond_expression(self.op, v_m[self.arg1],
                                              v_m[self.arg2])
@@ -1164,7 +1184,7 @@ class UnaryExpression(IRForm):
     def get_used_vars(self):
         return self.var_map[self.arg].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_unary_expression(self.op, self.var_map[self.arg])
 
     def replace_var(self, old, new):
@@ -1202,7 +1222,7 @@ class CastExpression(UnaryExpression):
     def get_used_vars(self):
         return self.var_map[self.arg].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_cast(self.op, self.var_map[self.arg])
 
     def __str__(self):
@@ -1235,7 +1255,7 @@ class ConditionalExpression(IRForm):
     def neg(self):
         self.op = CONDS[self.op]
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         v_m = self.var_map
         return visitor.visit_cond_expression(self.op, v_m[self.arg1],
                                              v_m[self.arg2])
@@ -1292,7 +1312,7 @@ class ConditionalZExpression(IRForm):
     def neg(self):
         self.op = CONDS[self.op]
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_condz_expression(self.op, self.var_map[self.arg])
 
     def replace_var(self, old, new):
@@ -1333,7 +1353,7 @@ class InstanceExpression(IRForm):
     def get_used_vars(self):
         return self.var_map[self.arg].get_used_vars()
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_get_instance(
             self.var_map[self.arg],
             self.name,
@@ -1372,7 +1392,7 @@ class StaticExpression(IRForm):
     def get_type(self):
         return self.ftype
 
-    def visit(self, visitor):
+    def visit(self, visitor: "Writer"):
         return visitor.visit_get_static(self.cls, self.name)
 
     def replace(self, old, new):

@@ -15,12 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import defaultdict
-
-from androguard.decompiler.basic_blocks import (build_node_from_block,
-                                                    StatementBlock, CondBlock)
-from androguard.decompiler.instruction import Variable
+from typing import TYPE_CHECKING, Iterator
 
 from loguru import logger
+
+from androguard.decompiler.basic_blocks import (
+    CondBlock,
+    StatementBlock,
+    build_node_from_block,
+)
+from androguard.decompiler.instruction import Variable
+
+if TYPE_CHECKING:
+    from androguard.decompiler.node import Node
 
 
 # TODO Could use networkx here, as it has plenty of tools already, no need to reengineer the wheel
@@ -31,6 +38,17 @@ class Graph:
     The CFG defines an entry node :py:attr:`entry`, a single exit node :py:attr:`exit`, a list of nodes
     :py:attr:`nodes` and a list of edges :py:attr:`edges`.
     """
+    entry: "Node | None"
+    exit: "Node | None"
+    nodes: list["Node"]
+    edges: dict["Node", list["Node"]]
+    rpo: list["Node"]
+    catch_edges: dict["Node", list["Node"]]
+    reverse_edges: dict["Node", list["Node"]]
+    reverse_catch_edges: dict["Node", list["Node"]]
+    loc_to_ins: None
+    loc_to_node: None
+
     def __init__(self):
         self.entry = None
         self.exit = None
@@ -44,20 +62,19 @@ class Graph:
         self.loc_to_ins = None
         self.loc_to_node = None
 
-    def sucs(self, node):
+    def sucs(self, node: "Node") -> list["Node"]:
         return self.edges.get(node, [])
 
-    def all_sucs(self, node):
+    def all_sucs(self, node: "Node") -> list["Node"]:
         return self.edges.get(node, []) + self.catch_edges.get(node, [])
 
-    def preds(self, node):
+    def preds(self, node: "Node") -> list["Node"]:
         return [n for n in self.reverse_edges.get(node, []) if not n.in_catch]
 
-    def all_preds(self, node):
-        return (self.reverse_edges.get(node, []) + self.reverse_catch_edges.get(
-            node, []))
+    def all_preds(self, node: "Node") -> list["Node"]:
+        return (self.reverse_edges.get(node, []) + self.reverse_catch_edges.get(node, []))
 
-    def add_node(self, node):
+    def add_node(self, node: "Node") -> None:
         """
         Adds the given node to the graph, without connecting it to anyhting else.
 
@@ -65,7 +82,7 @@ class Graph:
         """
         self.nodes.append(node)
 
-    def add_edge(self, e1, e2):
+    def add_edge(self, e1: "Node", e2: "Node") -> None:
         lsucs = self.edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
@@ -73,7 +90,7 @@ class Graph:
         if e1 not in lpreds:
             lpreds.append(e1)
 
-    def add_catch_edge(self, e1, e2):
+    def add_catch_edge(self, e1: "Node", e2: "Node"):
         lsucs = self.catch_edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
@@ -81,7 +98,7 @@ class Graph:
         if e1 not in lpreds:
             lpreds.append(e1)
 
-    def remove_node(self, node):
+    def remove_node(self, node: "Node") -> None:
         """
         Remove the node from the graph, removes also all connections.
 
@@ -108,7 +125,7 @@ class Graph:
             self.rpo.remove(node)
         del node
 
-    def number_ins(self):
+    def number_ins(self) -> None:
         self.loc_to_ins = {}
         self.loc_to_node = {}
         num = 0
@@ -132,7 +149,7 @@ class Graph:
         self.get_node_from_loc(loc).remove_ins(loc, ins)
         self.loc_to_ins.pop(loc)
 
-    def compute_rpo(self):
+    def compute_rpo(self) -> None:
         """
         Number the nodes in reverse post order.
         An RPO traversal visit as many predecessors of a node as possible
@@ -143,12 +160,12 @@ class Graph:
             node.num = nb - node.po
         self.rpo = sorted(self.nodes, key=lambda n: n.num)
 
-    def post_order(self):
+    def post_order(self) -> Iterator["Node"]:
         """
         Yields the :class`~androguard.decompiler.node.Node`s of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
         """
-        def _visit(n, cnt):
+        def _visit(n: "Node", cnt: int) -> Iterator[tuple[int, "Node"]]:
             visited.add(n)
             for suc in self.all_sucs(n):
                 if suc not in visited:
@@ -157,11 +174,11 @@ class Graph:
             n.po = cnt
             yield cnt + 1, n
 
-        visited = set()
+        visited: set["Node"] = set()
         for _, node in _visit(self.entry, 1):
             yield node
 
-    def draw(self, name, dname, draw_branches=True):
+    def draw(self, name: None, dname: None, draw_branches: bool = True) -> None:
         """
         Writes the current graph as a PNG file
 
@@ -170,8 +187,9 @@ class Graph:
         :param draw_branches:
         :return:
         """
-        from pydot import Dot, Edge
         import os
+
+        from pydot import Dot, Edge
 
         g = Dot()
         g.set_node_defaults(color='lightgray',
@@ -197,13 +215,13 @@ class Graph:
     def immediate_dominators(self):
         return dom_lt(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.nodes)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.nodes)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator["Node"]:
         for node in self.nodes:
             yield node
 
@@ -391,7 +409,7 @@ def dom_lt(graph):
     return dom
 
 
-def bfs(start):
+def bfs(start) -> Iterator:
     """
     Breadth first search
 
@@ -487,8 +505,8 @@ def construct(start_block, vmap, exceptions):
     """
     bfs_blocks = bfs(start_block)
 
-    graph = Graph()
-    gen_ret = GenInvokeRetName()
+    graph: Graph = Graph()
+    gen_ret: GenInvokeRetName = GenInvokeRetName()
 
     # Construction of a mapping of basic blocks into Nodes
     block_to_node = {}

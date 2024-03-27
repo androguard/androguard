@@ -1,13 +1,16 @@
-from androguard.core.analysis.analysis import Analysis
-from androguard.core import dex, apk
-from androguard.decompiler.decompiler import DecompilerDAD
-from androguard.core import androconf
-
-import hashlib
 import collections
-import dataset
+import hashlib
+from typing import TYPE_CHECKING, Iterator, OrderedDict, cast
 
+import dataset
 from loguru import logger
+
+from androguard.core import androconf, apk, dex
+from androguard.core.analysis.analysis import Analysis
+from androguard.decompiler.decompiler import DecompilerDAD
+
+if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import StringAnalysis
 
 
 class Session:
@@ -21,8 +24,19 @@ class Session:
 
     >>> Should we go back to pickling or proceed further with the dataset ?<<<
     """
+    db: dataset.Database
+    table_information: dataset.Table
+    table_session: dataset.Table
+    table_pentest: dataset.Table
+    table_system: dataset.Table
+    analyzed_files: dict[str, list[str]]
+    analyzed_digest: dict[str, str]
+    analyzed_apk: dict[str, list[apk.APK]]
+    added_files: list[str]
+    analyzed_vms: OrderedDict[str, "Analysis"]
+    analyzed_dex: dict[str, dex.DEX]
 
-    def __init__(self, export_ipython=False):
+    def __init__(self, export_ipython: bool = False) -> None:
         """
         Create a new Session object
 
@@ -34,24 +48,24 @@ class Session:
 
         self.db = dataset.connect('sqlite:///androguard.db')
         logger.info("Opening database {}".format(self.db))
-        self.table_information = self.db["information"]
-        self.table_session = self.db["session"]
-        self.table_pentest = self.db["pentest"]
-        self.table_system = self.db["system"]
+        self.table_information = cast(dataset.Table, self.db["information"])
+        self.table_session = cast(dataset.Table, self.db["session"])
+        self.table_pentest = cast(dataset.Table, self.db["pentest"])
+        self.table_system = cast(dataset.Table, self.db["system"])
 
         self.session_id = len(self.table_session)
 
         self.table_session.insert(dict(id=self.session_id))
         logger.info("Creating new session [{}]".format(self.session_id))
 
-    def save(self, filename=None):
+    def save(self, filename: str | None = None) -> None:
         """
         Save the current session, see also :func:`~androguard.session.Save`.
         """
         logger.info("Saving the database")
         self.db.commit()
 
-    def _setup_objects(self):
+    def _setup_objects(self) -> None:
         self.analyzed_files = collections.defaultdict(list)
         self.analyzed_digest = dict()
         self.analyzed_apk = dict()
@@ -67,13 +81,13 @@ class Session:
         # files as well, but we do not remove it here for legacy reasons
         self.analyzed_dex = dict()
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the current session, delete all added files.
         """
         self._setup_objects()
 
-    def isOpen(self):
+    def isOpen(self) -> bool:
         """
         Test if any file was analyzed in this session
 
@@ -81,7 +95,7 @@ class Session:
         """
         return len(self.analyzed_digest) > 0
 
-    def show(self):
+    def show(self) -> None:
         """
         Print information to stdout about the current session.
         Gets all APKs, all DEX files and all Analysis objects.
@@ -98,15 +112,15 @@ class Session:
         for d, a in self.analyzed_vms.items():
             print("\t{}: {}".format(d, a))
 
-    def insert_event(self, call, callee, params, ret):
+    def insert_event(self, call: str, callee: str, params: str, ret: str) -> None:
         self.table_pentest.insert(
             dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
 
-    def insert_system_event(self, call, callee, information, params):
+    def insert_system_event(self, call: str, callee: str, information: str, params: str) -> None:
         self.table_system.insert(
             dict(session_id=str(self.session_id), call=call, callee=callee, information=information, params=params))
 
-    def addAPK(self, filename, data):
+    def addAPK(self, filename: str, data: bytes) -> tuple[str, apk.APK]:
         """
         Add an APK file to the Session and run analysis on it.
 
@@ -129,9 +143,9 @@ class Session:
         dx = Analysis()
         self.analyzed_vms[digest] = dx
 
-        for dex in newapk.get_all_dex():
+        for dex_bytes in newapk.get_all_dex():
             # we throw away the output... FIXME?
-            self.addDEX(filename, dex, dx, postpone_xref=True)
+            self.addDEX(filename, dex_bytes, dx, postpone_xref=True)
 
         # Postponed
         dx.create_xref()
@@ -139,7 +153,7 @@ class Session:
         logger.info("added APK {}:{}".format(filename, digest))
         return digest, newapk
 
-    def addDEX(self, filename, data, dx=None, postpone_xref=False):
+    def addDEX(self, filename: str, data: bytes, dx: "Analysis | None" = None, postpone_xref: bool = False) -> tuple[str, dex.DEX, "Analysis"]:
         """
         Add a DEX file to the Session and run analysis.
 
@@ -184,7 +198,7 @@ class Session:
 
         return digest, d, dx
 
-    def addODEX(self, filename, data, dx=None):
+    def addODEX(self, filename: str, data: bytes, dx: "Analysis | None" = None):
         """
         Add an ODEX file to the session and run the analysis
         """
@@ -214,13 +228,13 @@ class Session:
         for d in dx.vms:
             # TODO: allow different decompiler here!
             d.set_decompiler(DecompilerDAD(d, dx))
-            d.set_vmanalysis(dx)
+            #d.set_vmanalysis(dx)
 
         self.analyzed_vms[digest] = dx
 
         return digest, d, dx
 
-    def add(self, filename, raw_data=None, dx=None):
+    def add(self, filename: str, raw_data: bytes | None = None, dx: "Analysis | None" = None) -> str | None:
         """
         Generic method to add a file to the session.
 
@@ -258,7 +272,7 @@ class Session:
 
         return digest
 
-    def get_classes(self):
+    def get_classes(self) -> Iterator[tuple[int, str, str, list[dex.ClassDefItem]]]:
         """
         Returns all Java Classes from the DEX objects as an array of DEX files.
         """
@@ -268,7 +282,7 @@ class Session:
                 filename = self.analyzed_digest[digest]
                 yield idx, filename, digest, vm.get_classes()
 
-    def get_analysis(self, current_class):
+    def get_analysis(self, current_class: dex.ClassDefItem) -> "Analysis | None":
         """
         Returns the :class:`~androguard.core.analysis.analysis.Analysis` object
         which contains the `current_class`.
@@ -283,7 +297,7 @@ class Session:
                 return dx
         return None
 
-    def get_format(self, current_class):
+    def get_format(self, current_class: dex.ClassDefItem) -> dex.DEX:
         """
         Returns the :class:`~androguard.core.bytecodes.dvm.DEX` of a
         given :class:`~androguard.core.bytecodes.dvm.ClassDefItem`.
@@ -292,7 +306,7 @@ class Session:
         """
         return current_class.CM.vm
 
-    def get_filename_by_class(self, current_class):
+    def get_filename_by_class(self, current_class: dex.ClassDefItem) -> str | None:
         """
         Returns the filename of the DEX file where the class is in.
 
@@ -308,7 +322,7 @@ class Session:
                 return self.analyzed_digest[digest]
         return None
 
-    def get_digest_by_class(self, current_class):
+    def get_digest_by_class(self, current_class: dex.ClassDefItem) -> str | None:
         """
         Return the SHA256 hash of the object containing the ClassDefItem
 
@@ -321,31 +335,31 @@ class Session:
                 return digest
         return None
 
-    def get_strings(self):
+    def get_strings(self) -> Iterator[tuple[str, str, dict[str, "StringAnalysis"]]]:
         """
         Yields all StringAnalysis for all unique Analysis objects
         """
-        seen = []
+        seen: list[Analysis] = []
         for digest, dx in self.analyzed_vms.items():
             if dx in seen:
                 continue
             seen.append(dx)
             yield digest, self.analyzed_digest[digest], dx.get_strings_analysis()
 
-    def get_nb_strings(self):
+    def get_nb_strings(self) -> int:
         """
         Return the total number of strings in all Analysis objects
         """
         nb = 0
-        seen = []
-        for digest, dx in self.analyzed_vms.items():
+        seen: list[Analysis] = []
+        for _digest, dx in self.analyzed_vms.items():
             if dx in seen:
                 continue
             seen.append(dx)
             nb += len(dx.get_strings_analysis())
         return nb
 
-    def get_all_apks(self):
+    def get_all_apks(self) -> Iterator[tuple[str, list[apk.APK]]]:
         """
         Yields a list of tuples of SHA256 hash of the APK and APK objects
         of all analyzed APKs in the Session.
@@ -353,7 +367,7 @@ class Session:
         for digest, a in self.analyzed_apk.items():
             yield digest, a
 
-    def get_objects_apk(self, filename=None, digest=None):
+    def get_objects_apk(self, filename: str | None = None, digest: str | None = None) -> tuple[apk.APK, list[dex.DEX], "Analysis"] | tuple[None, None, None]:
         """
         Returns APK, DEX and Analysis of a specified APK.
 
@@ -380,18 +394,19 @@ class Session:
         if not filename and not digest:
             raise ValueError("Must give at least filename or digest!")
 
-        if digest is None:
+        if digest is None and filename is not None:
             digests = self.analyzed_files.get(filename)
             # Negate to reduce tree
             if not digests:
                 return None, None, None
             digest = digests[0]
 
+        assert digest is not None
         a = self.analyzed_apk[digest][0]
         dx = self.analyzed_vms[digest]
         return a, dx.vms, dx
 
-    def get_objects_dex(self):
+    def get_objects_dex(self) -> Iterator[tuple[str, dex.DEX, "Analysis"]]:
         """
         Yields all dex objects inclduing their Analysis objects
 

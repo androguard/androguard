@@ -1,20 +1,30 @@
 import hashlib
-from xml.sax.saxutils import escape
-from struct import pack
-import textwrap
 import json
+import textwrap
+from struct import pack
+from typing import TYPE_CHECKING, Any, Iterable
+from xml.sax.saxutils import escape
+
 from loguru import logger
 
 from androguard.core.androconf import CONF, color_range
 from androguard.core.dex.dex_types import Kind, Operand
 
+if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import (
+        DEXBasicBlock,
+        ExceptionAnalysis,
+        MethodAnalysis,
+    )
+    from androguard.core.dex import DEX
 
-def _PrintBanner():
+
+def PrintBanner() -> None:
     print_fct = CONF["PRINT_FCT"]
     print_fct("*" * 75 + "\n")
 
 
-def _PrintSubBanner(title=None):
+def PrintSubBanner(title: str | None = None)  -> None:
     print_fct = CONF["PRINT_FCT"]
     if title is None:
         print_fct("#" * 20 + "\n")
@@ -22,14 +32,14 @@ def _PrintSubBanner(title=None):
         print_fct("#" * 10 + " " + title + "\n")
 
 
-def _PrintNote(note, tab=0):
+def PrintNote(note: str, tab: int = 0) -> None:
     print_fct = CONF["PRINT_FCT"]
     note_color = CONF["COLORS"]["NOTE"]
     normal_color = CONF["COLORS"]["NORMAL"]
     print_fct("\t" * tab + "{}# {}{}".format(note_color, note, normal_color) + "\n")
 
 
-def _Print(name, arg):
+def Print(name: str, arg: int | str) -> None:
     """Print arg into a correct format"""
     buff = name + " "
 
@@ -43,7 +53,7 @@ def _Print(name, arg):
     print(buff)
 
 
-def PrettyShowEx(exceptions):
+def PrettyShowEx(exceptions: list["ExceptionAnalysis"]) -> None:
     if len(exceptions) > 0:
         CONF["PRINT_FCT"]("Exceptions:\n")
         for i in exceptions:
@@ -52,29 +62,12 @@ def PrettyShowEx(exceptions):
                                CONF["COLORS"]["NORMAL"]))
 
 
-def _PrintXRef(tag, items):
-    print_fct = CONF["PRINT_FCT"]
-    for i in items:
-        print_fct("%s: %s %s %s %s\n" %
-                  (tag, i[0].get_class_name(), i[0].get_name(),
-                   i[0].get_descriptor(), ' '.join("%x" % j.get_idx()
-                                                   for j in i[1])))
-
-
-def _PrintDRef(tag, items):
-    print_fct = CONF["PRINT_FCT"]
-    for i in items:
-        print_fct("%s: %s %s %s %s\n" %
-                  (tag, i[0].get_class_name(), i[0].get_name(),
-                   i[0].get_descriptor(), ' '.join("%x" % j for j in i[1])))
-
-
-def _PrintDefault(msg):
+def PrintDefault(msg: str) -> None:
     print_fct = CONF["PRINT_FCT"]
     print_fct(msg)
 
 
-def _colorize_operands(operands, colors):
+def colorize_operands(operands: list[tuple[Operand, str, str | None]], colors: dict[str, str]) -> Iterable[str]:
     """
     Return strings with color coded operands
     """
@@ -92,6 +85,7 @@ def _colorize_operands(operands, colors):
             yield "%s%d%s" % (colors["offset"], operand[1], colors["normal"])
 
         elif operand[0] & Operand.KIND:
+            assert operand[2] is not None
             if operand[0] == (Operand.KIND + Kind.STRING):
                 yield "{}{}{}".format(colors["string"], operand[2], colors["normal"])
             elif operand[0] == (Operand.KIND + Kind.METH):
@@ -106,7 +100,7 @@ def _colorize_operands(operands, colors):
             yield "{}".format(repr(operands[1]))
 
 
-def PrettyShow(basic_blocks, notes={}):
+def PrettyShow(basic_blocks: list["DEXBasicBlock"], notes: dict[int, str] = {}) -> None:
     idx = 0
 
     offset_color = CONF["COLORS"]["OFFSET"]
@@ -128,7 +122,7 @@ def PrettyShow(basic_blocks, notes={}):
         for ins in instructions:
             if nb in notes:
                 for note in notes[nb]:
-                    _PrintNote(note, 1)
+                    PrintNote(note, 1)
 
             print_fct("\t%s%-3d%s(%s%08x%s) " %
                       (offset_color, nb, normal_color, offset_addr_color, idx,
@@ -137,9 +131,7 @@ def PrettyShow(basic_blocks, notes={}):
                       (instruction_name_color, ins.get_name(), normal_color))
 
             operands = ins.get_operands()
-            print_fct(
-                "%s" %
-                ", ".join(_colorize_operands(operands, colors)))
+            print_fct("%s" % ", ".join(colorize_operands(operands, colors)))
 
             op_value = ins.get_op_value()
             if ins == instructions[-1] and i.childs:
@@ -148,24 +140,16 @@ def PrettyShow(basic_blocks, notes={}):
                 # packed/sparse-switch
                 if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1:
                     values = i.get_special_ins(idx).get_values()
-                    print_fct("%s[ D:%s%s " %
-                              (branch_false_color, i.childs[0][2].get_name(),
-                               branch_color))
+                    print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].get_name(), branch_color))
                     print_fct(' '.join("%d:%s" % (
-                        values[j], i.childs[j + 1][2].get_name()) for j in
-                                       range(0, len(i.childs) - 1)) + " ]%s" %
-                              normal_color)
+                        values[j], i.childs[j + 1][2].get_name()) for j in range(0, len(i.childs) - 1)) + " ]%s" % normal_color)
                 else:
                     if len(i.childs) == 2:
-                        print_fct("{}[ {}{} ".format(branch_false_color,
-                                                     i.childs[0][2].get_name(),
-                                                     branch_true_color))
-                        print_fct(' '.join("%s" % c[2].get_name(
-                        ) for c in i.childs[1:]) + " ]%s" % normal_color)
+                        print_fct("{}[ {}{} ".format(branch_false_color, i.childs[0][2].get_name(), branch_true_color))
+                        print_fct(' '.join("%s" % c[2].get_name() for c in i.childs[1:]) + " ]%s" % normal_color)
                     else:
                         print_fct("%s[ " % branch_color + ' '.join(
-                            "%s" % c[2].get_name() for c in i.childs) + " ]%s" %
-                                  normal_color)
+                            "%s" % c[2].get_name() for c in i.childs) + " ]%s" % normal_color)
 
             idx += ins.get_length()
 
@@ -179,7 +163,7 @@ def PrettyShow(basic_blocks, notes={}):
         print_fct("\n")
 
 
-def _get_operand_html(operand, registers_colors, colors):
+def get_operand_html(operand: tuple[Operand, str, str | None], registers_colors: dict[str, str], colors: dict[str, str]) -> str:
     """
     Return a HTML representation of the operand.
     The HTML should be compatible with pydot/graphviz to be used
@@ -206,6 +190,8 @@ def _get_operand_html(operand, registers_colors, colors):
         return '<FONT FACE="Times-Italic" color="{}">@0x{:x}</FONT>'.format(colors["offset"], operand[1])
 
     if operand[0] & Operand.KIND:
+        assert operand[2] is not None
+
         if operand[0] == (Operand.KIND + Kind.STRING):
             wrapped_adjust = "&quot; &#92;<br />&quot;".join(map(escape, textwrap.wrap(operand[2], 64)))
             return '<FONT color="{}">&quot;{}&quot;</FONT>'.format(colors["string"], wrapped_adjust)
@@ -222,7 +208,7 @@ def _get_operand_html(operand, registers_colors, colors):
     return escape(str(operand[1]))
 
 
-def method2dot(mx, colors=None):
+def method2dot(mx: "MethodAnalysis", colors: dict[str, str | tuple[str, str]] | None = None) -> str:
     """
     Export analysis method to dot format.
 
@@ -310,7 +296,7 @@ def method2dot(mx, colors=None):
                 new_links.append((basic_block, ins_idx, instruction.get_ref_off() * 2 + ins_idx))
 
             operands = instruction.get_operands(ins_idx)
-            output = ", ".join(_get_operand_html(i, registers, colors) for i in operands)
+            output = ", ".join(get_operand_html(i, registers, colors) for i in operands)
 
             bg_idx = colors["bg_idx"]
             if ins_idx == 0 and "bg_start_idx" in colors:
@@ -505,20 +491,20 @@ def method2jpg(output, mx, raw=False):
     method2format(output, "jpg", mx, buff)
 
 
-def vm2json(vm):
+def vm2json(vm: "DEX") -> str:
     """
     Get a JSON representation of a DEX file
 
     :param vm: :class:`~androguard.core.bytecodes.dvm.DEX`
     :return:
     """
-    d = {"name": "root", "children": []}
+    d: dict[str, Any] = {"name": "root", "children": []}
 
     for _class in vm.get_classes():
-        c_class = {"name": _class.get_name(), "children": []}
+        c_class: dict[str, Any] = {"name": _class.get_name(), "children": []}
 
         for method in _class.get_methods():
-            c_method = {"name": method.get_name(), "children": []}
+            c_method: dict[str, Any] = {"name": method.get_name(), "children": []}
 
             c_class["children"].append(c_method)
 
@@ -528,14 +514,14 @@ def vm2json(vm):
 
 
 class TmpBlock:
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self.name = name
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
 
-def method2json(mx, directed_graph=False):
+def method2json(mx: "MethodAnalysis", directed_graph: bool = False) -> str:
     """
     Create directed or undirected graph in the json format.
 
@@ -548,7 +534,7 @@ def method2json(mx, directed_graph=False):
     return method2json_undirect(mx)
 
 
-def method2json_undirect(mx):
+def method2json_undirect(mx: "MethodAnalysis") -> str:
     """
 
     :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
@@ -580,7 +566,7 @@ def method2json_undirect(mx):
     return json.dumps(d)
 
 
-def method2json_direct(mx):
+def method2json_direct(mx: "MethodAnalysis") -> str:
     """
 
     :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
@@ -674,7 +660,7 @@ def method2json_direct(mx):
     return json.dumps(d)
 
 
-def object_to_bytes(obj):
+def object_to_bytes(obj: Any) -> bytearray | bytes:
     """
     Convert a object to a bytearray or call get_raw() of the object
     if no useful type was found.
@@ -693,7 +679,7 @@ def object_to_bytes(obj):
     return obj.get_raw()
 
 
-def FormatClassToJava(i):
+def FormatClassToJava(i: str) -> str:
     """
     Transform a java class name into the typed variant found in DEX files.
 
@@ -708,7 +694,7 @@ def FormatClassToJava(i):
     return "L" + i.replace(".", "/") + ";"
 
 
-def FormatClassToPython(i):
+def FormatClassToPython(i: str) -> str:
     """
     Transform a typed class name into a form which can be used as a python
     attribute
@@ -728,7 +714,7 @@ def FormatClassToPython(i):
     return i
 
 
-def get_package_class_name(name):
+def get_package_class_name(name: str) -> tuple[str, str]:
     """
     Return package and class name in a java variant from a typed variant name.
 
@@ -770,7 +756,7 @@ def get_package_class_name(name):
     return package, clsname
 
 
-def FormatNameToPython(i):
+def FormatNameToPython(i: str) -> str:
     """
     Transform a (method) name into a form which can be used as a python
     attribute
@@ -791,7 +777,7 @@ def FormatNameToPython(i):
     return i
 
 
-def FormatDescriptorToPython(i):
+def FormatDescriptorToPython(i: str) -> str:
     """
     Format a descriptor into a form which can be used as a python attribute
 
@@ -816,7 +802,7 @@ def FormatDescriptorToPython(i):
 
 
 class Node:
-    def __init__(self, n, s):
+    def __init__(self, n: int, s: str):
         self.id = n
         self.title = s
         self.children = []

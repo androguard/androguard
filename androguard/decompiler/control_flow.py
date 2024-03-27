@@ -16,16 +16,22 @@
 # limitations under the License.
 
 from collections import defaultdict
-from androguard.decompiler.basic_blocks import (
-    CatchBlock, Condition, LoopBlock, ShortCircuitBlock, TryBlock)
-from androguard.decompiler.graph import Graph
-from androguard.decompiler.node import Interval
-from androguard.decompiler.util import common_dom
 
 from loguru import logger
 
+from androguard.decompiler.basic_blocks import (
+    CatchBlock,
+    Condition,
+    LoopBlock,
+    ShortCircuitBlock,
+    TryBlock,
+)
+from androguard.decompiler.util import common_dom
+from androguard.decompiler.graph import Graph
+from androguard.decompiler.node import Interval
 
-def intervals(graph):
+
+def intervals(graph: Graph) -> tuple:
     """
     Compute the intervals of the graph
     Returns

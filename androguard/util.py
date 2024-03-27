@@ -1,8 +1,12 @@
 #  External dependecies
-import asn1crypto
-
 import sys
+from typing import TYPE_CHECKING
+
+import asn1crypto
 from loguru import logger
+
+if TYPE_CHECKING:
+    from io import BufferedReader
 
 
 class MyFilter:
@@ -26,7 +30,7 @@ def set_log(level):
 
 # Stuff that might be useful
 
-def read_at(buff, offset, size=-1):
+def read_at(buff: "BufferedReader", offset: int, size: int = -1) -> bytes:
     idx = buff.tell()
     buff.seek(offset)
     d = buff.read(size)
