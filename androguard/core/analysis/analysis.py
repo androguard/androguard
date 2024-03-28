@@ -5,7 +5,7 @@ import re
 import time
 from enum import IntEnum
 from operator import itemgetter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import networkx as nx
 from loguru import logger
@@ -322,16 +322,17 @@ class BasicBlocks:
 class ExceptionAnalysis:
     start: int
     end: int
-    exceptions: list[tuple[str, int, "BasicBlock"]]
+    exceptions: list[list[DEXBasicBlock | int | None]]
 
-    def __init__(self, exception: tuple[str, int, BasicBlocks], bb: BasicBlocks):
-        self.start = exception[0]
-        self.end = exception[1]
+    def __init__(self, exception: list[int | list[list[DEXBasicBlock]]], bb: BasicBlocks):
+        self.start = cast(int, exception[0])
+        self.end = cast(int, exception[1])
 
-        self.exceptions = exception[2:]
+        self.exceptions = cast(list[list[DEXBasicBlock | int | None]], exception[2:])
 
         for i in self.exceptions:
-            i.append(bb.get_basic_block(i[1]))
+            idx = cast(int, i[1])
+            i.append(bb.get_basic_block(idx))
 
     def show_buff(self):
         buff = "{:x}:{:x}\n".format(self.start, self.end)
