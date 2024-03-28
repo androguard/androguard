@@ -22,8 +22,7 @@ from androguard.util import read_at
 from .dex_types import ACCESS_FLAGS, TYPE_DESCRIPTOR, Kind, Operand, TypeMapItem
 
 if TYPE_CHECKING:
-    from androguard.core.analysis.analysis import Analysis
-    from androguard.core.dex.dex_types import TypeMapItem
+    from androguard.core.analysis.analysis import Analysis, MethodAnalysis
     from androguard.decompiler.decompiler import DecompilerDAD
 
 # TODO: have some more generic magic...
@@ -2598,7 +2597,7 @@ class MethodIdItem:
         """
         return self.name_idx
 
-    def get_class_name(self):
+    def get_class_name(self) -> str:
         """
         Return the class name of the method
 
@@ -2620,7 +2619,7 @@ class MethodIdItem:
 
         return self.proto_idx_value
 
-    def get_descriptor(self):
+    def get_descriptor(self) -> str:
         """
         Return the descriptor
 
@@ -2638,7 +2637,7 @@ class MethodIdItem:
         proto = self.get_proto()
         return proto[0].replace(' ', '') + proto[1]
 
-    def get_name(self):
+    def get_name(self) -> str:
         """
         Return the name of the method
 
@@ -8069,7 +8068,7 @@ class DEX:
         """
         return len(self.get_classes())
 
-    def get_class(self, name):
+    def get_class(self, name: str) -> ClassDefItem:
         """
         Return a specific class
 
@@ -8179,7 +8178,7 @@ class DEX:
                 l.append(i)
         return l
 
-    def get_methods(self):
+    def get_methods(self) -> list[MethodIdItem]:
         """
         Return a list of method items
 
@@ -8468,7 +8467,7 @@ class DEX:
     def set_analysis(self, analysis_dex: "Analysis") -> None:
         self.CM.set_analysis(analysis_dex)
 
-    def disassemble(self, offset, size):
+    def disassemble(self, offset: int, size: int) -> Iterator[Instruction]:
         """
         Disassembles a given offset in the DEX file
 
@@ -8477,9 +8476,7 @@ class DEX:
         :param size:
         :type size:
         """
-        for i in DCode(
-                self.CM, offset, size,
-                read_at(self.raw, offset, size)).get_instructions():
+        for i in DCode(self.CM, offset, size,read_at(self.raw, offset, size)).get_instructions():
             yield i
 
     def _get_class_hierarchy(self):
@@ -8721,12 +8718,12 @@ def get_params_info(nb, proto):
     return i_buffer
 
 
-def get_bytecodes_method(dex_object, ana_object, method):
+def get_bytecodes_method(dex_object: DEX, ana_object: Analysis, method: EncodedMethod) -> str:
     mx = ana_object.get_method(method)
     return get_bytecodes_methodx(method, mx)
 
 
-def get_bytecodes_methodx(method, mx):
+def get_bytecodes_methodx(method: EncodedMethod, mx: MethodAnalysis) -> str:
     basic_blocks = mx.basic_blocks.gets()
     i_buffer = ""
 

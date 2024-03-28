@@ -1,6 +1,6 @@
 #  External dependecies
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AnyStr, Literal
 
 import asn1crypto
 from loguru import logger
@@ -18,7 +18,7 @@ class MyFilter:
         return record["level"].no >= levelno
 
 
-def set_log(level):
+def set_log(level: Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]) -> None:
     """
     Sets the log for loguru based on the level being passed.
     The possible values are TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
@@ -38,7 +38,7 @@ def read_at(buff: "BufferedReader", offset: int, size: int = -1) -> bytes:
     return d
 
 
-def readFile(filename, binary=True):
+def readFile(filename: str, binary: bool = True) -> AnyStr:
     """
     Open and read a file
     :param filename: filename to open and read
@@ -49,7 +49,7 @@ def readFile(filename, binary=True):
         return f.read()
 
 
-def get_certificate_name_string(name, short=False, delimiter=', '):
+def get_certificate_name_string(name: str, short: bool = False, delimiter: str = ', ') -> str:
     """
     Format the Name type of a X509 Certificate in a human readable form.
 

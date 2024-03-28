@@ -4,23 +4,24 @@ import re
 import shutil
 import sys
 
+from loguru import logger
+
 # 3rd party modules
 from lxml import etree
-from loguru import logger
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name
 from pygments.formatters.terminal import TerminalFormatter
+from pygments.lexers import get_lexer_by_name
 
 # internal modules
-from androguard.core import androconf
-from androguard.core import apk
-from androguard.core.axml import AXMLPrinter
+from androguard.core import androconf, apk
+from androguard.core.axml import ARSCParser, AXMLPrinter
 from androguard.core.dex import get_bytecodes_method
-from androguard.util import readFile
+from androguard.session import Session
 from androguard.ui import DynamicUI
+from androguard.util import readFile
 
 
-def androaxml_main(inp, outp=None, resource=None):
+def androaxml_main(inp: str, outp: str | None = None, resource: str | None = None) -> None:
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":
         a = apk.APK(inp)
@@ -46,7 +47,7 @@ def androaxml_main(inp, outp=None, resource=None):
         sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
-def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
+def androarsc_main(arscobj: ARSCParser, outp: str | None = None, package: str | None = None, typ: str | None = None, locale: str | None = None) -> None:
     package = package or arscobj.get_packages_names()[0]
     ttype = typ or "public"
     locale = locale or '\x00\x00'
@@ -63,9 +64,7 @@ def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
 
     x = getattr(arscobj, "get_" + ttype + "_resources")(package, locale)
 
-    buff = etree.tostring(etree.fromstring(x),
-                          pretty_print=True,
-                          encoding="UTF-8")
+    buff = etree.tostring(etree.fromstring(x), pretty_print=True, encoding="UTF-8")
 
     if outp:
         with open(outp, "wb") as fd:
@@ -74,16 +73,16 @@ def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
         sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
-def export_apps_to_format(filename,
-                          s,
-                          output,
-                          methods_filter=None,
-                          jar=None,
-                          decompiler_type=None,
-                          form=None):
-    from androguard.misc import clean_file_name
+def export_apps_to_format(filename: str,
+                          s: Session,
+                          output: str,
+                          methods_filter: str | None = None,
+                          jar: bool | None = None,
+                          decompiler_type: str | None = None,
+                          form: str | None = None):
     from androguard.core.bytecode import method2dot, method2format
     from androguard.decompiler import decompiler
+    from androguard.misc import clean_file_name
     print("Dump information {} in {}".format(filename, output))
 
     if not os.path.exists(output):
@@ -108,7 +107,7 @@ def export_apps_to_format(filename,
     if methods_filter:
         methods_filter_expr = re.compile(methods_filter)
 
-    dump_classes = []
+    dump_classes: list[str] = []
     for _, vm, vmx in s.get_objects_dex():
         print("Decompilation ...", end=' ')
         sys.stdout.flush()
@@ -146,8 +145,7 @@ def export_apps_to_format(filename,
 
         for method in vm.get_methods():
             if methods_filter_expr:
-                msig = "{}{}{}".format(method.get_class_name(), method.get_name(),
-                                       method.get_descriptor())
+                msig = "{}{}{}".format(method.get_class_name(), method.get_name(), method.get_descriptor())
                 if not methods_filter_expr.search(msig):
                     continue
 
@@ -156,13 +154,13 @@ def export_apps_to_format(filename,
             filename_class = os.path.join(output, filename_class)
             create_directory(filename_class)
 
-            print("Dump {} {} {} ...".format(method.get_class_name(),
-                                             method.get_name(),
-                                             method.get_descriptor()), end=' ')
+            print("Dump {} {} {} ...".format(method.get_class_name(), method.get_name(), method.get_descriptor()), end=' ')
 
             filename = clean_file_name(os.path.join(filename_class, method.get_short_string()))
 
-            buff = method2dot(vmx.get_method(method))
+            mx = vmx.get_method(method)
+            assert mx is not None
+            buff = method2dot(mx)
             # Write Graph of method
             if form:
                 print("%s ..." % form, end=' ')
@@ -187,30 +185,29 @@ def export_apps_to_format(filename,
             print()
 
 
-def valid_class_name(class_name):
+def valid_class_name(class_name: str) -> str:
     if class_name[-1] == ";":
         class_name = class_name[1:-1]
     return os.path.join(*class_name.split("/"))
 
 
-def create_directory(pathdir):
+def create_directory(pathdir: str) -> None:
     if not os.path.exists(pathdir):
         os.makedirs(pathdir)
 
 
-def androlyze_main(session, filename):
+def androlyze_main(session: Session, filename: str) -> None:
     """
     Start an interactive shell
 
     :param session: Session file to load
     :param filename: File to analyze, can be APK or DEX (or ODEX)
     """
-    from colorama import Fore
-    import colorama
     import atexit
 
+    import colorama
+    from colorama import Fore
     from IPython.terminal.embed import embed
-
     from traitlets.config import Config
 
     from androguard.core.androconf import ANDROGUARD_VERSION, CONF
@@ -297,15 +294,16 @@ def androlyze_main(session, filename):
     ipshell()
 
 
-def androsign_main(args_apk, args_hash, args_all, show):
+def androsign_main(args_apk: list[str], args_hash: str, args_all: bool, show: bool) -> None:
+    import binascii
+    import hashlib
+    import traceback
+
+    from asn1crypto import keys, x509
+    from colorama import Fore, Style
+
     from androguard.core.apk import APK
     from androguard.util import get_certificate_name_string
-
-    import hashlib
-    import binascii
-    import traceback
-    from colorama import Fore, Style
-    from asn1crypto import x509, keys
 
     # Keep the list of hash functions in sync with cli/entry_points.py:sign
     hashfunctions = dict(md5=hashlib.md5,
@@ -380,7 +378,7 @@ def androsign_main(args_apk, args_hash, args_all, show):
             print()
 
 
-def androdis_main(offset, size, dex_file):
+def androdis_main(offset: int, size: int, dex_file: str) -> None:
     from androguard.core.dex import DEX
 
     with open(dex_file, "rb") as fp:
@@ -413,7 +411,7 @@ def androdis_main(offset, size, dex_file):
                 idx += i.get_length()
 
 
-def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
+def androtrace_main(apk_file: str, list_modules: list[str], live: bool = False, enable_ui: bool = False) -> None:
     from androguard.pentest import Pentest
     from androguard.session import Session
 
@@ -433,9 +431,13 @@ def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
 
     if enable_ui:
         logger.remove(1)
-        from prompt_toolkit.eventloop.inputhook import InputHookContext, set_eventloop_with_inputhook
-        from prompt_toolkit.application import get_app
         import time
+
+        from prompt_toolkit.application import get_app
+        from prompt_toolkit.eventloop.inputhook import (
+            InputHookContext,
+            set_eventloop_with_inputhook,
+        )
 
         time.sleep(1)
 
@@ -458,7 +460,7 @@ def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
             s = input("Type 'e' to exit:")
 
 
-def androdump_main(package_name, list_modules):
+def androdump_main(package_name: str, list_modules: list[str]) -> None:
     from androguard.pentest import Pentest
     from androguard.session import Session
 

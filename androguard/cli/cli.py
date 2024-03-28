@@ -4,28 +4,32 @@
 """Androguard is a full Python tool to reverse Android Applications."""
 import json
 import sys
+from typing import Literal
 
 import click
+import networkx as nx
 from loguru import logger
 
 import androguard.core.apk
 from androguard import util
-from androguard.cli.main import (androarsc_main,
-                                 androaxml_main,
-                                 export_apps_to_format,
-                                 androsign_main,
-                                 androlyze_main,
-                                 androdis_main,
-                                 androtrace_main,
-                                 androdump_main,
-                                 )
+from androguard.cli.main import (
+    androarsc_main,
+    androaxml_main,
+    androdis_main,
+    androdump_main,
+    androlyze_main,
+    androsign_main,
+    androtrace_main,
+    export_apps_to_format,
+)
+from androguard.decompiler.graph import Graph
+from androguard.session import Session
 
-import networkx as nx
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
 @click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
-def entry_point(verbosity):
+def entry_point(verbosity: Literal["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"] | None):
     if verbosity is None:
         util.set_log("ERROR")
     else:
@@ -51,7 +55,7 @@ def entry_point(verbosity):
     required=False,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-def axml(input_, output, file_, resource):
+def axml(input_: str | None, output: str, file_: str | None, resource: str):
     """
     Parse the AndroidManifest.xml.
 
@@ -128,16 +132,16 @@ def axml(input_, output, file_, resource):
     default=False,
     help='List all types and exit',
 )
-def arsc(input_,
-         file_,
-         output,
-         package,
-         locale,
-         type_,
-         id_,
-         list_packages,
-         list_locales,
-         list_types):
+def arsc(input_: str,
+         file_: str,
+         output: str,
+         package: str,
+         locale: str,
+         type_: str,
+         id_: str,
+         list_packages: bool,
+         list_locales: bool,
+         list_types: bool):
     """
     Decode resources.arsc either directly from a given file or from an APK.
 
@@ -147,8 +151,7 @@ def arsc(input_,
         $ androguard arsc app.apk
     """
 
-    from androguard.core import androconf
-    from androguard.core import axml, apk
+    from androguard.core import androconf, apk, axml
 
     if file_ and input_:
         logger.info("Can not give --input and positional argument! Please use only one of them!")
@@ -214,18 +217,15 @@ def arsc(input_,
             print("In Package:", p)
             print("\n".join(map(lambda x: "  \\x00\\x00"
             if x == "\x00\x00"
-            else "  {}".format(x),
-                                sorted(arscobj.get_locales(p)))))
+            else "  {}".format(x), sorted(arscobj.get_locales(p)))))
         sys.exit(0)
 
     if list_types:
         for p in arscobj.get_packages_names():
             print("In Package:", p)
             for locale in sorted(arscobj.get_locales(p)):
-                print("  In Locale: {}".format("\\x00\\x00"
-                                               if locale == "\x00\x00" else locale))
-                print("\n".join(map("    {}".format,
-                                    sorted(arscobj.get_types(p, locale)))))
+                print("  In Locale: {}".format("\\x00\\x00" if locale == "\x00\x00" else locale))
+                print("\n".join(map("    {}".format, sorted(arscobj.get_types(p, locale)))))
         sys.exit(0)
 
     androarsc_main(arscobj,
@@ -271,7 +271,7 @@ def arsc(input_,
     '--decompiler', '-d',
     help='Use a different decompiler (default: DAD)',
 )
-def decompile(input_, file_, output, format_, jar, limit, decompiler):
+def decompile(input_: str, file_: str, output: str, format_: str, jar: bool, limit: str, decompiler: str):
     """
     Decompile an APK and create Control Flow Graphs.
 
@@ -327,7 +327,7 @@ def decompile(input_, file_, output, format_, jar, limit, decompiler):
     nargs=-1,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
-def sign(hash_, print_all_hashes, show, apk):
+def sign(hash_: str, print_all_hashes: bool, show: bool, apk: list[str]) -> None:
     """Return the fingerprint(s) of all certificates inside an APK."""
     androsign_main(apk, hash_, print_all_hashes, show)
 
@@ -338,13 +338,13 @@ def sign(hash_, print_all_hashes, show, apk):
     nargs=-1,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-def apkid(apks):
+def apkid(apks: list[str]):
     """Return the packageName/versionCode/versionName per APK as JSON."""
     from androguard.core.apk import get_apkid
 
     logger.debug("APKID")
 
-    results = dict()
+    results: dict[str, tuple[str, str, str]] = dict()
     for apk in apks:
         results[apk] = get_apkid(apk)
     print(json.dumps(results, indent=2))
@@ -362,7 +362,7 @@ def apkid(apks):
     required=False,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
-def analyze(session, apk):
+def analyze(session: Session, apk: str):
     """Open a IPython Shell and start reverse engineering."""
     androlyze_main(session, apk)
 
@@ -380,7 +380,7 @@ def analyze(session, apk):
     "DEX",
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
-def disassemble(offset, size, dex):
+def disassemble(offset: int, size: int, dex: str):
     """
     Disassemble Dalvik Code with size SIZE starting from an offset
     """
@@ -402,7 +402,7 @@ def disassemble(offset, size, dex):
     default=False,
     help='Enable UI',
 )
-def trace(apk, modules, enable_ui):
+def trace(apk: str, modules: list[str], enable_ui: bool):
     """
     Push an APK on the phone and start to trace all interesting methods from the modules list
 
@@ -424,7 +424,7 @@ def trace(apk, modules, enable_ui):
 @click.option("-m", "--modules",
               multiple=True, default=[],
               help="A list of modules to load in frida")
-def dtrace(package_name, modules):
+def dtrace(package_name: str, modules: list[str]):
     """
     Start dynamically an installed APK on the phone and start to trace all interesting methods from the modules list
 
@@ -445,7 +445,7 @@ def dtrace(package_name, modules):
 @click.option("-m", "--modules",
               multiple=True, default=["androguard/pentest/modules/helpers/dump/dexdump.js"],
               help="A list of modules to load in frida")
-def dump(package_name, modules):
+def dump(package_name: str, modules: list[str]):
     """
     Start and dump dynamically an installed APK on the phone
 
@@ -457,17 +457,17 @@ def dump(package_name, modules):
     androdump_main(package_name, modules)
 
 # callgraph exporting utility functions
-def _write_gml(G, path):
+def _write_gml(G: Graph, path: str) -> None:
     """Wrapper around nx.write_gml"""
     return nx.write_gml(G, path, stringizer=str)
 
-def _write_gpickle(G, path):
+def _write_gpickle(G: Graph, path: str) -> None:
     """Wrapper around pickle dump"""
     import pickle
     with open(path, 'wb') as f:
         pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
 
-def _write_yaml(G, path):
+def _write_yaml(G: Graph, path: str) -> None:
     """Wrapper around yaml dump"""
     import yaml
     with open(path, 'w') as f:
@@ -534,26 +534,26 @@ write_methods = dict(
     help='Do not store methods which has no xrefs',
 )
 def cg(
-    file_,
-    output,
-    output_type,
-    show,
-    classname,
-    methodname,
-    descriptor,
-    accessflag,
-    no_isolated):
+    file_: str,
+    output: str,
+    output_type: str,
+    show: bool,
+    classname: str,
+    methodname: str,
+    descriptor: str,
+    accessflag: str,
+    no_isolated: bool):
     """
     Create a call graph based on the data of Analysis and export it into a graph format.
     """
-    from androguard.core.bytecode import FormatClassToJava
-    from androguard.misc import AnalyzeAPK
-    from androguard.core.analysis.analysis import ExternalMethod
-
     import matplotlib.pyplot as plt
     import networkx as nx
 
-    a, d, dx = AnalyzeAPK(file_)
+    from androguard.core.analysis.analysis import ExternalMethod
+    from androguard.core.bytecode import FormatClassToJava
+    from androguard.misc import AnalyzeAPK
+
+    a, _d, dx = AnalyzeAPK(file_)
 
     entry_points = map(FormatClassToJava,
                        a.get_activities() + a.get_providers() +

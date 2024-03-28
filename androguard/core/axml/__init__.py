@@ -1019,7 +1019,7 @@ class AXMLPrinter:
         """
         return etree.tostring(self.root, encoding="utf-8", pretty_print=pretty)
 
-    def get_xml_obj(self):
+    def get_xml_obj(self) -> etree._Element:
         """
         Get the XML as an ElementTree object
 
@@ -1631,14 +1631,14 @@ class ARSCParser:
     def get_resource_style(self, ate):
         return ["", ""]
 
-    def get_packages_names(self):
+    def get_packages_names(self) -> list[str]:
         """
         Retrieve a list of all package names, which are available
         in the given resources.arsc.
         """
         return list(self.packages.keys())
 
-    def get_locales(self, package_name):
+    def get_locales(self, package_name: str) -> list[str]:
         """
         Retrieve a list of all available locales in a given packagename.
 
@@ -1647,7 +1647,7 @@ class ARSCParser:
         self._analyse()
         return list(self.values[package_name].keys())
 
-    def get_types(self, package_name, locale='\x00\x00'):
+    def get_types(self, package_name: str, locale: str = '\x00\x00') -> list[str]:
         """
         Retrieve a list of all types which are available in the given
         package and locale.
@@ -1970,7 +1970,7 @@ class ARSCParser:
                 else:
                     result.append((config, item.format_value()))
 
-    def get_resolved_res_configs(self, rid, config=None):
+    def get_resolved_res_configs(self, rid: int, config: "ARSCResTableConfig | None" = None) -> list[tuple["ARSCResTableConfig", str]]:
         """
         Return a list of resolved resource IDs with their corresponding configuration.
         It has a similar return type as :meth:`get_res_configs` but also handles complex entries
@@ -2130,7 +2130,7 @@ class ARSCParser:
         except ValueError:
             raise ValueError("ID is not a hex ID: '{}'".format(res_id))
 
-    def get_resource_xml_name(self, r_id, package=None):
+    def get_resource_xml_name(self, r_id: int, package: str | None = None) -> str:
         """
         Returns the XML name for a resource, including the package name if package is None.
         A full name might look like `@com.example:string/foobar`

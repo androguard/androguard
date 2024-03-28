@@ -266,7 +266,7 @@ class APK:
     _v2_blocks: dict
     _v2_signing_data: list | None
     _v3_signing_data: list | None
-    _files: dict
+    _files: dict[str, str]
     files_crc32: dict
     __raw: bytes
     zip: ZipEntry
@@ -690,7 +690,7 @@ class APK:
         """
         return self.zip.namelist()
 
-    def _get_file_magic_name(self, buffer):
+    def _get_file_magic_name(self, buffer: bytes) -> str:
         """
         Return the filetype guessed for a buffer
         :param buffer: bytes
@@ -742,7 +742,7 @@ class APK:
             return self._patch_magic(buffer, ftype)
 
     @property
-    def files(self):
+    def files(self) -> dict[str, str]:
         """
         Returns a dictionary of filenames and detected magic type
 
@@ -750,7 +750,7 @@ class APK:
         """
         return self.get_files_types()
 
-    def get_files_types(self):
+    def get_files_types(self) -> dict[str, str]:
         """
         Return the files inside the APK with their associated types (by using python-magic)
 
@@ -779,7 +779,7 @@ class APK:
 
         return orig
 
-    def _get_crc32(self, filename):
+    def _get_crc32(self, filename: str) -> bytes:
         """
         Calculates and compares the CRC32 and returns the raw buffer.
 
@@ -2182,7 +2182,7 @@ def ensure_final_value(packageName, arsc, value):
     return ''
 
 
-def get_apkid(apkfile):
+def get_apkid(apkfile: str) -> tuple[str, str, str]:
     """Read (appid, versionCode, versionName) from an APK
 
     This first tries to do quick binary XML parsing to just get the

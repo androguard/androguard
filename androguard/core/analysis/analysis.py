@@ -5,7 +5,7 @@ import re
 import time
 from enum import IntEnum
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING
 
 import networkx as nx
 from loguru import logger
@@ -23,6 +23,8 @@ from androguard.core.dex import (
 )
 
 if TYPE_CHECKING:
+    from typing import Any, Iterator, List, Optional, Set, Tuple, Union
+
     from networkx.classes.digraph import DiGraph
 
     from androguard.core.dex import (

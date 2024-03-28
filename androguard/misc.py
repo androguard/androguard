@@ -1,3 +1,4 @@
+from typing import Any
 from androguard.session import Session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
@@ -22,7 +23,7 @@ def get_default_session():
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(_file, session=None, raw=False):
+def AnalyzeAPK(_file: str, session: Session | None = None, raw: bool = False) -> tuple[apk.APK, list[dex.DEX], Analysis]:
     """
     Analyze an android application and setup all stuff for a more quickly
     analysis!
@@ -96,7 +97,7 @@ def AnalyzeDex(filename, session=None, raw=False):
     return session.addDEX(filename, data)
 
 
-def AnalyzeODex(filename, session=None, raw=False):
+def AnalyzeODex(filename: str, session: Session | None = None, raw: bool = False) -> tuple[str, Any, Analysis]:
     """
     Analyze an android odex file and setup all stuff for a more quickly analysis !
 
@@ -121,7 +122,7 @@ def AnalyzeODex(filename, session=None, raw=False):
     return session.addDEY(filename, data)
 
 
-def clean_file_name(filename, unique=True, replace="_", force_nt=False):
+def clean_file_name(filename: str, unique: bool = True, replace: str = "_", force_nt: bool = False) -> str:
     """
     Return a filename version, which has no characters in it which are forbidden.
     On Windows these are for example <, /, ?, ...

@@ -380,7 +380,7 @@ def method2dot(mx: "MethodAnalysis", colors: dict[str, str | tuple[str, str]] | 
     return {'name': method_label, 'nodes': blocks_html, 'edges': edges_html}
 
 
-def method2format(output: str, _format: str = "png", mx: "MethodAnalysis | None" = None, raw: bytes | None = None):
+def method2format(output: str, _format: str = "png", mx: "MethodAnalysis | None" = None, raw: dict[str, Any] | str | None = None) -> None:
     """
     Export method structure as a graph to a specific file format using dot from the graphviz package.
     The result is written to the file specified via :code:`output`.
@@ -408,6 +408,7 @@ def method2format(output: str, _format: str = "png", mx: "MethodAnalysis | None"
     if raw:
         data = raw
     else:
+        assert mx is not None
         data = method2dot(mx)
 
     buff = """
