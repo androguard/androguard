@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 
 from colorama import Fore, init
 from loguru import logger
@@ -245,7 +245,7 @@ def color_range(startcolor: str, goalcolor: str, steps: int) -> list[str]:
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name: str, api: int | None = None) -> Dict[str, Union[List[str], Dict[str, str]]]:
+def load_api_specific_resource_module(resource_name: str, api: int | None = None) -> dict[str, list[str] | dict[str, str]]:
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.

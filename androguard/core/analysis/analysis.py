@@ -342,8 +342,8 @@ class ExceptionAnalysis:
 
         return buff[:-1]
 
-    def get(self) -> dict:
-        d = {"start": self.start, "end": self.end, "list": []}
+    def get(self) -> dict[str, Any]:
+        d: dict[str, Any] = {"start": self.start, "end": self.end, "list": []}
 
         for i in self.exceptions:
             d["list"].append({"name": i[0], "idx": i[1], "bb": i[2].get_name()})

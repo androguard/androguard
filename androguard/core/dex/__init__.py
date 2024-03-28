@@ -96,7 +96,7 @@ class InvalidInstruction(Exception):
     pass
 
 
-def read_null_terminated_string(f: io.BufferedReader) -> bytes:
+def read_null_terminated_string(f: BufferedReader) -> bytes:
     """
     Read a null terminated string from a file-like object.
     :param f: file-like object
@@ -133,7 +133,7 @@ def get_access_flags_string(value: int) -> str:
     return " ".join(flags)
 
 
-def get_type(atype, size=None):
+def get_type(atype: str, size: int | None = None) -> str:
     """
     Retrieve the type of a descriptor (e.g : I)
     """
@@ -174,7 +174,7 @@ BRANCH_DEX_OPCODES = ["throw", "throw.", "if.", "goto", "goto.", "return",
                       "return.", "packed-switch$", "sparse-switch$"]
 
 
-def clean_name_instruction(instruction):
+def clean_name_instruction(instruction: Instruction) -> str:
     """USED IN ELSIM"""
     op_value = instruction.get_op_value()
 
@@ -185,7 +185,7 @@ def clean_name_instruction(instruction):
     return instruction.get_name()
 
 
-def static_operand_instruction(instruction):
+def static_operand_instruction(instruction: Instruction) -> str:
     """USED IN ELSIM"""
     buff = ""
 
@@ -201,15 +201,15 @@ def static_operand_instruction(instruction):
     return buff
 
 
-def get_sbyte(cm, buff):
+def get_sbyte(cm: ClassManager, buff: BufferedReader) -> int:
     return cm.packer["b"].unpack(buff.read(1))[0]
 
 
-def get_byte(cm, buff):
+def get_byte(cm: ClassManager, buff: BufferedReader) -> int:
     return cm.packer["B"].unpack(buff.read(1))[0]
 
 
-def readuleb128(cm, buff):
+def readuleb128(cm: ClassManager, buff: BufferedReader) -> int:
     """
     Read an unsigned LEB128 at the current position of the buffer
 
@@ -235,7 +235,7 @@ def readuleb128(cm, buff):
     return result
 
 
-def readuleb128p1(cm, buff):
+def readuleb128p1(cm: ClassManager, buff: BufferedReader) -> int:
     """
     Read an unsigned LEB128p1 at the current position of the buffer.
     This format is the same as uLEB128 but has the ability to store the value -1.
@@ -246,7 +246,7 @@ def readuleb128p1(cm, buff):
     return readuleb128(cm, buff) - 1
 
 
-def readsleb128(cm, buff):
+def readsleb128(cm: ClassManager, buff: BufferedReader) -> int:
     """
     Read a signed LEB128 at the current position of the buffer.
 
@@ -272,7 +272,7 @@ def readsleb128(cm, buff):
     return result
 
 
-def writeuleb128(cm, value):
+def writeuleb128(cm: ClassManager, value: int) -> int:
     """
     Convert an integer value to the corresponding unsigned LEB128.
 
@@ -297,7 +297,7 @@ def writeuleb128(cm, value):
     return buff
 
 
-def writesleb128(cm, value):
+def writesleb128(cm: ClassManager, value: int) -> bytes:
     """
     Convert an integer value to the corresponding signed LEB128
 
@@ -326,7 +326,7 @@ def writesleb128(cm, value):
     return buff
 
 
-def determineNext(i, cur_idx, m):
+def determineNext(i: Instruction, cur_idx: int, m: EncodedMethod) -> list[int]:
     """
     Determine the next offsets inside the bytecode of an :class:`EncodedMethod`.
     The offsets are calculated in number of bytes from the start of the method.
@@ -394,7 +394,7 @@ def determineNext(i, cur_idx, m):
     return []
 
 
-def determineException(vm, m) -> list[list[int | str]]:
+def determineException(vm: DEX, m: EncodedMethod) -> list[list[int | str]]:
     """
     Returns try-catch handler inside the method.
 
@@ -403,14 +403,17 @@ def determineException(vm, m) -> list[list[int | str]]:
     :return:
     """
     # no exceptions !
-    if m.get_code().get_tries_size() <= 0:
+    code = m.get_code()
+    if code is None:
+        return []
+    if code.get_tries_size() <= 0:
         return []
 
     h_off = {}
 
-    handler_catch_list = m.get_code().get_handlers()
+    handler_catch_list = code.get_handlers()
 
-    for try_item in m.get_code().get_tries():
+    for try_item in code.get_tries():
         offset_handler = try_item.get_handler_off(
         ) + handler_catch_list.get_off()
         if offset_handler in h_off:
@@ -496,7 +499,7 @@ class HeaderItem:
     class_off_obj: None
     data_off_obj: None
 
-    def __init__(self, size: int, buff: io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
         logger.debug("HeaderItem")
 
         self.CM = cm
@@ -721,7 +724,7 @@ class AnnotationOffItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
         self.annotation_off, = cm.packer["I"].unpack(buff.read(4))
 
@@ -759,7 +762,7 @@ class AnnotationSetItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -811,7 +814,7 @@ class AnnotationSetRefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
         self.annotations_off, = cm.packer["I"].unpack(buff.read(4))
 
@@ -849,7 +852,7 @@ class AnnotationSetRefList:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.offset = buff.tell()
 
         self.CM = cm
@@ -1069,7 +1072,7 @@ class AnnotationsDirectoryItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1778,7 +1781,7 @@ class AnnotationElement:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -1893,7 +1896,7 @@ class AnnotationItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
 
         self.offset = buff.tell()
@@ -3456,7 +3459,7 @@ class ClassDataItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
 
         self.offset = buff.tell()
@@ -3575,7 +3578,7 @@ class ClassDataItem:
                 for i in range(0, len(values)):
                     self.static_fields[i].set_init_value(values[i])
 
-    def _load_elements(self, size: int, l: List[Any], Type: Union[Type[EncodedField], Type[EncodedMethod]], buff:     io.BufferedReader, cm: "ClassManager"):
+    def _load_elements(self, size: int, l: List[Any], Type: Union[Type[EncodedField], Type[EncodedMethod]], buff: BufferedReader, cm: "ClassManager"):
         prev = 0
         for i in range(0, size):
             el = Type(buff, cm)
@@ -3662,7 +3665,7 @@ class ClassDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff:     io.BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -3951,7 +3954,7 @@ class ClassHDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size: int, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
 
         self.offset = buff.tell()
@@ -4371,7 +4374,7 @@ class Instruction:
         """
         return ""
 
-    def get_operands(self, idx: int = -1) -> list[tuple[Operand, object]]:
+    def get_operands(self, idx: int = -1) -> list[tuple[Operand, str, str | None]]:
         """
         Return all operands
 
@@ -4627,7 +4630,7 @@ class SparseSwitch:
         """
         return self.ident
 
-    def get_keys(self):
+    def get_keys(self) -> list[int]:
         """
         Return the keys of the instruction
 
@@ -4635,7 +4638,7 @@ class SparseSwitch:
         """
         return self.keys
 
-    def get_values(self):
+    def get_values(self) -> list[int]:
         return self.get_keys()
 
     def get_targets(self) -> list[int]:
@@ -4765,7 +4768,7 @@ class PackedSwitch:
         """
         return self.ident
 
-    def get_keys(self):
+    def get_keys(self) -> list[int]:
         """
         Return the keys of the instruction
 
@@ -4773,7 +4776,7 @@ class PackedSwitch:
         """
         return [(self.first_key + i) for i in range(0, len(self.targets))]
 
-    def get_values(self):
+    def get_values(self) -> list[int]:
         return self.get_keys()
 
     def get_targets(self):
@@ -6593,7 +6596,7 @@ class DCode:
         """
         self.cached_instructions = instructions
 
-    def get_instructions(self) -> Iterator[Any]:
+    def get_instructions(self) -> Iterator[Instruction]:
         """
         Get the instructions
 
@@ -6774,7 +6777,7 @@ class DalvikCode:
     :type cm: :class:`ClassManager` object
     """
     CM: "ClassManager"
-    offset: io.BufferedReader
+    offset: BufferedReader
     registers_size: int
     ins_size: int
     outs_size: int
@@ -6783,9 +6786,10 @@ class DalvikCode:
     insns_size: int
     code: DCode
     padding: int
+    tries: list[TryItem]
     handlers: EncodedCatchHandlerList
 
-    def __init__(self, buff: io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -6811,7 +6815,7 @@ class DalvikCode:
 
             self.handlers = EncodedCatchHandlerList(buff, self.CM)
 
-    def get_registers_size(self):
+    def get_registers_size(self) -> int:
         """
         Get the number of registers used by this code
 
@@ -6835,7 +6839,7 @@ class DalvikCode:
         """
         return self.outs_size
 
-    def get_tries_size(self):
+    def get_tries_size(self) -> int:
         """
         Get the number of :class:`TryItem` for this instance
 
@@ -6867,7 +6871,7 @@ class DalvikCode:
         """
         return self.handlers
 
-    def get_tries(self):
+    def get_tries(self) -> list[TryItem]:
         """
         Get the array indicating where in the code exceptions are caught and how to handle them
 
@@ -6875,7 +6879,7 @@ class DalvikCode:
         """
         return self.tries
 
-    def get_debug(self):
+    def get_debug(self) -> DebugInfoItem:
         """
         Return the associated debug object
 
@@ -6883,7 +6887,7 @@ class DalvikCode:
         """
         return self.CM.get_debug_off(self.debug_info_off)
 
-    def get_bc(self):
+    def get_bc(self) -> DCode:
         """
         Return the associated code object
 
@@ -6891,13 +6895,13 @@ class DalvikCode:
         """
         return self.code
 
-    def seek(self, idx):
+    def seek(self, idx: int) -> None:
         self.code.seek(idx)
 
-    def get_length(self):
+    def get_length(self) -> int:
         return self.insns_size
 
-    def _begin_show(self):
+    def _begin_show(self) -> None:
         logger.debug("registers_size: %d" % self.registers_size)
         logger.debug("ins_size: %d" % self.ins_size)
         logger.debug("outs_size: %d" % self.outs_size)
@@ -6907,12 +6911,12 @@ class DalvikCode:
 
         bytecode.PrintBanner()
 
-    def show(self):
+    def show(self) -> None:
         self._begin_show()
         self.code.show()
         self._end_show()
 
-    def _end_show(self):
+    def _end_show(self) -> None:
         bytecode.PrintBanner()
 
     def get_obj(self):
@@ -6974,7 +6978,7 @@ class DalvikCode:
 
 
 class CodeItem:
-    def __init__(self, size: int, buff:     io.BufferedReader, cm: "ClassManager"):
+    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
         self.CM = cm
 
         self.offset = buff.tell()
@@ -7032,7 +7036,7 @@ class CodeItem:
 
 class MapItem:
     CM: "ClassManager"
-    buff: io.BufferedReader
+    buff: BufferedReader
     off: int
     type: TypeMapItem
     unused: int
@@ -7059,7 +7063,7 @@ class MapItem:
         DebugInfoItemEmpty | \
         None
 
-    def __init__(self, buff: io.BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
         """
         Implementation of a map_item, which occours in a map_list
 
@@ -7265,8 +7269,8 @@ class ClassManager:
     __strings_off: dict
     __typelists_off: dict
     __classdata_off: dict
-    __obj_offset: dict
-    __item_offset: dict
+    __obj_offset: dict[int, MapItem]
+    __item_offset: dict[int, Any]
     __cached_proto: dict
     hook_strings: dict
     odex_format: bool

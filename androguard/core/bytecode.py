@@ -139,7 +139,9 @@ def PrettyShow(basic_blocks: list["DEXBasicBlock"], notes: dict[int, str] = {}) 
 
                 # packed/sparse-switch
                 if (op_value == 0x2b or op_value == 0x2c) and len(i.childs) > 1:
-                    values = i.get_special_ins(idx).get_values()
+                    instr = i.get_special_ins(idx)
+                    assert instr is not None
+                    values = instr.get_values()
                     print_fct("%s[ D:%s%s " % (branch_false_color, i.childs[0][2].get_name(), branch_color))
                     print_fct(' '.join("%d:%s" % (
                         values[j], i.childs[j + 1][2].get_name()) for j in range(0, len(i.childs) - 1)) + " ]%s" % normal_color)
@@ -155,10 +157,8 @@ def PrettyShow(basic_blocks: list["DEXBasicBlock"], notes: dict[int, str] = {}) 
 
             print_fct("\n")
 
-        if i.get_exception_analysis():
-            print_fct("\t%s%s%s\n" %
-                      (exception_color, i.exception_analysis.show_buff(),
-                       normal_color))
+        if i.exception_analysis is not None:
+            print_fct("\t%s%s%s\n" % (exception_color, i.exception_analysis.show_buff(), normal_color))
 
         print_fct("\n")
 
@@ -274,9 +274,9 @@ def method2dot(mx: "MethodAnalysis", colors: dict[str, str | tuple[str, str]] | 
     sha256 = hashlib.sha256((mx.get_method().get_class_name() + mx.get_method().get_name() + mx.get_method().get_descriptor()).encode("utf-8")).hexdigest()
 
     # Collect all used Registers and create colors
-    if method.get_code() and method.get_code().get_registers_size() != 0:
-        registers = {i: c for i, c in enumerate(color_range(colors["registers_range"][0], colors["registers_range"][1],
-                                                            method.get_code().get_registers_size()))}
+    code = method.get_code()
+    if code is not None and code.get_registers_size() != 0:
+        registers = {i: c for i, c in enumerate(color_range(colors["registers_range"][0], colors["registers_range"][1], code.get_registers_size()))}
     else:
         registers = dict()
 
@@ -380,7 +380,7 @@ def method2dot(mx: "MethodAnalysis", colors: dict[str, str | tuple[str, str]] | 
     return {'name': method_label, 'nodes': blocks_html, 'edges': edges_html}
 
 
-def method2format(output, _format="png", mx=None, raw=None):
+def method2format(output: str, _format: str = "png", mx: "MethodAnalysis | None" = None, raw: bytes | None = None):
     """
     Export method structure as a graph to a specific file format using dot from the graphviz package.
     The result is written to the file specified via :code:`output`.

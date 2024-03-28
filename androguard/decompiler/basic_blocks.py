@@ -18,38 +18,42 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, DefaultDict, List, Tuple, Union
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from androguard.decompiler.instruction import MoveExceptionExpression
+from androguard.core.dex import Instruction, PackedSwitch, SparseSwitch
+from androguard.decompiler.instruction import (
+    ConditionalExpression,
+    ConditionalZExpression,
+    IRForm,
+    MoveExceptionExpression,
+    Variable,
+)
 from androguard.decompiler.node import Node
 from androguard.decompiler.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.util import get_type
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from androguard.core.analysis.analysis import DEXBasicBlock
     from androguard.decompiler.graph import GenInvokeRetName
     from androguard.decompiler.instruction import (
-        ArrayStoreInstruction,
         AssignExpression,
-        FillArrayExpression,
-        InstanceInstruction,
-        Param,
-        ReturnInstruction,
         ThisParam,
     )
     from androguard.decompiler.writer import Writer
 
 
 class BasicBlock(Node):
-    ins: list | None
+    ins: list[IRForm]
     ins_range: tuple[int, int] | None
-    loc_ins: None
-    var_to_declare: set
-    catch_type: None
+    loc_ins: list[tuple[int, IRForm]] | None
+    var_to_declare: set[Variable]
+    catch_type: str | None
 
-    def __init__(self, name: str, block_ins: list | None):
+    def __init__(self, name: str, block_ins: list[IRForm]):
         super().__init__(name)
         self.ins = block_ins
         self.ins_range = None
@@ -57,23 +61,25 @@ class BasicBlock(Node):
         self.var_to_declare = set()
         self.catch_type = None
 
-    def get_ins(self) -> List[Union[AssignExpression, FillArrayExpression, InstanceInstruction, ArrayStoreInstruction, ReturnInstruction]]:
+    def get_ins(self) -> list[IRForm] | None:
         return self.ins
 
-    def get_loc_with_ins(self) -> List[Union[Tuple[int, AssignExpression], Tuple[int, FillArrayExpression], Tuple[int, InstanceInstruction], Tuple[int, ArrayStoreInstruction], Tuple[int, ReturnInstruction]]]:
+    def get_loc_with_ins(self) -> list[tuple[int, IRForm]] | None:
         if self.loc_ins is None:
+            assert self.ins_range is not None
             self.loc_ins = list(zip(range(*self.ins_range), self.ins))
         return self.loc_ins
 
-    def remove_ins(self, loc: int, ins: AssignExpression):
+    def remove_ins(self, loc: int, ins: AssignExpression) -> None:
+        assert self.loc_ins is not None
         self.ins.remove(ins)
         self.loc_ins.remove((loc, ins))
 
-    def add_ins(self, new_ins_list):
+    def add_ins(self, new_ins_list: list[IRForm]) -> None:
         for new_ins in new_ins_list:
             self.ins.append(new_ins)
 
-    def add_variable_declaration(self, variable):
+    def add_variable_declaration(self, variable: Variable) -> None:
         self.var_to_declare.add(variable)
 
     def number_ins(self, num: int) -> int:
@@ -82,16 +88,16 @@ class BasicBlock(Node):
         self.loc_ins = None
         return last_ins_num
 
-    def set_catch_type(self, _type):
+    def set_catch_type(self, _type: str) -> None:
         self.catch_type = _type
 
 
 class StatementBlock(BasicBlock):
-    def __init__(self, name, block_ins):
+    def __init__(self, name: str, block_ins: list[IRForm]) -> None:
         super().__init__(name, block_ins)
         self.type.is_stmt = True
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_statement_node(self)
 
     def __str__(self):
@@ -99,31 +105,36 @@ class StatementBlock(BasicBlock):
 
 
 class ReturnBlock(BasicBlock):
-    def __init__(self, name: str, block_ins: List[Union[AssignExpression, FillArrayExpression, InstanceInstruction, ArrayStoreInstruction, ReturnInstruction]]):
+    def __init__(self, name: str, block_ins: list[IRForm]) -> None:
         super().__init__(name, block_ins)
         self.type.is_return = True
 
     def visit(self, visitor: Writer) -> None:
         return visitor.visit_return_node(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%d-Return(%s)' % (self.num, self.name)
 
 
 class ThrowBlock(BasicBlock):
-    def __init__(self, name, block_ins):
+    def __init__(self, name: str, block_ins: list[IRForm]) -> None:
         super().__init__(name, block_ins)
         self.type.is_throw = True
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_throw_node(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%d-Throw(%s)' % (self.num, self.name)
 
 
 class SwitchBlock(BasicBlock):
-    def __init__(self, name, switch, block_ins):
+    switch: PackedSwitch | SparseSwitch
+    cases: list[Node]
+    default: Node | None
+    node_to_case: dict[Node, Any]
+
+    def __init__(self, name: str, switch: PackedSwitch | SparseSwitch, block_ins: list[IRForm]) -> None:
         super().__init__(name, block_ins)
         self.switch = switch
         self.cases = []
@@ -131,44 +142,51 @@ class SwitchBlock(BasicBlock):
         self.node_to_case = defaultdict(list)
         self.type.is_switch = True
 
-    def add_case(self, case):
+    def add_case(self, case: SwitchBlock) -> None:
         self.cases.append(case)
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_switch_node(self)
 
-    def copy_from(self, node):
+    def copy_from(self, node: Node) -> None:
+        assert isinstance(node, SwitchBlock)
         super().copy_from(node)
         self.cases = node.cases[:]
         self.switch = node.switch[:]
 
-    def update_attribute_with(self, n_map):
+    def update_attribute_with(self, n_map: dict[Node, Any]) -> None:
         super().update_attribute_with(n_map)
         self.cases = [n_map.get(n, n) for n in self.cases]
         for node1, node2 in n_map.items():
             if node1 in self.node_to_case:
                 self.node_to_case[node2] = self.node_to_case.pop(node1)
 
-    def order_cases(self):
+    def order_cases(self) -> None:
         values = self.switch.get_values()
         if len(values) < len(self.cases):
             self.default = self.cases.pop(0)
         for case, node in zip(values, self.cases):
             self.node_to_case[node].append(case)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%d-Switch(%s)' % (self.num, self.name)
 
 
 class CondBlock(BasicBlock):
-    def __init__(self, name, block_ins):
+    ins: list[ConditionalExpression | ConditionalZExpression]
+    true: Node | None
+    false: Node | None
+
+    def __init__(self, name: str, block_ins: list[IRForm]) -> None:
         super().__init__(name, block_ins)
         self.true = None
         self.false = None
         self.type.is_cond = True
 
-    def update_attribute_with(self, n_map):
+    def update_attribute_with(self, n_map: dict[Node, Node]) -> None:
         super().update_attribute_with(n_map)
+        assert self.true is not None
+        assert self.false is not None
         self.true = n_map.get(self.true, self.true)
         self.false = n_map.get(self.false, self.false)
 
@@ -177,43 +195,48 @@ class CondBlock(BasicBlock):
             raise RuntimeWarning('Condition should have only 1 instruction !')
         self.ins[-1].neg()
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_cond_node(self)
 
-    def visit_cond(self, visitor):
+    def visit_cond(self, visitor: Writer) -> None:
         if len(self.ins) != 1:
             raise RuntimeWarning('Condition should have only 1 instruction !')
         return visitor.visit_ins(self.ins[-1])
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%d-If(%s)' % (self.num, self.name)
 
 
 class Condition:
-    def __init__(self, cond1, cond2, isand, isnot):
+    cond1: ShortCircuitBlock
+    cond2: ShortCircuitBlock
+    isand: bool
+    isnot: bool
+
+    def __init__(self, cond1: ShortCircuitBlock, cond2: ShortCircuitBlock, isand: bool, isnot: bool):
         self.cond1 = cond1
         self.cond2 = cond2
         self.isand = isand
         self.isnot = isnot
 
-    def neg(self):
+    def neg(self) -> None:
         self.isand = not self.isand
         self.cond1.neg()
         self.cond2.neg()
 
-    def get_ins(self):
-        lins = []
+    def get_ins(self) -> list[IRForm]:
+        lins: list[IRForm] = []
         lins.extend(self.cond1.get_ins())
         lins.extend(self.cond2.get_ins())
         return lins
 
-    def get_loc_with_ins(self):
-        loc_ins = []
+    def get_loc_with_ins(self) -> list[tuple[int, IRForm]]:
+        loc_ins: list[tuple[int, IRForm]] = []
         loc_ins.extend(self.cond1.get_loc_with_ins())
         loc_ins.extend(self.cond2.get_loc_with_ins())
         return loc_ins
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_short_circuit_condition(self.isnot, self.isand,
                                                      self.cond1, self.cond2)
 
@@ -226,51 +249,55 @@ class Condition:
 
 
 class ShortCircuitBlock(CondBlock):
-    def __init__(self, name, cond):
+    cond: ShortCircuitBlock
+
+    def __init__(self, name: str, cond: ShortCircuitBlock):
         super().__init__(name, None)
         self.cond = cond
 
-    def get_ins(self):
+    def get_ins(self) -> list[IRForm]:
         return self.cond.get_ins()
 
-    def get_loc_with_ins(self):
+    def get_loc_with_ins(self) -> list[tuple[int, IRForm]]:
         return self.cond.get_loc_with_ins()
 
-    def neg(self):
+    def neg(self) -> None:
         self.cond.neg()
 
-    def visit_cond(self, visitor):
+    def visit_cond(self, visitor: Writer) -> None:
         return self.cond.visit(visitor)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%d-SC(%s)' % (self.num, self.cond)
 
 
 class LoopBlock(CondBlock):
-    def __init__(self, name, cond):
+    cond: CondBlock
+
+    def __init__(self, name: str, cond: CondBlock):
         super().__init__(name, None)
         self.cond = cond
 
-    def get_ins(self):
+    def get_ins(self) -> list[IRForm] | None:
         return self.cond.get_ins()
 
-    def neg(self):
+    def neg(self) -> None:
         self.cond.neg()
 
-    def get_loc_with_ins(self):
+    def get_loc_with_ins(self) -> list[tuple[int, IRForm]] | None:
         return self.cond.get_loc_with_ins()
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         return visitor.visit_loop_node(self)
 
-    def visit_cond(self, visitor):
+    def visit_cond(self, visitor: Writer) -> None:
         return self.cond.visit_cond(visitor)
 
-    def update_attribute_with(self, n_map):
+    def update_attribute_with(self, n_map: dict[Node, Node]):
         super().update_attribute_with(n_map)
         self.cond.update_attribute_with(n_map)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.looptype.is_pretest:
             if self.false in self.loop_nodes:
                 return '%d-While(!%s)[%s]' % (self.num, self.name, self.cond)
@@ -283,32 +310,38 @@ class LoopBlock(CondBlock):
 
 
 class TryBlock(BasicBlock):
-    def __init__(self, node):
+    try_start: Node
+    catch: list[Node]
+    def __init__(self, node: Node) -> None:
         super().__init__('Try-%s' % node.name, None)
         self.try_start = node
         self.catch = []
 
     # FIXME:
     @property
-    def num(self):
+    def num(self) -> int:
         return self.try_start.num
 
     @num.setter
-    def num(self, value):
+    def num(self, value: int) -> None:
         pass
 
-    def add_catch_node(self, node):
+    def add_catch_node(self, node: Node) -> None:
         self.catch.append(node)
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         visitor.visit_try_node(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Try({})[{}]'.format(self.name, self.catch)
 
 
 class CatchBlock(BasicBlock):
-    def __init__(self, node):
+    exception_ins: IRForm | None
+    catch_start: BasicBlock
+    catch_type: str | None
+
+    def __init__(self, node: BasicBlock):
         first_ins = node.ins[0]
         self.exception_ins = None
         if isinstance(first_ins, MoveExceptionExpression):
@@ -318,22 +351,25 @@ class CatchBlock(BasicBlock):
         self.catch_start = node
         self.catch_type = node.catch_type
 
-    def visit(self, visitor):
+    def visit(self, visitor: Writer) -> None:
         visitor.visit_catch_node(self)
 
-    def visit_exception(self, visitor):
+    def visit_exception(self, visitor: Writer) -> None:
         if self.exception_ins:
             visitor.visit_ins(self.exception_ins)
         else:
+            assert self.catch_type is not None
             visitor.write(get_type(self.catch_type))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Catch(%s)' % self.name
 
 
-def build_node_from_block(block: DEXBasicBlock, vmap: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Param]]], gen_ret: GenInvokeRetName, exception_type: None=None) -> ReturnBlock:
-    ins, lins = None, []
+def build_node_from_block(block: DEXBasicBlock, vmap: dict[int, ThisParam | Variable], gen_ret: GenInvokeRetName, exception_type: None=None) -> ReturnBlock | SwitchBlock | CondBlock | ThrowBlock | StatementBlock:
+    ins: Instruction | None = None
+    lins: list[IRForm] = []
     idx = block.get_start()
+    opcode: int = 0
     for ins in block.get_instructions():
         opcode = ins.get_op_value()
         if opcode == -1:  # FIXME? or opcode in (0x0300, 0x0200, 0x0100):
@@ -373,6 +409,7 @@ def build_node_from_block(block: DEXBasicBlock, vmap: Union[DefaultDict[int, Thi
         node = ReturnBlock(name, lins)
     # {packed,sparse}-switch
     elif 0x2b <= opcode <= 0x2c:
+        assert ins is not None
         idx -= ins.get_length()
         values = block.get_special_ins(idx)
         node = SwitchBlock(name, values, lins)

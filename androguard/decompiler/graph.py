@@ -448,19 +448,22 @@ def bfs(start: DEXBasicBlock) -> Iterator:
 
 
 class GenInvokeRetName:
+    num: int
+    ret: Variable | None
+
     def __init__(self):
         self.num = 0
         self.ret = None
 
-    def new(self):
+    def new(self) -> Variable:
         self.num += 1
         self.ret = Variable('tmp%d' % self.num)
         return self.ret
 
-    def set_to(self, ret):
+    def set_to(self, ret: Variable) -> None:
         self.ret = ret
 
-    def last(self):
+    def last(self) -> Variable | None:
         return self.ret
 
 

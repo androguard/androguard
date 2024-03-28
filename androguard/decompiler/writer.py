@@ -18,10 +18,20 @@
 from __future__ import annotations
 
 from struct import unpack
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from androguard.decompiler.basic_blocks import (
+    BasicBlock,
+    CatchBlock,
+    CondBlock,
+    LoopBlock,
+    ShortCircuitBlock,
+    SwitchBlock,
+    ThrowBlock,
+    TryBlock,
+)
 from androguard.decompiler.instruction import (
     BaseClass,
     BinaryCompExpression,
@@ -38,21 +48,19 @@ from androguard.decompiler.opcode_ins import Op
 from androguard.decompiler.util import get_type
 
 if TYPE_CHECKING:
+    from typing import Any, List, Optional, Union
+
     from androguard.core.dex import FillArrayData
     from androguard.decompiler.basic_blocks import ReturnBlock
     from androguard.decompiler.decompile import DvMethod
     from androguard.decompiler.graph import Graph
     from androguard.decompiler.instruction import (
         ArrayStoreInstruction,
-        AssignExpression,
         BinaryExpression2Addr,
         BinaryExpressionLit,
-        FillArrayExpression,
-        InstanceInstruction,
         InvokeDirectInstruction,
         NewArrayExpression,
         Param,
-        ReturnInstruction,
     )
 
 
@@ -172,7 +180,7 @@ class Writer:
                 data=rhs)
         return self.write_ind_visit_end(lhs, ' = ', rhs, data=rhs)
 
-    def visit_ins(self, ins: Union[FillArrayExpression, AssignExpression, InstanceInstruction, ArrayStoreInstruction, ReturnInstruction]):
+    def visit_ins(self, ins: IRForm) -> None:
         ins.visit(self)
 
     def write_method(self):
@@ -244,7 +252,7 @@ class Writer:
             var.declared = True
         node.visit(self)
 
-    def visit_loop_node(self, loop):
+    def visit_loop_node(self, loop: LoopBlock) -> None:
         follow = loop.follow['loop']
         if follow is None and not loop.looptype.is_endless:
             logger.error('Loop has no follow !')
@@ -291,7 +299,7 @@ class Writer:
         if follow is not None:
             self.visit_node(follow)
 
-    def visit_cond_node(self, cond):
+    def visit_cond_node(self, cond: CondBlock) -> None:
         follow = cond.follow['if']
         if cond.false is cond.true:
             self.write('%s// Both branches of the condition point to the same'
@@ -358,7 +366,7 @@ class Writer:
             self.dec_ind()
             self.write('%s}\n' % self.space(), data="IF_END_3")
 
-    def visit_short_circuit_condition(self, nnot, aand, cond1, cond2):
+    def visit_short_circuit_condition(self, nnot: bool, aand: bool, cond1: ShortCircuitBlock, cond2: ShortCircuitBlock) -> None:
         if nnot:
             cond1.neg()
         self.write('(', data="TODO24")
@@ -367,7 +375,7 @@ class Writer:
         cond2.visit_cond(self)
         self.write(')', data="TODO26")
 
-    def visit_switch_node(self, switch):
+    def visit_switch_node(self, switch: SwitchBlock) -> None:
         lins = switch.get_ins()
         for ins in lins[:-1]:
             self.visit_ins(ins)
@@ -411,7 +419,7 @@ class Writer:
         self.switch_follow.pop()
         self.visit_node(follow)
 
-    def visit_statement_node(self, stmt):
+    def visit_statement_node(self, stmt: BasicBlock) -> None:
         sucs = self.graph.sucs(stmt)
         for ins in stmt.get_ins():
             self.visit_ins(ins)
@@ -423,7 +431,7 @@ class Writer:
             else:
                 self.visit_node(sucs[0])
 
-    def visit_try_node(self, try_node):
+    def visit_try_node(self, try_node: TryBlock) -> None:
         self.write('%stry {\n' % self.space(), data="TRY_START")
         self.inc_ind()
         self.try_follow.append(try_node.follow)
@@ -435,7 +443,7 @@ class Writer:
         self.write('\n', data="NEWLINE_END_TRY")
         self.visit_node(self.try_follow.pop())
 
-    def visit_catch_node(self, catch_node):
+    def visit_catch_node(self, catch_node: CatchBlock) -> None:
         self.write(' catch (', data="CATCH")
         catch_node.visit_exception(self)
         self.write(') {\n', data="CATCH_START")
@@ -449,7 +457,7 @@ class Writer:
         for ins in ret.get_ins():
             self.visit_ins(ins)
 
-    def visit_throw_node(self, throw):
+    def visit_throw_node(self, throw: ThrowBlock) -> None:
         for ins in throw.get_ins():
             self.visit_ins(ins)
 
