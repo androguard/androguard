@@ -15,6 +15,7 @@
 # limitations under the License.
 """This file is a simplified version of writer.py that outputs an AST instead of source code."""
 import struct
+from typing import Any
 
 from androguard.core.dex.dex_types import TYPE_DESCRIPTOR
 from androguard.decompiler import basic_blocks, instruction, opcode_ins
@@ -82,7 +83,7 @@ def var_decl(typen, var):
     return [typen, var]
 
 
-def dummy(*args):
+def dummy(*args) -> tuple[str, Any]:
     return ['Dummy', args]
 
 

@@ -22,7 +22,11 @@ from androguard.util import read_at
 from .dex_types import ACCESS_FLAGS, TYPE_DESCRIPTOR, Kind, Operand, TypeMapItem
 
 if TYPE_CHECKING:
-    from androguard.core.analysis.analysis import Analysis, MethodAnalysis
+    from androguard.core.analysis.analysis import (
+        Analysis,
+        DEXBasicBlock,
+        MethodAnalysis,
+    )
     from androguard.decompiler.decompiler import DecompilerDAD
 
 # TODO: have some more generic magic...
@@ -395,7 +399,7 @@ def determineNext(i: Instruction, cur_idx: int, m: EncodedMethod) -> list[int]:
     return []
 
 
-def determineException(vm: DEX, m: EncodedMethod) -> list[list[int | list[int | str]]]:
+def determineException(vm: DEX, m: EncodedMethod) -> list[list[int | list[list[DEXBasicBlock]]]]:
     """
     Returns try-catch handler inside the method.
 
@@ -496,7 +500,7 @@ class HeaderItem:
     class_off_obj: None
     data_off_obj: None
 
-    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
+    def __init__(self, size: int, buff: BufferedReader, cm: ClassManager):
         logger.debug("HeaderItem")
 
         self.cm = cm
@@ -723,7 +727,7 @@ class AnnotationOffItem:
     cm: ClassManager
     annotation_off: int
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
         self.annotation_off, = cm.packer["I"].unpack(buff.read(4))
 
@@ -764,7 +768,7 @@ class AnnotationSetItem:
     size: int
     annotation_off_item: list[AnnotationOffItem]
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
         self.offset = buff.tell()
 
@@ -817,7 +821,7 @@ class AnnotationSetRefItem:
     cm: ClassManager
     annotations_off: int
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
         self.annotations_off, = cm.packer["I"].unpack(buff.read(4))
 
@@ -857,7 +861,7 @@ class AnnotationSetRefList:
     size: int
     list: list[AnnotationSetRefItem]
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.offset = buff.tell()
 
         self.cm = cm
@@ -1093,7 +1097,7 @@ class AnnotationsDirectoryItem:
     method_annotations: list[MethodAnnotation]
     parameter_annotations: list[ParameterAnnotation]
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
 
         self.offset = buff.tell()
@@ -1836,7 +1840,7 @@ class AnnotationElement:
     name_idx: int
     value: EncodedValue
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
         self.offset = buff.tell()
 
@@ -1960,7 +1964,7 @@ class AnnotationItem:
     visibility: int
     annotation: EncodedAnnotation
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
 
         self.offset = buff.tell()
@@ -2782,6 +2786,9 @@ class MethodHIdItem:
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
+    cm: ClassManager
+    offset: int
+    method_id_items: list[MethodIdItem]
 
     def __init__(self, size: int, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
@@ -2796,16 +2803,16 @@ class MethodHIdItem:
     def get_off(self) -> int:
         return self.offset
 
-    def gets(self):
+    def gets(self) -> list[MethodIdItem]:
         return self.method_id_items
 
-    def get(self, idx):
+    def get(self, idx: int) -> MethodIdItem | MethodIdItemInvalid:
         try:
             return self.method_id_items[idx]
         except IndexError:
             return MethodIdItemInvalid()
 
-    def reload(self):
+    def reload(self) -> None:
         for i in self.method_id_items:
             i.reload()
 
@@ -2817,7 +2824,7 @@ class MethodHIdItem:
             i.show()
             nb = nb + 1
 
-    def get_obj(self):
+    def get_obj(self) -> list[MethodIdItem]:
         return [i for i in self.method_id_items]
 
     def get_raw(self) -> bytes:
@@ -2988,6 +2995,7 @@ class EncodedField:
         """
         if not self.loaded:
             self.load()
+        assert self.class_name is not None
         return self.class_name
 
     def get_descriptor(self) -> str:
@@ -3000,6 +3008,7 @@ class EncodedField:
         """
         if not self.loaded:
             self.load()
+        assert self.proto is not None
         return self.proto
 
     def get_name(self) -> str:
@@ -3010,6 +3019,7 @@ class EncodedField:
         """
         if not self.loaded:
             self.load()
+        assert self.name is not None
         return self.name
 
     def get_access_flags_string(self) -> str:
@@ -3212,7 +3222,7 @@ class EncodedMethod:
 
         return self.code.get_registers_size() - len(params) - 1
 
-    def get_information(self) -> dict[str, tuple[int, int] | list[tuple[int, str]]]:
+    def get_information(self) -> dict[str, tuple[int, int] | list[tuple[int, str]] | str]:
         """
         Get brief information about the method's register use,
         parameters and return type.
@@ -3236,7 +3246,7 @@ class EncodedMethod:
         :return: a dictionary with the basic information about the method
         :rtype: dict
         """
-        info: dict[str, tuple[int, int] | list[tuple[int, str]]] = dict()
+        info: dict[str, tuple[int, int] | list[tuple[int, str]] | str] = dict()
         if self.code:
             nb = self.code.get_registers_size()
             proto = self.get_descriptor()
@@ -3378,15 +3388,17 @@ class EncodedMethod:
                 bytecode.PrintNote(i)
             bytecode.PrintSubBanner()
 
-    def source(self):
+    def source(self) -> None:
         """
         Return the source code of this method
 
         :rtype: string
         """
+        assert self.cm.decompiler_ob is not None
         self.cm.decompiler_ob.display_source(self)
 
     def get_source(self):
+        assert self.cm.decompiler_ob is not None
         return self.cm.decompiler_ob.get_source_method(self)
 
     def get_length(self) -> int:
@@ -3427,7 +3439,7 @@ class EncodedMethod:
             return cast(list[Instruction], []).__iter__()
         return dalvik_code.get_bc().get_instructions()
 
-    def get_instructions_idx(self) -> Iterator[tuple[int, "Instruction"]]:
+    def get_instructions_idx(self) -> Iterator[tuple[int, Instruction]]:
         """
         Iterate over all instructions of the method, but also return the current index.
         This is the same as using :meth:`get_instructions` and adding the instruction length
@@ -3444,7 +3456,7 @@ class EncodedMethod:
             yield idx, ins
             idx += ins.get_length()
 
-    def set_instructions(self, instructions):
+    def set_instructions(self, instructions: list[Instruction]) -> None:
         """
         Set the instructions
 
@@ -3452,7 +3464,7 @@ class EncodedMethod:
         :type instructions: a list of :class:`Instruction`
         """
         if self.code is None:
-            return []
+            return
         return self.code.get_bc().set_instructions(instructions)
 
     def get_instruction(self, idx: int, off: int | None = None) -> Instruction | None:
@@ -3477,9 +3489,10 @@ class EncodedMethod:
 
         :rtype: :class:`DebugInfoItem`
         """
-        if self.get_code() is None:
+        dalvik_code = self.get_code()
+        if dalvik_code  is None:
             return None
-        return self.get_code().get_debug()
+        return dalvik_code.get_debug()
 
     def get_descriptor(self) -> str:
         """
@@ -3505,6 +3518,7 @@ class EncodedMethod:
         """
         if not self.loaded:
             self.load()
+        assert self.proto is not None
         return self.proto
 
     def get_class_name(self) -> str:
@@ -3515,6 +3529,7 @@ class EncodedMethod:
         """
         if not self.loaded:
             self.load()
+        assert self.class_name is not None
         return self.class_name
 
     def get_name(self) -> str:
@@ -3525,12 +3540,13 @@ class EncodedMethod:
         """
         if not self.loaded:
             self.load()
+        assert self.name is not None
         return self.name
 
-    def get_triple(self):
+    def get_triple(self) -> tuple[str, str, str]:
         return self.cm.get_method_ref(self.method_idx).get_triple()
 
-    def add_inote(self, msg, idx, off=None):
+    def add_inote(self, msg: str, idx: int, off: int = None):
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -3598,7 +3614,7 @@ class ClassDataItem:
     direct_methods: list[EncodedMethod]
     virtual_methods: list[EncodedMethod]
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: ClassManager):
         self.cm = cm
 
         self.offset = buff.tell()
@@ -3710,7 +3726,7 @@ class ClassDataItem:
                 for i in range(0, len(values)):
                     self.static_fields[i].set_init_value(values[i])
 
-    def _load_elements(self, size: int, elems: List[Any], Type: Type[EncodedField] | Type[EncodedMethod], buff: BufferedReader, cm: "ClassManager") -> None:
+    def _load_elements(self, size: int, elems: List[Any], Type: Type[EncodedField] | Type[EncodedMethod], buff: BufferedReader, cm: ClassManager) -> None:
         prev = 0
         for i in range(0, size):
             el = Type(buff, cm)
@@ -3797,7 +3813,7 @@ class ClassDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
         self.offset = buff.tell()
 
@@ -3976,9 +3992,10 @@ class ClassDefItem:
 
         :rtype: str
         """
+        assert self.name is not None
         return self.name
 
-    def get_superclassname(self) -> str:
+    def get_superclassname(self) -> str | None:
         """
         Return the name of the super class
 
@@ -4082,7 +4099,7 @@ class ClassHDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, size: int, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
 
         self.offset = buff.tell()
@@ -4435,6 +4452,7 @@ class Instruction:
     """
     length: int = 0
     OP: int = 0
+    cm: ClassManager
 
     def get_kind(self) -> Kind | None:
         """
@@ -4486,7 +4504,7 @@ class Instruction:
         """
         print(self.get_name() + " " + self.get_output(idx), end=' ')
 
-    def show_buff(self, idx: int) -> None:
+    def show_buff(self, idx: int) -> str:
         """
         Return the display of the instruction
 
@@ -4500,7 +4518,9 @@ class Instruction:
 
         :rtype: string
         """
-        return get_kind(self.cm, self.get_kind(), self.get_ref_kind())
+        kind = self.get_kind()
+        assert kind is not None
+        return get_kind(self.cm, kind, self.get_ref_kind())
 
     def get_output(self, idx: int = -1) -> str:
         """
@@ -4579,7 +4599,7 @@ class FillArrayData:
     """
     OP: int
     notes: list[str]
-    cm: "ClassManager"
+    cm: ClassManager
     format_general_size: int
     ident: int
     element_width: int
@@ -4587,7 +4607,7 @@ class FillArrayData:
     data: bytes
 
     # FIXME: why is this not a subclass of Instruction?
-    def __init__(self, cm: "ClassManager", buff: bytes):
+    def __init__(self, cm: ClassManager, buff: bytes):
         self.OP = 0x0
         self.notes = []
         self.cm = cm
@@ -6689,8 +6709,15 @@ class DCode:
     :param buff: a raw buffer where are the instructions
     :type buff: string
     """
+    cm: ClassManager
+    insn: bytes
+    offset: int
+    size: int
+    notes: dict[int, list[str]]
+    cached_instructions: list[Instruction] | None
+    idx: int
 
-    def __init__(self, class_manager: "ClassManager", offset: int, size: int, buff: bytes):
+    def __init__(self, class_manager: ClassManager, offset: int, size: int, buff: bytes) -> None:
         self.cm = class_manager
         self.insn = buff
         self.offset = offset
@@ -6701,7 +6728,7 @@ class DCode:
 
         self.idx = 0
 
-    def get_insn(self):
+    def get_insn(self) -> bytes:
         """
         Get the insn buffer
 
@@ -6709,7 +6736,7 @@ class DCode:
         """
         return self.insn
 
-    def set_insn(self, insn):
+    def set_insn(self, insn: bytes) -> None:
         """
         Set a new raw buffer to disassemble
 
@@ -6733,7 +6760,7 @@ class DCode:
             return True
         return False
 
-    def set_instructions(self, instructions):
+    def set_instructions(self, instructions: list[Instruction]) -> None:
         """
         Set the instructions
 
@@ -6756,7 +6783,7 @@ class DCode:
         for i in self.cached_instructions:
             yield i
 
-    def add_inote(self, msg, idx, off=None):
+    def add_inote(self, msg: str, idx: int, off: int | None = None) -> None:
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -6775,7 +6802,7 @@ class DCode:
 
         self.notes[idx].append(msg)
 
-    def get_instruction(self, idx, off=None):
+    def get_instruction(self, idx: int, off: int | None = None) -> Instruction:
         """
         Get a particular instruction by using (default) the index of the address if specified
 
@@ -6792,7 +6819,7 @@ class DCode:
             self.get_instructions()
         return self.cached_instructions[idx]
 
-    def off_to_pos(self, off):
+    def off_to_pos(self, off: int) -> int:
         """
         Get the position of an instruction by using the address
 
@@ -6927,7 +6954,7 @@ class DalvikCode:
     :param cm: the ClassManager
     :type cm: :class:`ClassManager` object
     """
-    cm: "ClassManager"
+    cm: ClassManager
     offset: BufferedReader
     registers_size: int
     ins_size: int
@@ -6940,7 +6967,7 @@ class DalvikCode:
     tries: list[TryItem]
     handlers: EncodedCatchHandlerList
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager"):
+    def __init__(self, buff: BufferedReader, cm: ClassManager):
         self.cm = cm
         self.offset = buff.tell()
 
@@ -7100,7 +7127,7 @@ class DalvikCode:
 
         return buff
 
-    def add_inote(self, msg, idx, off=None):
+    def add_inote(self, msg: str, idx: int, off: int = None) -> None:
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -7129,7 +7156,7 @@ class DalvikCode:
 
 
 class CodeItem:
-    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
+    def __init__(self, size: int, buff: BufferedReader, cm: ClassManager):
         self.cm = cm
 
         self.offset = buff.tell()
@@ -7186,7 +7213,7 @@ class CodeItem:
 
 
 class MapItem:
-    cm: "ClassManager"
+    cm: ClassManager
     buff: BufferedReader
     off: int
     type: TypeMapItem
@@ -7214,7 +7241,7 @@ class MapItem:
         DebugInfoItemEmpty | \
         None
 
-    def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
+    def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         """
         Implementation of a map_item, which occours in a map_list
 
@@ -8469,7 +8496,7 @@ class DEX:
                 res.append(i)
         return res
 
-    def get_encoded_field_descriptor(self, class_name, field_name, descriptor):
+    def get_encoded_field_descriptor(self, class_name: str, field_name: str, descriptor: str) -> EncodedField | None:
         """
         Return the specific encoded field given a class name, field name, and descriptor
 

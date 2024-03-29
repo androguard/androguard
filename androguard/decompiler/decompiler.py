@@ -17,14 +17,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from loguru import logger
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
-from pygments.token import Token
 
+from androguard.core.dex import EncodedMethod
 from androguard.decompiler import decompile
 
 if TYPE_CHECKING:
@@ -33,6 +32,9 @@ if TYPE_CHECKING:
 
 
 class DecompilerDAD:
+    vm: DEX
+    vmx: Analysis
+
     def __init__(self, vm: DEX, vmx: Analysis):
         """
         Decompiler wrapper for DAD: **D**AD is **A** **D**ecompiler
@@ -48,19 +50,21 @@ class DecompilerDAD:
         self.vm = vm
         self.vmx = vmx
 
-    def get_source_method(self, m):
+    def get_source_method(self, m: EncodedMethod) -> str:
         mx = self.vmx.get_method(m)
+        assert mx is not None
         z = decompile.DvMethod(mx)
         z.process()
         return z.get_source()
 
-    def get_ast_method(self, m):
+    def get_ast_method(self, m: EncodedMethod) -> dict[str, Any]:
         mx = self.vmx.get_method(m)
+        assert mx is not None
         z = decompile.DvMethod(mx)
         z.process(doAST=True)
         return z.get_ast()
 
-    def display_source(self, m):
+    def display_source(self, m: EncodedMethod) -> None:
         result = self.get_source_method(m)
 
         lexer = get_lexer_by_name("java", stripall=True)
@@ -73,12 +77,12 @@ class DecompilerDAD:
         c.process()
         return c.get_source()
 
-    def get_ast_class(self, _class):
+    def get_ast_class(self, _class: ClassDefItem) -> dict[str, Any]:
         c = decompile.DvClass(_class, self.vmx)
         c.process(doAST=True)
         return c.get_ast()
 
-    def get_source_class_ext(self, _class):
+    def get_source_class_ext(self, _class: ClassDefItem) -> list[tuple[str, Any]]:
         c = decompile.DvClass(_class, self.vmx)
         c.process()
 
@@ -86,7 +90,7 @@ class DecompilerDAD:
 
         return result
 
-    def display_all(self, _class):
+    def display_all(self, _class: ClassDefItem) -> None:
         result = self.get_source_class(_class)
 
         lexer = get_lexer_by_name("java", stripall=True)
