@@ -304,7 +304,7 @@ class Session:
 
         :param current_class: A ClassDefItem
         """
-        return current_class.CM.vm
+        return current_class.cm.vm
 
     def get_filename_by_class(self, current_class: dex.ClassDefItem) -> str | None:
         """

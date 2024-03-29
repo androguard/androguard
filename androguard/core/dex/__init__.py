@@ -124,7 +124,7 @@ def get_access_flags_string(value: int) -> str:
 
     :rtype: string
     """
-    flags = []
+    flags: list[str] = []
     for k, v in ACCESS_FLAGS.items():
         if (k & value) == k:
             flags.append(v)
@@ -285,7 +285,7 @@ def writeuleb128(cm: ClassManager, value: int) -> bytes:
 
     remaining = value >> 7
 
-    buff: bytes = bytearray()
+    buff: bytes = b""
     while remaining > 0:
         buff += cm.packer["B"].pack(((value & 0x7f) | 0x80))
 
@@ -499,7 +499,7 @@ class HeaderItem:
     def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
         logger.debug("HeaderItem")
 
-        self.CM = cm
+        self.cm = cm
 
         self.offset = buff.tell()
 
@@ -578,29 +578,29 @@ class HeaderItem:
 
     def get_obj(self) -> bytes:
         if self.map_off_obj is None:
-            self.map_off_obj = self.CM.get_item_by_offset(self.map_off)
+            self.map_off_obj = self.cm.get_item_by_offset(self.map_off)
 
         if self.string_off_obj is None:
-            self.string_off_obj = self.CM.get_item_by_offset(self.string_ids_off)
+            self.string_off_obj = self.cm.get_item_by_offset(self.string_ids_off)
 
         if self.type_off_obj is None:
-            self.type_off_obj = self.CM.get_item_by_offset(self.type_ids_off)
+            self.type_off_obj = self.cm.get_item_by_offset(self.type_ids_off)
 
         if self.proto_off_obj is None:
-            self.proto_off_obj = self.CM.get_item_by_offset(self.proto_ids_off)
+            self.proto_off_obj = self.cm.get_item_by_offset(self.proto_ids_off)
 
         if self.field_off_obj is None:
-            self.field_off_obj = self.CM.get_item_by_offset(self.field_ids_off)
+            self.field_off_obj = self.cm.get_item_by_offset(self.field_ids_off)
 
         if self.method_off_obj is None:
-            self.method_off_obj = self.CM.get_item_by_offset(
+            self.method_off_obj = self.cm.get_item_by_offset(
                 self.method_ids_off)
 
         if self.class_off_obj is None:
-            self.class_off_obj = self.CM.get_item_by_offset(self.class_defs_off)
+            self.class_off_obj = self.cm.get_item_by_offset(self.class_defs_off)
 
         if self.data_off_obj is None:
-            self.data_off_obj = self.CM.get_item_by_offset(self.data_off)
+            self.data_off_obj = self.cm.get_item_by_offset(self.data_off)
 
         # FIXME: has no object map_off_obj!
         self.map_off = self.map_off_obj.get_off()
@@ -1605,9 +1605,9 @@ class DebugInfoItem:
 
     def get_raw(self) -> None:
         pass
-        #return [bytecode.Buff(self.__offset, writeuleb128(self.CM, self.line_start) + \
-        #                      writeuleb128(self.CM, self.parameters_size) + \
-        #                      b''.join(writeuleb128(self.CM, i) for i in self.parameter_names) + \
+        #return [bytecode.Buff(self.__offset, writeuleb128(self.cm, self.line_start) + \
+        #                      writeuleb128(self.cm, self.parameters_size) + \
+        #                      b''.join(writeuleb128(self.cm, i) for i in self.parameter_names) + \
         #                      b''.join(i.get_raw() for i in self.bytecodes))]
 
     def get_off(self) -> int:
@@ -1807,7 +1807,7 @@ class EncodedValue:
         bytecode.PrintDefault("val=%x value_arg=%x value_type=%x\n" %
                                (self.val, self.value_arg, self.value_type))
 
-    def get_obj(self):
+    def get_obj(self) -> list[str | int | bool | tuple[str, str, str] | EncodedArray | EncodedAnnotation | None]:
         if not isinstance(self.value, str):
             return [self.value]
         return []
@@ -1984,7 +1984,7 @@ class AnnotationItem:
         """
         return self.annotation
 
-    def set_off(self, off) -> None:
+    def set_off(self, off: int) -> None:
         self.offset = off
 
     def get_off(self) -> int:
@@ -2120,7 +2120,7 @@ class StringDataItem:
         Returns a str object
         """
         try:
-            return cast(str, mutf8.decode(self.data))
+            return mutf8.decode(self.data)
         except UnicodeDecodeError:
             logger.error("Impossible to decode {}".format(self.data))
             return "ANDROGUARD[INVALID_STRING] {}".format(self.data)
@@ -2440,7 +2440,7 @@ class ProtoHIdItem:
     def get_off(self) -> int:
         return self.offset
 
-    def get(self, idx: int) -> ProtoIdItem:
+    def get(self, idx: int) -> ProtoIdItem | ProtoIdItemInvalid:
         try:
             return self.proto[idx]
         except IndexError:
@@ -2478,9 +2478,9 @@ class FieldIdItem:
     class_idx: int
     type_idx: int
     name_idx: int
-    class_idx_value: str
-    type_idx_value: str
-    name_idx_value: str
+    class_idx_value: str | None
+    type_idx_value: str | None
+    name_idx_value: str | None
 
     def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.cm = cm
@@ -2566,7 +2566,7 @@ class FieldIdItem:
         return self.name_idx_value
 
     def get_list(self) -> tuple[str, str, str]:
-        return [self.get_class_name(), self.get_type(), self.get_name()]
+        return (self.get_class_name(), self.get_type(), self.get_name())
 
     def show(self) -> None:
         bytecode.PrintSubBanner("Field Id Item")
@@ -2614,7 +2614,7 @@ class FieldHIdItem:
     def gets(self) -> list[FieldIdItem]:
         return self.field_id_items
 
-    def get(self, idx: int) -> FieldIdItem:
+    def get(self, idx: int) -> FieldIdItem | FieldIdItemInvalid:
         try:
             return self.field_id_items[idx]
         except IndexError:
@@ -2649,9 +2649,17 @@ class MethodIdItem:
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
+    cm: ClassManager
+    offset: int
+    class_idx: int
+    proto_idx: int
+    name_idx: int
+    class_idx_value: str | None
+    proto_idx_value: list[str] | None
+    name_idx_value: str | None
 
     def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
-        self.CM = cm
+        self.cm = cm
         self.offset = buff.tell()
 
         self.class_idx, \
@@ -2661,9 +2669,9 @@ class MethodIdItem:
         self.reload()
 
     def reload(self):
-        self.class_idx_value = self.CM.get_type(self.class_idx)
-        self.proto_idx_value = self.CM.get_proto(self.proto_idx)
-        self.name_idx_value = self.CM.get_string(self.name_idx)
+        self.class_idx_value = self.cm.get_type(self.class_idx)
+        self.proto_idx_value = self.cm.get_proto(self.proto_idx)
+        self.name_idx_value = self.cm.get_string(self.name_idx)
 
     def get_class_idx(self):
         """
@@ -2696,7 +2704,7 @@ class MethodIdItem:
         :rtype: string
         """
         if self.class_idx_value is None:
-            self.class_idx_value = self.CM.get_type(self.class_idx)
+            self.class_idx_value = self.cm.get_type(self.class_idx)
 
         return self.class_idx_value
 
@@ -2707,7 +2715,7 @@ class MethodIdItem:
         :rtype: string
         """
         if self.proto_idx_value is None:
-            self.proto_idx_value = self.CM.get_proto(self.proto_idx)
+            self.proto_idx_value = self.cm.get_proto(self.proto_idx)
 
         return self.proto_idx_value
 
@@ -2736,12 +2744,12 @@ class MethodIdItem:
         :rtype: string
         """
         if self.name_idx_value is None:
-            self.name_idx_value = self.CM.get_string(self.name_idx)
+            self.name_idx_value = self.cm.get_string(self.name_idx)
 
         return self.name_idx_value
 
-    def get_list(self) -> tuple[str, str, str]:
-        return [self.get_class_name(), self.get_name(), self.get_proto()]
+    def get_list(self) -> tuple[str, str, list[str]]:
+        return (self.get_class_name(), self.get_name(), self.get_proto())
 
     def get_triple(self):
         return self.get_class_name()[1:-1], self.get_name(
@@ -2756,9 +2764,7 @@ class MethodIdItem:
             (self.class_idx_value, self.proto_idx_value, self.name_idx_value))
 
     def get_obj(self):
-        return self.CM.packer["2HI"].pack(self.class_idx,
-                    self.proto_idx,
-                    self.name_idx)
+        return self.cm.packer["2HI"].pack(self.class_idx, self.proto_idx, self.name_idx)
 
     def get_raw(self) -> bytes:
         return self.get_obj()
@@ -2778,7 +2784,7 @@ class MethodHIdItem:
     """
 
     def __init__(self, size: int, buff: BufferedReader, cm: ClassManager) -> None:
-        self.CM = cm
+        self.cm = cm
 
         self.offset = buff.tell()
 
@@ -3410,15 +3416,16 @@ class EncodedMethod:
 
         return self.code.get_bc().is_cached_instructions()
 
-    def get_instructions(self) -> list["Instruction"]:
+    def get_instructions(self) -> Iterator[Instruction]:
         """
         Get the instructions
 
         :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
         """
-        if self.get_code() is None:
-            return []
-        return self.get_code().get_bc().get_instructions()
+        dalvik_code = self.get_code()
+        if dalvik_code is None:
+            return cast(list[Instruction], []).__iter__()
+        return dalvik_code.get_bc().get_instructions()
 
     def get_instructions_idx(self) -> Iterator[tuple[int, "Instruction"]]:
         """
@@ -3429,10 +3436,11 @@ class EncodedMethod:
         :return:
         :rtype: Iterator[(int, Instruction)]
         """
-        if self.get_code() is None:
-            return []
+        dalvik_code = self.get_code()
+        if dalvik_code is None:
+            return cast(tuple[int, "Instruction"], []).__iter__()
         idx = 0
-        for ins in self.get_code().get_bc().get_instructions():
+        for ins in dalvik_code.get_bc().get_instructions():
             yield idx, ins
             idx += ins.get_length()
 
@@ -3447,7 +3455,7 @@ class EncodedMethod:
             return []
         return self.code.get_bc().set_instructions(instructions)
 
-    def get_instruction(self, idx, off=None):
+    def get_instruction(self, idx: int, off: int | None = None) -> Instruction | None:
         """
         Get a particular instruction by using (default) the index of the address if specified
 
@@ -3458,8 +3466,9 @@ class EncodedMethod:
 
         :rtype: an :class:`Instruction` object
         """
-        if self.get_code() is not None:
-            return self.get_code().get_bc().get_instruction(idx, off)
+        dalvik_code = self.get_code()
+        if dalvik_code is not None:
+            return dalvik_code.get_bc().get_instruction(idx, off)
         return None
 
     def get_debug(self):
@@ -3578,9 +3587,19 @@ class ClassDataItem:
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
+    cm: ClassManager
+    offset: int
+    static_fields_size: int
+    instance_fields_size: int
+    direct_methods_size: int
+    virtual_methods_size: int
+    static_fields: list[EncodedField]
+    instance_fields: list[EncodedField]
+    direct_methods: list[EncodedMethod]
+    virtual_methods: list[EncodedMethod]
 
     def __init__(self, buff: BufferedReader, cm: "ClassManager"):
-        self.CM = cm
+        self.cm = cm
 
         self.offset = buff.tell()
 
@@ -3594,16 +3613,12 @@ class ClassDataItem:
         self.direct_methods = []
         self.virtual_methods = []
 
-        self._load_elements(self.static_fields_size, self.static_fields,
-                            EncodedField, buff, cm)
-        self._load_elements(self.instance_fields_size, self.instance_fields,
-                            EncodedField, buff, cm)
-        self._load_elements(self.direct_methods_size, self.direct_methods,
-                            EncodedMethod, buff, cm)
-        self._load_elements(self.virtual_methods_size, self.virtual_methods,
-                            EncodedMethod, buff, cm)
+        self._load_elements(self.static_fields_size, self.static_fields, EncodedField, buff, cm)
+        self._load_elements(self.instance_fields_size, self.instance_fields, EncodedField, buff, cm)
+        self._load_elements(self.direct_methods_size, self.direct_methods, EncodedMethod, buff, cm)
+        self._load_elements(self.virtual_methods_size, self.virtual_methods, EncodedMethod, buff, cm)
 
-    def get_static_fields_size(self):
+    def get_static_fields_size(self) -> int:
         """
         Return the number of static fields defined in this item
 
@@ -3611,7 +3626,7 @@ class ClassDataItem:
         """
         return self.static_fields_size
 
-    def get_instance_fields_size(self):
+    def get_instance_fields_size(self) -> int:
         """
         Return the number of instance fields defined in this item
 
@@ -3619,7 +3634,7 @@ class ClassDataItem:
         """
         return self.instance_fields_size
 
-    def get_direct_methods_size(self):
+    def get_direct_methods_size(self) -> int:
         """
         Return the number of direct methods defined in this item
 
@@ -3627,7 +3642,7 @@ class ClassDataItem:
         """
         return self.direct_methods_size
 
-    def get_virtual_methods_size(self):
+    def get_virtual_methods_size(self) -> int:
         """
         Return the number of virtual methods defined in this item
 
@@ -3635,7 +3650,7 @@ class ClassDataItem:
         """
         return self.virtual_methods_size
 
-    def get_static_fields(self):
+    def get_static_fields(self) -> list[EncodedField]:
         """
         Return the defined static fields, represented as a sequence of encoded elements
 
@@ -3643,7 +3658,7 @@ class ClassDataItem:
         """
         return self.static_fields
 
-    def get_instance_fields(self):
+    def get_instance_fields(self) -> list[EncodedField]:
         """
         Return the defined instance fields, represented as a sequence of encoded elements
 
@@ -3651,7 +3666,7 @@ class ClassDataItem:
         """
         return self.instance_fields
 
-    def get_direct_methods(self):
+    def get_direct_methods(self) -> list[EncodedMethod]:
         """
         Return the defined direct (any of static, private, or constructor) methods, represented as a sequence of encoded elements
 
@@ -3659,7 +3674,7 @@ class ClassDataItem:
         """
         return self.direct_methods
 
-    def get_virtual_methods(self):
+    def get_virtual_methods(self) -> list[EncodedMethod]:
         """
         Return the defined virtual (none of static, private, or constructor) methods, represented as a sequence of encoded elements
 
@@ -3669,36 +3684,33 @@ class ClassDataItem:
 
         return self.virtual_methods
 
-    def get_methods(self) -> List[Union[EncodedMethod, Any]]:
+    def get_methods(self) -> list[EncodedMethod]:
         """
         Return direct and virtual methods
 
         :rtype: a list of :class:`EncodedMethod` objects
         """
-        return [x
-                for x in self.direct_methods] + [x
-                                                 for x in self.virtual_methods]
+        return [x for x in self.direct_methods] + [x for x in self.virtual_methods]
 
-    def get_fields(self) -> List[Union[EncodedField, Any]]:
+    def get_fields(self) -> list[EncodedField]:
         """
         Return static and instance fields
 
         :rtype: a list of :class:`EncodedField` objects
         """
-        return [x for x in self.static_fields] + [x
-                                                  for x in self.instance_fields]
+        return [x for x in self.static_fields] + [x for x in self.instance_fields]
 
     def set_off(self, off: int) -> None:
         self.offset = off
 
-    def set_static_fields(self, value: EncodedArray):
+    def set_static_fields(self, value: EncodedArray | None) -> None:
         if value is not None:
             values = value.get_values()
             if len(values) <= len(self.static_fields):
                 for i in range(0, len(values)):
                     self.static_fields[i].set_init_value(values[i])
 
-    def _load_elements(self, size: int, l: List[Any], Type: Union[Type[EncodedField], Type[EncodedMethod]], buff: BufferedReader, cm: "ClassManager"):
+    def _load_elements(self, size: int, elems: List[Any], Type: Type[EncodedField] | Type[EncodedMethod], buff: BufferedReader, cm: "ClassManager") -> None:
         prev = 0
         for i in range(0, size):
             el = Type(buff, cm)
@@ -3709,7 +3721,7 @@ class ClassDataItem:
             else:
                 prev = el.get_method_idx()
 
-            l.append(el)
+            elems.append(el)
 
     def show(self) -> None:
         bytecode.PrintSubBanner("Class Data Item")
@@ -3733,17 +3745,17 @@ class ClassDataItem:
         for i in self.virtual_methods:
             i.show()
 
-    def get_obj(self):
+    def get_obj(self) -> list[EncodedField | EncodedMethod]:
         return [i for i in self.static_fields] + \
                [i for i in self.instance_fields] + \
                [i for i in self.direct_methods] + \
                [i for i in self.virtual_methods]
 
     def get_raw(self) -> bytes:
-        buff = writeuleb128(self.CM, self.static_fields_size) + \
-               writeuleb128(self.CM, self.instance_fields_size) + \
-               writeuleb128(self.CM, self.direct_methods_size) + \
-               writeuleb128(self.CM, self.virtual_methods_size) + \
+        buff = writeuleb128(self.cm, self.static_fields_size) + \
+               writeuleb128(self.cm, self.instance_fields_size) + \
+               writeuleb128(self.cm, self.direct_methods_size) + \
+               writeuleb128(self.cm, self.virtual_methods_size) + \
                b''.join(i.get_raw() for i in self.static_fields) + \
                b''.join(i.get_raw() for i in self.instance_fields) + \
                b''.join(i.get_raw() for i in self.direct_methods) + \
@@ -3752,10 +3764,10 @@ class ClassDataItem:
         return buff
 
     def get_length(self) -> int:
-        length = len(writeuleb128(self.CM, self.static_fields_size)) + \
-                 len(writeuleb128(self.CM, self.instance_fields_size)) + \
-                 len(writeuleb128(self.CM, self.direct_methods_size)) + \
-                 len(writeuleb128(self.CM, self.virtual_methods_size))
+        length = len(writeuleb128(self.cm, self.static_fields_size)) + \
+                 len(writeuleb128(self.cm, self.instance_fields_size)) + \
+                 len(writeuleb128(self.cm, self.direct_methods_size)) + \
+                 len(writeuleb128(self.cm, self.virtual_methods_size))
 
         for i in self.static_fields:
             length += i.get_size()
@@ -3786,7 +3798,7 @@ class ClassDefItem:
     """
 
     def __init__(self, buff: BufferedReader, cm: "ClassManager") -> None:
-        self.CM = cm
+        self.cm = cm
         self.offset = buff.tell()
 
         self.class_idx, \
@@ -3810,18 +3822,18 @@ class ClassDefItem:
         self.reload()
 
     def reload(self):
-        self.name = self.CM.get_type(self.class_idx)
-        self.sname = self.CM.get_type(self.superclass_idx)
-        self.interfaces = self.CM.get_type_list(self.interfaces_off)
+        self.name = self.cm.get_type(self.class_idx)
+        self.sname = self.cm.get_type(self.superclass_idx)
+        self.interfaces = self.cm.get_type_list(self.interfaces_off)
 
         if self.class_data_off != 0:
-            self.class_data_item = self.CM.get_class_data_item(self.class_data_off)
+            self.class_data_item = self.cm.get_class_data_item(self.class_data_off)
 
         if self.annotations_off != 0:
-            self.annotations_directory_item = self.CM.get_annotations_directory_item(self.annotations_off)
+            self.annotations_directory_item = self.cm.get_annotations_directory_item(self.annotations_off)
 
         if self.static_values_off != 0:
-            self.static_values = self.CM.get_encoded_array_item(self.static_values_off)
+            self.static_values = self.cm.get_encoded_array_item(self.static_values_off)
 
             if self.class_data_item:
                 self.class_data_item.set_static_fields(self.static_values.get_value())
@@ -3880,7 +3892,7 @@ class ClassDefItem:
 
         :rtype: Iterator[str]
         """
-        return [self.CM.get_type(x.get_type_idx()) for x in self._get_annotation_type_ids()]
+        return [self.cm.get_type(x.get_type_idx()) for x in self._get_annotation_type_ids()]
 
     def get_class_idx(self) -> int:
         """
@@ -4017,38 +4029,34 @@ class ClassDefItem:
 
         :rtype: string
         """
-        self.CM.decompiler_ob.display_all(self)
+        self.cm.decompiler_ob.display_all(self)
 
     def get_source(self) -> str:
-        return self.CM.decompiler_ob.get_source_class(self)
+        return self.cm.decompiler_ob.get_source_class(self)
 
     def get_source_ext(self):
-        return self.CM.decompiler_ob.get_source_class_ext(self)
+        return self.cm.decompiler_ob.get_source_class_ext(self)
 
     def get_ast(self):
-        return self.CM.decompiler_ob.get_ast_class(self)
+        return self.cm.decompiler_ob.get_ast_class(self)
 
     def set_name(self, value: str):
-        self.CM.set_hook_class_name(self, value)
+        self.cm.set_hook_class_name(self, value)
 
     def get_obj(self):
         if self.interfaces_off != 0:
-            self.interfaces_off = self.CM.get_obj_by_offset(
-                self.interfaces_off).get_off()
+            self.interfaces_off = self.cm.get_obj_by_offset(self.interfaces_off).get_off()
 
         if self.annotations_off != 0:
-            self.annotations_off = self.CM.get_obj_by_offset(
-                self.annotations_off).get_off()
+            self.annotations_off = self.cm.get_obj_by_offset(self.annotations_off).get_off()
 
         if self.class_data_off != 0:
-            self.class_data_off = self.CM.get_obj_by_offset(
-                self.class_data_off).get_off()
+            self.class_data_off = self.cm.get_obj_by_offset(self.class_data_off).get_off()
 
         if self.static_values_off != 0:
-            self.static_values_off = self.CM.get_obj_by_offset(
-                self.static_values_off).get_off()
+            self.static_values_off = self.cm.get_obj_by_offset(self.static_values_off).get_off()
 
-        return self.CM.packer["8I"].pack(self.class_idx,
+        return self.cm.packer["8I"].pack(self.class_idx,
                     self.access_flags,
                     self.superclass_idx,
                     self.interfaces_off,
@@ -4074,12 +4082,12 @@ class ClassHDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
-        self.CM = cm
+    def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager") -> None:
+        self.cm = cm
 
         self.offset = buff.tell()
 
-        self.class_def = []
+        self.class_def: list[ClassDefItem] = []
 
         for i in range(0, size):
             idx = buff.tell()
@@ -4095,22 +4103,20 @@ class ClassHDefItem:
     def get_off(self) -> int:
         return self.offset
 
-    def get_class_idx(self, idx: int) -> ClassDefItem:
+    def get_class_idx(self, idx: int) -> ClassDefItem | None:
         for i in self.class_def:
             if i.get_class_idx() == idx:
                 return i
         return None
 
-    def get_method(self, name_class, name_method):
-        l = []
-
+    def get_method(self, name_class: str, name_method: str) -> list[EncodedMethod]:
+        methods: list[EncodedMethod] = []
         for i in self.class_def:
             if i.get_name() == name_class:
                 for j in i.get_methods():
                     if j.get_name() == name_method:
-                        l.append(j)
-
-        return l
+                        methods.append(j)
+        return methods
 
     def get_names(self):
         return [x.get_name() for x in self.class_def]
@@ -4142,8 +4148,8 @@ class EncodedTypeAddrPair:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, cm, buff):
-        self.CM = cm
+    def __init__(self, cm: ClassManager, buff: BufferedReader) -> None:
+        self.cm = cm
         self.type_idx = readuleb128(cm, buff)
         self.addr = readuleb128(cm, buff)
 
@@ -4163,7 +4169,7 @@ class EncodedTypeAddrPair:
         """
         return self.addr
 
-    def get_obj(self):
+    def get_obj(self) -> list[None]:
         return []
 
     def show(self) -> None:
@@ -4172,7 +4178,7 @@ class EncodedTypeAddrPair:
                                (self.type_idx, self.addr))
 
     def get_raw(self) -> bytes:
-        return writeuleb128(self.CM, self.type_idx) + writeuleb128(self.CM, self.addr)
+        return writeuleb128(self.cm, self.type_idx) + writeuleb128(self.cm, self.addr)
 
     def get_length(self) -> int:
         return len(self.get_raw())
@@ -4187,14 +4193,14 @@ class EncodedCatchHandler:
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
-    CM: ClassManager
+    cm: ClassManager
     offset: int
     size: int
     handlers: list[EncodedTypeAddrPair]
     catch_all_addr: int
 
     def __init__(self, buff: BufferedReader, cm: ClassManager):
-        self.CM = cm
+        self.cm = cm
         self.offset = buff.tell()
 
         self.size = readsleb128(cm, buff)
@@ -4252,23 +4258,23 @@ class EncodedCatchHandler:
         :rtype: bytearray
         """
         buff = bytearray()
-        buff += writesleb128(self.CM, self.size)
+        buff += writesleb128(self.cm, self.size)
         for i in self.handlers:
             buff += i.get_raw()
 
         if self.size <= 0:
-            buff += writeuleb128(self.CM, self.catch_all_addr)
+            buff += writeuleb128(self.cm, self.catch_all_addr)
 
         return buff
 
     def get_length(self) -> int:
-        length = len(writesleb128(self.CM, self.size))
+        length = len(writesleb128(self.cm, self.size))
 
         for i in self.handlers:
             length += i.get_length()
 
         if self.size <= 0:
-            length += len(writeuleb128(self.CM, self.catch_all_addr))
+            length += len(writeuleb128(self.cm, self.catch_all_addr))
 
         return length
 
@@ -4282,11 +4288,11 @@ class EncodedCatchHandlerList:
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
-    CM: ClassManager
+    cm: ClassManager
     offset: int
 
     def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
-        self.CM = cm
+        self.cm = cm
         self.offset = buff.tell()
 
         self.size = readuleb128(cm, buff)
@@ -4321,14 +4327,14 @@ class EncodedCatchHandlerList:
     def set_off(self, off: int) -> None:
         self.offset = off
 
-    def get_obj(self) -> int:
-        return writeuleb128(self.CM, self.size)
+    def get_obj(self) -> bytes:
+        return writeuleb128(self.cm, self.size)
 
     def get_raw(self) -> bytes:
         """
         :rtype: bytearray
         """
-        buff = bytearray()
+        buff = b""
         buff += self.get_obj()
         for i in self.list:
             buff += i.get_raw()
@@ -4342,7 +4348,7 @@ class EncodedCatchHandlerList:
         return length
 
 
-def get_kind(cm: ClassManager, kind: int, value: int) -> str:
+def get_kind(cm: ClassManager, kind: Kind, value: int) -> str:
     """
     Return the value of the 'kind' argument
 
@@ -4430,7 +4436,7 @@ class Instruction:
     length: int = 0
     OP: int = 0
 
-    def get_kind(self) -> int:
+    def get_kind(self) -> Kind | None:
         """
         Return the 'kind' argument of the instruction
 
@@ -4441,7 +4447,10 @@ class Instruction:
         """
         if self.OP >= 0xf2ff:
             return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
-        return DALVIK_OPCODES_FORMAT[self.OP][1][1]
+        opcode_tuple = DALVIK_OPCODES_FORMAT[self.OP][1]
+        if len(opcode_tuple) == 1:
+            return None
+        return opcode_tuple[1]
 
     def get_name(self) -> str:
         """
@@ -4520,7 +4529,7 @@ class Instruction:
         """
         return self.length
 
-    def get_raw(self) -> str:
+    def get_raw(self) -> bytes:
         """
         Return the object in a raw format
 
@@ -4570,7 +4579,7 @@ class FillArrayData:
     """
     OP: int
     notes: list[str]
-    CM: "ClassManager"
+    cm: "ClassManager"
     format_general_size: int
     ident: int
     element_width: int
@@ -4581,7 +4590,7 @@ class FillArrayData:
     def __init__(self, cm: "ClassManager", buff: bytes):
         self.OP = 0x0
         self.notes = []
-        self.CM = cm
+        self.cm = cm
 
         self.format_general_size = calcsize("2HI")
         (self.ident, \
@@ -4689,7 +4698,7 @@ class FillArrayData:
         return ((self.size * self.element_width + 1) // 2 + 4) * 2
 
     def get_raw(self) -> bytes:
-        return self.CM.packer["2HI"].pack(self.ident, self.element_width, self.size) + self.data
+        return self.cm.packer["2HI"].pack(self.ident, self.element_width, self.size) + self.data
 
     def get_hex(self) -> str:
         """
@@ -4711,10 +4720,10 @@ class SparseSwitch:
     """
 
     # FIXME: why is this not a subclass of Instruction?
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         self.OP = 0x0
         self.notes = []
-        self.CM = cm
+        self.cm = cm
 
         self.format_general_size = calcsize("2H")
         self.ident, \
@@ -4825,7 +4834,7 @@ class SparseSwitch:
         return self.format_general_size + (self.size * calcsize('<L')) * 2
 
     def get_raw(self) -> bytes:
-        return self.CM.packer["2H"].pack(self.ident, self.size) + b''.join(self.CM.packer["l"].pack(i) for i in self.keys) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
+        return self.cm.packer["2H"].pack(self.ident, self.size) + b''.join(self.cm.packer["l"].pack(i) for i in self.keys) + b''.join(self.cm.packer["l"].pack(i) for i in self.targets)
 
     def get_hex(self):
         """
@@ -4847,7 +4856,7 @@ class PackedSwitch:
     """
     OP: int
     notes: list[str]
-    CM: ClassManager
+    cm: ClassManager
     format_general_size: int
     ident: int
     size: int
@@ -4858,7 +4867,7 @@ class PackedSwitch:
     def __init__(self, cm: ClassManager, buff: bytes) -> None:
         self.OP = 0x0
         self.notes = []
-        self.CM = cm
+        self.cm = cm
 
         self.format_general_size = calcsize("2HI")
 
@@ -4975,7 +4984,7 @@ class PackedSwitch:
         return self.format_general_size + (self.size * calcsize('<L'))
 
     def get_raw(self) -> bytes:
-        return self.CM.packer["2Hi"].pack(self.ident, self.size, self.first_key) + b''.join(self.CM.packer["l"].pack(i) for i in self.targets)
+        return self.cm.packer["2Hi"].pack(self.ident, self.size, self.first_key) + b''.join(self.cm.packer["l"].pack(i) for i in self.targets)
 
     def get_hex(self) -> str:
         """
@@ -4995,7 +5004,7 @@ class Instruction35c(Instruction):
     """
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5072,7 +5081,7 @@ class Instruction10x(Instruction):
 
     length = 2
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5090,7 +5099,7 @@ class Instruction21h(Instruction):
     """
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5125,7 +5134,7 @@ class Instruction11n(Instruction):
     """
     length = 2
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5193,7 +5202,7 @@ class Instruction21s(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5220,7 +5229,7 @@ class Instruction22c(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5252,7 +5261,7 @@ class Instruction22cs(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5283,7 +5292,7 @@ class Instruction31t(Instruction):
     """
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5309,7 +5318,7 @@ class Instruction31c(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
         self.OP, self.AA, self.BBBBBBBB = cm.packer["BBi"].unpack(buff[:self.length])
@@ -5348,7 +5357,7 @@ class Instruction12x(Instruction):
 
     length = 2
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5374,7 +5383,7 @@ class Instruction11x(Instruction):
 
     length = 2
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5397,7 +5406,7 @@ class Instruction51l(Instruction):
 
     length = 10
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5423,7 +5432,7 @@ class Instruction31i(Instruction):
     """
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5453,7 +5462,7 @@ class Instruction22x(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5476,7 +5485,7 @@ class Instruction23x(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5501,7 +5510,7 @@ class Instruction20t(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5529,7 +5538,7 @@ class Instruction21t(Instruction):
     """
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5555,7 +5564,7 @@ class Instruction10t(Instruction):
 
     length = 2
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5582,7 +5591,7 @@ class Instruction22t(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5612,7 +5621,7 @@ class Instruction22s(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5642,7 +5651,7 @@ class Instruction22b(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5669,7 +5678,7 @@ class Instruction30t(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5697,7 +5706,7 @@ class Instruction3rc(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5733,7 +5742,7 @@ class Instruction32x(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5758,7 +5767,7 @@ class Instruction20bc(Instruction):
 
     length = 4
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5781,7 +5790,7 @@ class Instruction35mi(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5853,7 +5862,7 @@ class Instruction35ms(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5927,7 +5936,7 @@ class Instruction3rmi(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -5973,7 +5982,7 @@ class Instruction3rms(Instruction):
 
     length = 6
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6019,7 +6028,7 @@ class Instruction41c(Instruction):
 
     length = 8
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6052,7 +6061,7 @@ class Instruction40sc(Instruction):
 
     length = 8
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6085,7 +6094,7 @@ class Instruction52c(Instruction):
 
     length = 10
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6121,7 +6130,7 @@ class Instruction5rc(Instruction):
 
     length = 10
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes):
         super().__init__()
         self.cm = cm
 
@@ -6165,7 +6174,7 @@ class Instruction45cc(Instruction):
     length = 8
 
     # FIXME!!!
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6215,7 +6224,7 @@ class Instruction4rcc(Instruction):
     length = 8
 
     # FIXME!!!
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6238,11 +6247,11 @@ class Instruction00x(Instruction):
     """A class for unused instructions, has zero length and raises an error on initialization"""
     length = 0
 
-    def __init__(self, cm, buff):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         raise InvalidInstruction("Instruction with opcode '0x{:02x}' is unused! This looks like invalid bytecode.".format(buff[0]))
 
 
-DALVIK_OPCODES_FORMAT = {
+DALVIK_OPCODES_FORMAT: dict[int, tuple[type[Instruction], tuple[str] | tuple[str, Kind]]] = {
     # From the Dalvik documentation:
     #
     # > Most format IDs consist of three characters, two digits followed by a letter.
@@ -6258,271 +6267,271 @@ DALVIK_OPCODES_FORMAT = {
     # name and if the instruction contains typed arguments also the Kind
     # descriptor.
 
-    0x00: [Instruction10x, ["nop"]],
-    0x01: [Instruction12x, ["move"]],
-    0x02: [Instruction22x, ["move/from16"]],
-    0x03: [Instruction32x, ["move/16"]],
-    0x04: [Instruction12x, ["move-wide"]],
-    0x05: [Instruction22x, ["move-wide/from16"]],
-    0x06: [Instruction32x, ["move-wide/16"]],
-    0x07: [Instruction12x, ["move-object"]],
-    0x08: [Instruction22x, ["move-object/from16"]],
-    0x09: [Instruction32x, ["move-object/16"]],
-    0x0a: [Instruction11x, ["move-result"]],
-    0x0b: [Instruction11x, ["move-result-wide"]],
-    0x0c: [Instruction11x, ["move-result-object"]],
-    0x0d: [Instruction11x, ["move-exception"]],
-    0x0e: [Instruction10x, ["return-void"]],
-    0x0f: [Instruction11x, ["return"]],
-    0x10: [Instruction11x, ["return-wide"]],
-    0x11: [Instruction11x, ["return-object"]],
-    0x12: [Instruction11n, ["const/4"]],
-    0x13: [Instruction21s, ["const/16"]],
-    0x14: [Instruction31i, ["const"]],
-    0x15: [Instruction21h, ["const/high16"]],
-    0x16: [Instruction21s, ["const-wide/16"]],
-    0x17: [Instruction31i, ["const-wide/32"]],
-    0x18: [Instruction51l, ["const-wide"]],
-    0x19: [Instruction21h, ["const-wide/high16"]],
-    0x1a: [Instruction21c, ["const-string", Kind.STRING]],
-    0x1b: [Instruction31c, ["const-string/jumbo", Kind.STRING]],
-    0x1c: [Instruction21c, ["const-class", Kind.TYPE]],
-    0x1d: [Instruction11x, ["monitor-enter"]],
-    0x1e: [Instruction11x, ["monitor-exit"]],
-    0x1f: [Instruction21c, ["check-cast", Kind.TYPE]],
-    0x20: [Instruction22c, ["instance-of", Kind.TYPE]],
-    0x21: [Instruction12x, ["array-length"]],
-    0x22: [Instruction21c, ["new-instance", Kind.TYPE]],
-    0x23: [Instruction22c, ["new-array", Kind.TYPE]],
-    0x24: [Instruction35c, ["filled-new-array", Kind.TYPE]],
-    0x25: [Instruction3rc, ["filled-new-array/range", Kind.TYPE]],
-    0x26: [Instruction31t, ["fill-array-data"]],
-    0x27: [Instruction11x, ["throw"]],
-    0x28: [Instruction10t, ["goto"]],
-    0x29: [Instruction20t, ["goto/16"]],
-    0x2a: [Instruction30t, ["goto/32"]],
-    0x2b: [Instruction31t, ["packed-switch"]],
-    0x2c: [Instruction31t, ["sparse-switch"]],
-    0x2d: [Instruction23x, ["cmpl-float"]],
-    0x2e: [Instruction23x, ["cmpg-float"]],
-    0x2f: [Instruction23x, ["cmpl-double"]],
-    0x30: [Instruction23x, ["cmpg-double"]],
-    0x31: [Instruction23x, ["cmp-long"]],
-    0x32: [Instruction22t, ["if-eq"]],
-    0x33: [Instruction22t, ["if-ne"]],
-    0x34: [Instruction22t, ["if-lt"]],
-    0x35: [Instruction22t, ["if-ge"]],
-    0x36: [Instruction22t, ["if-gt"]],
-    0x37: [Instruction22t, ["if-le"]],
-    0x38: [Instruction21t, ["if-eqz"]],
-    0x39: [Instruction21t, ["if-nez"]],
-    0x3a: [Instruction21t, ["if-ltz"]],
-    0x3b: [Instruction21t, ["if-gez"]],
-    0x3c: [Instruction21t, ["if-gtz"]],
-    0x3d: [Instruction21t, ["if-lez"]],
+    0x00: (Instruction10x, ("nop",)),
+    0x01: (Instruction12x, ("move",)),
+    0x02: (Instruction22x, ("move/from16",)),
+    0x03: (Instruction32x, ("move/16",)),
+    0x04: (Instruction12x, ("move-wide",)),
+    0x05: (Instruction22x, ("move-wide/from16",)),
+    0x06: (Instruction32x, ("move-wide/16",)),
+    0x07: (Instruction12x, ("move-object",)),
+    0x08: (Instruction22x, ("move-object/from16",)),
+    0x09: (Instruction32x, ("move-object/16",)),
+    0x0a: (Instruction11x, ("move-result",)),
+    0x0b: (Instruction11x, ("move-result-wide",)),
+    0x0c: (Instruction11x, ("move-result-object",)),
+    0x0d: (Instruction11x, ("move-exception",)),
+    0x0e: (Instruction10x, ("return-void",)),
+    0x0f: (Instruction11x, ("return",)),
+    0x10: (Instruction11x, ("return-wide",)),
+    0x11: (Instruction11x, ("return-object",)),
+    0x12: (Instruction11n, ("const/4",)),
+    0x13: (Instruction21s, ("const/16",)),
+    0x14: (Instruction31i, ("const",)),
+    0x15: (Instruction21h, ("const/high16",)),
+    0x16: (Instruction21s, ("const-wide/16",)),
+    0x17: (Instruction31i, ("const-wide/32",)),
+    0x18: (Instruction51l, ("const-wide",)),
+    0x19: (Instruction21h, ("const-wide/high16",)),
+    0x1a: (Instruction21c, ("const-string", Kind.STRING)),
+    0x1b: (Instruction31c, ("const-string/jumbo", Kind.STRING)),
+    0x1c: (Instruction21c, ("const-class", Kind.TYPE)),
+    0x1d: (Instruction11x, ("monitor-enter",)),
+    0x1e: (Instruction11x, ("monitor-exit",)),
+    0x1f: (Instruction21c, ("check-cast", Kind.TYPE)),
+    0x20: (Instruction22c, ("instance-of", Kind.TYPE)),
+    0x21: (Instruction12x, ("array-length",)),
+    0x22: (Instruction21c, ("new-instance", Kind.TYPE)),
+    0x23: (Instruction22c, ("new-array", Kind.TYPE)),
+    0x24: (Instruction35c, ("filled-new-array", Kind.TYPE)),
+    0x25: (Instruction3rc, ("filled-new-array/range", Kind.TYPE)),
+    0x26: (Instruction31t, ("fill-array-data",)),
+    0x27: (Instruction11x, ("throw",)),
+    0x28: (Instruction10t, ("goto",)),
+    0x29: (Instruction20t, ("goto/16",)),
+    0x2a: (Instruction30t, ("goto/32",)),
+    0x2b: (Instruction31t, ("packed-switch",)),
+    0x2c: (Instruction31t, ("sparse-switch",)),
+    0x2d: (Instruction23x, ("cmpl-float",)),
+    0x2e: (Instruction23x, ("cmpg-float",)),
+    0x2f: (Instruction23x, ("cmpl-double",)),
+    0x30: (Instruction23x, ("cmpg-double",)),
+    0x31: (Instruction23x, ("cmp-long",)),
+    0x32: (Instruction22t, ("if-eq",)),
+    0x33: (Instruction22t, ("if-ne",)),
+    0x34: (Instruction22t, ("if-lt",)),
+    0x35: (Instruction22t, ("if-ge",)),
+    0x36: (Instruction22t, ("if-gt",)),
+    0x37: (Instruction22t, ("if-le",)),
+    0x38: (Instruction21t, ("if-eqz",)),
+    0x39: (Instruction21t, ("if-nez",)),
+    0x3a: (Instruction21t, ("if-ltz",)),
+    0x3b: (Instruction21t, ("if-gez",)),
+    0x3c: (Instruction21t, ("if-gtz",)),
+    0x3d: (Instruction21t, ("if-lez",)),
     # unused
-    0x3e: [Instruction00x, ["unused"]],
-    0x3f: [Instruction00x, ["unused"]],
-    0x40: [Instruction00x, ["unused"]],
-    0x41: [Instruction00x, ["unused"]],
-    0x42: [Instruction00x, ["unused"]],
-    0x43: [Instruction00x, ["unused"]],
+    0x3e: (Instruction00x, ("unused",)),
+    0x3f: (Instruction00x, ("unused",)),
+    0x40: (Instruction00x, ("unused",)),
+    0x41: (Instruction00x, ("unused",)),
+    0x42: (Instruction00x, ("unused",)),
+    0x43: (Instruction00x, ("unused",)),
 
-    0x44: [Instruction23x, ["aget"]],
-    0x45: [Instruction23x, ["aget-wide"]],
-    0x46: [Instruction23x, ["aget-object"]],
-    0x47: [Instruction23x, ["aget-boolean"]],
-    0x48: [Instruction23x, ["aget-byte"]],
-    0x49: [Instruction23x, ["aget-char"]],
-    0x4a: [Instruction23x, ["aget-short"]],
-    0x4b: [Instruction23x, ["aput"]],
-    0x4c: [Instruction23x, ["aput-wide"]],
-    0x4d: [Instruction23x, ["aput-object"]],
-    0x4e: [Instruction23x, ["aput-boolean"]],
-    0x4f: [Instruction23x, ["aput-byte"]],
-    0x50: [Instruction23x, ["aput-char"]],
-    0x51: [Instruction23x, ["aput-short"]],
-    0x52: [Instruction22c, ["iget", Kind.FIELD]],
-    0x53: [Instruction22c, ["iget-wide", Kind.FIELD]],
-    0x54: [Instruction22c, ["iget-object", Kind.FIELD]],
-    0x55: [Instruction22c, ["iget-boolean", Kind.FIELD]],
-    0x56: [Instruction22c, ["iget-byte", Kind.FIELD]],
-    0x57: [Instruction22c, ["iget-char", Kind.FIELD]],
-    0x58: [Instruction22c, ["iget-short", Kind.FIELD]],
-    0x59: [Instruction22c, ["iput", Kind.FIELD]],
-    0x5a: [Instruction22c, ["iput-wide", Kind.FIELD]],
-    0x5b: [Instruction22c, ["iput-object", Kind.FIELD]],
-    0x5c: [Instruction22c, ["iput-boolean", Kind.FIELD]],
-    0x5d: [Instruction22c, ["iput-byte", Kind.FIELD]],
-    0x5e: [Instruction22c, ["iput-char", Kind.FIELD]],
-    0x5f: [Instruction22c, ["iput-short", Kind.FIELD]],
-    0x60: [Instruction21c, ["sget", Kind.FIELD]],
-    0x61: [Instruction21c, ["sget-wide", Kind.FIELD]],
-    0x62: [Instruction21c, ["sget-object", Kind.FIELD]],
-    0x63: [Instruction21c, ["sget-boolean", Kind.FIELD]],
-    0x64: [Instruction21c, ["sget-byte", Kind.FIELD]],
-    0x65: [Instruction21c, ["sget-char", Kind.FIELD]],
-    0x66: [Instruction21c, ["sget-short", Kind.FIELD]],
-    0x67: [Instruction21c, ["sput", Kind.FIELD]],
-    0x68: [Instruction21c, ["sput-wide", Kind.FIELD]],
-    0x69: [Instruction21c, ["sput-object", Kind.FIELD]],
-    0x6a: [Instruction21c, ["sput-boolean", Kind.FIELD]],
-    0x6b: [Instruction21c, ["sput-byte", Kind.FIELD]],
-    0x6c: [Instruction21c, ["sput-char", Kind.FIELD]],
-    0x6d: [Instruction21c, ["sput-short", Kind.FIELD]],
-    0x6e: [Instruction35c, ["invoke-virtual", Kind.METH]],
-    0x6f: [Instruction35c, ["invoke-super", Kind.METH]],
-    0x70: [Instruction35c, ["invoke-direct", Kind.METH]],
-    0x71: [Instruction35c, ["invoke-static", Kind.METH]],
-    0x72: [Instruction35c, ["invoke-interface", Kind.METH]],
+    0x44: (Instruction23x, ("aget",)),
+    0x45: (Instruction23x, ("aget-wide",)),
+    0x46: (Instruction23x, ("aget-object",)),
+    0x47: (Instruction23x, ("aget-boolean",)),
+    0x48: (Instruction23x, ("aget-byte",)),
+    0x49: (Instruction23x, ("aget-char",)),
+    0x4a: (Instruction23x, ("aget-short",)),
+    0x4b: (Instruction23x, ("aput",)),
+    0x4c: (Instruction23x, ("aput-wide",)),
+    0x4d: (Instruction23x, ("aput-object",)),
+    0x4e: (Instruction23x, ("aput-boolean",)),
+    0x4f: (Instruction23x, ("aput-byte",)),
+    0x50: (Instruction23x, ("aput-char",)),
+    0x51: (Instruction23x, ("aput-short",)),
+    0x52: (Instruction22c, ("iget", Kind.FIELD)),
+    0x53: (Instruction22c, ("iget-wide", Kind.FIELD)),
+    0x54: (Instruction22c, ("iget-object", Kind.FIELD)),
+    0x55: (Instruction22c, ("iget-boolean", Kind.FIELD)),
+    0x56: (Instruction22c, ("iget-byte", Kind.FIELD)),
+    0x57: (Instruction22c, ("iget-char", Kind.FIELD)),
+    0x58: (Instruction22c, ("iget-short", Kind.FIELD)),
+    0x59: (Instruction22c, ("iput", Kind.FIELD)),
+    0x5a: (Instruction22c, ("iput-wide", Kind.FIELD)),
+    0x5b: (Instruction22c, ("iput-object", Kind.FIELD)),
+    0x5c: (Instruction22c, ("iput-boolean", Kind.FIELD)),
+    0x5d: (Instruction22c, ("iput-byte", Kind.FIELD)),
+    0x5e: (Instruction22c, ("iput-char", Kind.FIELD)),
+    0x5f: (Instruction22c, ("iput-short", Kind.FIELD)),
+    0x60: (Instruction21c, ("sget", Kind.FIELD)),
+    0x61: (Instruction21c, ("sget-wide", Kind.FIELD)),
+    0x62: (Instruction21c, ("sget-object", Kind.FIELD)),
+    0x63: (Instruction21c, ("sget-boolean", Kind.FIELD)),
+    0x64: (Instruction21c, ("sget-byte", Kind.FIELD)),
+    0x65: (Instruction21c, ("sget-char", Kind.FIELD)),
+    0x66: (Instruction21c, ("sget-short", Kind.FIELD)),
+    0x67: (Instruction21c, ("sput", Kind.FIELD)),
+    0x68: (Instruction21c, ("sput-wide", Kind.FIELD)),
+    0x69: (Instruction21c, ("sput-object", Kind.FIELD)),
+    0x6a: (Instruction21c, ("sput-boolean", Kind.FIELD)),
+    0x6b: (Instruction21c, ("sput-byte", Kind.FIELD)),
+    0x6c: (Instruction21c, ("sput-char", Kind.FIELD)),
+    0x6d: (Instruction21c, ("sput-short", Kind.FIELD)),
+    0x6e: (Instruction35c, ("invoke-virtual", Kind.METH)),
+    0x6f: (Instruction35c, ("invoke-super", Kind.METH)),
+    0x70: (Instruction35c, ("invoke-direct", Kind.METH)),
+    0x71: (Instruction35c, ("invoke-static", Kind.METH)),
+    0x72: (Instruction35c, ("invoke-interface", Kind.METH)),
     # unused
-    0x73: [Instruction00x, ["unused"]],
+    0x73: (Instruction00x, ("unused",)),
 
-    0x74: [Instruction3rc, ["invoke-virtual/range", Kind.METH]],
-    0x75: [Instruction3rc, ["invoke-super/range", Kind.METH]],
-    0x76: [Instruction3rc, ["invoke-direct/range", Kind.METH]],
-    0x77: [Instruction3rc, ["invoke-static/range", Kind.METH]],
-    0x78: [Instruction3rc, ["invoke-interface/range", Kind.METH]],
+    0x74: (Instruction3rc, ("invoke-virtual/range", Kind.METH)),
+    0x75: (Instruction3rc, ("invoke-super/range", Kind.METH)),
+    0x76: (Instruction3rc, ("invoke-direct/range", Kind.METH)),
+    0x77: (Instruction3rc, ("invoke-static/range", Kind.METH)),
+    0x78: (Instruction3rc, ("invoke-interface/range", Kind.METH)),
     # unused
-    0x79: [Instruction00x, ["unused"]],
-    0x7a: [Instruction00x, ["unused"]],
+    0x79: (Instruction00x, ("unused",)),
+    0x7a: (Instruction00x, ("unused",)),
 
-    0x7b: [Instruction12x, ["neg-int"]],
-    0x7c: [Instruction12x, ["not-int"]],
-    0x7d: [Instruction12x, ["neg-long"]],
-    0x7e: [Instruction12x, ["not-long"]],
-    0x7f: [Instruction12x, ["neg-float"]],
-    0x80: [Instruction12x, ["neg-double"]],
-    0x81: [Instruction12x, ["int-to-long"]],
-    0x82: [Instruction12x, ["int-to-float"]],
-    0x83: [Instruction12x, ["int-to-double"]],
-    0x84: [Instruction12x, ["long-to-int"]],
-    0x85: [Instruction12x, ["long-to-float"]],
-    0x86: [Instruction12x, ["long-to-double"]],
-    0x87: [Instruction12x, ["float-to-int"]],
-    0x88: [Instruction12x, ["float-to-long"]],
-    0x89: [Instruction12x, ["float-to-double"]],
-    0x8a: [Instruction12x, ["double-to-int"]],
-    0x8b: [Instruction12x, ["double-to-long"]],
-    0x8c: [Instruction12x, ["double-to-float"]],
-    0x8d: [Instruction12x, ["int-to-byte"]],
-    0x8e: [Instruction12x, ["int-to-char"]],
-    0x8f: [Instruction12x, ["int-to-short"]],
-    0x90: [Instruction23x, ["add-int"]],
-    0x91: [Instruction23x, ["sub-int"]],
-    0x92: [Instruction23x, ["mul-int"]],
-    0x93: [Instruction23x, ["div-int"]],
-    0x94: [Instruction23x, ["rem-int"]],
-    0x95: [Instruction23x, ["and-int"]],
-    0x96: [Instruction23x, ["or-int"]],
-    0x97: [Instruction23x, ["xor-int"]],
-    0x98: [Instruction23x, ["shl-int"]],
-    0x99: [Instruction23x, ["shr-int"]],
-    0x9a: [Instruction23x, ["ushr-int"]],
-    0x9b: [Instruction23x, ["add-long"]],
-    0x9c: [Instruction23x, ["sub-long"]],
-    0x9d: [Instruction23x, ["mul-long"]],
-    0x9e: [Instruction23x, ["div-long"]],
-    0x9f: [Instruction23x, ["rem-long"]],
-    0xa0: [Instruction23x, ["and-long"]],
-    0xa1: [Instruction23x, ["or-long"]],
-    0xa2: [Instruction23x, ["xor-long"]],
-    0xa3: [Instruction23x, ["shl-long"]],
-    0xa4: [Instruction23x, ["shr-long"]],
-    0xa5: [Instruction23x, ["ushr-long"]],
-    0xa6: [Instruction23x, ["add-float"]],
-    0xa7: [Instruction23x, ["sub-float"]],
-    0xa8: [Instruction23x, ["mul-float"]],
-    0xa9: [Instruction23x, ["div-float"]],
-    0xaa: [Instruction23x, ["rem-float"]],
-    0xab: [Instruction23x, ["add-double"]],
-    0xac: [Instruction23x, ["sub-double"]],
-    0xad: [Instruction23x, ["mul-double"]],
-    0xae: [Instruction23x, ["div-double"]],
-    0xaf: [Instruction23x, ["rem-double"]],
-    0xb0: [Instruction12x, ["add-int/2addr"]],
-    0xb1: [Instruction12x, ["sub-int/2addr"]],
-    0xb2: [Instruction12x, ["mul-int/2addr"]],
-    0xb3: [Instruction12x, ["div-int/2addr"]],
-    0xb4: [Instruction12x, ["rem-int/2addr"]],
-    0xb5: [Instruction12x, ["and-int/2addr"]],
-    0xb6: [Instruction12x, ["or-int/2addr"]],
-    0xb7: [Instruction12x, ["xor-int/2addr"]],
-    0xb8: [Instruction12x, ["shl-int/2addr"]],
-    0xb9: [Instruction12x, ["shr-int/2addr"]],
-    0xba: [Instruction12x, ["ushr-int/2addr"]],
-    0xbb: [Instruction12x, ["add-long/2addr"]],
-    0xbc: [Instruction12x, ["sub-long/2addr"]],
-    0xbd: [Instruction12x, ["mul-long/2addr"]],
-    0xbe: [Instruction12x, ["div-long/2addr"]],
-    0xbf: [Instruction12x, ["rem-long/2addr"]],
-    0xc0: [Instruction12x, ["and-long/2addr"]],
-    0xc1: [Instruction12x, ["or-long/2addr"]],
-    0xc2: [Instruction12x, ["xor-long/2addr"]],
-    0xc3: [Instruction12x, ["shl-long/2addr"]],
-    0xc4: [Instruction12x, ["shr-long/2addr"]],
-    0xc5: [Instruction12x, ["ushr-long/2addr"]],
-    0xc6: [Instruction12x, ["add-float/2addr"]],
-    0xc7: [Instruction12x, ["sub-float/2addr"]],
-    0xc8: [Instruction12x, ["mul-float/2addr"]],
-    0xc9: [Instruction12x, ["div-float/2addr"]],
-    0xca: [Instruction12x, ["rem-float/2addr"]],
-    0xcb: [Instruction12x, ["add-double/2addr"]],
-    0xcc: [Instruction12x, ["sub-double/2addr"]],
-    0xcd: [Instruction12x, ["mul-double/2addr"]],
-    0xce: [Instruction12x, ["div-double/2addr"]],
-    0xcf: [Instruction12x, ["rem-double/2addr"]],
-    0xd0: [Instruction22s, ["add-int/lit16"]],
-    0xd1: [Instruction22s, ["rsub-int"]],
-    0xd2: [Instruction22s, ["mul-int/lit16"]],
-    0xd3: [Instruction22s, ["div-int/lit16"]],
-    0xd4: [Instruction22s, ["rem-int/lit16"]],
-    0xd5: [Instruction22s, ["and-int/lit16"]],
-    0xd6: [Instruction22s, ["or-int/lit16"]],
-    0xd7: [Instruction22s, ["xor-int/lit16"]],
-    0xd8: [Instruction22b, ["add-int/lit8"]],
-    0xd9: [Instruction22b, ["rsub-int/lit8"]],
-    0xda: [Instruction22b, ["mul-int/lit8"]],
-    0xdb: [Instruction22b, ["div-int/lit8"]],
-    0xdc: [Instruction22b, ["rem-int/lit8"]],
-    0xdd: [Instruction22b, ["and-int/lit8"]],
-    0xde: [Instruction22b, ["or-int/lit8"]],
-    0xdf: [Instruction22b, ["xor-int/lit8"]],
-    0xe0: [Instruction22b, ["shl-int/lit8"]],
-    0xe1: [Instruction22b, ["shr-int/lit8"]],
-    0xe2: [Instruction22b, ["ushr-int/lit8"]],
+    0x7b: (Instruction12x, ("neg-int",)),
+    0x7c: (Instruction12x, ("not-int",)),
+    0x7d: (Instruction12x, ("neg-long",)),
+    0x7e: (Instruction12x, ("not-long",)),
+    0x7f: (Instruction12x, ("neg-float",)),
+    0x80: (Instruction12x, ("neg-double",)),
+    0x81: (Instruction12x, ("int-to-long",)),
+    0x82: (Instruction12x, ("int-to-float",)),
+    0x83: (Instruction12x, ("int-to-double",)),
+    0x84: (Instruction12x, ("long-to-int",)),
+    0x85: (Instruction12x, ("long-to-float",)),
+    0x86: (Instruction12x, ("long-to-double",)),
+    0x87: (Instruction12x, ("float-to-int",)),
+    0x88: (Instruction12x, ("float-to-long",)),
+    0x89: (Instruction12x, ("float-to-double",)),
+    0x8a: (Instruction12x, ("double-to-int",)),
+    0x8b: (Instruction12x, ("double-to-long",)),
+    0x8c: (Instruction12x, ("double-to-float",)),
+    0x8d: (Instruction12x, ("int-to-byte",)),
+    0x8e: (Instruction12x, ("int-to-char",)),
+    0x8f: (Instruction12x, ("int-to-short",)),
+    0x90: (Instruction23x, ("add-int",)),
+    0x91: (Instruction23x, ("sub-int",)),
+    0x92: (Instruction23x, ("mul-int",)),
+    0x93: (Instruction23x, ("div-int",)),
+    0x94: (Instruction23x, ("rem-int",)),
+    0x95: (Instruction23x, ("and-int",)),
+    0x96: (Instruction23x, ("or-int",)),
+    0x97: (Instruction23x, ("xor-int",)),
+    0x98: (Instruction23x, ("shl-int",)),
+    0x99: (Instruction23x, ("shr-int",)),
+    0x9a: (Instruction23x, ("ushr-int",)),
+    0x9b: (Instruction23x, ("add-long",)),
+    0x9c: (Instruction23x, ("sub-long",)),
+    0x9d: (Instruction23x, ("mul-long",)),
+    0x9e: (Instruction23x, ("div-long",)),
+    0x9f: (Instruction23x, ("rem-long",)),
+    0xa0: (Instruction23x, ("and-long",)),
+    0xa1: (Instruction23x, ("or-long",)),
+    0xa2: (Instruction23x, ("xor-long",)),
+    0xa3: (Instruction23x, ("shl-long",)),
+    0xa4: (Instruction23x, ("shr-long",)),
+    0xa5: (Instruction23x, ("ushr-long",)),
+    0xa6: (Instruction23x, ("add-float",)),
+    0xa7: (Instruction23x, ("sub-float",)),
+    0xa8: (Instruction23x, ("mul-float",)),
+    0xa9: (Instruction23x, ("div-float",)),
+    0xaa: (Instruction23x, ("rem-float",)),
+    0xab: (Instruction23x, ("add-double",)),
+    0xac: (Instruction23x, ("sub-double",)),
+    0xad: (Instruction23x, ("mul-double",)),
+    0xae: (Instruction23x, ("div-double",)),
+    0xaf: (Instruction23x, ("rem-double",)),
+    0xb0: (Instruction12x, ("add-int/2addr",)),
+    0xb1: (Instruction12x, ("sub-int/2addr",)),
+    0xb2: (Instruction12x, ("mul-int/2addr",)),
+    0xb3: (Instruction12x, ("div-int/2addr",)),
+    0xb4: (Instruction12x, ("rem-int/2addr",)),
+    0xb5: (Instruction12x, ("and-int/2addr",)),
+    0xb6: (Instruction12x, ("or-int/2addr",)),
+    0xb7: (Instruction12x, ("xor-int/2addr",)),
+    0xb8: (Instruction12x, ("shl-int/2addr",)),
+    0xb9: (Instruction12x, ("shr-int/2addr",)),
+    0xba: (Instruction12x, ("ushr-int/2addr",)),
+    0xbb: (Instruction12x, ("add-long/2addr",)),
+    0xbc: (Instruction12x, ("sub-long/2addr",)),
+    0xbd: (Instruction12x, ("mul-long/2addr",)),
+    0xbe: (Instruction12x, ("div-long/2addr",)),
+    0xbf: (Instruction12x, ("rem-long/2addr",)),
+    0xc0: (Instruction12x, ("and-long/2addr",)),
+    0xc1: (Instruction12x, ("or-long/2addr",)),
+    0xc2: (Instruction12x, ("xor-long/2addr",)),
+    0xc3: (Instruction12x, ("shl-long/2addr",)),
+    0xc4: (Instruction12x, ("shr-long/2addr",)),
+    0xc5: (Instruction12x, ("ushr-long/2addr",)),
+    0xc6: (Instruction12x, ("add-float/2addr",)),
+    0xc7: (Instruction12x, ("sub-float/2addr",)),
+    0xc8: (Instruction12x, ("mul-float/2addr",)),
+    0xc9: (Instruction12x, ("div-float/2addr",)),
+    0xca: (Instruction12x, ("rem-float/2addr",)),
+    0xcb: (Instruction12x, ("add-double/2addr",)),
+    0xcc: (Instruction12x, ("sub-double/2addr",)),
+    0xcd: (Instruction12x, ("mul-double/2addr",)),
+    0xce: (Instruction12x, ("div-double/2addr",)),
+    0xcf: (Instruction12x, ("rem-double/2addr",)),
+    0xd0: (Instruction22s, ("add-int/lit16",)),
+    0xd1: (Instruction22s, ("rsub-int",)),
+    0xd2: (Instruction22s, ("mul-int/lit16",)),
+    0xd3: (Instruction22s, ("div-int/lit16",)),
+    0xd4: (Instruction22s, ("rem-int/lit16",)),
+    0xd5: (Instruction22s, ("and-int/lit16",)),
+    0xd6: (Instruction22s, ("or-int/lit16",)),
+    0xd7: (Instruction22s, ("xor-int/lit16",)),
+    0xd8: (Instruction22b, ("add-int/lit8",)),
+    0xd9: (Instruction22b, ("rsub-int/lit8",)),
+    0xda: (Instruction22b, ("mul-int/lit8",)),
+    0xdb: (Instruction22b, ("div-int/lit8",)),
+    0xdc: (Instruction22b, ("rem-int/lit8",)),
+    0xdd: (Instruction22b, ("and-int/lit8",)),
+    0xde: (Instruction22b, ("or-int/lit8",)),
+    0xdf: (Instruction22b, ("xor-int/lit8",)),
+    0xe0: (Instruction22b, ("shl-int/lit8",)),
+    0xe1: (Instruction22b, ("shr-int/lit8",)),
+    0xe2: (Instruction22b, ("ushr-int/lit8",)),
     # unused
-    0xe3: [Instruction00x, ["unused"]],
-    0xe4: [Instruction00x, ["unused"]],
-    0xe5: [Instruction00x, ["unused"]],
-    0xe6: [Instruction00x, ["unused"]],
-    0xe7: [Instruction00x, ["unused"]],
-    0xe8: [Instruction00x, ["unused"]],
-    0xe9: [Instruction00x, ["unused"]],
-    0xea: [Instruction00x, ["unused"]],
-    0xeb: [Instruction00x, ["unused"]],
-    0xec: [Instruction00x, ["unused"]],
-    0xed: [Instruction00x, ["unused"]],
-    0xee: [Instruction00x, ["unused"]],
-    0xef: [Instruction00x, ["unused"]],
-    0xf0: [Instruction00x, ["unused"]],
-    0xf1: [Instruction00x, ["unused"]],
-    0xf2: [Instruction00x, ["unused"]],
-    0xf3: [Instruction00x, ["unused"]],
-    0xf4: [Instruction00x, ["unused"]],
-    0xf5: [Instruction00x, ["unused"]],
-    0xf6: [Instruction00x, ["unused"]],
-    0xf7: [Instruction00x, ["unused"]],
-    0xf8: [Instruction00x, ["unused"]],
-    0xf9: [Instruction00x, ["unused"]],
+    0xe3: (Instruction00x, ("unused",)),
+    0xe4: (Instruction00x, ("unused",)),
+    0xe5: (Instruction00x, ("unused",)),
+    0xe6: (Instruction00x, ("unused",)),
+    0xe7: (Instruction00x, ("unused",)),
+    0xe8: (Instruction00x, ("unused",)),
+    0xe9: (Instruction00x, ("unused",)),
+    0xea: (Instruction00x, ("unused",)),
+    0xeb: (Instruction00x, ("unused",)),
+    0xec: (Instruction00x, ("unused",)),
+    0xed: (Instruction00x, ("unused",)),
+    0xee: (Instruction00x, ("unused",)),
+    0xef: (Instruction00x, ("unused",)),
+    0xf0: (Instruction00x, ("unused",)),
+    0xf1: (Instruction00x, ("unused",)),
+    0xf2: (Instruction00x, ("unused",)),
+    0xf3: (Instruction00x, ("unused",)),
+    0xf4: (Instruction00x, ("unused",)),
+    0xf5: (Instruction00x, ("unused",)),
+    0xf6: (Instruction00x, ("unused",)),
+    0xf7: (Instruction00x, ("unused",)),
+    0xf8: (Instruction00x, ("unused",)),
+    0xf9: (Instruction00x, ("unused",)),
 
     # FIXME: what is with the Kinds? Need to implement in get_kinds and opcodes too
-    0xfa: [Instruction45cc, ["invoke-polymorphic", Kind.METH_PROTO]],  # Dalvik 038
-    0xfb: [Instruction4rcc, ["invoke-polymorphic/range", Kind.METH_PROTO]],  # Dalvik 038
-    0xfc: [Instruction35c, ["invoke-custom", Kind.CALL_SITE]],  # Dalvik 038
-    0xfd: [Instruction3rc, ["invoke-custom/range", Kind.CALL_SITE]],  # Dalvik 038
-    0xfe: [Instruction21c, ["const-method-handle", Kind.METH]],  # Dalvik 039
-    0xff: [Instruction21c, ['const-method-type', Kind.PROTO]],  # Dalvik 039
+    0xfa: (Instruction45cc, ("invoke-polymorphic", Kind.METH_PROTO)),  # Dalvik 038
+    0xfb: (Instruction4rcc, ("invoke-polymorphic/range", Kind.METH_PROTO)),  # Dalvik 038
+    0xfc: (Instruction35c, ("invoke-custom", Kind.CALL_SITE)),  # Dalvik 038
+    0xfd: (Instruction3rc, ("invoke-custom/range", Kind.CALL_SITE)),  # Dalvik 038
+    0xfe: (Instruction21c, ("const-method-handle", Kind.METH)),  # Dalvik 039
+    0xff: (Instruction21c, ('const-method-type', Kind.PROTO)),  # Dalvik 039
 }
 
 # Pseudo instructions used for payload
@@ -6534,8 +6543,7 @@ DALVIK_OPCODES_PAYLOAD = {
 
 # TODO: is this even used? Examples?
 INLINE_METHODS = [
-    ["Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "()V"
-     ],
+    ["Lorg/apache/harmony/dalvik/NativeTestTarget;", "emptyInlineMethod", "()V"],
     ["Ljava/lang/String;", "charAt", "(I)C"],
     ["Ljava/lang/String;", "compareTo", "(Ljava/lang/String;)I"],
     ["Ljava/lang/String;", "equals", "(Ljava/lang/Object;)Z"],
@@ -6559,25 +6567,25 @@ INLINE_METHODS = [
     ["Ljava/lang/Double;", "longBitsToDouble", "(J)D"],
 ]
 
-DALVIK_OPCODES_OPTIMIZED = {
-    0xf2ff: [Instruction5rc, ["invoke-object-init/jumbo", Kind.METH]],
-    0xf3ff: [Instruction52c, ["iget-volatile/jumbo", Kind.FIELD]],
-    0xf4ff: [Instruction52c, ["iget-wide-volatile/jumbo", Kind.FIELD]],
-    0xf5ff: [Instruction52c, ["iget-object-volatile/jumbo ", Kind.FIELD]],
-    0xf6ff: [Instruction52c, ["iput-volatile/jumbo", Kind.FIELD]],
-    0xf7ff: [Instruction52c, ["iput-wide-volatile/jumbo", Kind.FIELD]],
-    0xf8ff: [Instruction52c, ["iput-object-volatile/jumbo", Kind.FIELD]],
-    0xf9ff: [Instruction41c, ["sget-volatile/jumbo", Kind.FIELD]],
-    0xfaff: [Instruction41c, ["sget-wide-volatile/jumbo", Kind.FIELD]],
-    0xfbff: [Instruction41c, ["sget-object-volatile/jumbo", Kind.FIELD]],
-    0xfcff: [Instruction41c, ["sput-volatile/jumbo", Kind.FIELD]],
-    0xfdff: [Instruction41c, ["sput-wide-volatile/jumbo", Kind.FIELD]],
-    0xfeff: [Instruction41c, ["sput-object-volatile/jumbo", Kind.FIELD]],
-    0xffff: [Instruction40sc, ["throw-verification-error/jumbo", Kind.VARIES]],
+DALVIK_OPCODES_OPTIMIZED: dict[int, tuple[type[Instruction], tuple[str, Kind]]] = {
+    0xf2ff: (Instruction5rc, ("invoke-object-init/jumbo", Kind.METH)),
+    0xf3ff: (Instruction52c, ("iget-volatile/jumbo", Kind.FIELD)),
+    0xf4ff: (Instruction52c, ("iget-wide-volatile/jumbo", Kind.FIELD)),
+    0xf5ff: (Instruction52c, ("iget-object-volatile/jumbo ", Kind.FIELD)),
+    0xf6ff: (Instruction52c, ("iput-volatile/jumbo", Kind.FIELD)),
+    0xf7ff: (Instruction52c, ("iput-wide-volatile/jumbo", Kind.FIELD)),
+    0xf8ff: (Instruction52c, ("iput-object-volatile/jumbo", Kind.FIELD)),
+    0xf9ff: (Instruction41c, ("sget-volatile/jumbo", Kind.FIELD)),
+    0xfaff: (Instruction41c, ("sget-wide-volatile/jumbo", Kind.FIELD)),
+    0xfbff: (Instruction41c, ("sget-object-volatile/jumbo", Kind.FIELD)),
+    0xfcff: (Instruction41c, ("sput-volatile/jumbo", Kind.FIELD)),
+    0xfdff: (Instruction41c, ("sput-wide-volatile/jumbo", Kind.FIELD)),
+    0xfeff: (Instruction41c, ("sput-object-volatile/jumbo", Kind.FIELD)),
+    0xffff: (Instruction40sc, ("throw-verification-error/jumbo", Kind.VARIES)),
 }
 
 
-def get_instruction(cm, op_value, buff):
+def get_instruction(cm: ClassManager, op_value: int, buff: BufferedReader) -> Instruction:
     """
     Return the :class:`Instruction` for the given opcode
 
@@ -6594,7 +6602,7 @@ def get_instruction(cm, op_value, buff):
         raise InvalidInstruction("Invalid Instruction for '0x{:02x}': {}".format(op_value, repr(buff)))
 
 
-def get_optimized_instruction(cm, op_value, buff):
+def get_optimized_instruction(cm: ClassManager, op_value: int, buff: bytes):
     try:
         return DALVIK_OPCODES_OPTIMIZED[op_value][0](cm, buff)
     except struct.error:
@@ -6602,7 +6610,7 @@ def get_optimized_instruction(cm, op_value, buff):
         raise InvalidInstruction("Invalid Instruction for '0x{:04x}': {}".format(op_value, repr(buff)))
 
 
-def get_instruction_payload(op_value, cm, buff):
+def get_instruction_payload(op_value: int, cm: ClassManager, buff: bytes):
     try:
         return DALVIK_OPCODES_PAYLOAD[op_value][0](cm, buff)
     except struct.error:
@@ -6616,7 +6624,7 @@ class LinearSweepAlgorithm:
     """
 
     @staticmethod
-    def get_instructions(cm, size, insn, idx):
+    def get_instructions(cm: ClassManager, size: int, insn: bytes, idx: int):
         """
         Yields all instructions for the given bytecode sequence.
         If unknown/corrupt/unused instructions are encountered,
@@ -6683,7 +6691,7 @@ class DCode:
     """
 
     def __init__(self, class_manager: "ClassManager", offset: int, size: int, buff: bytes):
-        self.CM = class_manager
+        self.cm = class_manager
         self.insn = buff
         self.offset = offset
         self.size = size
@@ -6742,7 +6750,7 @@ class DCode:
         """
         # it is possible to a cache for instructions (avoid a new disasm)
         if self.cached_instructions is None:
-            ins = LinearSweepAlgorithm.get_instructions(self.CM, self.size, self.insn, self.idx)
+            ins = LinearSweepAlgorithm.get_instructions(self.cm, self.size, self.insn, self.idx)
             self.cached_instructions = list(ins)
 
         for i in self.cached_instructions:
@@ -6857,7 +6865,7 @@ class TryItem:
     :type cm: ClassManager
     """
     offset: int
-    CM: ClassManager
+    cm: ClassManager
     start_addr: int
     insn_count: int
     handler_off: int
@@ -6865,7 +6873,7 @@ class TryItem:
     def __init__(self, buff: BufferedReader, cm: ClassManager) -> None:
         self.offset = buff.tell()
 
-        self.CM = cm
+        self.cm = cm
 
         self.start_addr, \
         self.insn_count, \
@@ -6902,7 +6910,7 @@ class TryItem:
         return self.handler_off
 
     def get_raw(self) -> bytes:
-        return self.CM.packer["I2H"].pack(self.start_addr,
+        return self.cm.packer["I2H"].pack(self.start_addr,
                     self.insn_count,
                     self.handler_off)
 
@@ -6919,7 +6927,7 @@ class DalvikCode:
     :param cm: the ClassManager
     :type cm: :class:`ClassManager` object
     """
-    CM: "ClassManager"
+    cm: "ClassManager"
     offset: BufferedReader
     registers_size: int
     ins_size: int
@@ -6933,7 +6941,7 @@ class DalvikCode:
     handlers: EncodedCatchHandlerList
 
     def __init__(self, buff: BufferedReader, cm: "ClassManager"):
-        self.CM = cm
+        self.cm = cm
         self.offset = buff.tell()
 
         (self.registers_size, \
@@ -6945,7 +6953,7 @@ class DalvikCode:
 
         ushort = calcsize('H')
 
-        self.code = DCode(self.CM, buff.tell(), self.insns_size, buff.read(self.insns_size * ushort))
+        self.code = DCode(self.cm, buff.tell(), self.insns_size, buff.read(self.insns_size * ushort))
 
         if self.insns_size % 2 == 1 and self.tries_size > 0:
             (self.padding,) = cast(tuple[int], cm.packer["H"].unpack(buff.read(2)))
@@ -6954,9 +6962,9 @@ class DalvikCode:
         self.handlers = None
         if self.tries_size > 0:
             for i in range(0, self.tries_size):
-                self.tries.append(TryItem(buff, self.CM))
+                self.tries.append(TryItem(buff, self.cm))
 
-            self.handlers = EncodedCatchHandlerList(buff, self.CM)
+            self.handlers = EncodedCatchHandlerList(buff, self.cm)
 
     def get_registers_size(self) -> int:
         """
@@ -7028,7 +7036,7 @@ class DalvikCode:
 
         :rtype: :class:`DebugInfoItem`
         """
-        return self.CM.get_debug_off(self.debug_info_off)
+        return self.cm.get_debug_off(self.debug_info_off)
 
     def get_bc(self) -> DCode:
         """
@@ -7075,7 +7083,7 @@ class DalvikCode:
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
 
         buff = bytearray()
-        buff += self.CM.packer["4H2I"].pack(self.registers_size,
+        buff += self.cm.packer["4H2I"].pack(self.registers_size,
                     self.ins_size,
                     self.outs_size,
                     self.tries_size,
@@ -7084,7 +7092,7 @@ class DalvikCode:
 
         if self.tries_size > 0:
             if (self.insns_size % 2 == 1):
-                buff += self.CM.packer["H"].pack(self.padding)
+                buff += self.cm.packer["H"].pack(self.padding)
 
             for i in self.tries:
                 buff += i.get_raw()
@@ -7122,7 +7130,7 @@ class DalvikCode:
 
 class CodeItem:
     def __init__(self, size: int, buff: BufferedReader, cm: "ClassManager"):
-        self.CM = cm
+        self.cm = cm
 
         self.offset = buff.tell()
 
@@ -7178,7 +7186,7 @@ class CodeItem:
 
 
 class MapItem:
-    CM: "ClassManager"
+    cm: "ClassManager"
     buff: BufferedReader
     off: int
     type: TypeMapItem
@@ -7212,7 +7220,7 @@ class MapItem:
 
         https://source.android.com/devices/tech/dalvik/dex-format#map-item
         """
-        self.CM = cm
+        self.cm = cm
         self.buff = buff
 
         self.off = buff.tell()
@@ -7251,7 +7259,7 @@ class MapItem:
         # Hence, we need to check the alignment for each item.
 
         buff = self.buff
-        cm = self.CM
+        cm = self.cm
 
         if TypeMapItem.STRING_ID_ITEM == self.type:
             # Byte aligned
@@ -7388,7 +7396,7 @@ class MapItem:
         else:
             self.offset = self.item.get_off()
 
-        return self.CM.packer["2H2I"].pack(self.type, self.unused, self.size, self.offset)
+        return self.cm.packer["2H2I"].pack(self.type, self.unused, self.size, self.offset)
 
     def get_length(self) -> int:
         return calcsize("HHII")
@@ -7771,7 +7779,7 @@ class MapList:
     """
 
     def __init__(self, cm, off, buff):
-        self.CM = cm
+        self.cm = cm
 
         buff.seek(off)
 
@@ -7783,7 +7791,7 @@ class MapList:
         for _ in range(0, self.size):
             idx = buff.tell()
 
-            mi = MapItem(buff, self.CM)
+            mi = MapItem(buff, self.cm)
             self.map_item.append(mi)
 
             buff.seek(idx + mi.get_length())
@@ -7799,7 +7807,7 @@ class MapList:
                 mi.set_item(self)
                 c_item = mi.get_item()
 
-            self.CM.add_type_item(mi.get_type(), mi, c_item)
+            self.cm.add_type_item(mi.get_type(), mi, c_item)
 
     def get_off(self) -> int:
         return self.offset
@@ -7835,10 +7843,10 @@ class MapList:
         return [x.get_obj() for x in self.map_item]
 
     def get_raw(self) -> bytes:
-        return self.CM.packer["I"].pack(self.size) + b''.join(x.get_raw() for x in self.map_item)
+        return self.cm.packer["I"].pack(self.size) + b''.join(x.get_raw() for x in self.map_item)
 
     def get_class_manager(self):
-        return self.CM
+        return self.cm
 
     def get_length(self) -> int:
         return len(self.get_raw())
@@ -7890,7 +7898,7 @@ class DEX:
     """
     api_version: str | None
     raw: BufferedReader
-    CM: ClassManager
+    cm: ClassManager
     header: HeaderItem
     map_list: MapList
     classes: ClassHDefItem
@@ -7917,8 +7925,8 @@ class DEX:
 
         self._flush()
 
-        self.CM = ClassManager(self)
-        self.CM.set_decompiler(decompiler)
+        self.cm = ClassManager(self)
+        self.cm.set_decompiler(decompiler)
 
         self._preload(buff)
         self._load(buff)
@@ -7927,13 +7935,13 @@ class DEX:
         pass
 
     def _load(self, buff: bytes) -> None:
-        self.header = HeaderItem(0, self.raw, self.CM)
+        self.header = HeaderItem(0, self.raw, self.cm)
 
         if self.header.map_off == 0:
             # TODO check if the header specifies items but does not have a map
             logger.warning("no map list! This DEX file is probably empty.")
         else:
-            self.map_list = MapList(self.CM, self.header.map_off, self.raw)
+            self.map_list = MapList(self.cm, self.header.map_off, self.raw)
 
             self.classes = self.map_list.get_item_type(TypeMapItem.CLASS_DEF_ITEM)
             self.methods = self.map_list.get_item_type(TypeMapItem.METHOD_ID_ITEM)
@@ -8046,7 +8054,7 @@ class DEX:
 
         :rtype: :class:`ClassManager` object
         """
-        return self.CM
+        return self.cm
 
     def show(self) -> None:
         """
@@ -8137,7 +8145,7 @@ class DEX:
 
         return self.fix_checksums(buff)
 
-    def fix_checksums(self, buff) -> str:
+    def fix_checksums(self, buff: bytes) -> str:
         """
           Fix a dex format buffer by setting all checksums
 
@@ -8148,7 +8156,7 @@ class DEX:
 
         buff = buff[:12] + signature + buff[32:]
         checksum = zlib.adler32(buff[12:])
-        buff = buff[:8] + self.CM.packer["I"].pack(checksum) + buff[12:]
+        buff = buff[:8] + self.cm.packer["I"].pack(checksum) + buff[12:]
 
         logger.debug("NEW SIGNATURE %s" % repr(signature))
         logger.debug("NEW CHECKSUM %x" % checksum)
@@ -8162,7 +8170,7 @@ class DEX:
         :param idx: index of the field
         :type idx: int
         """
-        return self.CM.get_field(idx)
+        return self.cm.get_field(idx)
 
     def get_cm_method(self, idx: int) -> tuple[str, str, str]:
         """
@@ -8171,7 +8179,7 @@ class DEX:
         :param idx: index of the method
         :type idx: int
         """
-        return self.CM.get_method(idx)
+        return self.cm.get_method(idx)
 
     def get_cm_string(self, idx: int) -> str:
         """
@@ -8180,7 +8188,7 @@ class DEX:
         :param idx: index of the string
         :type idx: int
         """
-        return self.CM.get_raw_string(idx)
+        return self.cm.get_raw_string(idx)
 
     def get_cm_type(self, idx: int) -> str:
         """
@@ -8189,7 +8197,7 @@ class DEX:
         :param idx: index of the type
         :type idx: int
         """
-        return self.CM.get_type(idx)
+        return self.cm.get_type(idx)
 
     def get_classes_names(self, update: bool = False) -> list[str]:
         """
@@ -8601,10 +8609,10 @@ class DEX:
                     setattr(_class.F, name, j)
 
     def set_decompiler(self, decompiler: "DecompilerDAD") -> None:
-        self.CM.set_decompiler(decompiler)
+        self.cm.set_decompiler(decompiler)
 
     def set_analysis(self, analysis_dex: "Analysis") -> None:
-        self.CM.set_analysis(analysis_dex)
+        self.cm.set_analysis(analysis_dex)
 
     def disassemble(self, offset: int, size: int) -> Iterator[Instruction]:
         """
@@ -8615,7 +8623,7 @@ class DEX:
         :param size:
         :type size:
         """
-        for i in DCode(self.CM, offset, size,read_at(self.raw, offset, size)).get_instructions():
+        for i in DCode(self.cm, offset, size,read_at(self.raw, offset, size)).get_instructions():
             yield i
 
     def _get_class_hierarchy(self) -> bytecode.Node:
