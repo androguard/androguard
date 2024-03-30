@@ -144,7 +144,7 @@ def export_apps_to_format(filename,
             shutil.move(filenamejar, os.path.join(output, "classes.jar"))
             print("End")
 
-        for method in vm.get_methods():
+        for method in vm.get_encoded_methods():
             if methods_filter_expr:
                 msig = "{}{}{}".format(method.get_class_name(), method.get_name(),
                                        method.get_descriptor())
