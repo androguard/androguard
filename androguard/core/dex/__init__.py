@@ -3546,7 +3546,7 @@ class EncodedMethod:
     def get_triple(self) -> tuple[str, str, str]:
         return self.cm.get_method_ref(self.method_idx).get_triple()
 
-    def add_inote(self, msg: str, idx: int, off: int = None):
+    def add_inote(self, msg: str, idx: int, off: int | None = None) -> None:
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -6150,7 +6150,7 @@ class Instruction5rc(Instruction):
 
     length = 10
 
-    def __init__(self, cm: ClassManager, buff: bytes):
+    def __init__(self, cm: ClassManager, buff: bytes) -> None:
         super().__init__()
         self.cm = cm
 
@@ -6161,27 +6161,30 @@ class Instruction5rc(Instruction):
 
         self.NNNN = self.CCCC + self.AAAA - 1
 
-    def get_output(self, idx=-1):
-        kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
+    def get_output(self, idx: int = -1) -> str:
+        kind_val = self.get_kind()
+        assert kind_val is not None
+        kind = get_kind(self.cm, kind_val, self.BBBBBBBB)
 
         if self.CCCC == self.NNNN:
             return "v{}, {}".format(self.CCCC, kind)
         else:
             return "v{} ... v{}, {}".format(self.CCCC, self.NNNN, kind)
 
-    def get_operands(self, idx: int = -1) -> list[tuple[Operand, int]]:
-        kind = get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
+    def get_operands(self, idx: int = -1) -> list[tuple[Operand, int] | tuple[int, int, str]]:
+        kind_val = self.get_kind()
+        assert kind_val is not None
+        kind = get_kind(self.cm, kind_val, self.BBBBBBBB)
 
         if self.CCCC == self.NNNN:
-            return [(Operand.REGISTER, self.CCCC),
-                    (self.get_kind() + Operand.KIND, self.BBBBBBBB, kind)]
+            return [(Operand.REGISTER, self.CCCC), (kind_val + Operand.KIND, self.BBBBBBBB, kind)]
         else:
-            l = []
+            res: list[tuple[Operand, int] | tuple[int, int, str]] = []
             for i in range(self.CCCC, self.NNNN):
-                l.append((Operand.REGISTER, i))
+                res.append((Operand.REGISTER, i))
 
-            l.append((self.get_kind() + Operand.KIND, self.BBBBBBBB, kind))
-            return l
+            res.append((kind_val + Operand.KIND, self.BBBBBBBB, kind))
+            return res
 
     def get_ref_kind(self):
         return self.BBBBBBBB
@@ -6220,7 +6223,7 @@ class Instruction45cc(Instruction):
                     self.F << 12 | self.E << 8 | self.D << 4 | self.C,
                     self.HHHH)
 
-    def get_output(self, idx=-1):
+    def get_output(self, idx: int = -1) -> str:
         # FIXME get_kind of BBBB (method) and HHHH (proto)
         if self.A == 1:
             return 'v{}, {}, {}'.format(self.C, self.BBBB, self.HHHH)
@@ -6233,7 +6236,7 @@ class Instruction45cc(Instruction):
         if self.A == 5:
             return 'v{}, v{}, v{}, v{}, v{}, {}, {}'.format(self.C, self.D, self.E, self.F, self.G, self.BBBB, self.HHHH)
 
-    def get_operands(self):
+    def get_operands(self) -> None:
         # FIXME
         # THis one gets especially nasty, as all other opcodes assume that there
         # is only a single kind type! But this opcode has two...
@@ -6605,7 +6608,7 @@ DALVIK_OPCODES_OPTIMIZED: dict[int, tuple[type[Instruction], tuple[str, Kind]]] 
 }
 
 
-def get_instruction(cm: ClassManager, op_value: int, buff: BufferedReader) -> Instruction:
+def get_instruction(cm: ClassManager, op_value: int, buff: bytes) -> Instruction:
     """
     Return the :class:`Instruction` for the given opcode
 
@@ -6644,7 +6647,7 @@ class LinearSweepAlgorithm:
     """
 
     @staticmethod
-    def get_instructions(cm: ClassManager, size: int, insn: bytes, idx: int):
+    def get_instructions(cm: ClassManager, size: int, insn: bytes, idx: int) -> Iterator[Instruction]:
         """
         Yields all instructions for the given bytecode sequence.
         If unknown/corrupt/unused instructions are encountered,
@@ -6746,7 +6749,7 @@ class DCode:
         self.insn = insn
         self.size = len(self.insn)
 
-    def seek(self, idx):
+    def seek(self, idx: int) -> None:
         """
         Set the start address of the buffer
 
@@ -6755,7 +6758,7 @@ class DCode:
         """
         self.idx = idx
 
-    def is_cached_instructions(self):
+    def is_cached_instructions(self) -> bool:
         if self.cached_instructions is not None:
             return True
         return False
@@ -6837,7 +6840,7 @@ class DCode:
             idx += i.get_length()
         return -1
 
-    def get_ins_off(self, off: int) -> Instruction:
+    def get_ins_off(self, off: int) -> Instruction | None:
         """
         Get a particular instruction by using the address
 
@@ -7097,8 +7100,8 @@ class DalvikCode:
     def _end_show(self) -> None:
         bytecode.PrintBanner()
 
-    def get_obj(self):
-        return [self.code, self.tries, self.handlers]
+    def get_obj(self) -> tuple[DCode, TryItem, EncodedCatchHandlerList]:
+        return (self.code, self.tries, self.handlers)
 
     def get_raw(self) -> bytes:
         """
@@ -7127,7 +7130,7 @@ class DalvikCode:
 
         return buff
 
-    def add_inote(self, msg: str, idx: int, off: int = None) -> None:
+    def add_inote(self, msg: str, idx: int, off: int | None = None) -> None:
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -7141,7 +7144,7 @@ class DalvikCode:
         if self.code:
             return self.code.add_inote(msg, idx, off)
 
-    def get_instruction(self, idx, off=None):
+    def get_instruction(self, idx: int, off: int | None = None) -> Instruction:
         if self.code:
             return self.code.get_instruction(idx, off)
 
