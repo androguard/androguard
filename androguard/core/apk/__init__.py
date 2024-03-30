@@ -11,12 +11,7 @@ from struct import unpack
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
     cast,
 )
 from xml.dom.pulldom import SAX2DOM
@@ -256,10 +251,10 @@ class APK:
     axml: dict[str, AXMLPrinter]
     arsc: dict
     package: str
-    androidversion: dict
-    permissions: list
-    uses_permissions: list
-    declared_permissions: dict
+    androidversion: dict[str, str]
+    permissions: list[str]
+    uses_permissions: list[str]
+    declared_permissions: dict[str, dict[str, str]]
     valid_apk: bool
     _is_signed_v2: bool | None
     _is_signed_v3: bool | None
@@ -475,7 +470,7 @@ class APK:
                 break
         return string_value
 
-    def _get_permission_maxsdk(self, item: _Element) -> Optional[int]:
+    def _get_permission_maxsdk(self, item: _Element) -> int | None:
         maxSdkVersion = None
         try:
             maxSdkVersion = int(self.get_value_from_tag(item, "maxSdkVersion"))
@@ -564,7 +559,7 @@ class APK:
                 logger.warning("Exception selecting app name: %s" % e)
         return app_name
 
-    def get_app_icon(self, max_dpi: int=65536) -> Optional[str]:
+    def get_app_icon(self, max_dpi: int = 65536) -> str | None:
         """
         Return the first icon file name, which density is not greater than max_dpi,
         unless exact icon resolution is set in the manifest, in which case
@@ -682,7 +677,7 @@ class APK:
         """
         return self.androidversion["Name"]
 
-    def get_files(self) -> List[Union[Any, str]]:
+    def get_files(self) -> list[str]:
         """
         Return the file names inside the APK.
 
@@ -1102,7 +1097,7 @@ class APK:
             return sorted(main_activities)[0]
         return None
 
-    def get_activities(self) -> List[str]:
+    def get_activities(self) -> list[str]:
         """
         Return the android:name attribute of all activities
 
@@ -1129,7 +1124,7 @@ class APK:
                 ali.append(activity_alias)
         return ali
 
-    def get_services(self) -> List[str]:
+    def get_services(self) -> list[str]:
         """
         Return the android:name attribute of all services
 
@@ -1137,7 +1132,7 @@ class APK:
         """
         return list(self.get_all_attribute_value("service", "name"))
 
-    def get_receivers(self) -> List[str]:
+    def get_receivers(self) -> list[str]:
         """
         Return the android:name attribute of all receivers
 
@@ -1174,7 +1169,7 @@ class APK:
 
         return value
 
-    def get_intent_filters(self, itemtype: str, name: str) -> Dict[str, Union[List[str], List[Union[str, Dict[str, str]]]]]:
+    def get_intent_filters(self, itemtype: str, name: str) -> dict[str, list[str]]:
         """
         Find intent filters for a given item and name.
 
@@ -1188,7 +1183,7 @@ class APK:
         """
         attributes = {"action": ["name"], "category": ["name"], "data": ['scheme', 'host', 'port', 'path', 'pathPattern', 'pathPrefix', 'mimeType']}
 
-        d = {}
+        d: dict[str, list[str]] = {}
         for element in attributes.keys():
             d[element] = []
 
@@ -1225,7 +1220,7 @@ class APK:
 
         return d
 
-    def get_permissions(self) -> List[Union[Any, str]]:
+    def get_permissions(self) -> list[str]:
         """
         Return permissions names declared in the AndroidManifest.xml.
 
@@ -1242,7 +1237,7 @@ class APK:
         """
         return self.permissions
 
-    def get_uses_implied_permission_list(self) -> List[Union[Any, List[Optional[str]], List[Union[str, int]]]]:
+    def get_uses_implied_permission_list(self) -> list[str]:
         """
             Return all permissions implied by the target SDK or other permissions.
 
@@ -1376,7 +1371,7 @@ class APK:
                 third_party_permissions.append(perm)
         return third_party_permissions
 
-    def get_declared_permissions(self) -> List[Any]:
+    def get_declared_permissions(self) -> list[str]:
         """
         Returns list of the declared permissions.
 
@@ -1400,7 +1395,7 @@ class APK:
         """
         return self.get_attribute_value("uses-sdk", "maxSdkVersion")
 
-    def get_min_sdk_version(self) -> Optional[str]:
+    def get_min_sdk_version(self) -> str | None:
         """
             Return the android:minSdkVersion attribute
 
@@ -1408,7 +1403,7 @@ class APK:
         """
         return self.get_attribute_value("uses-sdk", "minSdkVersion")
 
-    def get_target_sdk_version(self) -> Optional[str]:
+    def get_target_sdk_version(self) -> str | None:
         """
             Return the android:targetSdkVersion attribute
 
@@ -1434,7 +1429,7 @@ class APK:
         except (ValueError, TypeError):
             return 1
 
-    def get_libraries(self) -> List[str]:
+    def get_libraries(self) -> list[str]:
         """
             Return the android:name attributes for libraries
 
@@ -1442,7 +1437,7 @@ class APK:
         """
         return list(self.get_all_attribute_value("uses-library", "name"))
 
-    def get_features(self) -> List[str]:
+    def get_features(self) -> list[str]:
         """
         Return a list of all android:names found for the tag uses-feature
         in the AndroidManifest.xml
@@ -1508,7 +1503,7 @@ class APK:
 
         return certificate
 
-    def new_zip(self, filename: str, deleted_files: Optional[str]=None, new_files: Dict[str, str]={}):
+    def new_zip(self, filename: str, deleted_files: str | None = None, new_files: dict[str, str] = {}):
         """
             Create a new zip file
 
@@ -1602,7 +1597,7 @@ class APK:
         """
         return self.get_signature_name() is not None
 
-    def is_signed_v2(self) -> Optional[bool]:
+    def is_signed_v2(self) -> bool | None:
         """
         Returns true of a v2 / APK signature was found.
 
@@ -1614,7 +1609,7 @@ class APK:
 
         return self._is_signed_v2
 
-    def is_signed_v3(self) -> Optional[bool]:
+    def is_signed_v3(self) -> bool | None:
         """
         Returns true of a v3 / APK signature was found.
 
@@ -1630,13 +1625,13 @@ class APK:
         value, = unpack('<I', io_stream.read(4))
         return value
 
-    def parse_signatures_or_digests(self, digest_bytes: bytes) -> List[Union[Any, Tuple[int, bytes]]]:
+    def parse_signatures_or_digests(self, digest_bytes: bytes) -> list[tuple[int, bytes]]:
         """ Parse digests """
 
         if not len(digest_bytes):
             return []
 
-        digests = []
+        digests: list[tuple[int, bytes]] = []
         block = BytesIO(digest_bytes)
 
         data_len = self.read_uint32_le(block)
@@ -1928,12 +1923,12 @@ class APK:
 
         return public_keys
 
-    def get_public_keys_der_v2(self):
+    def get_public_keys_der_v2(self) -> list[bytes]:
         """
         Return a list of DER coded X.509 public keys from the v3 signature block
         """
 
-        if self._v2_signing_data == None:
+        if self._v2_signing_data is None:
             self.parse_v2_signing_block()
 
         public_keys = []
@@ -1943,27 +1938,27 @@ class APK:
 
         return public_keys
 
-    def get_certificates_der_v3(self) -> List[Union[bytes, Any]]:
+    def get_certificates_der_v3(self) -> list[bytes]:
         """
         Return a list of DER coded X.509 certificates from the v3 signature block
         """
 
-        if self._v3_signing_data == None:
+        if self._v3_signing_data is None:
             self.parse_v3_signing_block()
 
-        certs = []
+        certs: list[bytes] = []
         for signed_data in [signer.signed_data for signer in self._v3_signing_data]:
             for cert in signed_data.certificates:
                 certs.append(cert)
 
         return certs
 
-    def get_certificates_der_v2(self) -> List[Union[bytes, Any]]:
+    def get_certificates_der_v2(self) -> list[bytes]:
         """
         Return a list of DER coded X.509 certificates from the v3 signature block
         """
 
-        if self._v2_signing_data == None:
+        if self._v2_signing_data is None:
             self.parse_v2_signing_block()
 
         certs = []
@@ -1996,7 +1991,7 @@ class APK:
         """
         return [ x509.Certificate.load(cert) for cert in self.get_certificates_der_v3()]
 
-    def get_certificates_v2(self) -> List[Union[Certificate, Any]]:
+    def get_certificates_v2(self) -> list[Certificate]:
         """
         Return a list of :class:`asn1crypto.x509.Certificate` which are found
         in the v2 signing block.
@@ -2033,7 +2028,7 @@ class APK:
                 certs.append(x)
         return certs
 
-    def get_signature_name(self) -> str:
+    def get_signature_name(self) -> str | None:
         """
             Return the name of the first signature file found.
         """
@@ -2043,7 +2038,7 @@ class APK:
             # Unsigned APK
             return None
 
-    def get_signature_names(self) -> List[Union[Any, str]]:
+    def get_signature_names(self) -> list[str]:
         """
         Return a list of the signature file names (v1 Signature / JAR
         Signature)
@@ -2051,7 +2046,7 @@ class APK:
         :rtype: List of filenames matching a Signature
         """
         signature_expr = re.compile(r"^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
-        signatures = []
+        signatures: list[str] = []
 
         for i in self.get_files():
             if signature_expr.search(i):
@@ -2062,7 +2057,7 @@ class APK:
 
         return signatures
 
-    def get_signature(self):
+    def get_signature(self) -> bytes | None:
         """
         Return the data of the first signature file found (v1 Signature / JAR
         Signature)
@@ -2074,7 +2069,7 @@ class APK:
         else:
             return None
 
-    def get_signatures(self):
+    def get_signatures(self) -> list[bytes]:
         """
         Return a list of the data of the signature files.
         Only v1 / JAR Signing.
@@ -2082,7 +2077,7 @@ class APK:
         :rtype: list of bytes
         """
         signature_expr = re.compile(r"^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
-        signature_datas = []
+        signature_datas: list[bytes] = []
 
         for i in self.get_files():
             if signature_expr.search(i):

@@ -1,5 +1,5 @@
 from collections import UserList
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 
 class Filter:
@@ -13,9 +13,9 @@ class Filter:
 
     def __init__(
         self,
-        interface: Optional[str] = None,
-        method: Optional[str] = None,
-        types: Optional[list[str]] = None,
+        interface: str | None = None,
+        method: str | None = None,
+        types: list[str] | None = None,
         include: bool = True
     ):
         self.interface = interface

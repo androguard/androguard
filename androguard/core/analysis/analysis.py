@@ -25,7 +25,7 @@ from androguard.core.dex import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Iterator, List, Optional, Set, Tuple
+    from typing import Any, Iterator
 
     from networkx.classes.digraph import DiGraph
 
@@ -234,7 +234,9 @@ class DEXBasicBlock:
             dalvik_code = self.method.get_code()
             assert dalvik_code is not None
             code = dalvik_code.get_bc()
-            self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
+            ins = code.get_ins_off(idx + i.get_ref_off() * 2)
+            assert ins is not None
+            self.special_ins[idx] = ins
 
     def get_special_ins(self, idx: int) -> Instruction | None:
         """
@@ -252,7 +254,7 @@ class DEXBasicBlock:
     def get_exception_analysis(self):
         return self.exception_analysis
 
-    def set_exception_analysis(self, exception_analysis: Optional[ExceptionAnalysis]) -> None:
+    def set_exception_analysis(self, exception_analysis: ExceptionAnalysis | None) -> None:
         self.exception_analysis = exception_analysis
 
     def show(self) -> None:
@@ -598,7 +600,7 @@ class MethodAnalysis:
         """
         self.xreffrom.add((classobj, methodobj, offset))
 
-    def get_xref_from(self) -> Set[Tuple[ClassAnalysis, MethodAnalysis, int]]:
+    def get_xref_from(self) -> set[tuple[ClassAnalysis, MethodAnalysis, int]]:
         """
         Returns a list of tuples containing the class, method and offset of
         the call, from where this object was called.
@@ -610,7 +612,7 @@ class MethodAnalysis:
         """
         return self.xreffrom
 
-    def get_xref_to(self) -> Set[Tuple[ClassAnalysis, MethodAnalysis, int]]:
+    def get_xref_to(self) -> set[tuple[ClassAnalysis, MethodAnalysis, int]]:
         """
         Returns a list of tuples containing the class, method and offset of
         the call, which are called by this method.
@@ -632,7 +634,7 @@ class MethodAnalysis:
         """
         self.xrefnewinstance.add((classobj, offset))
 
-    def get_xref_new_instance(self) -> Set[Tuple[ClassAnalysis, int]]:
+    def get_xref_new_instance(self) -> set[tuple[ClassAnalysis, int]]:
         """
         Returns a list of tuples containing the class and offset of
         the creation of a new instance of a class by this method.
@@ -1727,7 +1729,7 @@ class Analysis:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
                     field_item = instruction.cm.vm.get_encoded_field_descriptor(field_info[0], field_info[2], field_info[1])
-                    if not field_item:
+                    if field_item is None:
                         continue
 
                     if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
@@ -1784,7 +1786,7 @@ class Analysis:
 
         return self.__method_hashes[m_hash]
 
-    def get_method_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> EncodedMethod |  None:
+    def get_method_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> EncodedMethod | ExternalMethod |  None:
         """
         Search for a :class:`EncodedMethod` in all classes in this analysis
 
@@ -1799,7 +1801,7 @@ class Analysis:
             return m_a.get_method()
         return None
 
-    def get_method_analysis_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> MethodAnalysis:
+    def get_method_analysis_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> MethodAnalysis | None:
         """
         Returns the crossreferencing object for a given method.
 
@@ -1817,7 +1819,7 @@ class Analysis:
             return None
         return self.__method_hashes[m_hash]
 
-    def get_field_analysis(self, field):
+    def get_field_analysis(self, field: EncodedField) -> FieldAnalysis | None:
         """
         Get the FieldAnalysis for a given fieldname
 
@@ -1840,7 +1842,7 @@ class Analysis:
         """
         return class_name in self.classes
 
-    def get_class_analysis(self, class_name: str) -> ClassAnalysis:
+    def get_class_analysis(self, class_name: str) -> ClassAnalysis | None:
         """
         Returns the :class:`ClassAnalysis` object for a given classname.
 
@@ -2027,7 +2029,7 @@ class Analysis:
         descriptor: str=".*",
         accessflags: str=".*",
         no_isolated: bool=False,
-        entry_points: List[Any]=[]) -> DiGraph:
+        entry_points: list[str] = []) -> DiGraph:
         """
         Generate a directed graph based on the methods found by the filters applied.
         The filters are the same as in
@@ -2047,7 +2049,7 @@ class Analysis:
         :rtype: DiGraph
         """
 
-        def _add_node(G, method, _entry_points):
+        def _add_node(G: DiGraph, method: EncodedMethod | ExternalMethod, _entry_points: list[str]) -> None:
             """
             Wrapper to add methods to a graph
             """
@@ -2091,7 +2093,7 @@ class Analysis:
 
             _add_node(CG, orig_method, entry_points)
 
-            for callee_class, callee_method, offset in m.get_xref_to():
+            for _callee_class, callee_method, _offset in m.get_xref_to():
                 _add_node(CG, callee_method.method, entry_points)
 
                 # As this is a DiGraph and we are not interested in duplicate edges,
@@ -2121,6 +2123,7 @@ class Analysis:
         """
         # TODO: it would be fun to have the classes organized like the packages. I.e. you could do dx.CLASS_xx.yyy.zzz
         for cls in self.get_classes():
+            assert cls.name is not None
             name = "CLASS_" + bytecode.FormatClassToPython(cls.name)
             if hasattr(self, name):
                 logger.warning("Already existing class {}!".format(name))
@@ -2145,7 +2148,7 @@ class Analysis:
                     logger.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
 
-    def get_permissions(self, apilevel: Optional[int]=None) -> Iterator[Tuple[MethodAnalysis, List[str]]]:
+    def get_permissions(self, apilevel: int | None = None) -> Iterator[tuple[MethodAnalysis, list[str]]]:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
@@ -2187,10 +2190,10 @@ class Analysis:
         for cls in self.get_external_classes():
             for meth_analysis in cls.get_methods():
                 meth = meth_analysis.get_method()
-                if meth.permission_api_name in permmap:
-                    yield meth_analysis, permmap[meth.permission_api_name]
+                if isinstance(meth, ExternalMethod) and meth.permission_api_name in permmap:
+                    yield meth_analysis, cast(list[str], permmap[meth.permission_api_name])
 
-    def get_permission_usage(self, permission: str, apilevel: Optional[int]=None) -> Iterator[MethodAnalysis]:
+    def get_permission_usage(self, permission: str, apilevel: int | None = None) -> Iterator[MethodAnalysis]:
         """
         Find the usage of a permission inside the Analysis.
 
@@ -2226,7 +2229,7 @@ class Analysis:
         for cls in self.get_external_classes():
             for meth_analysis in cls.get_methods():
                 meth = meth_analysis.get_method()
-                if meth.permission_api_name in apis:
+                if isinstance(meth, ExternalMethod) and meth.permission_api_name in apis:
                     yield meth_analysis
 
     def get_android_api_usage(self):
@@ -2242,7 +2245,7 @@ class Analysis:
                     yield meth_analysis
 
 
-def is_ascii_obfuscation(vm):
+def is_ascii_obfuscation(vm: DEX):
     """
     Tests if any class inside a DalvikVMObject
     uses ASCII Obfuscation (e.g. UTF-8 Chars in Classnames)
@@ -2252,9 +2255,9 @@ def is_ascii_obfuscation(vm):
     :rtype: bool
     """
     for classe in vm.get_classes():
-        if is_ascii_problem(classe.get_name()):
+        if is_ascii_problem(classe.get_name().encode()):
             return True
         for method in classe.get_methods():
-            if is_ascii_problem(method.get_name()):
+            if is_ascii_problem(method.get_name().encode()):
                 return True
     return False

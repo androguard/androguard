@@ -37,7 +37,7 @@ class SelectableFrame:
         style: str = "",
         width: AnyDimension = None,
         height: AnyDimension = None,
-        key_bindings: Optional[KeyBindings] = None,
+        key_bindings: KeyBindings | None = None,
         modal: bool = False,
         activated: bool = False,
     ) -> None:

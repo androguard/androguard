@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 import androguard.decompiler.util as util
-from androguard.core.dex import Instruction, Instruction10t
+from androguard.core.dex import Instruction
 from androguard.decompiler.instruction import (
     ArrayLengthExpression,
     ArrayLoadExpression,
@@ -66,7 +66,7 @@ from androguard.decompiler.instruction import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, DefaultDict, List, Optional, Union
+    from typing import Any, Callable
 
     from androguard.core.dex import (
         FillArrayData,
@@ -119,7 +119,7 @@ def get_variables(vmap: dict[int, IRForm], *variables) -> list[IRForm] | IRForm:
     return res
 
 
-def assign_const(dest_reg: int, cst: Constant, vmap: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, Union[ThisParam, Param]], DefaultDict[int, ThisParam]]) -> AssignExpression:
+def assign_const(dest_reg: int, cst: Constant, vmap: dict[int, IRForm]) -> AssignExpression:
     return AssignExpression(get_variables(vmap, dest_reg), cst)
 
 
@@ -134,7 +134,7 @@ def load_array_exp(val_a, val_b, val_c, ar_type, vmap):
     return AssignExpression(reg_a, ArrayLoadExpression(reg_b, reg_c, ar_type))
 
 
-def store_array_inst(val_a: int, val_b: int, val_c: int, ar_type: str, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> ArrayStoreInstruction:
+def store_array_inst(val_a: int, val_b: int, val_c: int, ar_type: str, vmap: dict[int, IRForm]) -> ArrayStoreInstruction:
     reg_a, reg_b, reg_c = get_variables(vmap, val_a, val_b, val_c)
     return ArrayStoreInstruction(reg_a, reg_b, reg_c, ar_type)
 
@@ -150,13 +150,13 @@ def assign_binary_exp(ins, val_op, op_type, vmap):
                                                     op_type))
 
 
-def assign_binary_2addr_exp(ins: Instruction12x, val_op: str, op_type: str, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
+def assign_binary_2addr_exp(ins: Instruction12x, val_op: str, op_type: str, vmap: dict[int, IRForm]) -> AssignExpression:
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b,
                                                          op_type))
 
 
-def assign_lit(op_type: str, val_cst: int, val_a: int, val_b: int, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
+def assign_lit(op_type: str, val_cst: int, val_a: int, val_b: int, vmap: dict[int, IRForm]) -> AssignExpression:
     cst = Constant(val_cst, 'I')
     var_a, var_b = get_variables(vmap, val_a, val_b)
     return AssignExpression(var_a, BinaryExpressionLit(op_type, var_b, cst))
@@ -165,193 +165,193 @@ def assign_lit(op_type: str, val_cst: int, val_a: int, val_b: int, vmap: Default
 ## From here on, there are all defined instructions
 
 # nop
-def nop(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> NopExpression:
+def nop(ins: Instruction, vmap: dict[int, IRForm]) -> NopExpression:
     return NopExpression()
 
 
 # move vA, vB ( 4b, 4b )
-def move(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def move(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('Move %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return MoveExpression(reg_a, reg_b)
 
 
 # move/from16 vAA, vBBBB ( 8b, 16b )
-def movefrom16(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def movefrom16(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveFrom16 %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move/16 vAAAA, vBBBB ( 16b, 16b )
-def move16(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def move16(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('Move16 %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-wide vA, vB ( 4b, 4b )
-def movewide(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def movewide(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveWide %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-wide/from16 vAA, vBBBB ( 8b, 16b )
-def movewidefrom16(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def movewidefrom16(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveWideFrom16 : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-wide/16 vAAAA, vBBBB ( 16b, 16b )
-def movewide16(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def movewide16(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveWide16 %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-object vA, vB ( 4b, 4b )
-def moveobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def moveobject(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveObject %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-object/from16 vAA, vBBBB ( 8b, 16b )
-def moveobjectfrom16(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def moveobjectfrom16(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveObjectFrom16 : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-object/16 vAAAA, vBBBB ( 16b, 16b )
-def moveobject16(ins: Instruction, vmap: dict[int, ThisParam | Variable]) -> MoveExpression:
+def moveobject16(ins: Instruction, vmap: dict[int, IRForm]) -> MoveExpression:
     logger.debug('MoveObject16 : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.AAAA, ins.BBBB)
     return MoveExpression(reg_a, reg_b)
 
 
 # move-result vAA ( 8b )
-def moveresult(ins: Instruction, vmap: dict[int, ThisParam | Variable], ret) -> MoveResultExpression:
+def moveresult(ins: Instruction, vmap: dict[int, IRForm], ret) -> MoveResultExpression:
     logger.debug('MoveResult : %s', ins.get_output())
     return MoveResultExpression(get_variables(vmap, ins.AA), ret)
 
 
 # move-result-wide vAA ( 8b )
-def moveresultwide(ins: Instruction, vmap: dict[int, ThisParam | Variable], ret) -> MoveResultExpression:
+def moveresultwide(ins: Instruction, vmap: dict[int, IRForm], ret) -> MoveResultExpression:
     logger.debug('MoveResultWide : %s', ins.get_output())
     return MoveResultExpression(get_variables(vmap, ins.AA), ret)
 
 
 # move-result-object vAA ( 8b )
-def moveresultobject(ins: Instruction, vmap: dict[int, ThisParam | Variable], ret) -> MoveResultExpression:
+def moveresultobject(ins: Instruction, vmap: dict[int, IRForm], ret) -> MoveResultExpression:
     logger.debug('MoveResultObject : %s', ins.get_output())
     return MoveResultExpression(get_variables(vmap, ins.AA), ret)
 
 
 # move-exception vAA ( 8b )
-def moveexception(ins: Instruction, vmap: dict[int, ThisParam | Variable], _type) -> MoveExceptionExpression:
+def moveexception(ins: Instruction, vmap: dict[int, IRForm], _type) -> MoveExceptionExpression:
     logger.debug('MoveException : %s', ins.get_output())
     return MoveExceptionExpression(get_variables(vmap, ins.AA), _type)
 
 
 # return-void
-def returnvoid(ins: Instruction10x, vmap: dict[int, ThisParam | Variable]) -> ReturnInstruction:
+def returnvoid(ins: Instruction10x, vmap: dict[int, IRForm]) -> ReturnInstruction:
     logger.debug('ReturnVoid')
     return ReturnInstruction(None)
 
 
 # return vAA ( 8b )
-def return_reg(ins: Instruction11x, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> ReturnInstruction:
+def return_reg(ins: Instruction11x, vmap: dict[int, IRForm]) -> ReturnInstruction:
     logger.debug('Return : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # return-wide vAA ( 8b )
-def returnwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def returnwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ReturnWide : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # return-object vAA ( 8b )
-def returnobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def returnobject(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ReturnObject : %s', ins.get_output())
     return ReturnInstruction(get_variables(vmap, ins.AA))
 
 
 # const/4 vA, #+B ( 4b, 4b )
-def const4(ins: Instruction11n, vmap: Union[DefaultDict[int, Union[ThisParam, Variable]], DefaultDict[int, ThisParam]]) -> AssignExpression:
+def const4(ins: Instruction11n, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('Const4 : %s', ins.get_output())
     cst = Constant(ins.B, 'I')
     return assign_const(ins.A, cst, vmap)
 
 
 # const/16 vAA, #+BBBB ( 8b, 16b )
-def const16(ins: Instruction21s, vmap: DefaultDict[int, Union[ThisParam, Param]]) -> AssignExpression:
+def const16(ins: Instruction21s, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('Const16 : %s', ins.get_output())
     cst = Constant(ins.BBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const vAA, #+BBBBBBBB ( 8b, 32b )
-def const(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def const(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('Const : %s', ins.get_output())
     cst = Constant(ins.BBBBBBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const/high16 vAA, #+BBBB0000 ( 8b, 16b )
-def consthigh16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def consthigh16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstHigh16 : %s', ins.get_output())
     cst = Constant(ins.BBBB, 'I')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/16 vAA, #+BBBB ( 8b, 16b )
-def constwide16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def constwide16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstWide16 : %s', ins.get_output())
     cst = Constant(ins.BBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/32 vAA, #+BBBBBBBB ( 8b, 32b )
-def constwide32(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def constwide32(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstWide32 : %s', ins.get_output())
     cst = Constant(ins.BBBBBBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide vAA, #+BBBBBBBBBBBBBBBB ( 8b, 64b )
-def constwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def constwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstWide : %s', ins.get_output())
     cst = Constant(ins.BBBBBBBBBBBBBBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-wide/high16 vAA, #+BBBB000000000000 ( 8b, 16b )
-def constwidehigh16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def constwidehigh16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstWideHigh16 : %s', ins.get_output())
     cst = Constant(ins.BBBB, 'J')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-string vAA ( 8b )
-def conststring(ins: Instruction21c, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> AssignExpression:
+def conststring(ins: Instruction21c, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('ConstString : %s', ins.get_output())
     cst = Constant(ins.get_raw_string(), 'Ljava/lang/String;')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-string/jumbo vAA ( 8b )
-def conststringjumbo(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def conststringjumbo(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstStringJumbo %s', ins.get_output())
     cst = Constant(ins.get_raw_string(), 'Ljava/lang/String;')
     return assign_const(ins.AA, cst, vmap)
 
 
 # const-class vAA, type@BBBB ( 8b )
-def constclass(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def constclass(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ConstClass : %s', ins.get_output())
     cst = Constant(util.get_type(ins.get_string()),
                    'Ljava/lang/Class;',
@@ -360,20 +360,20 @@ def constclass(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # monitor-enter vAA ( 8b )
-def monitorenter(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def monitorenter(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MonitorEnter : %s', ins.get_output())
     return MonitorEnterExpression(get_variables(vmap, ins.AA))
 
 
 # monitor-exit vAA ( 8b )
-def monitorexit(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def monitorexit(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MonitorExit : %s', ins.get_output())
     a = get_variables(vmap, ins.AA)
     return MonitorExitExpression(a)
 
 
 # check-cast vAA ( 8b )
-def checkcast(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def checkcast(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('CheckCast: %s', ins.get_output())
     cast_type = util.get_type(ins.get_translated_kind())
     cast_var = get_variables(vmap, ins.AA)
@@ -384,7 +384,7 @@ def checkcast(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # instance-of vA, vB ( 4b, 4b )
-def instanceof(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def instanceof(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('InstanceOf : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     reg_c = BaseClass(util.get_type(ins.get_translated_kind()),
@@ -394,14 +394,14 @@ def instanceof(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # array-length vA, vB ( 4b, 4b )
-def arraylength(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def arraylength(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ArrayLength: %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
     return AssignExpression(reg_a, ArrayLengthExpression(reg_b))
 
 
 # new-instance vAA ( 8b )
-def newinstance(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def newinstance(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NewInstance : %s', ins.get_output())
     reg_a = get_variables(vmap, ins.AA)
     ins_type = ins.cm.get_type(ins.BBBB)
@@ -409,7 +409,7 @@ def newinstance(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # new-array vA, vB ( 8b, size )
-def newarray(ins: Instruction22c, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> AssignExpression:
+def newarray(ins: Instruction22c, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('NewArray : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = NewArrayExpression(b, ins.cm.get_type(ins.CCCC))
@@ -435,247 +435,247 @@ def fillednewarrayrange(ins, vmap, ret):
 
 
 # fill-array-data vAA, +BBBBBBBB ( 8b, 32b )
-def fillarraydata(ins: Instruction31t, vmap: DefaultDict[int, Union[ThisParam, Variable]], value: FillArrayData) -> FillArrayExpression:
+def fillarraydata(ins: Instruction31t, vmap: dict[int, IRForm], value: FillArrayData) -> FillArrayExpression:
     logger.debug('FillArrayData : %s', ins.get_output())
     return FillArrayExpression(get_variables(vmap, ins.AA), value)
 
 
 # fill-array-data-payload vAA, +BBBBBBBB ( 8b, 32b )
-def fillarraydatapayload(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def fillarraydatapayload(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('FillArrayDataPayload : %s', ins.get_output())
     return FillArrayExpression(None)
 
 
 # throw vAA ( 8b )
-def throw(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def throw(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('Throw : %s', ins.get_output())
     return ThrowExpression(get_variables(vmap, ins.AA))
 
 
 # goto +AA ( 8b )
-def goto(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def goto(ins: Instruction, vmap: dict[int, IRForm]):
     return NopExpression()
 
 
 # goto/16 +AAAA ( 16b )
-def goto16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def goto16(ins: Instruction, vmap: dict[int, IRForm]):
     return NopExpression()
 
 
 # goto/32 +AAAAAAAA ( 32b )
-def goto32(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def goto32(ins: Instruction, vmap: dict[int, IRForm]):
     return NopExpression()
 
 
 # packed-switch vAA, +BBBBBBBB ( reg to test, 32b )
-def packedswitch(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def packedswitch(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('PackedSwitch : %s', ins.get_output())
     reg_a = get_variables(vmap, ins.AA)
     return SwitchExpression(reg_a, ins.BBBBBBBB)
 
 
 # sparse-switch vAA, +BBBBBBBB ( reg to test, 32b )
-def sparseswitch(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sparseswitch(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SparseSwitch : %s', ins.get_output())
     reg_a = get_variables(vmap, ins.AA)
     return SwitchExpression(reg_a, ins.BBBBBBBB)
 
 
 # cmpl-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def cmplfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def cmplfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('CmpglFloat : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'F', vmap)
 
 
 # cmpg-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def cmpgfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def cmpgfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('CmpgFloat : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'F', vmap)
 
 
 # cmpl-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def cmpldouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def cmpldouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('CmplDouble : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'D', vmap)
 
 
 # cmpg-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def cmpgdouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def cmpgdouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('CmpgDouble : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'D', vmap)
 
 
 # cmp-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def cmplong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def cmplong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('CmpLong : %s', ins.get_output())
     return assign_cmp(ins.AA, ins.BB, ins.CC, 'J', vmap)
 
 
 # if-eq vA, vB, +CCCC ( 4b, 4b, 16b )
-def ifeq(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifeq(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfEq : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.EQUAL, a, b)
 
 
 # if-ne vA, vB, +CCCC ( 4b, 4b, 16b )
-def ifne(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifne(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfNe : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.NEQUAL, a, b)
 
 
 # if-lt vA, vB, +CCCC ( 4b, 4b, 16b )
-def iflt(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iflt(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfLt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.LOWER, a, b)
 
 
 # if-ge vA, vB, +CCCC ( 4b, 4b, 16b )
-def ifge(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifge(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfGe : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.GEQUAL, a, b)
 
 
 # if-gt vA, vB, +CCCC ( 4b, 4b, 16b )
-def ifgt(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifgt(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfGt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.GREATER, a, b)
 
 
 # if-le vA, vB, +CCCC ( 4b, 4b, 16b )
-def ifle(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifle(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfLe : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     return ConditionalExpression(Op.LEQUAL, a, b)
 
 
 # if-eqz vAA, +BBBB ( 8b, 16b )
-def ifeqz(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifeqz(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfEqz : %s', ins.get_output())
     return ConditionalZExpression(Op.EQUAL, get_variables(vmap, ins.AA))
 
 
 # if-nez vAA, +BBBB ( 8b, 16b )
-def ifnez(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifnez(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfNez : %s', ins.get_output())
     return ConditionalZExpression(Op.NEQUAL, get_variables(vmap, ins.AA))
 
 
 # if-ltz vAA, +BBBB ( 8b, 16b )
-def ifltz(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifltz(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfLtz : %s', ins.get_output())
     return ConditionalZExpression(Op.LOWER, get_variables(vmap, ins.AA))
 
 
 # if-gez vAA, +BBBB ( 8b, 16b )
-def ifgez(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifgez(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfGez : %s', ins.get_output())
     return ConditionalZExpression(Op.GEQUAL, get_variables(vmap, ins.AA))
 
 
 # if-gtz vAA, +BBBB ( 8b, 16b )
-def ifgtz(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ifgtz(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfGtz : %s', ins.get_output())
     return ConditionalZExpression(Op.GREATER, get_variables(vmap, ins.AA))
 
 
 # if-lez vAA, +BBBB (8b, 16b )
-def iflez(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iflez(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IfLez : %s', ins.get_output())
     return ConditionalZExpression(Op.LEQUAL, get_variables(vmap, ins.AA))
 
 
 # TODO: check type for all aget
 # aget vAA, vBB, vCC ( 8b, 8b, 8b )
-def aget(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aget(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGet : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, None, vmap)
 
 
 # aget-wide vAA, vBB, vCC ( 8b, 8b, 8b )
-def agetwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def agetwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGetWide : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'W', vmap)
 
 
 # aget-object vAA, vBB, vCC ( 8b, 8b, 8b )
-def agetobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def agetobject(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGetObject : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
 
 # aget-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
-def agetboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def agetboolean(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGetBoolean : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'Z', vmap)
 
 
 # aget-byte vAA, vBB, vCC ( 8b, 8b, 8b )
-def agetbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def agetbyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGetByte : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'B', vmap)
 
 
 # aget-char vAA, vBB, vCC ( 8b, 8b, 8b )
-def agetchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def agetchar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGetChar : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'C', vmap)
 
 
 # aget-short vAA, vBB, vCC ( 8b, 8b, 8b )
-def agetshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def agetshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AGetShort : %s', ins.get_output())
     return load_array_exp(ins.AA, ins.BB, ins.CC, 'S', vmap)
 
 
 # aput vAA, vBB, vCC
-def aput(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aput(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('APut : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, None, vmap)
 
 
 # aput-wide vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aputwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('APutWide : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'W', vmap)
 
 
 # aput-object vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputobject(ins: Instruction23x, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> ArrayStoreInstruction:
+def aputobject(ins: Instruction23x, vmap: dict[int, IRForm]) -> ArrayStoreInstruction:
     logger.debug('APutObject : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'O', vmap)
 
 
 # aput-boolean vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aputboolean(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('APutBoolean : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'Z', vmap)
 
 
 # aput-byte vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aputbyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('APutByte : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'B', vmap)
 
 
 # aput-char vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aputchar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('APutChar : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'C', vmap)
 
 
 # aput-short vAA, vBB, vCC ( 8b, 8b, 8b )
-def aputshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def aputshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('APutShort : %s', ins.get_output())
     return store_array_inst(ins.AA, ins.BB, ins.CC, 'S', vmap)
 
 
 # iget vA, vB ( 4b, 4b )
-def iget(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iget(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGet : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -684,7 +684,7 @@ def iget(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iget-wide vA, vB ( 4b, 4b )
-def igetwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def igetwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGetWide : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -693,7 +693,7 @@ def igetwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iget-object vA, vB ( 4b, 4b )
-def igetobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def igetobject(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGetObject : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -702,7 +702,7 @@ def igetobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iget-boolean vA, vB ( 4b, 4b )
-def igetboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def igetboolean(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGetBoolean : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -711,7 +711,7 @@ def igetboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iget-byte vA, vB ( 4b, 4b )
-def igetbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def igetbyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGetByte : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -720,7 +720,7 @@ def igetbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iget-char vA, vB ( 4b, 4b )
-def igetchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def igetchar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGetChar : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -729,7 +729,7 @@ def igetchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iget-short vA, vB ( 4b, 4b )
-def igetshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def igetshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IGetShort : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -738,7 +738,7 @@ def igetshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iput vA, vB ( 4b, 4b )
-def iput(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iput(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IPut %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -746,7 +746,7 @@ def iput(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iput-wide vA, vB ( 4b, 4b )
-def iputwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iputwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IPutWide %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -754,7 +754,7 @@ def iputwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iput-object vA, vB ( 4b, 4b )
-def iputobject(ins: Instruction22c, vmap: DefaultDict[int, Union[ThisParam, Variable]]) -> InstanceInstruction:
+def iputobject(ins: Instruction22c, vmap: dict[int, IRForm]) -> InstanceInstruction:
     logger.debug('IPutObject %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -762,7 +762,7 @@ def iputobject(ins: Instruction22c, vmap: DefaultDict[int, Union[ThisParam, Vari
 
 
 # iput-boolean vA, vB ( 4b, 4b )
-def iputboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iputboolean(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IPutBoolean %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -770,7 +770,7 @@ def iputboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iput-byte vA, vB ( 4b, 4b )
-def iputbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iputbyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IPutByte %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -778,7 +778,7 @@ def iputbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iput-char vA, vB ( 4b, 4b )
-def iputchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iputchar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IPutChar %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -786,7 +786,7 @@ def iputchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # iput-short vA, vB ( 4b, 4b )
-def iputshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def iputshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IPutShort %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.CCCC)
     a, b = get_variables(vmap, ins.A, ins.B)
@@ -794,7 +794,7 @@ def iputshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget vAA ( 8b )
-def sget(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sget(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGet : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -803,7 +803,7 @@ def sget(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget-wide vAA ( 8b )
-def sgetwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sgetwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGetWide : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -812,7 +812,7 @@ def sgetwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget-object vAA ( 8b )
-def sgetobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sgetobject(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGetObject : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -821,7 +821,7 @@ def sgetobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget-boolean vAA ( 8b )
-def sgetboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sgetboolean(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGetBoolean : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -830,7 +830,7 @@ def sgetboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget-byte vAA ( 8b )
-def sgetbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sgetbyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGetByte : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -839,7 +839,7 @@ def sgetbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget-char vAA ( 8b )
-def sgetchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sgetchar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGetChar : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -848,7 +848,7 @@ def sgetchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sget-short vAA ( 8b )
-def sgetshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sgetshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SGetShort : %s', ins.get_output())
     klass, atype, name = ins.cm.get_field(ins.BBBB)
     exp = StaticExpression(klass, atype, name)
@@ -857,7 +857,7 @@ def sgetshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput vAA ( 8b )
-def sput(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sput(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPut : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
@@ -865,7 +865,7 @@ def sput(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput-wide vAA ( 8b )
-def sputwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sputwide(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPutWide : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
@@ -873,7 +873,7 @@ def sputwide(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput-object vAA ( 8b )
-def sputobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sputobject(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPutObject : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
@@ -881,7 +881,7 @@ def sputobject(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput-boolean vAA ( 8b )
-def sputboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sputboolean(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPutBoolean : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
@@ -889,7 +889,7 @@ def sputboolean(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput-wide vAA ( 8b )
-def sputbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sputbyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPutByte : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
@@ -897,7 +897,7 @@ def sputbyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput-char vAA ( 8b )
-def sputchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sputchar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPutChar : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
@@ -905,14 +905,14 @@ def sputchar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # sput-short vAA ( 8b )
-def sputshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sputshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SPutShort : %s', ins.get_output())
     klass, ftype, name = ins.cm.get_field(ins.BBBB)
     a = get_variables(vmap, ins.AA)
     return StaticInstruction(a, klass, ftype, name)
 
 
-def get_args(vmap: DefaultDict[int, ThisParam], param_type: List[Any], largs: List[int]) -> List[Any]:
+def get_args(vmap: DefaultDict[int, ThisParam], param_type: list[Any], largs: list[int]) -> list[Any]:
     num_param = 0
     args = []
     if len(param_type) > len(largs):
@@ -1116,7 +1116,7 @@ def invokeinterfacerange(ins, vmap, ret):
 
 
 # neg-int vA, vB ( 4b, 4b )
-def negint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def negint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NegInt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b, 'I')
@@ -1124,7 +1124,7 @@ def negint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # not-int vA, vB ( 4b, 4b )
-def notint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def notint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NotInt : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NOT, b, 'I')
@@ -1132,7 +1132,7 @@ def notint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # neg-long vA, vB ( 4b, 4b )
-def neglong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def neglong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NegLong : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b, 'J')
@@ -1140,7 +1140,7 @@ def neglong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # not-long vA, vB ( 4b, 4b )
-def notlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def notlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NotLong : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NOT, b, 'J')
@@ -1148,7 +1148,7 @@ def notlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # neg-float vA, vB ( 4b, 4b )
-def negfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def negfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NegFloat : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b, 'F')
@@ -1156,7 +1156,7 @@ def negfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # neg-double vA, vB ( 4b, 4b )
-def negdouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def negdouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('NegDouble : %s', ins.get_output())
     a, b = get_variables(vmap, ins.A, ins.B)
     exp = UnaryExpression(Op.NEG, b, 'D')
@@ -1164,487 +1164,487 @@ def negdouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # int-to-long vA, vB ( 4b, 4b )
-def inttolong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def inttolong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IntToLong : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # int-to-float vA, vB ( 4b, 4b )
-def inttofloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def inttofloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IntToFloat : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # int-to-double vA, vB ( 4b, 4b )
-def inttodouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def inttodouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IntToDouble : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # long-to-int vA, vB ( 4b, 4b )
-def longtoint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def longtoint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('LongToInt : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # long-to-float vA, vB ( 4b, 4b )
-def longtofloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def longtofloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('LongToFloat : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # long-to-double vA, vB ( 4b, 4b )
-def longtodouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def longtodouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('LongToDouble : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # float-to-int vA, vB ( 4b, 4b )
-def floattoint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def floattoint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('FloatToInt : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # float-to-long vA, vB ( 4b, 4b )
-def floattolong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def floattolong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('FloatToLong : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # float-to-double vA, vB ( 4b, 4b )
-def floattodouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def floattodouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('FloatToDouble : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(double)', 'D', vmap)
 
 
 # double-to-int vA, vB ( 4b, 4b )
-def doubletoint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def doubletoint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DoubleToInt : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(int)', 'I', vmap)
 
 
 # double-to-long vA, vB ( 4b, 4b )
-def doubletolong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def doubletolong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DoubleToLong : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(long)', 'J', vmap)
 
 
 # double-to-float vA, vB ( 4b, 4b )
-def doubletofloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def doubletofloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DoubleToFloat : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(float)', 'F', vmap)
 
 
 # int-to-byte vA, vB ( 4b, 4b )
-def inttobyte(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def inttobyte(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IntToByte : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(byte)', 'B', vmap)
 
 
 # int-to-char vA, vB ( 4b, 4b )
-def inttochar(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def inttochar(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IntToChar : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(char)', 'C', vmap)
 
 
 # int-to-short vA, vB ( 4b, 4b )
-def inttoshort(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def inttoshort(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('IntToShort : %s', ins.get_output())
     return assign_cast_exp(ins.A, ins.B, '(short)', 'S', vmap)
 
 
 # add-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def addint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'I', vmap)
 
 
 # sub-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def subint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def subint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SubInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'I', vmap)
 
 
 # mul-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def mulint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mulint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'I', vmap)
 
 
 # div-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def divint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'I', vmap)
 
 
 # rem-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def remint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'I', vmap)
 
 
 # and-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def andint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def andint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AndInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.AND, 'I', vmap)
 
 
 # or-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def orint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def orint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('OrInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.OR, 'I', vmap)
 
 
 # xor-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def xorint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def xorint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('XorInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.XOR, 'I', vmap)
 
 
 # shl-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def shlint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shlint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShlInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.INTSHL, 'I', vmap)
 
 
 # shr-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def shrint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shrint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShrInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # ushr-int vAA, vBB, vCC ( 8b, 8b, 8b )
-def ushrint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ushrint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('UShrInt : %s', ins.get_output())
     return assign_binary_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # add-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def addlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'J', vmap)
 
 
 # sub-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def sublong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sublong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SubLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'J', vmap)
 
 
 # mul-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def mullong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mullong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'J', vmap)
 
 
 # div-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def divlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'J', vmap)
 
 
 # rem-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def remlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'J', vmap)
 
 
 # and-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def andlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def andlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AndLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.AND, 'J', vmap)
 
 
 # or-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def orlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def orlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('OrLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.OR, 'J', vmap)
 
 
 # xor-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def xorlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def xorlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('XorLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.XOR, 'J', vmap)
 
 
 # shl-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def shllong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shllong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShlLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.LONGSHL, 'J', vmap)
 
 
 # shr-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def shrlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shrlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShrLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # ushr-long vAA, vBB, vCC ( 8b, 8b, 8b )
-def ushrlong(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ushrlong(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('UShrLong : %s', ins.get_output())
     return assign_binary_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # add-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def addfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'F', vmap)
 
 
 # sub-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def subfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def subfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SubFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'F', vmap)
 
 
 # mul-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def mulfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mulfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'F', vmap)
 
 
 # div-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def divfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'F', vmap)
 
 
 # rem-float vAA, vBB, vCC ( 8b, 8b, 8b )
-def remfloat(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remfloat(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemFloat : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'F', vmap)
 
 
 # add-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def adddouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def adddouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.ADD, 'D', vmap)
 
 
 # sub-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def subdouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def subdouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SubDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.SUB, 'D', vmap)
 
 
 # mul-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def muldouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def muldouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MUL, 'D', vmap)
 
 
 # div-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def divdouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divdouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.DIV, 'D', vmap)
 
 
 # rem-double vAA, vBB, vCC ( 8b, 8b, 8b )
-def remdouble(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remdouble(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemDouble : %s', ins.get_output())
     return assign_binary_exp(ins, Op.MOD, 'D', vmap)
 
 
 # add-int/2addr vA, vB ( 4b, 4b )
-def addint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'I', vmap)
 
 
 # sub-int/2addr vA, vB ( 4b, 4b )
-def subint2addr(ins: Instruction12x, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
+def subint2addr(ins: Instruction12x, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('SubInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'I', vmap)
 
 
 # mul-int/2addr vA, vB ( 4b, 4b )
-def mulint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mulint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'I', vmap)
 
 
 # div-int/2addr vA, vB ( 4b, 4b )
-def divint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'I', vmap)
 
 
 # rem-int/2addr vA, vB ( 4b, 4b )
-def remint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'I', vmap)
 
 
 # and-int/2addr vA, vB ( 4b, 4b )
-def andint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def andint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AndInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.AND, 'I', vmap)
 
 
 # or-int/2addr vA, vB ( 4b, 4b )
-def orint2addr(ins: Instruction12x, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
+def orint2addr(ins: Instruction12x, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('OrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.OR, 'I', vmap)
 
 
 # xor-int/2addr vA, vB ( 4b, 4b )
-def xorint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def xorint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('XorInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.XOR, 'I', vmap)
 
 
 # shl-int/2addr vA, vB ( 4b, 4b )
-def shlint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shlint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShlInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.INTSHL, 'I', vmap)
 
 
 # shr-int/2addr vA, vB ( 4b, 4b )
-def shrint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shrint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # ushr-int/2addr vA, vB ( 4b, 4b )
-def ushrint2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ushrint2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('UShrInt2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.INTSHR, 'I', vmap)
 
 
 # add-long/2addr vA, vB ( 4b, 4b )
-def addlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'J', vmap)
 
 
 # sub-long/2addr vA, vB ( 4b, 4b )
-def sublong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def sublong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SubLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'J', vmap)
 
 
 # mul-long/2addr vA, vB ( 4b, 4b )
-def mullong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mullong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'J', vmap)
 
 
 # div-long/2addr vA, vB ( 4b, 4b )
-def divlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'J', vmap)
 
 
 # rem-long/2addr vA, vB ( 4b, 4b )
-def remlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'J', vmap)
 
 
 # and-long/2addr vA, vB ( 4b, 4b )
-def andlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def andlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AndLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.AND, 'J', vmap)
 
 
 # or-long/2addr vA, vB ( 4b, 4b )
-def orlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def orlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('OrLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.OR, 'J', vmap)
 
 
 # xor-long/2addr vA, vB ( 4b, 4b )
-def xorlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def xorlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('XorLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.XOR, 'J', vmap)
 
 
 # shl-long/2addr vA, vB ( 4b, 4b )
-def shllong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shllong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShlLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.LONGSHL, 'J', vmap)
 
 
 # shr-long/2addr vA, vB ( 4b, 4b )
-def shrlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shrlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShrLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # ushr-long/2addr vA, vB ( 4b, 4b )
-def ushrlong2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ushrlong2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('UShrLong2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.LONGSHR, 'J', vmap)
 
 
 # add-float/2addr vA, vB ( 4b, 4b )
-def addfloat2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addfloat2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'F', vmap)
 
 
 # sub-float/2addr vA, vB ( 4b, 4b )
-def subfloat2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def subfloat2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('SubFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'F', vmap)
 
 
 # mul-float/2addr vA, vB ( 4b, 4b )
-def mulfloat2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mulfloat2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'F', vmap)
 
 
 # div-float/2addr vA, vB ( 4b, 4b )
-def divfloat2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divfloat2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'F', vmap)
 
 
 # rem-float/2addr vA, vB ( 4b, 4b )
-def remfloat2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remfloat2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemFloat2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'F', vmap)
 
 
 # add-double/2addr vA, vB ( 4b, 4b )
-def adddouble2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def adddouble2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.ADD, 'D', vmap)
 
 
 # sub-double/2addr vA, vB ( 4b, 4b )
-def subdouble2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def subdouble2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('subDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.SUB, 'D', vmap)
 
 
 # mul-double/2addr vA, vB ( 4b, 4b )
-def muldouble2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def muldouble2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MUL, 'D', vmap)
 
 
 # div-double/2addr vA, vB ( 4b, 4b )
-def divdouble2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divdouble2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.DIV, 'D', vmap)
 
 
 # rem-double/2addr vA, vB ( 4b, 4b )
-def remdouble2addr(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remdouble2addr(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemDouble2Addr : %s', ins.get_output())
     return assign_binary_2addr_exp(ins, Op.MOD, 'D', vmap)
 
 
 # add-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def addintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def addintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AddIntLit16 : %s', ins.get_output())
     return assign_lit(Op.ADD, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # rsub-int vA, vB, #+CCCC ( 4b, 4b, 16b )
-def rsubint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def rsubint(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RSubInt : %s', ins.get_output())
     var_a, var_b = get_variables(vmap, ins.A, ins.B)
     cst = Constant(ins.CCCC, 'I')
@@ -1652,50 +1652,50 @@ def rsubint(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # mul-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def mulintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mulintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulIntLit16 : %s', ins.get_output())
     return assign_lit(Op.MUL, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # div-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def divintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivIntLit16 : %s', ins.get_output())
     return assign_lit(Op.DIV, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # rem-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def remintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemIntLit16 : %s', ins.get_output())
     return assign_lit(Op.MOD, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # and-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def andintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def andintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('AndIntLit16 : %s', ins.get_output())
     return assign_lit(Op.AND, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # or-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def orintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def orintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('OrIntLit16 : %s', ins.get_output())
     return assign_lit(Op.OR, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # xor-int/lit16 vA, vB, #+CCCC ( 4b, 4b, 16b )
-def xorintlit16(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def xorintlit16(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('XorIntLit16 : %s', ins.get_output())
     return assign_lit(Op.XOR, ins.CCCC, ins.A, ins.B, vmap)
 
 
 # add-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def addintlit8(ins: Instruction22b, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
+def addintlit8(ins: Instruction22b, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('AddIntLit8 : %s', ins.get_output())
     literal, op = [(ins.CC, Op.ADD), (-ins.CC, Op.SUB)][ins.CC < 0]
     return assign_lit(op, literal, ins.AA, ins.BB, vmap)
 
 
 # rsub-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def rsubintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def rsubintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RSubIntLit8 : %s', ins.get_output())
     var_a, var_b = get_variables(vmap, ins.AA, ins.BB)
     cst = Constant(ins.CC, 'I')
@@ -1703,55 +1703,55 @@ def rsubintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 
 
 # mul-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def mulintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def mulintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('MulIntLit8 : %s', ins.get_output())
     return assign_lit(Op.MUL, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # div-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def divintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def divintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('DivIntLit8 : %s', ins.get_output())
     return assign_lit(Op.DIV, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # rem-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def remintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def remintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('RemIntLit8 : %s', ins.get_output())
     return assign_lit(Op.MOD, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # and-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def andintlit8(ins: Instruction22b, vmap: DefaultDict[int, Union[ThisParam, Param, Variable]]) -> AssignExpression:
+def andintlit8(ins: Instruction22b, vmap: dict[int, IRForm]) -> AssignExpression:
     logger.debug('AndIntLit8 : %s', ins.get_output())
     return assign_lit(Op.AND, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # or-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def orintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def orintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('OrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.OR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # xor-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def xorintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def xorintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('XorIntLit8 : %s', ins.get_output())
     return assign_lit(Op.XOR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # shl-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def shlintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shlintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShlIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHL, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # shr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def shrintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def shrintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('ShrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
 
 # ushr-int/lit8 vAA, vBB, #+CC ( 8b, 8b, 8b )
-def ushrintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
+def ushrintlit8(ins: Instruction, vmap: dict[int, IRForm]):
     logger.debug('UShrIntLit8 : %s', ins.get_output())
     return assign_lit(Op.INTSHR, ins.CC, ins.AA, ins.BB, vmap)
 
@@ -1759,7 +1759,7 @@ def ushrintlit8(ins: Instruction, vmap: dict[int, ThisParam | Variable]):
 # FIXME: Need to add all opcodes here, check for new unused ones.
 # FIXME: The instruction set is dalvik version specific
 INSTRUCTION_SET: list[
-        Callable[[Instruction, dict[int, ThisParam | Variable], Optional[Any]], IRForm],
+        Callable[[Instruction, dict[int, ThisParam | Variable], Any | None], IRForm],
     ] = [
     # 0x00
     nop,  # nop

@@ -11,7 +11,7 @@ import zlib
 from enum import IntEnum
 from io import BufferedReader, BytesIO
 from struct import calcsize, pack, unpack
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Type, cast
 
 from loguru import logger
 
@@ -775,7 +775,7 @@ class AnnotationSetItem:
         self.size, = cm.packer["I"].unpack(buff.read(4))
         self.annotation_off_item = [AnnotationOffItem(buff, cm) for _ in range(self.size)]
 
-    def get_annotation_off_item(self) -> List[AnnotationOffItem]:
+    def get_annotation_off_item(self) -> list[AnnotationOffItem]:
         """
         Return the offset from the start of the file to an annotation
 
@@ -3726,7 +3726,7 @@ class ClassDataItem:
                 for i in range(0, len(values)):
                     self.static_fields[i].set_init_value(values[i])
 
-    def _load_elements(self, size: int, elems: List[Any], Type: Type[EncodedField] | Type[EncodedMethod], buff: BufferedReader, cm: ClassManager) -> None:
+    def _load_elements(self, size: int, elems: list[Any], Type: Type[EncodedField] | Type[EncodedMethod], buff: BufferedReader, cm: ClassManager) -> None:
         prev = 0
         for i in range(0, size):
             el = Type(buff, cm)
@@ -3880,7 +3880,7 @@ class ClassDefItem:
             return self.class_data_item.get_fields()
         return []
 
-    def _get_annotation_type_ids(self) -> List[EncodedAnnotation]:
+    def _get_annotation_type_ids(self) -> list[EncodedAnnotation]:
         """
         Get the EncodedAnnotations from this class
 
@@ -3899,7 +3899,7 @@ class ClassDefItem:
         
         return [annotation.get_annotation_item().annotation for annotation in annotation_off_item]
 
-    def get_annotations(self) -> List[str]:
+    def get_annotations(self) -> list[str]:
         """
         Returns the class names of the annotations of this class.
 
@@ -7557,7 +7557,7 @@ class ClassManager:
         else:
             self.__manage_item_off.append(c_item.get_offset())
 
-    def get_code(self, idx: int) -> Optional[DalvikCode]:
+    def get_code(self, idx: int) -> DalvikCode | None:
         try:
             return self.__manage_item[TypeMapItem.CODE_ITEM].get_code(idx)
         except KeyError:
@@ -7631,7 +7631,7 @@ class ClassManager:
             logger.warning("unknown string item @ 0x%x(%d)" % (off, idx))
             return "AG:IS: invalid string"
 
-    def get_type_list(self, off: int) -> List[Union[str, Any]]:
+    def get_type_list(self, off: int) -> list[str]:
         if off == 0:
             return []
 
@@ -7664,7 +7664,7 @@ class ClassManager:
         """
         return self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(idx)
 
-    def get_proto(self, idx: int) -> List[str]:
+    def get_proto(self, idx: int) -> list[str]:
         proto = self.__cached_proto.get(idx)
         if not proto:
             proto = self.__manage_item[TypeMapItem.PROTO_ID_ITEM].get(idx)

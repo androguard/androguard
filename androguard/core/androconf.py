@@ -245,7 +245,7 @@ def color_range(startcolor: str, goalcolor: str, steps: int) -> list[str]:
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name: str, api: int | None = None) -> dict[str, list[str] | dict[str, str]]:
+def load_api_specific_resource_module(resource_name: str, api: int | None = None) -> dict[str, list[str] | Any]:
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.

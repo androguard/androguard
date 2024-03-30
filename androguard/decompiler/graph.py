@@ -20,12 +20,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
-    DefaultDict,
-    Dict,
     Iterator,
-    List,
-    Optional,
-    Union,
 )
 
 from loguru import logger
@@ -226,7 +221,7 @@ class Graph:
 
         g.write(os.path.join(dname, '%s.png' % name), format='png')
 
-    def immediate_dominators(self) -> Union[Dict[ReturnBlock, None], Dict[str, Optional[str]]]:
+    def immediate_dominators(self) -> dict[ReturnBlock | str, str | None]:
         return dom_lt(self)
 
     def __len__(self) -> int:
@@ -360,7 +355,7 @@ def simplify(graph: Graph):
             node.update_attribute_with(node_map)
 
 
-def dom_lt(graph: Graph) -> Union[Dict[ReturnBlock, None], Dict[str, Optional[str]]]:
+def dom_lt(graph: Graph) -> dict[ReturnBlock | str, str | None]:
     """Dominator algorithm from Lengauer-Tarjan"""
 
     def _dfs(v, n):
@@ -467,7 +462,7 @@ class GenInvokeRetName:
         return self.ret
 
 
-def make_node(graph: Graph, block: DEXBasicBlock, block_to_node: Dict[Any, Any], vmap: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Param]]], gen_ret: GenInvokeRetName) -> ReturnBlock:
+def make_node(graph: Graph, block: DEXBasicBlock, block_to_node: dict[Any, Any], vmap: dict[int, ThisParam | Param], gen_ret: GenInvokeRetName) -> ReturnBlock:
     node = block_to_node.get(block)
     if node is None:
         node = build_node_from_block(block, vmap, gen_ret)
@@ -510,7 +505,7 @@ def make_node(graph: Graph, block: DEXBasicBlock, block_to_node: Dict[Any, Any],
     return node
 
 
-def construct(start_block: DEXBasicBlock, vmap: Union[DefaultDict[int, ThisParam], DefaultDict[int, Union[ThisParam, Param]]], exceptions: List[Any]) -> Graph:
+def construct(start_block: DEXBasicBlock, vmap: dict[int, ThisParam | Param], exceptions: list[Any]) -> Graph:
     """
     Constructs a CFG
 

@@ -48,7 +48,7 @@ from androguard.decompiler.opcode_ins import Op
 from androguard.decompiler.util import get_type
 
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Union
+    from typing import Any
 
     from androguard.core.dex import FillArrayData
     from androguard.decompiler.basic_blocks import ReturnBlock
@@ -469,7 +469,7 @@ class Writer:
                        data="DECLARATION")
             self.end_ins()
 
-    def visit_constant(self, cst: Union[str, int]) -> None:
+    def visit_constant(self, cst: str | int) -> None:
         if isinstance(cst, str):
             return self.write(string(cst), data="CONSTANT_STRING")
         self.write('%r' % cst,
@@ -500,7 +500,7 @@ class Writer:
     def visit_super(self):
         self.write('super')
 
-    def visit_assign(self, lhs: Optional[Variable], rhs: Union[InvokeDirectInstruction, NewArrayExpression]) -> None:
+    def visit_assign(self, lhs: Variable | None, rhs: InvokeDirectInstruction | NewArrayExpression) -> None:
         if lhs is not None:
             return self.write_inplace_if_possible(lhs, rhs)
         self.write_ind()
@@ -515,7 +515,7 @@ class Writer:
         if lhs is not rhs:
             self.write_inplace_if_possible(lhs, rhs)
 
-    def visit_astore(self, array: Variable, index: Constant, rhs: Constant, data: Optional[ArrayStoreInstruction]=None):
+    def visit_astore(self, array: Variable, index: Constant, rhs: Constant, data: ArrayStoreInstruction | None = None):
         self.write_ind()
         array.visit(self)
         self.write('[', data=("ASTORE_START", data))
@@ -530,7 +530,7 @@ class Writer:
         rhs.visit(self)
         self.end_ins()
 
-    def visit_put_instance(self, lhs: ThisParam, name: str, rhs: Variable, data: Optional[str]=None):
+    def visit_put_instance(self, lhs: ThisParam, name: str, rhs: Variable, data: str | None = None):
         self.write_ind_visit_end_ext(
             lhs,
             '.',
@@ -546,7 +546,7 @@ class Writer:
         self.write_ext(
             ('NAME_CLASS_NEW', '%s' % get_type(atype), data.type, data))
 
-    def visit_invoke(self, name: str, base: ThisParam, ptype: List[Any], rtype: str, args: List[Any], invokeInstr: InvokeDirectInstruction):
+    def visit_invoke(self, name: str, base: ThisParam, ptype: list[Any], rtype: str, args: list[Any], invokeInstr: InvokeDirectInstruction):
         if isinstance(base, ThisParam):
             if name == '<init>':
                 if self.constructor and len(args) == 0:
@@ -690,7 +690,7 @@ class Writer:
         ref.visit(self)
         self.end_ins()
 
-    def visit_binary_expression(self, op: str, arg1: Union[BinaryExpression2Addr, Constant, BinaryExpressionLit, Param], arg2: Union[Constant, BinaryExpressionLit, Param]):
+    def visit_binary_expression(self, op: str, arg1: BinaryExpression, arg2: BinaryExpression):
         self.write('(', data="BINARY_EXPRESSION_START")
         arg1.visit(self)
         self.write(' %s ' % op, data="TODO58")
