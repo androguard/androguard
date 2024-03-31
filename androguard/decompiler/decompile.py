@@ -15,6 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+
 import struct
 import sys
 from collections import defaultdict
@@ -234,13 +239,13 @@ class DvClass:
     """
     This is a wrapper for :class:`~androguard.core.bytecodes.dvm.ClassDefItem` inside the decompiler.
 
-    At first, :py:attr:`methods` contains a list of :class:`~androguard.core.bytecodes.dvm.EncodedMethods`,
+    At first, :py:attr:`methods` contains a list of :class:`~androguard.core.dex.EncodedMethod`,
     which are successively replaced by :class:`DvMethod` in the process of decompilation.
 
-    :param androguard.core.bytecodes.dvm.ClassDefItem dvclass: the class item
+    :param androguard.core.dex.ClassDefItem dvclass: the class item
     :param androguard.core.analysis.analysis.Analysis vma: an Analysis object
     """
-    def __init__(self, dvclass, vma):
+    def __init__(self, dvclass: dex.ClassDefItem, vma: analysis.Analysis) -> None:
         name = dvclass.get_name()
         if name.find('/') > 0:
             pckg, name = name.rsplit('/', 1)
@@ -277,10 +282,10 @@ class DvClass:
             logger.debug('%s (%s, %s)', meth.get_method_idx(), self.name, meth.name)
         logger.debug('')
 
-    def get_methods(self):
+    def get_methods(self) -> list[dex.EncodedMethod]:
         return self.methods
 
-    def process_method(self, num, doAST=False):
+    def process_method(self, num: int, doAST:bool=False) -> None:
         method = self.methods[num]
         if not isinstance(method, DvMethod):
             self.methods[num] = DvMethod(self.vma.get_method(method))
@@ -288,7 +293,7 @@ class DvClass:
         else:
             method.process(doAST=doAST)
 
-    def process(self, doAST=False):
+    def process(self, doAST:bool=False) -> None:
         for i in range(len(self.methods)):
             try:
                 self.process_method(i, doAST=doAST)
@@ -296,7 +301,7 @@ class DvClass:
                 # FIXME: too broad exception?
                 logger.warning('Error decompiling method %s: %s', self.methods[i], e)
 
-    def get_ast(self):
+    def get_ast(self) -> dict:
         fields = [get_field_ast(f) for f in self.fields]
         methods = []
         for m in self.methods:
@@ -314,7 +319,7 @@ class DvClass:
             'methods': methods,
         }
 
-    def get_source(self):
+    def get_source(self) -> str:
         source = []
         if not self.inner and self.package:
             source.append('package %s;\n' % self.package)
@@ -362,7 +367,7 @@ class DvClass:
         source.append('}\n')
         return ''.join(source)
 
-    def get_source_ext(self):
+    def get_source_ext(self) -> list[tuple[str, list]]:
         source = []
         if not self.inner and self.package:
             source.append(
@@ -434,7 +439,7 @@ class DvClass:
         source.append(("CLASS_END", [('CLASS_END', '}\n')]))
         return source
 
-    def show_source(self):
+    def show_source(self) -> None:
         print(self.get_source())
 
     def __repr__(self):

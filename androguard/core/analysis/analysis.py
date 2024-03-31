@@ -1,10 +1,10 @@
-from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
-from androguard.core import bytecode, mutf8, dex
-
 # Allows type hinting of types not-yet-declared
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
+    
+from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
+from androguard.core import bytecode, mutf8, dex
 
 import re
 import sys
