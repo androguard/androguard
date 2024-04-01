@@ -2179,9 +2179,9 @@ def get_apkid(apkfile):
                     appid = value
                 elif versionCode is None and name == 'versionCode':
                     if value.startswith('0x'):
-                        versionCode = str(int(value, 16))
+                        versionCode = int(value, 16)
                     else:
-                        versionCode = value
+                        versionCode = int(value)
                 elif versionName is None and name == 'versionName':
                     versionName = value
 
