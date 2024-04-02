@@ -21,7 +21,7 @@ class InvalidResourceError(Exception):
     pass
 
 
-def is_ascii_problem(s):
+def is_ascii_problem(s: str) -> bool:
     """
     Test if a string contains other chars than ASCII
 
@@ -85,7 +85,7 @@ default_conf = {
 class Configuration:
     instance = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         A Wrapper for the CONF object
         This creates a singleton, which has the same attributes everywhere.
@@ -112,7 +112,7 @@ class Configuration:
 CONF = Configuration()
 
 
-def is_android(filename):
+def is_android(filename: str) -> str:
     """
     Return the type of the file
 
@@ -127,7 +127,7 @@ def is_android(filename):
         return is_android_raw(f_bytes)
 
 
-def is_android_raw(raw):
+def is_android_raw(raw: bytes) -> str:
     """
     Returns a string that describes the type of file, for common Android
     specific formats
@@ -155,7 +155,7 @@ def is_android_raw(raw):
 
     return val
 
-def rrmdir(directory):
+def rrmdir(directory: str) -> None:
     """
     Recursivly delete a directory
 
@@ -169,7 +169,7 @@ def rrmdir(directory):
     os.rmdir(directory)
 
 
-def make_color_tuple(color):
+def make_color_tuple(color: str) -> tuple[int,int,int]:
     """
     turn something like "#000000" into 0,0,0
     or "#FFFFFF into "255,255,255"
@@ -185,7 +185,7 @@ def make_color_tuple(color):
     return R, G, B
 
 
-def interpolate_tuple(startcolor, goalcolor, steps):
+def interpolate_tuple(startcolor: tuple[int,int,int], goalcolor: tuple[int,int,int], steps: int) -> list[str]:
     """
     Take two RGB color sets and mix them over a specified number of steps.  Return the list
     """
@@ -228,7 +228,7 @@ def interpolate_tuple(startcolor, goalcolor, steps):
     return buffer
 
 
-def color_range(startcolor, goalcolor, steps):
+def color_range(startcolor: tuple[int,int,int], goalcolor: tuple[int,int,int], steps: int) -> list[str]:
     """
     wrapper for interpolate_tuple that accepts colors as html ("#CCCCC" and such)
     """
@@ -238,7 +238,7 @@ def color_range(startcolor, goalcolor, steps):
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name, api:str|int=None):
+def load_api_specific_resource_module(resource_name: str, api:str|int=None) -> dict:
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.

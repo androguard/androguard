@@ -24,7 +24,7 @@ import zlib
 import hashlib
 from enum import IntEnum
 from loguru import logger
-from typing import Generator, Union, IO
+from typing import Generator, Union, IO, BinaryIO
 
 
 from androguard.core import mutf8
@@ -212,15 +212,15 @@ def static_operand_instruction(instruction: Instruction) -> str:
     return buff
 
 
-def get_sbyte(cm: ClassManager, buff: io.BufferedReader) -> int:
+def get_sbyte(cm: ClassManager, buff: BinaryIO) -> int:
     return cm.packer["b"].unpack(buff.read(1))[0]
 
 
-def get_byte(cm: ClassManager, buff: io.BufferedReader) -> int:
+def get_byte(cm: ClassManager, buff: BinaryIO) -> int:
     return cm.packer["B"].unpack(buff.read(1))[0]
 
 
-def readuleb128(cm: ClassManager, buff: io.BufferedReader) -> int:
+def readuleb128(cm: ClassManager, buff: BinaryIO) -> int:
     """
     Read an unsigned LEB128 at the current position of the buffer
 
@@ -246,7 +246,7 @@ def readuleb128(cm: ClassManager, buff: io.BufferedReader) -> int:
     return result
 
 
-def readuleb128p1(cm: ClassManager, buff: io.BufferedReader) -> int:
+def readuleb128p1(cm: ClassManager, buff: BinaryIO) -> int:
     """
     Read an unsigned LEB128p1 at the current position of the buffer.
     This format is the same as uLEB128 but has the ability to store the value -1.
@@ -257,7 +257,7 @@ def readuleb128p1(cm: ClassManager, buff: io.BufferedReader) -> int:
     return readuleb128(cm, buff) - 1
 
 
-def readsleb128(cm: ClassManager, buff: io.BufferedReader) -> int:
+def readsleb128(cm: ClassManager, buff: BinaryIO) -> int:
     """
     Read a signed LEB128 at the current position of the buffer.
 
@@ -698,12 +698,12 @@ class AnnotationOffItem:
     This class can parse an annotation_off_item of a dex file
 
     :param buff: a string which represents a Buff object of the annotation_off_item
-    :type buff: io.BufferedReader bytes object
+    :type buff: BinaryIO bytes object
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         self.CM = cm
         self.annotation_off, = cm.packer["I"].unpack(buff.read(4))
 
@@ -741,7 +741,7 @@ class AnnotationSetItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -793,7 +793,7 @@ class AnnotationSetRefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.annotations_off, = cm.packer["I"].unpack(buff.read(4))
 
@@ -831,7 +831,7 @@ class AnnotationSetRefList:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.offset = buff.tell()
 
         self.CM = cm
@@ -878,7 +878,7 @@ class FieldAnnotation:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.offset = buff.tell()
 
         self.CM = cm
@@ -935,7 +935,7 @@ class MethodAnnotation:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.offset = buff.tell()
 
         self.CM = cm
@@ -993,7 +993,7 @@ class ParameterAnnotation:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.offset = buff.tell()
 
         self.CM = cm
@@ -1051,7 +1051,7 @@ class AnnotationsDirectoryItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1203,7 +1203,7 @@ class HiddenApiClassDataItem:
         CORE_PLATFORM_API = 1
         TEST_API = 2
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1292,7 +1292,7 @@ class TypeItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.type_idx, = cm.packer["H"].unpack(buff.read(2))
 
@@ -1336,7 +1336,7 @@ class TypeList:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
         self.size, = cm.packer["I"].unpack(buff.read(4))
@@ -1456,7 +1456,7 @@ class DBGBytecode:
 
 
 class DebugInfoItem:
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1552,7 +1552,7 @@ class DebugInfoItem:
 
 
 class DebugInfoItemEmpty:
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1600,7 +1600,7 @@ class EncodedArray:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -1656,7 +1656,7 @@ class EncodedValue:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.val = get_byte(cm, buff)
@@ -1760,7 +1760,7 @@ class AnnotationElement:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -1808,7 +1808,7 @@ class EncodedAnnotation:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -1870,12 +1870,12 @@ class AnnotationItem:
     This class can parse an annotation_item of a dex file
 
     :param buff: a string which represents a Buff object of the annotation_item
-    :type buff: io.BufferedReader bytes object
+    :type buff: BinaryIO bytes object
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1930,7 +1930,7 @@ class EncodedArrayItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1987,12 +1987,12 @@ class StringDataItem:
     python you ca use :meth:`get` which escapes invalid characters.
 
     :param buff: a string which represents a Buff object of the string_data_item
-    :type buff: io.BufferedReader.io.BufferedReader
+    :type buff: BinaryIO.io.BufferedReader
     :param cm: a ClassManager object
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2070,7 +2070,7 @@ class StringIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager):
+    def __init__(self, buff: BinaryIO, cm: ClassManager):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2118,7 +2118,7 @@ class TypeIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager):
+    def __init__(self, buff: BinaryIO, cm: ClassManager):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2166,7 +2166,7 @@ class TypeHIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size: int, buff: io.BufferedReader, cm: ClassManager) -> None:
+    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2221,7 +2221,7 @@ class ProtoIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager):
+    def __init__(self, buff: BinaryIO, cm: ClassManager):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2324,7 +2324,7 @@ class ProtoHIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size:int, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2371,7 +2371,7 @@ class FieldIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm: ClassManager):
+    def __init__(self, buff: BinaryIO, cm: ClassManager):
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2483,7 +2483,7 @@ class FieldHIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size:int, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
         self.offset = buff.tell()
 
         self.field_id_items = [FieldIdItem(buff, cm) for i in range(0, size)]
@@ -2533,7 +2533,7 @@ class MethodIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2659,7 +2659,7 @@ class MethodHIdItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size:int, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2771,7 +2771,7 @@ class EncodedField:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2941,7 +2941,7 @@ class EncodedMethod:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -3432,7 +3432,7 @@ class ClassDataItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -3638,7 +3638,7 @@ class ClassDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -3927,7 +3927,7 @@ class ClassHDefItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size:int, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
 
         self.offset = buff.tell()
@@ -3994,7 +3994,7 @@ class EncodedTypeAddrPair:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, cm: ClassManager, buff: io.BufferedReader) -> None:
+    def __init__(self, cm: ClassManager, buff: BinaryIO) -> None:
         self.CM = cm
         self.type_idx = readuleb128(cm, buff)
         self.addr = readuleb128(cm, buff)
@@ -4040,7 +4040,7 @@ class EncodedCatchHandler:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -4130,7 +4130,7 @@ class EncodedCatchHandlerList:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -4412,7 +4412,7 @@ class FillArrayData:
     """
 
     # FIXME: why is this not a subclass of Instruction?
-    def __init__(self, cm: ClassManager, buff: io.BufferedReader) -> None:
+    def __init__(self, cm: ClassManager, buff: BinaryIO) -> None:
         self.OP = 0x0
         self.notes = []
         self.CM = cm
@@ -6675,12 +6675,12 @@ class TryItem:
     This class represents the try_item format
 
     :param buff: a raw buffer where are the try_item format
-    :type buff: io.BufferedReader.BufferedReader
+    :type buff: BinaryIO.BufferedReader
     :param cm: the ClassManager
     :type cm: ClassManager
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.offset = buff.tell()
 
         self.CM = cm
@@ -6733,12 +6733,12 @@ class DalvikCode:
     This class represents the instructions of a method
 
     :param buff: a raw buffer where are the instructions
-    :type buff: io.BufferedReader.BufferedReader
+    :type buff: BinaryIO.BufferedReader
     :param cm: the ClassManager
     :type cm: :class:`ClassManager` object
     """
 
-    def __init__(self, buff: io.BufferedReader, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
         self.CM = cm
         self.offset = buff.tell()
 
@@ -7536,7 +7536,7 @@ class MapList:
     https://source.android.com/devices/tech/dalvik/dex-format#map-list
     """
 
-    def __init__(self, cm: ClassManager, off: int, buff: io.BufferedReader) -> None:
+    def __init__(self, cm: ClassManager, off: int, buff: BinaryIO) -> None:
         self.CM = cm
 
         buff.seek(off)
@@ -7645,7 +7645,7 @@ class DEX:
 
     :param buff: a string which represents the classes.dex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: io.BufferedReader
+    :type buff: BinaryIO
     :type decompiler: object
 
     example::
@@ -8478,7 +8478,7 @@ class OdexHeaderItem:
     :param buff: a Buff object string which represents the odex dependencies
     """
 
-    def __init__(self, buff: io.BufferedReader) -> None:
+    def __init__(self, buff: BinaryIO) -> None:
         buff.seek(8)
 
         self.dex_offset = unpack("=I", buff.read(4))[0]
@@ -8513,7 +8513,7 @@ class OdexDependencies:
     :param buff: a Buff object string which represents the odex dependencies
     """
 
-    def __init__(self, buff: io.BufferedReader) -> None:
+    def __init__(self, buff: BinaryIO) -> None:
         self.modification_time = unpack("=I", buff.read(4))[0]
         self.crc = unpack("=I", buff.read(4))[0]
         self.dalvik_build = unpack("=I", buff.read(4))[0]
@@ -8563,7 +8563,7 @@ class ODEX(DEX):
           ODEX( read("classes.odex") )
     """
 
-    def _preload(self, buff: io.BufferedReader):
+    def _preload(self, buff: BinaryIO):
         self.orig_buff = buff
         self.magic = buff[:8]
         if self.magic in (ODEX_FILE_MAGIC_35, ODEX_FILE_MAGIC_36, ODEX_FILE_MAGIC_37):

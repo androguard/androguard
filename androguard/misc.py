@@ -10,7 +10,7 @@ import os
 from loguru import logger
 
 
-def get_default_session():
+def get_default_session() -> Session:
     """
     Return the default Session from the configuration
     or create a new one, if the session in the configuration is None.
@@ -22,7 +22,7 @@ def get_default_session():
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(_file, session=None, raw=False):
+def AnalyzeAPK(_file: str|bytes, session:Session=None, raw:bool=False) -> tuple[apk.APK, dex.DEX, Analysis]:
     """
     Analyze an android application and setup all stuff for a more quickly
     analysis!
@@ -36,7 +36,7 @@ def AnalyzeAPK(_file, session=None, raw=False):
     :type _file: string (for filename) or bytes (for raw)
     :param session: A session (default: None)
     :param raw: boolean if raw bytes are supplied instead of a filename
-    :rtype: return the :class:`~androguard.core.apk.APK`, list of :class:`~androguard.core.dvm.DEX`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
+    :rtype: return the :class:`~androguard.core.apk.APK`, list of :class:`~androguard.core.dex.DEX`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
     """
     logger.debug("AnalyzeAPK")
 
@@ -71,7 +71,7 @@ def AnalyzeAPK(_file, session=None, raw=False):
         return a, d, dx
 
 
-def AnalyzeDex(filename, session=None, raw=False):
+def AnalyzeDex(filename: str, session:Session=None, raw:bool=False) -> tuple[str, dex.DEX, Analysis]:
     """
     Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -96,29 +96,29 @@ def AnalyzeDex(filename, session=None, raw=False):
     return session.addDEX(filename, data)
 
 
-def AnalyzeODex(filename, session=None, raw=False):
-    """
-    Analyze an android odex file and setup all stuff for a more quickly analysis !
+# def AnalyzeODex(filename: str, session:Session=None, raw:bool=False):
+#     """
+#     Analyze an android odex file and setup all stuff for a more quickly analysis !
 
-    :param filename: the filename of the android dex file or a buffer which represents the dex file
-    :type filename: string
-    :param session: The Androguard Session to add the ODex to (default: None)
-    :param raw: If set, ``filename`` will be used as the odex's data (bytes). Defaults to ``False``
+#     :param filename: the filename of the android dex file or a buffer which represents the dex file
+#     :type filename: string
+#     :param session: The Androguard Session to add the ODex to (default: None)
+#     :param raw: If set, ``filename`` will be used as the odex's data (bytes). Defaults to ``False``
 
-    :rtype: return a tuple of (sha256hash, :class:`DalvikOdexVMFormat`, :class:`Analysis`)
-    """
-    logger.debug("AnalyzeODex")
+#     :rtype: return a tuple of (sha256hash, :class:`DalvikOdexVMFormat`, :class:`Analysis`)
+#     """
+#     logger.debug("AnalyzeODex")
 
-    if not session:
-        session = get_default_session()
+#     if not session:
+#         session = get_default_session()
 
-    if raw:
-        data = filename
-    else:
-        with open(filename, "rb") as fd:
-            data = fd.read()
+#     if raw:
+#         data = filename
+#     else:
+#         with open(filename, "rb") as fd:
+#             data = fd.read()
 
-    return session.addDEY(filename, data)
+#     return session.addDEY(filename, data) # <- this function is missing
 
 
 def clean_file_name(filename, unique=True, replace="_", force_nt=False):

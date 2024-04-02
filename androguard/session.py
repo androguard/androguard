@@ -22,7 +22,7 @@ class Session:
     >>> Should we go back to pickling or proceed further with the dataset ?<<<
     """
 
-    def __init__(self, export_ipython=False):
+    def __init__(self, export_ipython:bool=False) -> None:
         """
         Create a new Session object
 
@@ -139,7 +139,7 @@ class Session:
         logger.info("added APK {}:{}".format(filename, digest))
         return digest, newapk
 
-    def addDEX(self, filename, data, dx=None, postpone_xref=False):
+    def addDEX(self, filename: str, data: bytes, dx:Analysis=None, postpone_xref:bool=False) -> tuple[str, dex.DEX, Analysis]:
         """
         Add a DEX file to the Session and run analysis.
 
