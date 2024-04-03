@@ -3,8 +3,10 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import Analysis, MethodAnalysis
 
-from androguard.core.analysis.analysis import Analysis, MethodAnalysis
 from androguard.core import bytecode, apk
 from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.decompiler.node import Node
@@ -405,7 +407,7 @@ def determineNext(i: Instruction, cur_idx: int, m: EncodedMethod) -> list:
     return []
 
 
-def determineException(vm: DEX, m:EncodedMethod) ->  list[tuple[int,int,tuple[str,int]]]:
+def determineException(vm: DEX, m:EncodedMethod) ->  list[list]:
     """
     Returns try-catch handler inside the method.
 
@@ -478,7 +480,7 @@ class HeaderItem:
     :type cm: :class:`ClassManager`
     """
 
-    def __init__(self, size, buff:str, cm:ClassManager) -> None:
+    def __init__(self, size, buff: BinaryIO, cm:ClassManager) -> None:
         logger.debug("HeaderItem")
 
         self.CM = cm
@@ -6534,7 +6536,7 @@ class DCode:
         self.insn = insn
         self.size = len(self.insn)
 
-    def seek(self, idxL int) -> None:
+    def seek(self, idx: int) -> None:
         """
         Set the start address of the buffer
 

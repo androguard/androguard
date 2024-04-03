@@ -22,7 +22,7 @@ def get_default_session() -> Session:
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(_file: str|bytes, session:Session=None, raw:bool=False) -> tuple[apk.APK, dex.DEX, Analysis]:
+def AnalyzeAPK(_file: str|bytes, session:Session=None, raw:bool=False) -> tuple[apk.APK, list[dex.DEX], Analysis]:
     """
     Analyze an android application and setup all stuff for a more quickly
     analysis!
@@ -121,7 +121,7 @@ def AnalyzeDex(filename: str, session:Session=None, raw:bool=False) -> tuple[str
 #     return session.addDEY(filename, data) # <- this function is missing
 
 
-def clean_file_name(filename, unique=True, replace="_", force_nt=False):
+def clean_file_name(filename: str, unique:bool=True, replace:str="_", force_nt:bool=False) -> str:
     """
     Return a filename version, which has no characters in it which are forbidden.
     On Windows these are for example <, /, ?, ...

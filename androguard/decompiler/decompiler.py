@@ -15,8 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from androguard.core import dex
-from androguard.core.analysis.analysis import MethodAnalysis, Analysis
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from androguard.core.analysis.analysis import Analysis, MethodAnalysis
+    from androguard.core.dex import DEX, ClassDefItem
+
 from androguard.decompiler import decompile
 
 from pygments import highlight
@@ -28,7 +35,7 @@ from loguru import logger
 
 
 class DecompilerDAD:
-    def __init__(self, vm: dex.DEX, vmx: Analysis) -> None:
+    def __init__(self, vm: DEX, vmx: Analysis) -> None:
         """
         Decompiler wrapper for DAD: **D**AD is **A** **D**ecompiler
         DAD is the androguard internal decompiler.
@@ -55,7 +62,7 @@ class DecompilerDAD:
         z.process(doAST=True)
         return z.get_ast()
 
-    def display_source(self, m) -> None:
+    def display_source(self, m: MethodAnalysis) -> None:
         result = self.get_source_method(m)
 
         lexer = get_lexer_by_name("java", stripall=True)
@@ -63,17 +70,17 @@ class DecompilerDAD:
         result = highlight(result, lexer, formatter)
         print(result)
 
-    def get_source_class(self, _class) -> str:
+    def get_source_class(self, _class: ClassDefItem) -> str:
         c = decompile.DvClass(_class, self.vmx)
         c.process()
         return c.get_source()
 
-    def get_ast_class(self, _class) -> dict:
+    def get_ast_class(self, _class: ClassDefItem) -> dict:
         c = decompile.DvClass(_class, self.vmx)
         c.process(doAST=True)
         return c.get_ast()
 
-    def get_source_class_ext(self, _class:dex.ClassDefItem) -> list[tuple[str, list]]:
+    def get_source_class_ext(self, _class: ClassDefItem) -> list[tuple[str, list]]:
         c = decompile.DvClass(_class, self.vmx)
         c.process()
 
@@ -81,7 +88,7 @@ class DecompilerDAD:
 
         return result
 
-    def display_all(self, _class) -> None:
+    def display_all(self, _class: ClassDefItem) -> None:
         result = self.get_source_class(_class)
 
         lexer = get_lexer_by_name("java", stripall=True)

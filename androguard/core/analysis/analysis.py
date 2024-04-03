@@ -45,10 +45,10 @@ class REF_TYPE(IntEnum):
     INVOKE_INTERFACE_RANGE = 0x78
 
 class ExceptionAnalysis:
-    def __init__(self, exception: tuple[int, int, tuple[str,int]], basic_blocks: BasicBlocks):
+    def __init__(self, exception: list, basic_blocks: BasicBlocks):
         self.start = exception[0]
         self.end = exception[1]
-
+        
         self.exceptions = exception[2:]
 
         for i in self.exceptions:
@@ -78,7 +78,7 @@ class Exceptions:
     def __init__(self) -> None:
         self.exceptions = []
 
-    def add(self, exceptions: list[tuple[int,int,tuple[str,int]]], basic_blocks: BasicBlocks) -> None:
+    def add(self, exceptions: list[list], basic_blocks: BasicBlocks) -> None:
         for i in exceptions:
             self.exceptions.append(ExceptionAnalysis(i, basic_blocks))
 
@@ -92,10 +92,10 @@ class Exceptions:
 
         return None
 
-    def gets(self) -> list[tuple[int,int,tuple[str,int]]]:
+    def gets(self) -> list[list]:
         return self.exceptions
 
-    def get(self) -> Generator[tuple[int,int,tuple[str,int]]]:
+    def get(self) -> Generator[list]:
         for i in self.exceptions:
             yield i
 

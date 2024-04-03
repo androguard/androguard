@@ -1,4 +1,4 @@
-from androguard.core.analysis.analysis import Analysis
+from androguard.core.analysis.analysis import Analysis, StringAnalysis
 from androguard.core import dex, apk
 from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.core import androconf
@@ -6,6 +6,7 @@ from androguard.core import androconf
 import hashlib
 import collections
 import dataset
+from typing import Generator
 
 from loguru import logger
 
@@ -44,7 +45,7 @@ class Session:
         self.table_session.insert(dict(id=self.session_id))
         logger.info("Creating new session [{}]".format(self.session_id))
 
-    def save(self, filename=None):
+    def save(self, filename:str=None) -> None:
         """
         Save the current session, see also :func:`~androguard.session.Save`.
         """
@@ -67,13 +68,13 @@ class Session:
         # files as well, but we do not remove it here for legacy reasons
         self.analyzed_dex = dict()
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the current session, delete all added files.
         """
         self._setup_objects()
 
-    def isOpen(self):
+    def isOpen(self) -> bool:
         """
         Test if any file was analyzed in this session
 
@@ -81,7 +82,7 @@ class Session:
         """
         return len(self.analyzed_digest) > 0
 
-    def show(self):
+    def show(self) -> None:
         """
         Print information to stdout about the current session.
         Gets all APKs, all DEX files and all Analysis objects.
@@ -106,7 +107,7 @@ class Session:
         self.table_system.insert(
             dict(session_id=str(self.session_id), call=call, callee=callee, information=information, params=params))
 
-    def addAPK(self, filename, data):
+    def addAPK(self, filename: str, data:bytes) -> tuple[str, apk.APK]:
         """
         Add an APK file to the Session and run analysis on it.
 
@@ -184,7 +185,7 @@ class Session:
 
         return digest, d, dx
 
-    def addODEX(self, filename, data, dx=None):
+    def addODEX(self, filename:str, data:bytes, dx:Analysis=None) -> tuple[str, dex.ODEX, Analysis]:
         """
         Add an ODEX file to the session and run the analysis
         """
@@ -220,7 +221,7 @@ class Session:
 
         return digest, d, dx
 
-    def add(self, filename, raw_data=None, dx=None):
+    def add(self, filename: str, raw_data:bytes=None, dx:Analysis=None) -> str|None:
         """
         Generic method to add a file to the session.
 
@@ -258,7 +259,7 @@ class Session:
 
         return digest
 
-    def get_classes(self):
+    def get_classes(self) -> Generator[tuple[int, str, str, list[dex.ClassDefItem]]]:
         """
         Returns all Java Classes from the DEX objects as an array of DEX files.
         """
@@ -268,7 +269,7 @@ class Session:
                 filename = self.analyzed_digest[digest]
                 yield idx, filename, digest, vm.get_classes()
 
-    def get_analysis(self, current_class):
+    def get_analysis(self, current_class: dex.ClassDefItem) -> Analysis:
         """
         Returns the :class:`~androguard.core.analysis.analysis.Analysis` object
         which contains the `current_class`.
@@ -283,7 +284,7 @@ class Session:
                 return dx
         return None
 
-    def get_format(self, current_class):
+    def get_format(self, current_class: dex.ClassDefItem) -> dex.DEX:
         """
         Returns the :class:`~androguard.core.bytecodes.dvm.DEX` of a
         given :class:`~androguard.core.bytecodes.dvm.ClassDefItem`.
@@ -292,7 +293,7 @@ class Session:
         """
         return current_class.CM.vm
 
-    def get_filename_by_class(self, current_class):
+    def get_filename_by_class(self, current_class: dex.ClassDefItem) -> str|None:
         """
         Returns the filename of the DEX file where the class is in.
 
@@ -308,7 +309,7 @@ class Session:
                 return self.analyzed_digest[digest]
         return None
 
-    def get_digest_by_class(self, current_class):
+    def get_digest_by_class(self, current_class: dex.ClassDefItem) -> str|None:
         """
         Return the SHA256 hash of the object containing the ClassDefItem
 
@@ -321,7 +322,7 @@ class Session:
                 return digest
         return None
 
-    def get_strings(self):
+    def get_strings(self) -> Generator[tuple[str, str, dict[str,StringAnalysis]]]:
         """
         Yields all StringAnalysis for all unique Analysis objects
         """
@@ -332,7 +333,7 @@ class Session:
             seen.append(dx)
             yield digest, self.analyzed_digest[digest], dx.get_strings_analysis()
 
-    def get_nb_strings(self):
+    def get_nb_strings(self) -> int:
         """
         Return the total number of strings in all Analysis objects
         """
@@ -345,7 +346,7 @@ class Session:
             nb += len(dx.get_strings_analysis())
         return nb
 
-    def get_all_apks(self):
+    def get_all_apks(self) -> Generator[str, apk.APK]:
         """
         Yields a list of tuples of SHA256 hash of the APK and APK objects
         of all analyzed APKs in the Session.
@@ -353,7 +354,7 @@ class Session:
         for digest, a in self.analyzed_apk.items():
             yield digest, a
 
-    def get_objects_apk(self, filename=None, digest=None):
+    def get_objects_apk(self, filename:str=None, digest:str=None) -> Generator[apk.APK, list[dex.DEX], Analysis]:
         """
         Returns APK, DEX and Analysis of a specified APK.
 
@@ -391,7 +392,7 @@ class Session:
         dx = self.analyzed_vms[digest]
         return a, dx.vms, dx
 
-    def get_objects_dex(self):
+    def get_objects_dex(self) -> Generator[tuple[str, dex.DEX, Analysis]]:
         """
         Yields all dex objects inclduing their Analysis objects
 

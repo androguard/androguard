@@ -2,11 +2,13 @@
 import asn1crypto
 
 import sys
+from typing import BinaryIO
 from loguru import logger
 
 
+
 class MyFilter:
-    def __init__(self, level):
+    def __init__(self, level:int) -> None:
         self.level = level
 
     def __call__(self, record):
@@ -14,7 +16,7 @@ class MyFilter:
         return record["level"].no >= levelno
 
 
-def set_log(level):
+def set_log(level:int) -> None:
     """
     Sets the log for loguru based on the level being passed.
     The possible values are TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
@@ -26,7 +28,7 @@ def set_log(level):
 
 # Stuff that might be useful
 
-def read_at(buff, offset, size=-1):
+def read_at(buff: BinaryIO, offset:int, size:int=-1) -> bytes:
     idx = buff.tell()
     buff.seek(offset)
     d = buff.read(size)
@@ -34,7 +36,7 @@ def read_at(buff, offset, size=-1):
     return d
 
 
-def readFile(filename, binary=True):
+def readFile(filename: str, binary:bool=True) -> bytes:
     """
     Open and read a file
     :param filename: filename to open and read
@@ -45,7 +47,7 @@ def readFile(filename, binary=True):
         return f.read()
 
 
-def get_certificate_name_string(name, short=False, delimiter=', '):
+def get_certificate_name_string(name:str, short:bool=False, delimiter:str=', ') -> str:
     """
     Format the Name type of a X509 Certificate in a human readable form.
 
