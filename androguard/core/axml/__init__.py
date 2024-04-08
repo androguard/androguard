@@ -821,14 +821,15 @@ class AXMLParser:
 
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
-        if not res or res == ":":
+        if name <= len(self.m_resourceIDs):
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
                 res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
-            else:
-                # Attach the HEX Number, so for multiple missing attributes we do not run
-                # into problems.
-                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+        
+        if not res or res == ":":
+            # Attach the HEX Number, so for multiple missing attributes we do not run
+            # into problems.
+            res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
         return res
 
     def getAttributeValueType(self, index):
