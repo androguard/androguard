@@ -416,7 +416,7 @@ def method2format(output, _format="png", mx=None, raw=None):
     :param androguard.core.analysis.analysis.MethodAnalysis mx: specify the MethodAnalysis object
     :param dict raw: use directly a dot raw buffer if None
     """
-    # pydot is optional!
+    # pydot is optional, it's only needed for png, jpg formats
     import pydot
 
     if raw:
@@ -465,9 +465,12 @@ def method2format(output, _format="png", mx=None, raw=None):
             logger.warning("The graph generated for '{}' has too many subgraphs! "
                        "Only plotting the first one.".format(output))
         for g in d:
-            getattr(g, "write_" + _format.lower())(output)
-            break
-
+            try:
+                getattr(g, "write_" + _format.lower())(output)
+                break
+            except FileNotFoundError:
+                logger.error("Could not write graph image, ensure graphviz is installed!")
+                raise
 
 def method2png(output, mx, raw=False):
     """

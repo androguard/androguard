@@ -256,6 +256,7 @@ def arsc(input_,
     '--format', '-f', 'format_',
     help='Additionally write control flow graphs for each method, specify '
          'the format for example png, jpg, raw (write dot file), ...',
+    type=click.Choice(['png', 'jpg', 'raw'])
 )
 @click.option(
     '--jar', '-j',

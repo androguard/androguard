@@ -39,7 +39,7 @@ class TestCallgraph(unittest.TestCase):
         # num external nodes
         self.assertEqual(total_external_nodes, 1000)
 
-        # num external nodes
+        # num internal nodes
         self.assertEqual(total_internal_nodes, 2600)
 
         # total num edges
