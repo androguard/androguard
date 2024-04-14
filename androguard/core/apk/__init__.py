@@ -14,7 +14,7 @@ import binascii
 import zipfile
 import logging
 from struct import unpack
-from typing import Generator
+from typing import Generator, Iterator, Union
 import hashlib
 import warnings
 
@@ -755,7 +755,7 @@ class APK:
 
         return self.files_crc32
 
-    def get_files_information(self) -> Generator[str, str, int]:
+    def get_files_information(self) -> Iterator[tuple[str, str, int]]:
         """
         Return the files inside the APK with their associated types and crc32
 
@@ -816,7 +816,7 @@ class APK:
         dexre = re.compile(r"^classes(\d*).dex$")
         return filter(lambda x: dexre.match(x), self.get_files())
 
-    def get_all_dex(self) -> Generator[bytes]:
+    def get_all_dex(self) -> Iterator[bytes]:
         """
         Return the raw data of all classes dex files
 
@@ -857,7 +857,7 @@ class APK:
 
     def get_all_attribute_value(
         self, tag_name: str, attribute: str, format_value:bool=True, **attribute_filter
-    ) -> Generator[str]:
+    ) -> Iterator[str]:
         """
         Yields all the attribute values in xml files which match with the tag name and the specific attribute
 
@@ -1524,7 +1524,7 @@ class APK:
         except KeyError:
             return None
 
-    def get_android_manifest_xml(self) -> Element|None:
+    def get_android_manifest_xml(self) -> Union[lxml.etree.Element, None]:
         """
         Return the parsed xml object which corresponds to the AndroidManifest.xml file
 

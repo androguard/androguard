@@ -26,7 +26,7 @@ import zlib
 import hashlib
 from enum import IntEnum
 from loguru import logger
-from typing import Generator, Union, IO, BinaryIO
+from typing import Generator, Union, IO, BinaryIO, Iterator
 
 
 from androguard.core import mutf8
@@ -3265,7 +3265,7 @@ class EncodedMethod:
 
         return self.code.get_bc().is_cached_instructions()
 
-    def get_instructions(self) -> Generator[Instruction]:
+    def get_instructions(self) -> Iterator[Instruction]:
         """
         Get the instructions
 
@@ -3275,7 +3275,7 @@ class EncodedMethod:
             return []
         return self.get_code().get_bc().get_instructions()
 
-    def get_instructions_idx(self) -> Generator[tuple[int,Instruction]]:
+    def get_instructions_idx(self) -> Iterator[tuple[int,Instruction]]:
         """
         Iterate over all instructions of the method, but also return the current index.
         This is the same as using :meth:`get_instructions` and adding the instruction length
@@ -3302,7 +3302,7 @@ class EncodedMethod:
             return []
         return self.code.get_bc().set_instructions(instructions)
 
-    def get_instruction(self, idx, off:int=None) -> Generator[Instruction]:
+    def get_instruction(self, idx, off:int=None) -> Iterator[Instruction]:
         """
         Get a particular instruction by using (default) the index of the address if specified
 
@@ -6441,7 +6441,7 @@ class LinearSweepAlgorithm:
     """
 
     @staticmethod
-    def get_instructions(cm: ClassManager, size: int, insn: bytearray, idx: int) -> Generator[Instruction]:
+    def get_instructions(cm: ClassManager, size: int, insn: bytearray, idx: int) -> Iterator[Instruction]:
         """
         Yields all instructions for the given bytecode sequence.
         If unknown/corrupt/unused instructions are encountered,
@@ -6559,7 +6559,7 @@ class DCode:
         """
         self.cached_instructions = instructions
 
-    def get_instructions(self) -> Generator[Instruction]:
+    def get_instructions(self) -> Iterator[Instruction]:
         """
         Get the instructions
 
@@ -8376,7 +8376,7 @@ class DEX:
     def set_analysis(self, analysis_dex: Analysis) -> None:
         self.CM.set_analysis(analysis_dex)
 
-    def disassemble(self, offset: int, size: int) -> Generator[Instruction]:
+    def disassemble(self, offset: int, size: int) -> Iterator[Instruction]:
         """
         Disassembles a given offset in the DEX file
 
