@@ -1446,16 +1446,23 @@ class APK:
         return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
     def get_certificate_der(self, filename):
-        """
-        Return the DER coded X.509 certificate from the signature file.
+        """Return the DER coded X.509 certificate from the signature file.
+
+        Rarely, there is a certificate chain like in TLS (Microsoft
+        does this).  In that case, this returns only the final
+        certificate, which is the one used to sign the manifest. This
+        will be the same certificate that will be printed by:
+
+        apksigner verify --print-certs com.microsoft.emmx.apk
 
         :param filename: Signature filename in APK
         :returns: DER coded X.509 certificate as binary
+
         """
         pkcs7message = self.get_file(filename)
 
         pkcs7obj = cms.ContentInfo.load(pkcs7message)
-        cert = pkcs7obj['content']['certificates'][0].chosen.dump()
+        cert = pkcs7obj['content']['certificates'][-1].chosen.dump()
         return cert
 
     def get_certificate(self, filename):

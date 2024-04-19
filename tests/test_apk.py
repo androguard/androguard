@@ -84,6 +84,28 @@ class APKTest(unittest.TestCase):
 
         self.assertEqual(binascii.hexlify(cert).decode("ascii").upper(), expected)
 
+    def testAPKCertChain(self):
+        """Test that APK signatures with a cert chain are parsed like apksigner.
+
+        Microsoft signs their APKs with a X.509 certificate chain of
+        trust, so there are actually three certificates
+        included. apksigner only cares about the certificate that
+        actually signs the manifest and ignores the certificates that
+        just sign other certificates.
+
+        The correct value comes from:
+        apksigner verify --print-certs com.microsoft.emmx_242009005.apk | grep SHA-256
+
+        """
+        a = APK(os.path.join(test_dir, 'data/APK/CertChain.apk'), skip_analysis=True)
+        cert_der = a.get_certificate_der(a.get_signature_name())
+        sha256 = hashlib.sha256()
+        sha256.update(cert_der)
+        self.assertEqual(
+            sha256.hexdigest(),
+            '01e1999710a82c2749b4d50c445dc85d670b6136089d0a766a73827c82a1eac9',
+        )
+
     def testAPKCertFingerprint(self):
         """
         Test if certificates are correctly unpacked from the SignatureBlock files
