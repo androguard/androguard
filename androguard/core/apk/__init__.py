@@ -447,7 +447,7 @@ class APK:
         """
         return self.filename
 
-    def get_app_name(self):
+    def get_app_name(self, **kwargs):
         """
         Return the appname of the APK
 
@@ -500,9 +500,10 @@ class APK:
                     return app_name
 
             try:
+                config = ARSCResTableConfig(None, **kwargs) if kwargs else ARSCResTableConfig.default_config()
                 app_name = res_parser.get_resolved_res_configs(
                     res_id,
-                    ARSCResTableConfig.default_config())[0][1]
+                    config)[0][1]
             except Exception as e:
                 logger.warning("Exception selecting app name: %s" % e)
         return app_name

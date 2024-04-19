@@ -2510,7 +2510,12 @@ class ARSCResTableConfig:
                 ((kwargs.pop('mcc', 0) & 0xffff) << 0) + \
                 ((kwargs.pop('mnc', 0) & 0xffff) << 16)
 
-            self.locale = 0
+            temp_locale = kwargs.pop('locale', 0)
+            if isinstance(temp_locale, str):
+                self.set_language_and_region(temp_locale)
+            else:
+                self.locale = temp_locale
+
             for char_ix, char in kwargs.pop('locale', "")[0:4]:
                 self.locale += (ord(char) << (char_ix * 8))
 
@@ -2562,6 +2567,26 @@ class ARSCResTableConfig:
             if char_in[1]:
                 char_out += chr(char_in[1])
         return char_out
+
+    def _pack_language_or_region(self, char_in):
+        char_out = [0x00, 0x00]
+        if len(char_in) != 2:
+            return char_out
+        char_out[0] = ord(char_in[0])
+        char_out[1] = ord(char_in[1])
+        return char_out
+
+    def set_language_and_region(self, language_region):
+        try:
+            language, region = language_region.split("-r")
+        except ValueError:
+            language, region = language_region, None
+        language_bytes = self._pack_language_or_region(language)
+        if region:
+            region_bytes = self._pack_language_or_region(region)
+        else:
+            region_bytes = [0x00, 0x00]
+        self.locale = language_bytes[0] | (language_bytes[1] << 8) | (region_bytes[0] << 16) | (region_bytes[1] << 24)
 
     def get_language_and_region(self):
         """
