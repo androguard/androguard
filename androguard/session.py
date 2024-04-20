@@ -6,7 +6,7 @@ from androguard.core import androconf
 import hashlib
 import collections
 import dataset
-from typing import Generator, Union
+from typing import Generator, Union, Iterator
 
 from loguru import logger
 
@@ -259,7 +259,7 @@ class Session:
 
         return digest
 
-    def get_classes(self) -> Generator[tuple[int, str, str, list[dex.ClassDefItem]]]:
+    def get_classes(self) -> Iterator[tuple[int, str, str, list[dex.ClassDefItem]]]:
         """
         Returns all Java Classes from the DEX objects as an array of DEX files.
         """
@@ -322,7 +322,7 @@ class Session:
                 return digest
         return None
 
-    def get_strings(self) -> Generator[tuple[str, str, dict[str,StringAnalysis]]]:
+    def get_strings(self) -> Iterator[tuple[str, str, dict[str,StringAnalysis]]]:
         """
         Yields all StringAnalysis for all unique Analysis objects
         """
@@ -346,7 +346,7 @@ class Session:
             nb += len(dx.get_strings_analysis())
         return nb
 
-    def get_all_apks(self) -> Generator[str, apk.APK]:
+    def get_all_apks(self) -> Iterator[tuple[str, apk.APK]]:
         """
         Yields a list of tuples of SHA256 hash of the APK and APK objects
         of all analyzed APKs in the Session.
@@ -354,7 +354,7 @@ class Session:
         for digest, a in self.analyzed_apk.items():
             yield digest, a
 
-    def get_objects_apk(self, filename:str=None, digest:str=None) -> Generator[apk.APK, list[dex.DEX], Analysis]:
+    def get_objects_apk(self, filename:str=None, digest:str=None) -> Iterator[tuple[apk.APK, list[dex.DEX], Analysis]]:
         """
         Returns APK, DEX and Analysis of a specified APK.
 
@@ -392,7 +392,7 @@ class Session:
         dx = self.analyzed_vms[digest]
         return a, dx.vms, dx
 
-    def get_objects_dex(self) -> Generator[tuple[str, dex.DEX, Analysis]]:
+    def get_objects_dex(self) -> Iterator[tuple[str, dex.DEX, Analysis]]:
         """
         Yields all dex objects inclduing their Analysis objects
 

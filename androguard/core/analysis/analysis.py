@@ -11,7 +11,7 @@ import sys
 import collections
 from operator import itemgetter
 import time
-from typing import Any, Generator, Optional, Union
+from typing import Any, Generator, Optional, Union, Iterator
 from enum import IntEnum
 
 from loguru import logger
@@ -95,7 +95,7 @@ class Exceptions:
     def gets(self) -> list[list]:
         return self.exceptions
 
-    def get(self) -> Generator[list]:
+    def get(self) -> Iterator[list]:
         for i in self.exceptions:
             yield i
 
@@ -212,7 +212,7 @@ class DEXBasicBlock:
     def clear_notes(self) -> None:
         self.notes = []
 
-    def get_instructions(self) -> Generator[dex.Instruction]:
+    def get_instructions(self) -> Iterator[dex.Instruction]:
         """
         Get all instructions from a basic block.
 
@@ -1449,7 +1449,7 @@ class Analysis:
         self.__created_xrefs = False
 
     @property
-    def fields(self) -> Generator[FieldAnalysis]:
+    def fields(self) -> Iterator[FieldAnalysis]:
         """Returns FieldAnalysis generator"""
         return self.get_fields()
 
@@ -1765,7 +1765,7 @@ class Analysis:
         """
         return self.classes.get(class_name)
 
-    def get_external_classes(self) -> Generator[ClassAnalysis]:
+    def get_external_classes(self) -> Iterator[ClassAnalysis]:
         """
         Returns all external classes, that means all classes that are not
         defined in the given set of `DalvikVMObjects`.
@@ -1776,7 +1776,7 @@ class Analysis:
             if cls.is_external():
                 yield cls
 
-    def get_internal_classes(self) -> Generator[ClassAnalysis]:
+    def get_internal_classes(self) -> Iterator[ClassAnalysis]:
         """
         Returns all external classes, that means all classes that are
         defined in the given set of :class:`~DEX`.
@@ -1787,7 +1787,7 @@ class Analysis:
             if not cls.is_external():
                 yield cls
 
-    def get_internal_methods(self) -> Generator[MethodAnalysis]:
+    def get_internal_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns all internal methods, that means all methods that are
         defined in the given set of :class:`~DEX`.
@@ -1798,7 +1798,7 @@ class Analysis:
             if not m.is_external():
                 yield m
 
-    def get_external_methods(self) -> Generator[MethodAnalysis]:
+    def get_external_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns all external methods, that means all methods that are not
         defined in the given set of :class:`~DEX`.
@@ -1835,7 +1835,7 @@ class Analysis:
         """
         return self.classes.values()
 
-    def get_methods(self) -> Generator[MethodAnalysis]:
+    def get_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns a generator of `MethodAnalysis` objects
 
@@ -1844,7 +1844,7 @@ class Analysis:
         """
         yield from self.methods.values()
 
-    def get_fields(self) -> Generator[FieldAnalysis]:
+    def get_fields(self) -> Iterator[FieldAnalysis]:
         """
         Returns a generator of `FieldAnalysis` objects
 
@@ -1854,7 +1854,7 @@ class Analysis:
             for f in c.get_fields():
                 yield f
 
-    def find_classes(self, name:str = ".*", no_external:bool = False) -> Generator[ClassAnalysis]:
+    def find_classes(self, name:str = ".*", no_external:bool = False) -> Iterator[ClassAnalysis]:
         """
         Find classes by name, using regular expression
         This method will return all ClassAnalysis Object that match the name of
@@ -1876,7 +1876,7 @@ class Analysis:
         methodname:str=".*", 
         descriptor:str=".*",
         accessflags:str=".*", 
-        no_external:bool=False) -> Generator[MethodAnalysis]:
+        no_external:bool=False) -> Iterator[MethodAnalysis]:
         """
         Find a method by name using regular expression.
         This method will return all MethodAnalysis objects, which match the
@@ -1907,7 +1907,7 @@ class Analysis:
                        re.match(accessflags, z.get_access_flags_string()):
                         yield m
 
-    def find_strings(self, string:str=".*") -> Generator[StringAnalysis]:
+    def find_strings(self, string:str=".*") -> Iterator[StringAnalysis]:
         """
         Find strings by regex
 
@@ -1923,7 +1923,7 @@ class Analysis:
         classname:str=".*",
         fieldname:str=".*",
         fieldtype:str=".*",
-        accessflags:str=".*") -> Generator[FieldAnalysis]:
+        accessflags:str=".*") -> Iterator[FieldAnalysis]:
         """
         find fields by regex
 
@@ -2070,7 +2070,7 @@ class Analysis:
                     logger.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
 
-    def get_permissions(self, apilevel:str|int=None) -> Generator[MethodAnalysis, list[str]]:
+    def get_permissions(self, apilevel:str|int=None) -> Iterator[MethodAnalysis, list[str]]:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
@@ -2115,7 +2115,7 @@ class Analysis:
                 if meth.permission_api_name in permmap:
                     yield meth_analysis, permmap[meth.permission_api_name]
 
-    def get_permission_usage(self, permission:str, apilevel:str|int=None) -> Generator[MethodAnalysis]:
+    def get_permission_usage(self, permission:str, apilevel:str|int=None) -> Iterator[MethodAnalysis]:
         """
         Find the usage of a permission inside the Analysis.
 
@@ -2154,7 +2154,7 @@ class Analysis:
                 if meth.permission_api_name in apis:
                     yield meth_analysis
 
-    def get_android_api_usage(self) -> Generator[MethodAnalysis]:
+    def get_android_api_usage(self) -> Iterator[MethodAnalysis]:
         """
         Get all usage of the Android APIs inside the Analysis.
 

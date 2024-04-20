@@ -6,10 +6,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from androguard.core.analysis.analysis import Analysis, MethodAnalysis
+    from androguard.decompiler.decompiler import DecompilerDAD
+    from androguard.decompiler.node import Node
 
 from androguard.core import bytecode, apk
-from androguard.decompiler.decompiler import DecompilerDAD
-from androguard.decompiler.node import Node
 from androguard.core.androconf import CONF
 from androguard.util import read_at
 
