@@ -3248,7 +3248,7 @@ class EncodedMethod:
             return self.code.get_length()
         return 0
 
-    def get_code(self) -> DalvikCode|None:
+    def get_code(self) -> Union[DalvikCode,None]:
         """
         Return the code object associated to the method
 
@@ -7287,7 +7287,7 @@ class ClassManager:
         else:
             self.__manage_item_off.append(c_item.get_offset())
 
-    def get_code(self, idx: int) -> DalvikCode|None:
+    def get_code(self, idx: int) -> Union[DalvikCode,None]:
         try:
             return self.__manage_item[TypeMapItem.CODE_ITEM].get_code(idx)
         except KeyError:
@@ -8142,7 +8142,7 @@ class DEX:
         """
         return len(self.get_encoded_methods())
 
-    def get_encoded_method_by_idx(self, idx: int) -> EncodedMethod|None:
+    def get_encoded_method_by_idx(self, idx: int) -> Union[EncodedMethod,None]:
         """
         Return a specific encoded method by using an index
         :param idx: the index of the method
@@ -8161,7 +8161,7 @@ class DEX:
         except KeyError:
             return None
 
-    def get_encoded_method_descriptor(self, class_name: str, method_name: str, descriptor: str) -> EncodedMethod|None:
+    def get_encoded_method_descriptor(self, class_name: str, method_name: str, descriptor: str) -> Union[EncodedMethod,None]:
         """
         Return the specific encoded method given a class name, method name, and descriptor
 
@@ -8185,7 +8185,7 @@ class DEX:
 
         return self.__cache_methods.get(key)
 
-    def get_encoded_methods_class_method(self, class_name: str, method_name: str) -> EncodedMethod|None:
+    def get_encoded_methods_class_method(self, class_name: str, method_name: str) -> Union[EncodedMethod,None]:
         """
         Return the specific encoded methods of the class
 
@@ -8275,7 +8275,7 @@ class DEX:
         """
         return len(self.get_strings())
 
-    def get_regex_strings(self, regular_expressions: str) -> list[str]|None:
+    def get_regex_strings(self, regular_expressions: str) -> Union[list[str],None]:
         """
         Return all target strings matched the regex
 

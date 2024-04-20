@@ -6,7 +6,7 @@ from androguard.core import androconf
 import hashlib
 import collections
 import dataset
-from typing import Generator
+from typing import Generator, Union
 
 from loguru import logger
 
@@ -221,7 +221,7 @@ class Session:
 
         return digest, d, dx
 
-    def add(self, filename: str, raw_data:bytes=None, dx:Analysis=None) -> str|None:
+    def add(self, filename: str, raw_data:bytes=None, dx:Analysis=None) -> Union[str,None]:
         """
         Generic method to add a file to the session.
 
@@ -293,7 +293,7 @@ class Session:
         """
         return current_class.CM.vm
 
-    def get_filename_by_class(self, current_class: dex.ClassDefItem) -> str|None:
+    def get_filename_by_class(self, current_class: dex.ClassDefItem) -> Union[str,None]:
         """
         Returns the filename of the DEX file where the class is in.
 
@@ -309,7 +309,7 @@ class Session:
                 return self.analyzed_digest[digest]
         return None
 
-    def get_digest_by_class(self, current_class: dex.ClassDefItem) -> str|None:
+    def get_digest_by_class(self, current_class: dex.ClassDefItem) -> Union[str,None]:
         """
         Return the SHA256 hash of the object containing the ClassDefItem
 

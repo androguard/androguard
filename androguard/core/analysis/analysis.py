@@ -82,7 +82,7 @@ class Exceptions:
         for i in exceptions:
             self.exceptions.append(ExceptionAnalysis(i, basic_blocks))
 
-    def get_exception(self, addr_start: int, addr_end: int) -> ExceptionAnalysis|None:
+    def get_exception(self, addr_start: int, addr_end: int) -> Union[ExceptionAnalysis,None]:
         for i in self.exceptions:
             if i.start >= addr_start and i.end <= addr_end:
                 return i
@@ -119,7 +119,7 @@ class BasicBlocks:
     def pop(self, idx: int) -> DEXBasicBlock:
         return self.bb.pop(idx)
 
-    def get_basic_block(self, idx: int) -> DEXBasicBlock|None:
+    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock,None]:
         for i in self.bb:
             if i.get_start() <= idx < i.get_end():
                 return i
@@ -320,7 +320,7 @@ class DEXBasicBlock:
             code = self.method.get_code().get_bc()
             self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
     
-    def get_special_ins(self, idx: int) -> dex.Instruction|None:
+    def get_special_ins(self, idx: int) -> Union[dex.Instruction,None]:
         """
         Return the associated instruction to a specific instruction (for example a packed/sparse switch)
 
@@ -1654,7 +1654,7 @@ class Analysis:
                         self.classes[cur_cls_name].add_field_xref_write(cur_meth, cur_cls, field_item, off)
                         cur_meth.add_xref_write(cur_cls, field_item, off)
 
-    def get_method(self, method: dex.EncodedMethod) -> MethodAnalysis|None:
+    def get_method(self, method: dex.EncodedMethod) -> Union[MethodAnalysis,None]:
         """
         Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
         This Analysis object is used to enhance EncodedMethods.
@@ -1699,7 +1699,7 @@ class Analysis:
 
         return self.__method_hashes[m_hash]
 
-    def get_method_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> dex.EncodedMethod|None:
+    def get_method_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> Union[dex.EncodedMethod,None]:
         """
         Search for a :class:`EncodedMethod` in all classes in this analysis
 
@@ -1714,7 +1714,7 @@ class Analysis:
             return m_a.get_method()
         return None
 
-    def get_method_analysis_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> MethodAnalysis|None:
+    def get_method_analysis_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> Union[MethodAnalysis,None]:
         """
         Returns the crossreferencing object for a given method.
 
@@ -1732,7 +1732,7 @@ class Analysis:
             return None
         return self.__method_hashes[m_hash]
 
-    def get_field_analysis(self, field: dex.EncodedField) -> FieldAnalysis|None:
+    def get_field_analysis(self, field: dex.EncodedField) -> Union[FieldAnalysis,None]:
         """
         Get the FieldAnalysis for a given fieldname
 

@@ -890,7 +890,7 @@ class APK:
             if value is not None:
                 return value
 
-    def get_value_from_tag(self, tag: Element, attribute: str) -> str|None:
+    def get_value_from_tag(self, tag: Element, attribute: str) -> Union[str,None]:
         """
         Return the value of the android prefixed attribute in a specific tag.
 
@@ -1044,7 +1044,7 @@ class APK:
 
         return x.intersection(y)
 
-    def get_main_activity(self) -> str|None:
+    def get_main_activity(self) -> Union[str,None]:
         """
         Return the name of the main activity
 
@@ -1513,7 +1513,7 @@ class APK:
                 zout.writestr(item, buffer)
         zout.close()
 
-    def get_android_manifest_axml(self) -> AXMLPrinter|None:
+    def get_android_manifest_axml(self) -> Union[AXMLPrinter,None]:
         """
             Return the :class:`AXMLPrinter` object which corresponds to the AndroidManifest.xml file
 
@@ -1535,7 +1535,7 @@ class APK:
         except KeyError:
             return None
 
-    def get_android_resources(self) -> ARSCParser|None:
+    def get_android_resources(self) -> Union[ARSCParser,None]:
         """
         Return the :class:`~androguard.core.axml.ARSCParser` object which corresponds to the resources.arsc file
 
@@ -1997,7 +1997,7 @@ class APK:
                 certs.append(x)
         return certs
 
-    def get_signature_name(self) -> str|None:
+    def get_signature_name(self) -> Union[str,None]:
         """
             Return the name of the first signature file found.
         """
@@ -2026,7 +2026,7 @@ class APK:
 
         return signatures
 
-    def get_signature(self) -> str|None:
+    def get_signature(self) -> Union[str,None]:
         """
         Return the data of the first signature file found (v1 Signature / JAR
         Signature)
