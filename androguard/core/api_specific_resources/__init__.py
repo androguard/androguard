@@ -1,3 +1,4 @@
+
 import json
 import os
 import re
@@ -8,8 +9,7 @@ from loguru import logger
 class APILevelNotFoundError(Exception):
     pass
 
-
-def load_permissions(apilevel:str|int, permtype='permissions'):
+def load_permissions(apilevel:str|int, permtype:str='permissions') -> dict[str, dict[str,str]]:
     """
     Load the Permissions for the given apilevel.
 
@@ -64,7 +64,7 @@ def load_permissions(apilevel:str|int, permtype='permissions'):
         return json.load(fp)[permtype]
 
 
-def load_permission_mappings(apilevel:str|int):
+def load_permission_mappings(apilevel:str|int) -> dict[str, list[str]]:
     """
     Load the API/Permission mapping for the requested API level.
     If the requetsed level was not found, None is returned.
