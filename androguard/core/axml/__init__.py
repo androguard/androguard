@@ -2108,7 +2108,7 @@ class ARSCParser:
         return result
 
     @staticmethod
-    def parse_id(name):
+    def parse_id(name:str) -> tuple[str,str]:
         """
         Resolves an id from a binary XML file in the form "@[package:]DEADBEEF"
         and returns a tuple of package name and resource id.
@@ -2179,7 +2179,7 @@ class ARSCParser:
 
 
 class PackageContext:
-    def __init__(self, current_package, stringpool_main, mTableStrings, mKeyStrings):
+    def __init__(self, current_package: ARSCResTablePackage, stringpool_main: StringBlock, mTableStrings: StringBlock, mKeyStrings: StringBlock) -> None:
         """
         :param ARSCResTablePackage current_package:
         :param StringBlock stringpool_main:
@@ -2191,13 +2191,13 @@ class PackageContext:
         self.mKeyStrings = mKeyStrings
         self.current_package = current_package
 
-    def get_mResId(self):
+    def get_mResId(self) -> int:
         return self.current_package.mResId
 
-    def set_mResId(self, mResId):
+    def set_mResId(self, mResId: int) -> None:
         self.current_package.mResId = mResId
 
-    def get_package_name(self):
+    def get_package_name(self) -> str:
         return self.current_package.get_name()
 
     def __repr__(self):
@@ -2227,9 +2227,9 @@ class ARSCHeader:
     # This is the minimal size such a header must have. There might be other header data too!
     SIZE = 2 + 2 + 4
 
-    def __init__(self, buff, expected_type=None, possible_types=None):
+    def __init__(self, buff: BinaryIO, expected_type:Union[int,None]=None, possible_types:Union[set[int], None]=None) -> None:
         """
-        :param androguard.core.bytecode.BuffHandle buff: the buffer set to the position where the header starts.
+        :param buff: the buffer set to the position where the header starts.
         :param int expected_type: the type of the header which is expected.
         """
         self.start = buff.tell()
@@ -2274,14 +2274,14 @@ class ARSCHeader:
                                                                                               self.start))
 
     @property
-    def type(self):
+    def type(self) -> int:
         """
         Type identifier for this chunk
         """
         return self._type
 
     @property
-    def header_size(self):
+    def header_size(self) -> int:
         """
         Size of the chunk header (in bytes).  Adding this value to
         the address of the chunk allows you to find its associated data
@@ -2290,7 +2290,7 @@ class ARSCHeader:
         return self._header_size
 
     @property
-    def size(self):
+    def size(self) -> int:
         """
         Total size of this chunk (in bytes).  This is the chunkSize plus
         the size of any data associated with the chunk.  Adding this value
@@ -2301,7 +2301,7 @@ class ARSCHeader:
         return self._size
 
     @property
-    def end(self):
+    def end(self) -> int:
         """
         Get the absolute offset inside the file, where the chunk ends.
         This is equal to `ARSCHeader.start + ARSCHeader.size`.
@@ -2321,7 +2321,7 @@ class ARSCResTablePackage:
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#861
     """
-    def __init__(self, buff, header):
+    def __init__(self, buff: BinaryIO, header:ARSCHeader) -> None:
         self.header = header
         self.start = buff.tell()
         self.id = unpack('<I', buff.read(4))[0]
@@ -2332,7 +2332,7 @@ class ARSCResTablePackage:
         self.lastPublicKey = unpack('<I', buff.read(4))[0]
         self.mResId = self.id << 24
 
-    def get_name(self):
+    def get_name(self) -> None:
         name = self.name.decode("utf-16", 'replace')
         name = name[:name.find("\x00")]
         return name
@@ -2342,7 +2342,7 @@ class ARSCResTypeSpec:
     """
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1327
     """
-    def __init__(self, buff, parent=None):
+    def __init__(self, buff: BinaryIO, parent:Union[PackageContext, None]=None) -> None:
         self.start = buff.tell()
         self.parent = parent
         self.id = unpack('<B', buff.read(1))[0]
@@ -2369,7 +2369,7 @@ class ARSCResType:
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
     """
-    def __init__(self, buff, parent=None):
+    def __init__(self, buff: BinaryIO, parent:Union[PackageContext,None]=None) -> None:
         self.start = buff.tell()
         self.parent = parent
 
@@ -2389,10 +2389,10 @@ class ARSCResType:
 
         logger.debug("Parsed {}".format(self))
 
-    def get_type(self):
+    def get_type(self) -> str:
         return self.parent.mTableStrings.getString(self.id - 1)
 
-    def get_package_name(self):
+    def get_package_name(self) -> str:
         return self.parent.get_package_name()
 
     def __repr__(self):
@@ -2422,7 +2422,7 @@ class ARSCResTableConfig:
             cls.DEFAULT = ARSCResTableConfig(None)
         return cls.DEFAULT
 
-    def __init__(self, buff=None, **kwargs):
+    def __init__(self, buff:Union[BinaryIO, None]=None, **kwargs) -> None:
         if buff is not None:
             self.start = buff.tell()
 
@@ -2574,7 +2574,7 @@ class ARSCResTableConfig:
                 char_out += chr(char_in[1])
         return char_out
 
-    def get_language_and_region(self):
+    def get_language_and_region(self) -> str:
         """
         Returns the combined language+region string or \x00\x00 for the default locale
         :return:
@@ -2585,7 +2585,7 @@ class ARSCResTableConfig:
             return (_language + "-r" + _region) if _region else _language
         return "\x00\x00"
 
-    def get_config_name_friendly(self):
+    def get_config_name_friendly(self) -> str:
         """
         Here for legacy reasons.
 
@@ -2593,7 +2593,7 @@ class ARSCResTableConfig:
         """
         return self.get_qualifier()
 
-    def get_qualifier(self):
+    def get_qualifier(self) -> str:
         """
         Return resource name qualifier for the current configuration.
         for example
@@ -2814,19 +2814,19 @@ class ARSCResTableConfig:
 
         return "-".join(res)
 
-    def get_language(self):
+    def get_language(self) -> str:
         x = self.locale & 0x0000ffff
         return chr(x & 0x00ff) + chr((x & 0xff00) >> 8)
 
-    def get_country(self):
+    def get_country(self) -> str:
         x = (self.locale & 0xffff0000) >> 16
         return chr(x & 0x00ff) + chr((x & 0xff00) >> 8)
 
-    def get_density(self):
+    def get_density(self) -> str:
         x = ((self.screenType >> 16) & 0xffff)
         return x
 
-    def is_default(self):
+    def is_default(self) -> bool:
         """
         Test if this is a default resource, which matches all
 
@@ -2877,7 +2877,7 @@ class ARSCResTableEntry:
     # linking with other resource tables.
     FLAG_WEAK = 4
 
-    def __init__(self, buff, mResId, parent=None):
+    def __init__(self, buff:BinaryIO, mResId:int, parent:Union[PackageContext, None]=None) -> None:
         self.start = buff.tell()
         self.mResId = mResId
         self.parent = parent
@@ -2896,22 +2896,22 @@ class ARSCResTableEntry:
         if self.is_weak():
             logger.debug("Parsed {}".format(self))
 
-    def get_index(self):
+    def get_index(self) -> int:
         return self.index
 
-    def get_value(self):
+    def get_value(self) -> str:
         return self.parent.mKeyStrings.getString(self.index)
 
-    def get_key_data(self):
+    def get_key_data(self) -> str:
         return self.key.get_data_value()
 
-    def is_public(self):
+    def is_public(self) -> bool:
         return (self.flags & self.FLAG_PUBLIC) != 0
 
-    def is_complex(self):
+    def is_complex(self) -> bool:
         return (self.flags & self.FLAG_COMPLEX) != 0
 
-    def is_weak(self):
+    def is_weak(self) -> bool:
         return (self.flags & self.FLAG_WEAK) != 0
 
     def __repr__(self):
@@ -2934,7 +2934,7 @@ class ARSCComplex:
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1485 for `ResTable_map_entry`
     and http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1498 for `ResTable_map`
     """
-    def __init__(self, buff, parent=None):
+    def __init__(self, buff:BinaryIO, parent:Union[PackageContext,None]=None) -> None:
         self.start = buff.tell()
         self.parent = parent
 
@@ -2959,7 +2959,7 @@ class ARSCResStringPoolRef:
 
     See: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#262
     """
-    def __init__(self, buff, parent=None):
+    def __init__(self, buff:BinaryIO, parent:Union[PackageContext, None]=None) -> None:
         self.start = buff.tell()
         self.parent = parent
 
@@ -2974,19 +2974,19 @@ class ARSCResStringPoolRef:
         except Exception as e:
             logger.error(e)
 
-    def get_data_value(self):
+    def get_data_value(self) -> str:
         return self.parent.stringpool_main.getString(self.data)
 
-    def get_data(self):
+    def get_data(self) -> int:
         return self.data
 
-    def get_data_type(self):
+    def get_data_type(self) -> bytes:
         return self.data_type
 
-    def get_data_type_string(self):
+    def get_data_type_string(self) -> str:
         return TYPE_TABLE[self.data_type]
 
-    def format_value(self):
+    def format_value(self) -> str:
         """
         Return the formatted (interpreted) data according to `data_type`.
         """
@@ -2996,7 +2996,7 @@ class ARSCResStringPoolRef:
             self.parent.stringpool_main.getString
         )
 
-    def is_reference(self):
+    def is_reference(self) -> bool:
         """
         Returns True if the Res_value is actually a reference to another resource
         """
@@ -3010,7 +3010,7 @@ class ARSCResStringPoolRef:
             self.data)
 
 
-def get_arsc_info(arscobj):
+def get_arsc_info(arscobj:ARSCParser) -> str:
     """
     Return a string containing all resources packages ordered by packagename, locale and type.
 
