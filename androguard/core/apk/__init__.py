@@ -1,3 +1,8 @@
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+
 # Androguard
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string

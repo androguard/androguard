@@ -198,7 +198,7 @@ def _get_operand_html(operand, registers_colors, colors):
     The HTML should be compatible with pydot/graphviz to be used
     inside a node label.
 
-    This is solely used in :func:`~androguard.core.bytecodes.method2dot`
+    This is solely used in :func:`~androguard.core.bytecode.method2dot`
 
     :param operand: tuple containing the operand type and operands
     :param dict register_colors: key: register number, value: register color

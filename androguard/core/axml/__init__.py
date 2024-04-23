@@ -1,10 +1,16 @@
-from androguard.core.resources import public
-from .types import *
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
 
 from struct import pack, unpack
 from xml.sax.saxutils import escape
 import collections
 from collections import defaultdict
+from typing import BinaryIO, Union
+
+from androguard.core.resources import public
+from .types import *
 
 from lxml import etree
 from loguru import logger
@@ -85,7 +91,7 @@ class ResParserError(Exception):
     pass
 
 
-def complexToFloat(xcomplex):
+def complexToFloat(xcomplex) -> float:
     """
     Convert a complex unit into float
     """
@@ -99,7 +105,7 @@ class StringBlock:
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
     """
-    def __init__(self, buff, header):
+    def __init__(self, buff:BinaryIO, header:ARSCHeader) -> None:
         """
         :param buff: buffer which holds the string block
         :param header: a instance of :class:`~ARSCHeader`
@@ -191,7 +197,7 @@ class StringBlock:
         for i in range(self.stringCount):
             yield self.getString(i)
 
-    def getString(self, idx):
+    def getString(self, idx: int) -> str:
         """
         Return the string at the index in the string table
 
@@ -213,7 +219,7 @@ class StringBlock:
 
         return self._cache[idx]
 
-    def getStyle(self, idx):
+    def getStyle(self, idx:int) -> int:
         """
         Return the style associated with the index
 
@@ -222,7 +228,7 @@ class StringBlock:
         """
         return self.m_styles[idx]
 
-    def _decode8(self, offset):
+    def _decode8(self, offset:int) -> str:
         """
         Decode an UTF-8 String at the given offset
 
@@ -245,7 +251,7 @@ class StringBlock:
 
         return self._decode_bytes(data, 'utf-8', str_len)
 
-    def _decode16(self, offset):
+    def _decode16(self, offset:int) -> str:
         """
         Decode an UTF-16 String at the given offset
 
@@ -266,7 +272,7 @@ class StringBlock:
         return self._decode_bytes(data, 'utf-16', str_len)
 
     @staticmethod
-    def _decode_bytes(data, encoding, str_len):
+    def _decode_bytes(data:bytes, encoding:str, str_len:int) -> str:
         """
         Generic decoding with length check.
         The string is decoded from bytes with the given encoding, then the length
@@ -283,7 +289,7 @@ class StringBlock:
             logger.warning("invalid decoded string length")
         return string
 
-    def _decode_length(self, offset, sizeof_char):
+    def _decode_length(self, offset:int, sizeof_char:int) -> tuple[int,int]:
         """
         Generic Length Decoding at offset of string
 
@@ -320,7 +326,7 @@ class StringBlock:
 
         return length, size
 
-    def show(self):
+    def show(self) -> None:
         """
         Print some information on stdout about the string table
         """
@@ -371,7 +377,7 @@ class AXMLParser:
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
     """
-    def __init__(self, raw_buff):
+    def __init__(self, raw_buff:bytes) -> None:
         logger.debug("AXMLParser")
 
         self._reset()
@@ -458,7 +464,7 @@ class AXMLParser:
         # Store a list of prefix/uri mappings encountered
         self.namespaces = []
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """
         Get the state of the AXMLPrinter.
         if an error happend somewhere in the process of parsing the file,
@@ -671,7 +677,7 @@ class AXMLParser:
             self.buff.seek(h.end)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Return the String assosciated with the tag name
         """
@@ -681,7 +687,7 @@ class AXMLParser:
         return self.sb[self.m_name]
 
     @property
-    def comment(self):
+    def comment(self) -> Union[str,None]:
         """
         Return the comment at the current position or None if no comment is given
 
@@ -694,7 +700,7 @@ class AXMLParser:
         return self.sb[self.m_comment_index]
 
     @property
-    def namespace(self):
+    def namespace(self) -> str:
         """
         Return the Namespace URI (if any) as a String for the current tag
         """
@@ -708,7 +714,7 @@ class AXMLParser:
         return self.sb[self.m_namespaceUri]
 
     @property
-    def nsmap(self):
+    def nsmap(self) -> dict[str,str]:
         """
         Returns the current namespace mapping as a dictionary
 
@@ -734,7 +740,7 @@ class AXMLParser:
         return NSMAP
 
     @property
-    def text(self):
+    def text(self) -> str:
         """
         Return the String assosicated with the current text
         """
@@ -743,21 +749,21 @@ class AXMLParser:
 
         return self.sb[self.m_name]
 
-    def getName(self):
+    def getName(self) -> str:
         """
         Legacy only!
         use :py:attr:`~androguard.core.bytecodes.AXMLParser.name` instead
         """
         return self.name
 
-    def getText(self):
+    def getText(self) -> str:
         """
         Legacy only!
         use :py:attr:`~androguard.core.bytecodes.AXMLParser.text` instead
         """
         return self.text
 
-    def getPrefix(self):
+    def getPrefix(self) -> str:
         """
         Legacy only!
         use :py:attr:`~androguard.core.bytecodes.AXMLParser.namespace` instead
@@ -787,7 +793,7 @@ class AXMLParser:
 
         return self.m_attribute_count
 
-    def getAttributeUri(self, index):
+    def getAttributeUri(self, index:int):
         """
         Returns the numeric ID for the namespace URI of an attribute
         """
@@ -798,7 +804,7 @@ class AXMLParser:
 
         return uri
 
-    def getAttributeNamespace(self, index):
+    def getAttributeNamespace(self, index:int):
         """
         Return the Namespace URI (if any) for the attribute
         """
@@ -812,7 +818,7 @@ class AXMLParser:
 
         return self.sb[uri]
 
-    def getAttributeName(self, index):
+    def getAttributeName(self, index:int):
         """
         Returns the String which represents the attribute name
         """
@@ -836,7 +842,7 @@ class AXMLParser:
             res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
         return res
 
-    def getAttributeValueType(self, index):
+    def getAttributeValueType(self, index:int):
         """
         Return the type of the attribute at the given index
 
@@ -847,7 +853,7 @@ class AXMLParser:
         offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_TYPE]
 
-    def getAttributeValueData(self, index):
+    def getAttributeValueData(self, index:int):
         """
         Return the data of the attribute at the given index
 
@@ -877,7 +883,7 @@ class AXMLParser:
         return ''
 
 
-def format_value(_type, _data, lookup_string=lambda ix: "<string>"):
+def format_value(_type: int, _data: int, lookup_string=lambda ix: "<string>") -> str:
     """
     Format a value based on type and data.
     By default, no strings are looked up and "<string>" is returned.
@@ -941,7 +947,7 @@ class AXMLPrinter:
     __charrange = None
     __replacement = None
 
-    def __init__(self, raw_buff):
+    def __init__(self, raw_buff: bytes)->bytes:
         logger.debug("AXMLPrinter")
 
         self.axml = AXMLParser(raw_buff)
@@ -1008,7 +1014,7 @@ class AXMLPrinter:
                     logger.warning("Not all namespace mappings were closed! Malformed AXML?")
                 break
 
-    def get_buff(self):
+    def get_buff(self) -> bytes:
         """
         Returns the raw XML file without prettification applied.
 
@@ -1016,7 +1022,7 @@ class AXMLPrinter:
         """
         return self.get_xml(pretty=False)
 
-    def get_xml(self, pretty=True):
+    def get_xml(self, pretty:bool=True) -> bytes:
         """
         Get the XML as an UTF-8 string
 
@@ -1024,7 +1030,7 @@ class AXMLPrinter:
         """
         return etree.tostring(self.root, encoding="utf-8", pretty_print=pretty)
 
-    def get_xml_obj(self):
+    def get_xml_obj(self) -> etree.Element:
         """
         Get the XML as an ElementTree object
 
@@ -1032,7 +1038,7 @@ class AXMLPrinter:
         """
         return self.root
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """
         Return the state of the AXMLParser.
         If this flag is set to False, the parsing has failed, thus
@@ -1040,7 +1046,7 @@ class AXMLPrinter:
         """
         return self.axml.is_valid()
 
-    def is_packed(self):
+    def is_packed(self) -> bool:
         """
         Returns True if the AXML is likely to be packed
 
@@ -1053,7 +1059,7 @@ class AXMLPrinter:
         """
         return self.packerwarning or self.axml.packerwarning
 
-    def _get_attribute_value(self, index):
+    def _get_attribute_value(self, index: int):
         """
         Wrapper function for format_value to resolve the actual value of an attribute in a tag
         :param index: index of the current attribute
@@ -1357,7 +1363,7 @@ class ARSCParser:
     Each package is a chunk of type RES_TABLE_PACKAGE_TYPE.
     It contains again many more chunks.
     """
-    def __init__(self, raw_buff):
+    def __init__(self, raw_buff:bytes) -> None:
         """
         :param bytes raw_buff: the raw bytes of the file
         """
@@ -1586,10 +1592,10 @@ class ARSCParser:
                         nb += 3 + nb_i - 1  # -1 to account for the nb+=1 on the next line
                 nb += 1
 
-    def get_resource_string(self, ate):
+    def get_resource_string(self, ate:ARSCResTableEntry) -> list:
         return [ate.get_value(), ate.get_key_data()]
 
-    def get_resource_id(self, ate):
+    def get_resource_id(self, ate:ARSCResTableEntry) -> list[str]:
         x = [ate.get_value()]
         if ate.key.get_data() == 0:
             x.append("false")
@@ -1597,7 +1603,7 @@ class ARSCParser:
             x.append("true")
         return x
 
-    def get_resource_bool(self, ate):
+    def get_resource_bool(self, ate:ARSCResTableEntry) -> list[str]:
         x = [ate.get_value()]
         if ate.key.get_data() == 0:
             x.append("false")
@@ -1605,10 +1611,10 @@ class ARSCParser:
             x.append("true")
         return x
 
-    def get_resource_integer(self, ate):
+    def get_resource_integer(self, ate:ARSCResTableEntry) -> list:
         return [ate.get_value(), ate.key.get_data()]
 
-    def get_resource_color(self, ate):
+    def get_resource_color(self, ate:ARSCResTableEntry) -> list:
         entry_data = ate.key.get_data()
         return [
             ate.get_value(),
@@ -1619,7 +1625,7 @@ class ARSCParser:
                 (entry_data & 0xFF))
         ]
 
-    def get_resource_dimen(self, ate):
+    def get_resource_dimen(self, ate:ARSCResTableEntry) -> list:
         try:
             return [
                 ate.get_value(), "{}{}".format(
@@ -1633,17 +1639,17 @@ class ARSCParser:
             return [ate.get_value(), ate.key.get_data()]
 
     # FIXME
-    def get_resource_style(self, ate):
+    def get_resource_style(self, ate:ARSCResTableEntry) -> list:
         return ["", ""]
 
-    def get_packages_names(self):
+    def get_packages_names(self) -> list[str]:
         """
         Retrieve a list of all package names, which are available
         in the given resources.arsc.
         """
         return list(self.packages.keys())
 
-    def get_locales(self, package_name):
+    def get_locales(self, package_name:str) -> list[str]:
         """
         Retrieve a list of all available locales in a given packagename.
 
@@ -1652,7 +1658,7 @@ class ARSCParser:
         self._analyse()
         return list(self.values[package_name].keys())
 
-    def get_types(self, package_name, locale='\x00\x00'):
+    def get_types(self, package_name:str, locale:str='\x00\x00') -> list[str]:
         """
         Retrieve a list of all types which are available in the given
         package and locale.
@@ -1663,7 +1669,7 @@ class ARSCParser:
         self._analyse()
         return list(self.values[package_name][locale].keys())
 
-    def get_public_resources(self, package_name, locale='\x00\x00'):
+    def get_public_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'public'.
 
@@ -1689,7 +1695,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_string_resources(self, package_name, locale='\x00\x00'):
+    def get_string_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'string'.
 
@@ -1718,7 +1724,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_strings_resources(self):
+    def get_strings_resources(self) -> bytes:
         """
         Get the XML (as string) of all resources of type 'string'.
         This is a combined variant, which has all locales and all package names
@@ -1751,7 +1757,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_id_resources(self, package_name, locale='\x00\x00'):
+    def get_id_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'id'.
 
@@ -1780,7 +1786,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_bool_resources(self, package_name, locale='\x00\x00'):
+    def get_bool_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'bool'.
 
@@ -1805,7 +1811,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_integer_resources(self, package_name, locale='\x00\x00'):
+    def get_integer_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'integer'.
 
@@ -1830,7 +1836,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_color_resources(self, package_name, locale='\x00\x00'):
+    def get_color_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'color'.
 
@@ -1855,7 +1861,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_dimen_resources(self, package_name, locale='\x00\x00'):
+    def get_dimen_resources(self, package_name:str, locale:str='\x00\x00') -> bytes:
         """
         Get the XML (as string) of all resources of type 'dimen'.
 
@@ -1880,7 +1886,7 @@ class ARSCParser:
 
         return buff.encode('utf-8')
 
-    def get_id(self, package_name, rid, locale='\x00\x00'):
+    def get_id(self, package_name:str, rid:int, locale:str='\x00\x00') -> tuple:
         """
         Returns the tuple (resource_type, resource_name, resource_id)
         for the given resource_id.
@@ -1905,7 +1911,7 @@ class ARSCParser:
         Resolves resources by ID and configuration.
         This resolver deals with complex resources as well as with references.
         """
-        def __init__(self, android_resources, config=None):
+        def __init__(self, android_resources:ARSCParser, config:Union[ARSCResTableConfig,None]=None) -> None:
             """
             :param ARSCParser android_resources: A resource parser
             :param ARSCResTableConfig config: The desired configuration or None to resolve all.
@@ -1913,7 +1919,7 @@ class ARSCParser:
             self.resources = android_resources
             self.wanted_config = config
 
-        def resolve(self, res_id):
+        def resolve(self, res_id: int) -> list[tuple[ARSCResTableConfig, str]]:
             """
             the given ID into the Resource and returns a list of matching resources.
 
@@ -1932,7 +1938,7 @@ class ARSCParser:
                 # deconstruct them and check if more candidates are generated
                 self.put_ate_value(result, ate, config)
 
-        def put_ate_value(self, result, ate, config):
+        def put_ate_value(self, result: list, ate:ARSCResTableEntry, config:ARSCResTableConfig) -> None:
             """
             Put a ResTableEntry into the list of results
             :param list result: results array
@@ -1948,7 +1954,7 @@ class ARSCParser:
             else:
                 self.put_item_value(result, ate.key, config, ate, complex_=False)
 
-        def put_item_value(self, result, item, config, parent, complex_):
+        def put_item_value(self, result:list, item:ARSCResStringPoolRef, config:ARSCResTableConfig, parent:ARSCResTableEntry, complex_:bool)->None:
             """
             Put the tuple (ARSCResTableConfig, resolved string) into the result set
 
@@ -1975,7 +1981,7 @@ class ARSCParser:
                 else:
                     result.append((config, item.format_value()))
 
-    def get_resolved_res_configs(self, rid, config=None):
+    def get_resolved_res_configs(self, rid:int, config:Union[ARSCTableResConfig, None]=None) -> list[tuple[ARSCResTableConfig, str]]:
         """
         Return a list of resolved resource IDs with their corresponding configuration.
         It has a similar return type as :meth:`get_res_configs` but also handles complex entries
@@ -1991,7 +1997,7 @@ class ARSCParser:
         resolver = ARSCParser.ResourceResolver(self, config)
         return resolver.resolve(rid)
 
-    def get_resolved_strings(self):
+    def get_resolved_strings(self) -> list[str]:
         self._analyse()
         if self._resolved_strings:
             return self._resolved_strings
@@ -2026,7 +2032,7 @@ class ARSCParser:
         self._resolved_strings = r
         return r
 
-    def get_res_configs(self, rid, config=None, fallback=True):
+    def get_res_configs(self, rid:int, config:Union[ARSCResTableConfig,None]=None, fallback:bool=True) -> list[ARSCResTableConfig]:
         """
         Return the resources found with the ID `rid` and select
         the right one based on the configuration, or return all if no configuration was set.
@@ -2044,7 +2050,7 @@ class ARSCParser:
         :param rid: resource id as int
         :param config: a config to resolve from, or None to get all results
         :param fallback: Enable the fallback for resolving default configuration (default: True)
-        :return: a list of ARSCResTableConfig: ARSCResTableEntry
+        :return: a list of ARSCResTableConfig:
         """
         self._analyse()
 
@@ -2069,7 +2075,7 @@ class ARSCParser:
         else:
             return list(res_options.items())
 
-    def get_string(self, package_name, name, locale='\x00\x00'):
+    def get_string(self, package_name:str, name:str, locale:str='\x00\x00') -> Union[str,None]:
         self._analyse()
 
         try:
@@ -2135,7 +2141,7 @@ class ARSCParser:
         except ValueError:
             raise ValueError("ID is not a hex ID: '{}'".format(res_id))
 
-    def get_resource_xml_name(self, r_id, package=None):
+    def get_resource_xml_name(self, r_id:int, package:Union[str,None]=None) -> str:
         """
         Returns the XML name for a resource, including the package name if package is None.
         A full name might look like `@com.example:string/foobar`

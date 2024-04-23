@@ -2499,7 +2499,7 @@ class FieldHIdItem:
     def gets(self) -> list[FieldIdItem]:
         return self.field_id_items
 
-    def get(self, idx:int) -> FieldIdItem|FieldIdItemInvalid:
+    def get(self, idx:int) -> Union[FieldIdItem,FieldIdItemInvalid]:
         try:
             return self.field_id_items[idx]
         except IndexError:
@@ -2677,7 +2677,7 @@ class MethodHIdItem:
     def gets(self) -> list[MethodIdItem]:
         return self.method_id_items
 
-    def get(self, idx) -> MethodIdItem|MethodIdItemInvalid:
+    def get(self, idx) -> Union[MethodIdItem,MethodIdItemInvalid]:
         try:
             return self.method_id_items[idx]
         except IndexError:
@@ -6427,7 +6427,7 @@ def get_optimized_instruction(cm: ClassManager, op_value: int, buff: bytearray) 
         raise InvalidInstruction("Invalid Instruction for '0x{:04x}': {}".format(op_value, repr(buff)))
 
 
-def get_instruction_payload(op_value: int, cm: ClassManager, buff: bytearray) -> PackedSwitch|SparseSwitch|FillArrayData:
+def get_instruction_payload(op_value: int, cm: ClassManager, buff: bytearray) -> Union[PackedSwitch,SparseSwitch,FillArrayData]:
     try:
         return DALVIK_OPCODES_PAYLOAD[op_value][0](cm, buff)
     except struct.error:

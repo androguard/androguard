@@ -997,7 +997,7 @@ class ClassAnalysis:
     :param classobj: class:`~androguard.core.dex.ClassDefItem` or :class:`ExternalClass`
     """
 
-    def __init__(self, classobj: dex.ClassDefItem|ExternalClass):
+    def __init__(self, classobj: Union[dex.ClassDefItem,ExternalClass]) -> None:
         logger.info(f"Adding new ClassAnalysis: {classobj}")
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
@@ -1339,7 +1339,7 @@ class ClassAnalysis:
         """
         return self.xrefconstclass
 
-    def get_vm_class(self) -> dex.ClassDefItem | ExternalClass:
+    def get_vm_class(self) -> Union[dex.ClassDefItem,ExternalClass]:
         """
         Returns the original Dalvik VM class or the external class object.
 
@@ -2070,7 +2070,7 @@ class Analysis:
                     logger.warning("already existing field: {} at class {}".format(mname, name))
                 setattr(cls, mname, field)
 
-    def get_permissions(self, apilevel:str|int=None) -> Iterator[MethodAnalysis, list[str]]:
+    def get_permissions(self, apilevel:Union[str,int,None]=None) -> Iterator[MethodAnalysis, list[str]]:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
@@ -2115,7 +2115,7 @@ class Analysis:
                 if meth.permission_api_name in permmap:
                     yield meth_analysis, permmap[meth.permission_api_name]
 
-    def get_permission_usage(self, permission:str, apilevel:str|int=None) -> Iterator[MethodAnalysis]:
+    def get_permission_usage(self, permission:str, apilevel:Union[str,int,None]=None) -> Iterator[MethodAnalysis]:
         """
         Find the usage of a permission inside the Analysis.
 

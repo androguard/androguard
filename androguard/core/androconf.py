@@ -1,7 +1,16 @@
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+# from typing import TYPE_CHECKING
+# if TYPE_CHECKING:
+#     pass
+
 import sys
 import os
 import logging
 import tempfile
+from typing import Union
 from colorama import init, Fore
 from loguru import logger
 
@@ -238,7 +247,7 @@ def color_range(startcolor: tuple[int,int,int], goalcolor: tuple[int,int,int], s
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(resource_name: str, api:str|int=None) -> dict:
+def load_api_specific_resource_module(resource_name: str, api:Union[str,int,None]=None) -> dict:
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.
