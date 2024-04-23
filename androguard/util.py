@@ -1,11 +1,11 @@
 
 
 import sys
-from typing import BinaryIO
-from loguru import logger
+from typing import Union, BinaryIO
 
 #  External dependecies
 import asn1crypto
+from loguru import logger
 
 class MyFilter:
     def __init__(self, level:int) -> None:
@@ -47,7 +47,7 @@ def readFile(filename: str, binary:bool=True) -> bytes:
         return f.read()
 
 
-def get_certificate_name_string(name:str, short:bool=False, delimiter:str=', ') -> str:
+def get_certificate_name_string(name:Union[dict, asn1crypto.x509.Name], short:bool=False, delimiter:str=', ') -> str:
     """
     Format the Name type of a X509 Certificate in a human readable form.
 
