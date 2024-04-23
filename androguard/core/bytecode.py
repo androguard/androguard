@@ -1,8 +1,19 @@
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from androguard.core.analysis import DEXBasicBlock, MethodAnalysis
+    from androguard.core.dex import DEX
+
 import hashlib
 from xml.sax.saxutils import escape
 from struct import pack
+from typing import Union
 import textwrap
 import json
+
 from loguru import logger
 
 from androguard.core.androconf import CONF, color_range
@@ -106,7 +117,7 @@ def _colorize_operands(operands, colors):
             yield "{}".format(repr(operands[1]))
 
 
-def PrettyShow(basic_blocks, notes={}):
+def PrettyShow(basic_blocks: list[DEXBasicBlock], notes:list=[]) -> None:
     idx = 0
 
     offset_color = CONF["COLORS"]["OFFSET"]
@@ -126,6 +137,8 @@ def PrettyShow(basic_blocks, notes={}):
         print_fct("{}{}{} : \n".format(bb_color, i.get_name(), normal_color))
         instructions = list(i.get_instructions())
         for ins in instructions:
+
+            # TODO: this seems wrong, notes is a list[str], but maybe it used to be a dict?
             if nb in notes:
                 for note in notes[nb]:
                     _PrintNote(note, 1)
@@ -222,7 +235,7 @@ def _get_operand_html(operand, registers_colors, colors):
     return escape(str(operand[1]))
 
 
-def method2dot(mx, colors=None):
+def method2dot(mx: MethodAnalysis, colors:Union[dict[str,str],None]=None) -> str:
     """
     Export analysis method to dot format.
 
@@ -394,7 +407,11 @@ def method2dot(mx, colors=None):
     return {'name': method_label, 'nodes': blocks_html, 'edges': edges_html}
 
 
-def method2format(output, _format="png", mx=None, raw=None):
+def method2format(
+    output:str,
+    _format:str="png",
+    mx:Union[MethodAnalysis,None]=None,
+    raw:Union[str,None]=None):
     """
     Export method structure as a graph to a specific file format using dot from the graphviz package.
     The result is written to the file specified via :code:`output`.
@@ -472,7 +489,7 @@ def method2format(output, _format="png", mx=None, raw=None):
                 logger.error("Could not write graph image, ensure graphviz is installed!")
                 raise
 
-def method2png(output, mx, raw=False):
+def method2png(output:str, mx:MethodAnalysis, raw:Union[str,None]=None) -> None:
     """
     Export method to a png file format
 
@@ -490,7 +507,7 @@ def method2png(output, mx, raw=False):
     method2format(output, "png", mx, buff)
 
 
-def method2jpg(output, mx, raw=False):
+def method2jpg(output:str, mx:MethodAnalysis, raw:Union[str,None]=None) -> None:
     """
     Export method to a jpg file format
 
@@ -508,12 +525,12 @@ def method2jpg(output, mx, raw=False):
     method2format(output, "jpg", mx, buff)
 
 
-def vm2json(vm):
+def vm2json(vm:DEX) -> str:
     """
     Get a JSON representation of a DEX file
 
-    :param vm: :class:`~androguard.core.bytecodes.dvm.DEX`
-    :return:
+    :param vm: :class:`~androguard.core.dex.DEX`
+    :return: str
     """
     d = {"name": "root", "children": []}
 
@@ -531,31 +548,31 @@ def vm2json(vm):
 
 
 class TmpBlock:
-    def __init__(self, name):
+    def __init__(self, name:str) -> None:
         self.name = name
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
 
-def method2json(mx, directed_graph=False):
+def method2json(mx: MethodAnalysis, directed_graph:bool=False) -> str:
     """
     Create directed or undirected graph in the json format.
 
     :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
     :param directed_graph: True if a directed graph should be created (default: False)
-    :return:
+    :return: str
     """
     if directed_graph:
         return method2json_direct(mx)
     return method2json_undirect(mx)
 
 
-def method2json_undirect(mx):
+def method2json_undirect(mx: MethodAnalysis) -> str:
     """
 
     :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
-    :return:
+    :return: str
     """
     d = {}
     reports = []
@@ -583,7 +600,7 @@ def method2json_undirect(mx):
     return json.dumps(d)
 
 
-def method2json_direct(mx):
+def method2json_direct(mx: MethodAnalysis) -> str:
     """
 
     :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
@@ -677,7 +694,7 @@ def method2json_direct(mx):
     return json.dumps(d)
 
 
-def object_to_bytes(obj):
+def object_to_bytes(obj:Union[str,bool,int,bytearray]) -> bytearray:
     """
     Convert a object to a bytearray or call get_raw() of the object
     if no useful type was found.
@@ -696,7 +713,7 @@ def object_to_bytes(obj):
     return obj.get_raw()
 
 
-def FormatClassToJava(i):
+def FormatClassToJava(i:str) -> str:
     """
     Transform a java class name into the typed variant found in DEX files.
 
@@ -711,7 +728,7 @@ def FormatClassToJava(i):
     return "L" + i.replace(".", "/") + ";"
 
 
-def FormatClassToPython(i):
+def FormatClassToPython(i:str) -> str:
     """
     Transform a typed class name into a form which can be used as a python
     attribute
@@ -731,7 +748,7 @@ def FormatClassToPython(i):
     return i
 
 
-def get_package_class_name(name):
+def get_package_class_name(name:str)->tuple[str, str]:
     """
     Return package and class name in a java variant from a typed variant name.
 
@@ -773,7 +790,7 @@ def get_package_class_name(name):
     return package, clsname
 
 
-def FormatNameToPython(i):
+def FormatNameToPython(i:str) -> str:
     """
     Transform a (method) name into a form which can be used as a python
     attribute
@@ -794,7 +811,7 @@ def FormatNameToPython(i):
     return i
 
 
-def FormatDescriptorToPython(i):
+def FormatDescriptorToPython(i:str) -> str:
     """
     Format a descriptor into a form which can be used as a python attribute
 

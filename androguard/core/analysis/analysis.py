@@ -92,10 +92,10 @@ class Exceptions:
 
         return None
 
-    def gets(self) -> list[list]:
+    def gets(self) -> list[ExceptionAnalysis]:
         return self.exceptions
 
-    def get(self) -> Iterator[list]:
+    def get(self) -> Iterator[ExceptionAnalysis]:
         for i in self.exceptions:
             yield i
 
