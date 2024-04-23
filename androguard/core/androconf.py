@@ -2,22 +2,19 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
-# from typing import TYPE_CHECKING
-# if TYPE_CHECKING:
-#     pass
 
-import sys
+
 import os
-import logging
+import sys
 import tempfile
 from typing import Union
-from colorama import init, Fore
-from loguru import logger
 
 from androguard import __version__
 from androguard.core.api_specific_resources import load_permission_mappings, load_permissions
 ANDROGUARD_VERSION = __version__
 
+from colorama import init, Fore
+from loguru import logger
 
 # initialize colorama, only has an effect on windows
 init()

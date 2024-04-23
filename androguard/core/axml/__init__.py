@@ -3,20 +3,20 @@
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
 
-from struct import pack, unpack
-from xml.sax.saxutils import escape
-import collections
+import binascii
 from collections import defaultdict
+import collections
+import io
+import re
+from struct import pack, unpack
 from typing import BinaryIO, Union
 
 from androguard.core.resources import public
 from .types import *
 
-from lxml import etree
 from loguru import logger
-import re
-import binascii
-import io
+from lxml import etree
+from xml.sax.saxutils import escape
 
 # Constants for ARSC Files
 # see http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#233

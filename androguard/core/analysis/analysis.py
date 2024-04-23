@@ -2,17 +2,16 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
-    
-from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
-from androguard.core import bytecode, mutf8, dex
 
-import re
-import sys
 import collections
-from operator import itemgetter
-import time
-from typing import Any, Generator, Optional, Union, Iterator
 from enum import IntEnum
+from operator import itemgetter
+import re
+import time
+from typing import Union, Iterator
+
+from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
+from androguard.core import bytecode, dex
 
 from loguru import logger
 import networkx as nx
@@ -1428,9 +1427,9 @@ class Analysis:
     It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
     the functions from :class:`~androguard.core.dex.DEX` and the related classes.
 
-    :param Optional[androguard.core.dex.DEX] vm: inital DEX object (default None)
+    :param Union[androguard.core.dex.DEX, None] vm: inital DEX object (default None)
     """
-    def __init__(self, vm: Optional[dex.DEX]=None) -> None:
+    def __init__(self, vm: Union[dex.DEX, None]=None) -> None:
         # Contains DEX objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)

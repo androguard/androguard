@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from collections import defaultdict
+
 from androguard.decompiler.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.instruction import MoveExceptionExpression
 from androguard.decompiler.node import Node

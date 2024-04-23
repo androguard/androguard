@@ -3,25 +3,31 @@
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
 
+# Python core
+import binascii
+import hashlib
+import io
+import os
+import re
+from struct import unpack
+from typing import Iterator, Union
+import zipfile
+from zlib import crc32
+
 # Androguard
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string
 from apkInspector.headers import ZipEntry
 
-from androguard.core.axml import ARSCParser, AXMLPrinter, ARSCResTableConfig, AXMLParser, format_value, START_TAG, END_TAG, TEXT, END_DOCUMENT
-
-# Python core
-import io
-from zlib import crc32
-import os
-import re
-import binascii
-import zipfile
-import logging
-from struct import unpack
-from typing import Generator, Iterator, Union
-import hashlib
-import warnings
+from androguard.core.axml import (ARSCParser,
+    AXMLPrinter,
+    ARSCResTableConfig,
+    AXMLParser,
+    format_value, 
+    START_TAG,
+    END_TAG,
+    TEXT,
+    END_DOCUMENT)
 
 # External dependecies
 from lxml.etree import Element
@@ -29,12 +35,11 @@ import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
+
 from loguru import logger
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{{{}}}'.format(NS_ANDROID_URI)  # Namespace as used by etree
-
-
 
 def parse_lxml_dom(tree):
     handler = SAX2DOM()
@@ -223,7 +228,7 @@ class APK:
 
     __no_magic = False
 
-    def __init__(self, filename:str, raw:bool=False, magic_file:bool=None, skip_analysis:bool=False, testzip:bool=False) -> None:
+    def __init__(self, filename:str, raw:bool=False, magic_file:Union[str,None]=None, skip_analysis:bool=False, testzip:bool=False) -> None:
         """
         This class can access to all elements in an APK file
 
@@ -1477,7 +1482,7 @@ class APK:
 
         return certificate
 
-    def new_zip(self, filename:str, deleted_files:bool=None, new_files:dict={}) -> None:
+    def new_zip(self, filename:str, deleted_files:Union[str,None]=None, new_files:dict={}) -> None:
         """
             Create a new zip file
 

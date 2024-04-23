@@ -3,7 +3,20 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
+
+import binascii
+from enum import IntEnum
+import hashlib
+import io
+import re
+import struct
+from struct import pack, unpack, calcsize
+import sys
+import time
+from typing import Union, IO, BinaryIO, Iterator
 from typing import TYPE_CHECKING
+import zlib
+
 if TYPE_CHECKING:
     from androguard.core.analysis.analysis import Analysis, MethodAnalysis
     from androguard.decompiler.decompiler import DecompilerDAD
@@ -12,23 +25,6 @@ if TYPE_CHECKING:
 from androguard.core import bytecode, apk
 from androguard.core.androconf import CONF
 from androguard.util import read_at
-
-import sys
-import io
-import re
-import struct
-import binascii
-import time
-from struct import pack, unpack, calcsize
-import logging
-import warnings
-import zlib
-import hashlib
-from enum import IntEnum
-from loguru import logger
-from typing import Generator, Union, IO, BinaryIO, Iterator
-
-
 from androguard.core import mutf8
 from .dex_types import (
         TypeMapItem,
@@ -38,6 +34,7 @@ from .dex_types import (
         Operand,
         )
 
+from loguru import logger
 
 # TODO: have some more generic magic...
 DEX_FILE_MAGIC_35 = b'dex\n035\x00'
@@ -146,7 +143,7 @@ def get_access_flags_string(value: int) -> str:
     return " ".join(flags)
 
 
-def get_type(atype:str, size:int=None) -> str:
+def get_type(atype:str, size:Union[int,None]=None) -> str:
     """
     Retrieve the type of a descriptor (e.g : I)
     """
@@ -3302,7 +3299,7 @@ class EncodedMethod:
             return []
         return self.code.get_bc().set_instructions(instructions)
 
-    def get_instruction(self, idx, off:int=None) -> Iterator[Instruction]:
+    def get_instruction(self, idx, off:Union[int,None]=None) -> Iterator[Instruction]:
         """
         Get a particular instruction by using (default) the index of the address if specified
 
@@ -3376,7 +3373,7 @@ class EncodedMethod:
     def get_triple(self) -> tuple[str,str,str]:
         return self.CM.get_method_ref(self.method_idx).get_triple()
 
-    def add_inote(self, msg:str, idx:int, off:int=None) -> None:
+    def add_inote(self, msg:str, idx:int, off:Union[int,None]=None) -> None:
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -6573,7 +6570,7 @@ class DCode:
         for i in self.cached_instructions:
             yield i
 
-    def add_inote(self, msg: str, idx: int, off:int=None) -> None:
+    def add_inote(self, msg: str, idx: int, off:Union[int,None]=None) -> None:
         """
         Add a message to a specific instruction by using (default) the index of the address if specified
 
@@ -6592,7 +6589,7 @@ class DCode:
 
         self.notes[idx].append(msg)
 
-    def get_instruction(self, idx: int, off:int=None) -> Instruction:
+    def get_instruction(self, idx: int, off:Union[int,None]=None) -> Instruction:
         """
         Get a particular instruction by using (default) the index of the address if specified
 
@@ -6914,7 +6911,7 @@ class DalvikCode:
         if self.code:
             return self.code.add_inote(msg, idx, off)
 
-    def get_instruction(self, idx:int, off:int=None) -> Instruction:
+    def get_instruction(self, idx:int, off:Union[int,None]=None) -> Instruction:
         if self.code:
             return self.code.get_instruction(idx, off)
 
@@ -7655,7 +7652,7 @@ class DEX:
         d = DEX( read("classes.dex") )
     """
 
-    def __init__(self, buff, decompiler:DecompilerDAD=None, config=None, using_api:int=None) -> None:
+    def __init__(self, buff, decompiler:Union[DecompilerDAD,None]=None, config=None, using_api:Union[int,None]=None) -> None:
         logger.debug("DEX {} {} {}".format(decompiler, config, using_api))
 
         # to allow to pass apk object ==> we do not need to pass additionally target version

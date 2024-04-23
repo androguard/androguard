@@ -1,13 +1,13 @@
+import collections
+import hashlib
+from typing import Union, Iterator
+
 from androguard.core.analysis.analysis import Analysis, StringAnalysis
 from androguard.core import dex, apk
 from androguard.decompiler.decompiler import DecompilerDAD
 from androguard.core import androconf
 
-import hashlib
-import collections
 import dataset
-from typing import Generator, Union, Iterator
-
 from loguru import logger
 
 
@@ -45,7 +45,7 @@ class Session:
         self.table_session.insert(dict(id=self.session_id))
         logger.info("Creating new session [{}]".format(self.session_id))
 
-    def save(self, filename:str=None) -> None:
+    def save(self, filename:Union[str,None]=None) -> None:
         """
         Save the current session, see also :func:`~androguard.session.Save`.
         """
@@ -140,7 +140,7 @@ class Session:
         logger.info("added APK {}:{}".format(filename, digest))
         return digest, newapk
 
-    def addDEX(self, filename: str, data: bytes, dx:Analysis=None, postpone_xref:bool=False) -> tuple[str, dex.DEX, Analysis]:
+    def addDEX(self, filename: str, data: bytes, dx:Union[Analysis,None]=None, postpone_xref:bool=False) -> tuple[str, dex.DEX, Analysis]:
         """
         Add a DEX file to the Session and run analysis.
 
@@ -185,7 +185,7 @@ class Session:
 
         return digest, d, dx
 
-    def addODEX(self, filename:str, data:bytes, dx:Analysis=None) -> tuple[str, dex.ODEX, Analysis]:
+    def addODEX(self, filename:str, data:bytes, dx:Union[Analysis,None]=None) -> tuple[str, dex.ODEX, Analysis]:
         """
         Add an ODEX file to the session and run the analysis
         """
@@ -221,7 +221,7 @@ class Session:
 
         return digest, d, dx
 
-    def add(self, filename: str, raw_data:bytes=None, dx:Analysis=None) -> Union[str,None]:
+    def add(self, filename: str, raw_data:Union[bytes,None]=None, dx:Union[Analysis,None]=None) -> Union[str,None]:
         """
         Generic method to add a file to the session.
 
@@ -354,7 +354,7 @@ class Session:
         for digest, a in self.analyzed_apk.items():
             yield digest, a
 
-    def get_objects_apk(self, filename:str=None, digest:str=None) -> Iterator[tuple[apk.APK, list[dex.DEX], Analysis]]:
+    def get_objects_apk(self, filename:Union[str,None]=None, digest:Union[str,None]=None) -> Iterator[tuple[apk.APK, list[dex.DEX], Analysis]]:
         """
         Returns APK, DEX and Analysis of a specified APK.
 

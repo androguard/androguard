@@ -2,23 +2,22 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+import hashlib
+import json
+from struct import pack
+import textwrap
+from typing import TYPE_CHECKING, Union
+
+
+from androguard.core.androconf import CONF, color_range
+from androguard.core.dex.dex_types import Kind, Operand
 if TYPE_CHECKING:
     from androguard.core.analysis import DEXBasicBlock, MethodAnalysis
     from androguard.core.dex import DEX
 
-import hashlib
-from xml.sax.saxutils import escape
-from struct import pack
-from typing import Union
-import textwrap
-import json
-
 from loguru import logger
-
-from androguard.core.androconf import CONF, color_range
-from androguard.core.dex.dex_types import Kind, Operand
-
+from xml.sax.saxutils import escape
 
 def _PrintBanner():
     print_fct = CONF["PRINT_FCT"]

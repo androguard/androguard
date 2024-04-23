@@ -1,14 +1,19 @@
+# Allows type hinting of types not-yet-declared
+# in Python >= 3.7
+# see https://peps.python.org/pep-0563/
+from __future__ import annotations
+import hashlib
+import os
+import re
+from typing import Union
+
+from loguru import logger
+
 from androguard.session import Session
 from androguard.decompiler import decompiler
 from androguard.core import androconf
 from androguard.core import apk, dex
 from androguard.core.analysis.analysis import Analysis
-
-import hashlib
-import re
-import os
-from loguru import logger
-
 
 def get_default_session() -> Session:
     """
@@ -22,7 +27,7 @@ def get_default_session() -> Session:
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(_file: str|bytes, session:Session=None, raw:bool=False) -> tuple[apk.APK, list[dex.DEX], Analysis]:
+def AnalyzeAPK(_file: Union[str,bytes], session:Union[Session,None]=None, raw:bool=False) -> tuple[apk.APK, list[dex.DEX], Analysis]:
     """
     Analyze an android application and setup all stuff for a more quickly
     analysis!

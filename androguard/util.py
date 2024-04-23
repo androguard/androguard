@@ -1,11 +1,11 @@
-#  External dependecies
-import asn1crypto
+
 
 import sys
 from typing import BinaryIO
 from loguru import logger
 
-
+#  External dependecies
+import asn1crypto
 
 class MyFilter:
     def __init__(self, level:int) -> None:
