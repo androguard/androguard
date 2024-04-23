@@ -4,7 +4,8 @@ import sys
 from typing import Union, BinaryIO
 
 #  External dependecies
-import asn1crypto
+# import asn1crypto
+from asn1crypto.x509 import Name
 from loguru import logger
 
 class MyFilter:
@@ -47,7 +48,7 @@ def readFile(filename: str, binary:bool=True) -> bytes:
         return f.read()
 
 
-def get_certificate_name_string(name:Union[dict, asn1crypto.x509.Name], short:bool=False, delimiter:str=', ') -> str:
+def get_certificate_name_string(name:Union[dict,Name], short:bool=False, delimiter:str=', ') -> str:
     """
     Format the Name type of a X509 Certificate in a human readable form.
 
@@ -61,7 +62,7 @@ def get_certificate_name_string(name:Union[dict, asn1crypto.x509.Name], short:bo
 
     :rtype: str
     """
-    if isinstance(name, asn1crypto.x509.Name):
+    if isinstance(name, Name):#asn1crypto.x509.Name):
         name = name.native
 
     # For the shortform, we have a lookup table
