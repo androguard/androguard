@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import sys
+from typing import Union
 
 # 3rd party modules
 from lxml import etree
@@ -20,8 +21,16 @@ from androguard.core.dex import get_bytecodes_method
 from androguard.util import readFile
 from androguard.ui import DynamicUI
 
+if TYPE_CHECKING:
+    from androguard.core.axml import ARSCParser
+    from androguard.session import Session
 
-def androaxml_main(inp, outp=None, resource=None):
+
+def androaxml_main(
+        inp:str,
+        outp:Union[str,None]=None,
+        resource:Union[str,None]=None) -> None:
+    
     ret_type = androconf.is_android(inp)
     if ret_type == "APK":
         a = apk.APK(inp)
@@ -47,7 +56,13 @@ def androaxml_main(inp, outp=None, resource=None):
         sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
-def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
+def androarsc_main(
+        arscobj: ARSCParser,
+        outp:Union[str,None]=None,
+        package:Union[str,None]=None,
+        typ:Union[str,None]=None,
+        locale:Union[str,None]=None) -> None:
+    
     package = package or arscobj.get_packages_names()[0]
     ttype = typ or "public"
     locale = locale or '\x00\x00'
@@ -75,13 +90,15 @@ def androarsc_main(arscobj, outp=None, package=None, typ=None, locale=None):
         sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
 
 
-def export_apps_to_format(filename,
-                          s,
-                          output,
-                          methods_filter=None,
-                          jar=None,
-                          decompiler_type=None,
-                          form=None):
+def export_apps_to_format(
+        filename:str,
+        s: Session,
+        output: str,
+        methods_filter:Union[str,None]=None,
+        jar:bool=False,
+        decompiler_type:Union[str,None]=None,
+        form:Union[str,None]=None) -> None:
+    
     from androguard.misc import clean_file_name
     from androguard.core.bytecode import method2dot, method2format
     from androguard.decompiler import decompiler
@@ -188,18 +205,18 @@ def export_apps_to_format(filename,
             print()
 
 
-def valid_class_name(class_name):
+def valid_class_name(class_name:str) -> str:
     if class_name[-1] == ";":
         class_name = class_name[1:-1]
     return os.path.join(*class_name.split("/"))
 
 
-def create_directory(pathdir):
+def create_directory(pathdir:str) -> None:
     if not os.path.exists(pathdir):
         os.makedirs(pathdir)
 
 
-def androlyze_main(session, filename):
+def androlyze_main(session:Session, filename:str) -> None:
     """
     Start an interactive shell
 
@@ -275,7 +292,7 @@ def androlyze_main(session, filename):
                 print(dx)
                 print()
 
-    def shutdown_hook():
+    def shutdown_hook() -> None:
         """Save the session on exit, if wanted"""
         if not s.isOpen():
             return
@@ -298,7 +315,7 @@ def androlyze_main(session, filename):
     ipshell()
 
 
-def androsign_main(args_apk, args_hash, args_all, show):
+def androsign_main(args_apk:list[str], args_hash:str, args_all:bool, show:bool) -> None:
     from androguard.core.apk import APK
     from androguard.util import get_certificate_name_string
 
@@ -381,7 +398,7 @@ def androsign_main(args_apk, args_hash, args_all, show):
             print()
 
 
-def androdis_main(offset, size, dex_file):
+def androdis_main(offset:int, size:int, dex_file:str) -> None:
     from androguard.core.dex import DEX
 
     with open(dex_file, "rb") as fp:
@@ -414,7 +431,7 @@ def androdis_main(offset, size, dex_file):
                 idx += i.get_length()
 
 
-def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
+def androtrace_main(apk_file:str, list_modules:list[str], live:bool=False, enable_ui:bool=False) -> None:
     from androguard.pentest import Pentest
     from androguard.session import Session
 
@@ -459,7 +476,7 @@ def androtrace_main(apk_file, list_modules, live=False, enable_ui=False):
             s = input("Type 'e' to exit:")
 
 
-def androdump_main(package_name, list_modules):
+def androdump_main(package_name:str, list_modules:list[str]) -> None:
     from androguard.pentest import Pentest
     from androguard.session import Session
 
