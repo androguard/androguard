@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 import sys
-from typing import Union, TYPE_CHECKING
+from typing import Union
 
 # 3rd party modules
 from lxml import etree
