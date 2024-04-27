@@ -15,7 +15,6 @@ from androguard.core import bytecode, dex
 
 from loguru import logger
 import networkx as nx
-from typing_extensions import Self
 
 BasicOPCODES = set()
 for i in dex.BRANCH_DEX_OPCODES:
@@ -264,7 +263,7 @@ class DEXBasicBlock:
         """
         return list(self.get_instructions())[-1]
     
-    def get_next(self) -> Self:
+    def get_next(self) -> DEXBasicBlock:
         """
         Get next basic blocks
 
@@ -273,7 +272,7 @@ class DEXBasicBlock:
         """
         return self.childs
 
-    def get_prev(self) -> Self:
+    def get_prev(self) -> DEXBasicBlock:
         """
         Get previous basic blocks
 
@@ -282,7 +281,7 @@ class DEXBasicBlock:
         """
         return self.fathers
     
-    def set_fathers(self, f: Self) -> None:
+    def set_fathers(self, f: DEXBasicBlock) -> None:
         self.fathers.append(f)
 
     def get_last_length(self) -> int:
@@ -307,7 +306,7 @@ class DEXBasicBlock:
             if c[2] is not None:
                 c[2].set_fathers((c[1], c[0], self))
 
-    def push(self, i: Self) -> None:
+    def push(self, i: DEXBasicBlock) -> None:
         self.nb_instructions += 1
         idx = self.end
         self.last_length = i.get_length()
@@ -1154,7 +1153,7 @@ class ClassAnalysis:
         #     # Propagate ExternalField to ExternalClass
         #     self.orig_class.add_method(field_analysis.get_field())
 
-    def add_field_xref_read(self, method: MethodAnalysis, classobj: Self, field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_read(self, method: MethodAnalysis, classobj: ClassAnalysis, field: dex.EncodedField, off: int) -> None:
         """
         Add a Field Read to this class
 
@@ -1168,7 +1167,7 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_read(classobj, method, off)
 
-    def add_field_xref_write(self, method: MethodAnalysis, classobj: Self, field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_write(self, method: MethodAnalysis, classobj: ClassAnalysis, field: dex.EncodedField, off: int) -> None:
         """
         Add a Field Write to this class in a given method
 
@@ -1182,7 +1181,7 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_write(classobj, method, off)
 
-    def add_method_xref_to(self, method1: MethodAnalysis, classobj: Self, method2: MethodAnalysis, offset: int) -> None:
+    def add_method_xref_to(self, method1: MethodAnalysis, classobj: ClassAnalysis, method2: MethodAnalysis, offset: int) -> None:
         """
 
         :param MethodAnalysis method1: the calling method
@@ -1198,7 +1197,7 @@ class ClassAnalysis:
 
         self._methods[method1.get_method()].add_xref_to(classobj, method2, offset)
 
-    def add_method_xref_from(self, method1: MethodAnalysis, classobj: Self, method2: MethodAnalysis, offset: int) -> None:
+    def add_method_xref_from(self, method1: MethodAnalysis, classobj: ClassAnalysis, method2: MethodAnalysis, offset: int) -> None:
         """
 
         :param MethodAnalysis method1:
@@ -1213,7 +1212,7 @@ class ClassAnalysis:
 
         self._methods[method1.get_method()].add_xref_from(classobj, method2, offset)
 
-    def add_xref_to(self, ref_kind: REF_TYPE, classobj: Self, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_to(self, ref_kind: REF_TYPE, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
         """
         Creates a crossreference to another class.
         XrefTo means, that the current class calls another class.
@@ -1232,7 +1231,7 @@ class ClassAnalysis:
         """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
-    def add_xref_from(self, ref_kind: REF_TYPE, classobj: Self, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_from(self, ref_kind: REF_TYPE, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
         """
         Creates a crossreference from this class.
         XrefFrom means, that the current class is called by another class.
@@ -1245,7 +1244,7 @@ class ClassAnalysis:
         """
         self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
-    def get_xref_from(self) -> dict[Self, tuple[REF_TYPE, MethodAnalysis, int]]:
+    def get_xref_from(self) -> dict[ClassAnalysis, tuple[REF_TYPE, MethodAnalysis, int]]:
         """
         Returns a dictionary of all classes calling the current class.
         This dictionary contains also information from which method the class is accessed.
@@ -1271,7 +1270,7 @@ class ClassAnalysis:
         """
         return self.xreffrom
 
-    def get_xref_to(self) -> dict[Self, tuple[REF_TYPE, MethodAnalysis, int]]:
+    def get_xref_to(self) -> dict[ClassAnalysis, tuple[REF_TYPE, MethodAnalysis, int]]:
         """
         Returns a dictionary of all classes which are called by the current class.
         This dictionary contains also information about the method which is called.

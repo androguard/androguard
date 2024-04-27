@@ -37,7 +37,6 @@ PyQt5-Qt5 = [
 ]
 pyyaml = "*"
 oscrypto = ">=1.3.0"
-typing_extensions = "*"
 
 [tool.setuptools.package_data]
 "androguard.core.api_specific_resources" = ["aosp_permissions/*.json", "api_permission_mappings/*.json"]
