@@ -7357,7 +7357,7 @@ class ClassManager:
             logger.warning("unknown string item @ 0x%x(%d)" % (off, idx))
             return "AG:IS: invalid string"
 
-    def get_type_list(self, off:int) -> [str]:
+    def get_type_list(self, off:int) -> list[str]:
         if off == 0:
             return []
 
@@ -7379,7 +7379,7 @@ class ClassManager:
             return "AG:ITI: invalid type"
         return self.get_string(_type)
 
-    def get_type_ref(self, idx: int)  -> TypeIdItem:
+    def get_type_ref(self, idx: int) -> TypeIdItem:
         """
         Returns the string reference ID for a given type ID.
 
@@ -7390,7 +7390,7 @@ class ClassManager:
         """
         return self.__manage_item[TypeMapItem.TYPE_ID_ITEM].get(idx)
 
-    def get_proto(self, idx: int) -> tuple[int,str]:
+    def get_proto(self, idx: int) -> list:
         proto = self.__cached_proto.get(idx)
         if not proto:
             proto = self.__manage_item[TypeMapItem.PROTO_ID_ITEM].get(idx)
@@ -7758,7 +7758,7 @@ class DEX:
         """
         return self.codes
 
-    def get_string_data_item(self) -> list[StringDataItem]:
+    def get_string_data_item(self) -> StringDataItem:
         """
         This function returns the string data item
 
@@ -7888,7 +7888,7 @@ class DEX:
 
         return self.fix_checksums(buff)
 
-    def fix_checksums(self, buff) -> bytes:
+    def fix_checksums(self, buff: bytes) -> bytes:
         """
           Fix a dex format buffer by setting all checksums
 
@@ -7974,7 +7974,7 @@ class DEX:
         """
         return len(self.get_classes())
 
-    def get_class(self, name: str) -> str:
+    def get_class(self, name: str) -> Union[ClassDefItem, None]:
         """
         Return a specific class
 
