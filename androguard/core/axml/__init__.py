@@ -783,7 +783,7 @@ class AXMLParser:
 
         return offset
 
-    def getAttributeCount(self):
+    def getAttributeCount(self) -> int:
         """
         Return the number of Attributes for a Tag
         or -1 if not in a tag

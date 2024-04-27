@@ -519,7 +519,7 @@ class APK:
                 logger.warning("Exception selecting app name: %s" % e)
         return app_name
 
-    def get_app_icon(self, max_dpi:int=65536) -> str:
+    def get_app_icon(self, max_dpi:int=65536) -> Union[str,None]:
         """
         Return the first icon file name, which density is not greater than max_dpi,
         unless exact icon resolution is set in the manifest, in which case
@@ -2156,7 +2156,7 @@ def ensure_final_value(packageName:str, arsc:ARSCParser, value:str) -> str:
     return ''
 
 
-def get_apkid(apkfile) -> tuple[str,str,str]:
+def get_apkid(apkfile: str) -> tuple[str,str,str]:
     """Read (appid, versionCode, versionName) from an APK
 
     This first tries to do quick binary XML parsing to just get the
