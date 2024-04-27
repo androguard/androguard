@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 import sys
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 # 3rd party modules
 from lxml import etree
@@ -14,17 +14,14 @@ from pygments.formatters.terminal import TerminalFormatter
 from oscrypto import asymmetric
 
 # internal modules
+from androguard.core.axml import ARSCParser
+from androguard.session import Session
 from androguard.core import androconf
 from androguard.core import apk
 from androguard.core.axml import AXMLPrinter
 from androguard.core.dex import get_bytecodes_method
 from androguard.util import readFile
 from androguard.ui import DynamicUI
-
-if TYPE_CHECKING:
-    from androguard.core.axml import ARSCParser
-    from androguard.session import Session
-
 
 def androaxml_main(
         inp:str,
