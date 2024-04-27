@@ -36,6 +36,7 @@ PyQt5-Qt5 = [
     {version = "5.15.2", markers = "sys_platform != 'darwin'"}
 ]
 pyyaml = "*"
+oscrypto = ">=1.3.0"
 
 [tool.setuptools.package_data]
 "androguard.core.api_specific_resources" = ["aosp_permissions/*.json", "api_permission_mappings/*.json"]
