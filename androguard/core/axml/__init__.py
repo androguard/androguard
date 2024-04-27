@@ -380,6 +380,7 @@ class AXMLParser:
         self.axml_tampered = False
         self.buff = io.BufferedReader(io.BytesIO(raw_buff))
         self.buff_size = self.buff.raw.getbuffer().nbytes
+        self.packerwarning = False
 
         # Minimum is a single ARSCHeader, which would be a strange edge case...
         if self.buff_size < 8:
@@ -821,14 +822,18 @@ class AXMLParser:
 
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
-        if not res or res == ":":
+        if name <= len(self.m_resourceIDs):
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
-                res = 'android:' + public.SYSTEM_RESOURCES['attributes']['inverse'][attr]
-            else:
-                # Attach the HEX Number, so for multiple missing attributes we do not run
-                # into problems.
-                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+                res = public.SYSTEM_RESOURCES['attributes']['inverse'][attr].replace("_",
+                                                                               ":")
+                if res != self.sb[name]:
+                    self.packerwarning = True
+        
+        if not res or res == ":":
+            # Attach the HEX Number, so for multiple missing attributes we do not run
+            # into problems.
+            res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
         return res
 
     def getAttributeValueType(self, index):
@@ -1046,7 +1051,7 @@ class AXMLPrinter:
 
         :returns: True if packer detected, False otherwise
         """
-        return self.packerwarning
+        return self.packerwarning or self.axml.packerwarning
 
     def _get_attribute_value(self, index):
         """
