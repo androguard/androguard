@@ -244,6 +244,13 @@ class StringBlock:
         encoded_bytes, skip = self._decode_length(offset, 1)
         offset += skip
 
+        # Two checks should happen here:
+        # a) offset + encoded_bytes surpassing the string_pool length and
+        # b) non-null terminated strings which should be rejected
+        # platform/frameworks/base/libs/androidfw/ResourceTypes.cpp#789
+        if len(self.m_charbuff) < (offset + encoded_bytes):
+            logger.warning(f"String size: {offset + encoded_bytes} is exceeding string pool size. Returning empty string.")
+            return ""
         data = self.m_charbuff[offset: offset + encoded_bytes]
 
         if self.m_charbuff[offset + encoded_bytes] != 0:
@@ -263,6 +270,14 @@ class StringBlock:
 
         # The len is the string len in utf-16 units
         encoded_bytes = str_len * 2
+
+        # Two checks should happen here:
+        # a) offset + encoded_bytes surpassing the string_pool length and
+        # b) non-null terminated strings which should be rejected
+        # platform/frameworks/base/libs/androidfw/ResourceTypes.cpp#789
+        if len(self.m_charbuff) < (offset + encoded_bytes):
+            logger.warning(f"String size: {offset + encoded_bytes} is exceeding string pool size. Returning empty string.")
+            return ""
 
         data = self.m_charbuff[offset: offset + encoded_bytes]
 
@@ -835,7 +850,7 @@ class AXMLParser:
                                                                                ":")
                 if res != self.sb[name]:
                     self.packerwarning = True
-        
+
         if not res or res == ":":
             # Attach the HEX Number, so for multiple missing attributes we do not run
             # into problems.
