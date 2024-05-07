@@ -724,6 +724,15 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a._format_value('bla.bar.foo'), 'bla.bar.foo')
         self.assertEqual(a._format_value(None), None)
 
+    def testMultipleLocaleAppName(self):
+        """Test multiple locale appname"""
+        a = apk.APK(os.path.join(test_dir, 'data/APK/multiple_locale_appname_test.apk'))
+        self.assertEqual(a.get_app_name(), "values")
+        self.assertEqual(a.get_app_name(locale='en'), "values-en")
+        self.assertEqual(a.get_app_name(locale='zh-rCN'), "values-zh-rCN")
+        self.assertEqual(a.get_app_name(locale='zh-rTW'), "values-zh-rTW")
+        self.assertEqual(a.get_app_name(locale='ru-rRU'), "values-ru-rRU")
+
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
