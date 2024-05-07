@@ -299,8 +299,8 @@ class AnalysisTest(unittest.TestCase):
         sa = dx.strings['Hello world']
 
         self.assertEqual(len(sa.get_xref_from()), 1)
-        self.assertEqual(len(sa.get_xref_from(withoffset=True)), 1)
-        self.assertEqual(next(iter(sa.get_xref_from(withoffset=True)))[2], 4)  # offset is 4
+        self.assertEqual(len(sa.get_xref_from(with_offset=True)), 1)
+        self.assertEqual(next(iter(sa.get_xref_from(with_offset=True)))[2], 4)  # offset is 4
 
     def testXrefOffsetsFields(self):
         """Tests if Field offsets in bytecode are correctly stored"""
@@ -315,26 +315,26 @@ class AnalysisTest(unittest.TestCase):
         afield = next(dx.find_fields(fieldname='afield'))
 
         self.assertEqual(len(afield.get_xref_read()), 1)  # always same method
-        self.assertEqual(len(afield.get_xref_read(withoffset=True)), 2)
-        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_read(withoffset=True)))), [4, 40])
+        self.assertEqual(len(afield.get_xref_read(with_offset=True)), 2)
+        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_read(with_offset=True)))), [4, 40])
         self.assertListEqual(list(map(lambda x: x.name, map(itemgetter(1),
-                                                            afield.get_xref_read(withoffset=True)))),
+                                                            afield.get_xref_read(with_offset=True)))),
                              ["foonbar", "foonbar"])
 
         self.assertEqual(len(afield.get_xref_write()), 2)
-        self.assertEqual(len(afield.get_xref_write(withoffset=True)), 2)
-        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_write(withoffset=True)))), [10, 32])
+        self.assertEqual(len(afield.get_xref_write(with_offset=True)), 2)
+        self.assertListEqual(list(sorted(map(itemgetter(2), afield.get_xref_write(with_offset=True)))), [10, 32])
         self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
-                                                                   afield.get_xref_write(withoffset=True))))),
+                                                                   afield.get_xref_write(with_offset=True))))),
                              sorted(["<init>", "foonbar"]))
 
         cfield = next(dx.find_fields(fieldname='cfield'))
         # this one is static, hence it must have a write in <clinit>
         self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
-                                                                   cfield.get_xref_write(withoffset=True))))),
+                                                                   cfield.get_xref_write(with_offset=True))))),
                              sorted(["<clinit>"]))
         self.assertListEqual(list(sorted(map(lambda x: x.name, map(itemgetter(1),
-                                                                   cfield.get_xref_read(withoffset=True))))),
+                                                                   cfield.get_xref_read(with_offset=True))))),
                              sorted(["foonbar"]))
 
     def testPermissions(self):
