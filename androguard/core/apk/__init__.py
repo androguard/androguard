@@ -447,7 +447,7 @@ class APK:
         """
         return self.filename
 
-    def get_app_name(self, **kwargs):
+    def get_app_name(self, locale=None) -> str:
         """
         Return the appname of the APK
 
@@ -500,7 +500,7 @@ class APK:
                     return app_name
 
             try:
-                config = ARSCResTableConfig(None, **kwargs) if kwargs else ARSCResTableConfig.default_config()
+                config = ARSCResTableConfig(None, locale=locale) if locale else ARSCResTableConfig.default_config()
                 app_name = res_parser.get_resolved_res_configs(
                     res_id,
                     config)[0][1]

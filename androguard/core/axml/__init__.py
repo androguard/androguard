@@ -2568,7 +2568,7 @@ class ARSCResTableConfig:
                 char_out += chr(char_in[1])
         return char_out
 
-    def _pack_language_or_region(self, char_in):
+    def _pack_language_or_region(self, char_in: str) -> list[int]:
         char_out = [0x00, 0x00]
         if len(char_in) != 2:
             return char_out
@@ -2588,7 +2588,7 @@ class ARSCResTableConfig:
             region_bytes = [0x00, 0x00]
         self.locale = language_bytes[0] | (language_bytes[1] << 8) | (region_bytes[0] << 16) | (region_bytes[1] << 24)
 
-    def get_language_and_region(self):
+    def get_language_and_region(self) -> str:
         """
         Returns the combined language+region string or \x00\x00 for the default locale
         :return:
