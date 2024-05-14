@@ -7,7 +7,7 @@ import hashlib
 import binascii
 from unittest.mock import patch, MagicMock
 
-from androguard.core import apk
+from androguard.core import apk, axml
 from androguard.core.analysis.analysis import Analysis
 from androguard.core.apk import APK
 from androguard.core.axml import AXMLPrinter
@@ -694,6 +694,10 @@ class APKTest(unittest.TestCase):
             self.assertIn('label', perm['android.permission.INTERNET'])
             self.assertIn('protectionLevel', perm['android.permission.INTERNET'])
             self.assertIn('permissionGroup', perm['android.permission.INTERNET'])
+
+    def testCustomPermissionProtectionLevel(self):
+        a = APK(os.path.join(test_dir, 'data/APK/com.example.android.tvleanback.apk'))
+        self.assertEqual(a.get_details_permissions()["com.example.android.tvleanback.ACCESS_VIDEO_DATA"][0], 'signature')
 
     def testShortNamesInManifest(self):
         """Test if shortnames are correctly handled"""
