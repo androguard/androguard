@@ -41,6 +41,40 @@ from loguru import logger
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
 NS_ANDROID = '{{{}}}'.format(NS_ANDROID_URI)  # Namespace as used by etree
 
+# Dictionary of the different protection levels mapped to their corresponding attribute names as described in
+# https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/content/pm/PermissionInfo.java
+protection_flags_to_attributes = {
+    "0x00000000": "normal",
+    "0x00000001": "dangerous",
+    "0x00000002": "signature",
+    "0x00000003": "signature or system",
+    "0x00000004": "internal",
+    "0x00000010": "privileged",
+    "0x00000020": "development",
+    "0x00000040": "appop",
+    "0x00000080": "pre23",
+    "0x00000100": "installer",
+    "0x00000200": "verifier",
+    "0x00000400": "preinstalled",
+    "0x00000800": "setup",
+    "0x00001000": "instant",
+    "0x00002000": "runtime only",
+    "0x00004000": "oem",
+    "0x00008000": "vendor privileged",
+    "0x00010000": "system text classifier",
+    "0x00020000": "wellbeing",
+    "0x00040000": "documenter",
+    "0x00080000": "configurator",
+    "0x00100000": "incident report approver",
+    "0x00200000": "app predictor",
+    "0x00400000": "module",
+    "0x00800000": "companion",
+    "0x01000000": "retail demo",
+    "0x02000000": "recents",
+    "0x04000000": "role",
+    "0x08000000": "known signer"
+}
+
 def parse_lxml_dom(tree):
     handler = SAX2DOM()
     lxml.sax.saxify(tree, handler)
@@ -1302,10 +1336,14 @@ class APK:
             if i in self.permission_module:
                 x = self.permission_module[i]
                 l[i] = [x["protectionLevel"], x["label"], x["description"]]
-            else:
-                # FIXME: the permission might be signature, if it is defined by the app itself!
-                l[i] = ["normal", "Unknown permission from android reference",
+            elif i in self.declared_permissions:
+                protectionLevel_hex = self.declared_permissions[i]["protectionLevel"]
+                protectionLevel = protection_flags_to_attributes[protectionLevel_hex]
+                l[i] = [protectionLevel, "Unknown permission from android reference",
                         "Unknown permission from android reference"]
+            else:
+                # Is there a valid case not belonging to the above two?
+                logger.error(f"Unknown permission {i}")
         return self._fill_deprecated_permissions(l)
 
     def get_requested_aosp_permissions(self) -> list[str]:
