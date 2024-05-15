@@ -1735,7 +1735,12 @@ class APK:
         while f.tell() < end_offset - 24:
             size, key = unpack('<QI', f.read(12))
             value = f.read(size - 4)
-            self._v2_blocks[key] = value
+            if key in self._v2_blocks:
+                # TODO: Store the duplicate V2 Signature blocks and offer a way to show them
+                # https://github.com/androguard/androguard/issues/1030
+                logger.warning("Duplicate block ID in APK Signing Block: {}".format(key))
+            else:
+                self._v2_blocks[key] = value
 
         # Test if a signature is found
         if self._APK_SIG_KEY_V2_SIGNATURE in self._v2_blocks:
