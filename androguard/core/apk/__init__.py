@@ -1506,6 +1506,10 @@ class APK:
         pkcs7message = self.get_file(filename)
 
         pkcs7obj = cms.ContentInfo.load(pkcs7message)
+        # TODO: should be returning the matching cert here!
+        # https://github.com/androguard/androguard/pull/1038
+        if len(pkcs7obj['content']['certificates']) > 1:
+            logger.warning(f"Multiple certificates found. Returning the first one!")
         cert = pkcs7obj['content']['certificates'][0].chosen.dump()
         return cert
 
