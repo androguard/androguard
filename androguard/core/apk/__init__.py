@@ -14,7 +14,6 @@ from typing import Iterator, Union
 import zipfile
 from zlib import crc32
 
-from oscrypto.errors import SignatureError
 
 # Androguard
 from androguard.core import androconf
