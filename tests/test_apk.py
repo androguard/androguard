@@ -310,6 +310,14 @@ class APKTest(unittest.TestCase):
                             # Check that we get the same signature if we take the DER
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
 
+    def testMultipleCertsReturnTheCorrect(self):
+        sha256_fingerprint = '01e1999710a82c2749b4d50c445dc85d670b6136089d0a766a73827c82a1eac9'
+        a = APK(os.path.join(test_dir, 'data/APK/apksig/CertChain.apk'))
+        sig = a.get_signature_names()[0]
+        c = a.get_certificate(sig)
+        self.assertEqual(hashlib.sha256(c.dump()).hexdigest(), sha256_fingerprint)
+
+
     def testAPKWrapperUnsigned(self):
         a, d, dx = AnalyzeAPK(os.path.join(test_dir, 'data/APK/TestActivity_unsigned.apk'))
         self.assertIsInstance(a, APK)

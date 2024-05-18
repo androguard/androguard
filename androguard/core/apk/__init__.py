@@ -14,6 +14,8 @@ from typing import Iterator, Union
 import zipfile
 from zlib import crc32
 
+from oscrypto.errors import SignatureError
+
 # Androguard
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string
@@ -35,7 +37,6 @@ import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
-
 from loguru import logger
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
@@ -1499,19 +1500,76 @@ class APK:
     def get_certificate_der(self, filename:str) -> bytes:
         """
         Return the DER coded X.509 certificate from the signature file.
+        The public key of the certificate is used to validate the .SF.
+        If multiple certificates are found, the one that validates the .SF is returned.
+        If none validates the .SF then the first one is returned.
 
         :param filename: Signature filename in APK
         :returns: DER coded X.509 certificate as binary
         """
-        pkcs7message = self.get_file(filename)
+        from oscrypto import asymmetric, errors
+        from hashlib import md5, sha1, sha256, sha224, sha384, sha512
 
+        # Get the signature
+        pkcs7message = self.get_file(filename)
+        # Get the .SF
+        sf_filename = os.path.splitext(filename)[0] + '.SF'
+        sf_obj = self.get_file(sf_filename)
+        # Load the signature
         pkcs7obj = cms.ContentInfo.load(pkcs7message)
-        # TODO: should be returning the matching cert here!
-        # https://github.com/androguard/androguard/pull/1038
-        if len(pkcs7obj['content']['certificates']) > 1:
-            logger.warning(f"Multiple certificates found. Returning the first one!")
-        cert = pkcs7obj['content']['certificates'][0].chosen.dump()
-        return cert
+        # Locate the SignerInfo structure
+        signer_infos = pkcs7obj['content']['signer_infos']
+
+        # Check if signer_infos is empty
+        if not signer_infos:
+            raise ValueError('No signer information found in the PKCS7 object. The APK may not be properly signed.')
+        signer_info = signer_infos[0]
+        signature = signer_info['signature'].native
+
+        # Determine the hash algorithm from the SignerInfo
+        digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
+        # Map the digest algorithm to a hash function
+        hash_algorithms = {
+            'md5': md5,
+            'sha1': sha1,
+            'sha256': sha256,
+            'sha224': sha224,
+            'sha384': sha384,
+            'sha512': sha512
+        }
+        if digest_algorithm not in hash_algorithms:
+            raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
+
+        # Extract certificates from the PKCS7 object
+        certificates = pkcs7obj['content']['certificates']
+        ret_cert = None
+        for cert in certificates:
+            certificate = cert.chosen
+            loaded_cert = asymmetric.load_certificate(certificate)
+            public_key = loaded_cert.public_key
+            key_type = loaded_cert.algorithm
+
+            # Verify the signature
+            try:
+                if key_type == 'rsa':
+                    asymmetric.rsa_pkcs1v15_verify(public_key, signature, sf_obj, hash_algorithm=digest_algorithm)
+                elif key_type == 'dsa':
+                    asymmetric.dsa_verify(public_key, signature, sf_obj, hash_algorithm=digest_algorithm)
+                elif key_type == 'ec':
+                    asymmetric.ecdsa_verify(public_key, signature, sf_obj, hash_algorithm=digest_algorithm)
+                else:
+                    raise ValueError(f"Unsupported key algorithm: {key_type}")
+                ret_cert = certificate.dump()
+            except errors.SignatureError:
+                logger.warning(f"The public key of the certificate:{hashlib.sha256(certificate.dump()).hexdigest()} is not associated with the signature!")
+        if not ret_cert:
+            logger.warning(f"Out of the {len(certificates)} Certificates discovered, there was none associated with "
+                           "the provided signature! Returning the first certificate!")
+            ret_cert = pkcs7obj['content']['certificates'][0].chosen.dump()
+        return ret_cert
+
+
+
 
     def get_certificate(self, filename:str) -> x509.Certificate: 
         """
