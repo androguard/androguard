@@ -14,17 +14,18 @@ from typing import Iterator, Union
 import zipfile
 from zlib import crc32
 
-
 # Androguard
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string
 from apkInspector.headers import ZipEntry
+from oscrypto import asymmetric, errors
+from hashlib import md5, sha1, sha256, sha224, sha384, sha512
 
 from androguard.core.axml import (ARSCParser,
     AXMLPrinter,
     ARSCResTableConfig,
     AXMLParser,
-    format_value, 
+    format_value,
     START_TAG,
     END_TAG,
     TEXT,
@@ -36,6 +37,7 @@ import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
+from asn1crypto.util import OrderedDict
 from loguru import logger
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
@@ -1499,32 +1501,105 @@ class APK:
     def get_certificate_der(self, filename:str) -> bytes:
         """
         Return the DER coded X.509 certificate from the signature file.
-        The public key of the certificate is used to validate the .SF.
-        If multiple certificates are found, the one that validates the .SF is returned.
-        If none validates the .SF then the first one is returned.
+        If minSdkVersion is prior to Android N only the first SignerInfo is used.
+        If signed attributes are present, they are taken into account
 
         :param filename: Signature filename in APK
         :returns: DER coded X.509 certificate as binary
         """
-        from oscrypto import asymmetric, errors
-        from hashlib import md5, sha1, sha256, sha224, sha384, sha512
 
         # Get the signature
         pkcs7message = self.get_file(filename)
         # Get the .SF
         sf_filename = os.path.splitext(filename)[0] + '.SF'
-        sf_obj = self.get_file(sf_filename)
+        sf_object = self.get_file(sf_filename)
         # Load the signature
-        pkcs7obj = cms.ContentInfo.load(pkcs7message)
+        signed_data = cms.ContentInfo.load(pkcs7message)
         # Locate the SignerInfo structure
-        signer_infos = pkcs7obj['content']['signer_infos']
-
-        # Check if signer_infos is empty
+        signer_infos = signed_data['content']['signer_infos']
         if not signer_infos:
             raise ValueError('No signer information found in the PKCS7 object. The APK may not be properly signed.')
-        signer_info = signer_infos[0]
-        signature = signer_info['signature'].native
 
+        # Prior to Android N, Android attempts to verify only the first SignerInfo. From N onwards, Android attempts
+        # to verify all SignerInfos and then picks the first verified SignerInfo.
+        min_sdk_version = self.get_min_sdk_version()
+        if min_sdk_version is None or int(min_sdk_version) < 24:  # AndroidSdkVersion.N
+            logger.info(f"minsdkversion: {min_sdk_version} is less than 24. Getting the first signerInfo only!")
+            unverified_signer_infos_to_try = [signer_infos[0]]
+        else:
+            unverified_signer_infos_to_try = signer_infos
+
+        # Extract certificates from the PKCS7 object
+        certificates = signed_data['content']['certificates']
+        matching_certificate_verified = None
+        for signer_info in unverified_signer_infos_to_try:
+            matching_certificate_verified = self.verify_signer_info_against_sig_file(
+                signed_data,
+                certificates,
+                signer_info,
+                sf_object)
+            if matching_certificate_verified is not None:
+                # Return the first certificate that was verified
+                break
+        if not matching_certificate_verified:
+            logger.warning(f"minSdkVersion: {min_sdk_version}, # of SignerInfos: {len(unverified_signer_infos_to_try)}. None Verified!")
+        return matching_certificate_verified
+
+    def verify_signer_info_against_sig_file(self, signed_data, certificates, signer_info, sf_object):
+        matching_certificate = self.find_certificate(certificates, signer_info)
+        matching_certificate_verified = None
+        if matching_certificate is None:
+            logger.info("Signing certificate referenced in SignerInfo not found in SignedData")
+        else:
+            if signer_info['signed_attrs'].native:
+                logger.info("Signed Attributes detected!")
+                signed_attrs = signer_info['signed_attrs']
+                signed_attrs_dict = OrderedDict()
+                for attr in signed_attrs:
+                    if attr['type'].dotted in signed_attrs_dict:
+                        logger.error(f"Duplicate signed attribute: {attr['type'].dotted}")
+                        return None
+                    signed_attrs_dict[attr['type'].dotted] = attr['values']
+
+                # Check content type attribute (for Android N and newer)
+                max_sdk_version = self.get_max_sdk_version()
+                if max_sdk_version is None or int(max_sdk_version) >= 24:
+                    content_type_oid = '1.2.840.113549.1.9.3'  # OID for contentType
+                    if content_type_oid not in signed_attrs_dict:
+                        logger.error("No Content Type in signed attributes. Continuing to next SignerInfo, if any.")
+                        return None
+                    content_type = signed_attrs_dict[content_type_oid][0].native
+                    if content_type != signed_data['content']['encap_content_info']['content_type'].native:
+                        logger.error("Content Type mismatch. Continuing to next SignerInfo, if any.")
+                        return None
+
+                # Check message digest attribute
+                message_digest_oid = '1.2.840.113549.1.9.4'  # OID for messageDigest
+                if message_digest_oid not in signed_attrs_dict:
+                    logger.error("No Message Digest in signed attributes. Continuing to next SignerInfo, if any.")
+                    return None
+                expected_signature_file_digest = signed_attrs_dict[message_digest_oid][0].native
+                hash_algo = hashlib.new(signer_info['digest_algorithm']['algorithm'].native)
+                hash_algo.update(sf_object)
+                actual_digest = hash_algo.digest()
+
+                # Compare digests
+                if actual_digest != expected_signature_file_digest:
+                    logger.error("Digest mismatch. Continuing to next SignerInfo, if any.")
+                    return None
+
+                signed_data = signed_attrs.dump()
+                # Modify the first byte to 0x31 for UNIVERSAL SET
+                signed_data = b'\x31' + signed_data[1:]
+                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, signed_data)
+            else:
+                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, sf_object)
+        return matching_certificate_verified
+
+    @staticmethod
+    def verify_signature(signer_info, matching_certificate, signed_data):
+        matching_certificate_verified = None
+        signature = signer_info['signature'].native
         # Determine the hash algorithm from the SignerInfo
         digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
         # Map the digest algorithm to a hash function
@@ -1539,38 +1614,40 @@ class APK:
         if digest_algorithm not in hash_algorithms:
             raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
 
-        # Extract certificates from the PKCS7 object
-        certificates = pkcs7obj['content']['certificates']
-        ret_cert = None
-        for cert in certificates:
-            certificate = cert.chosen
-            loaded_cert = asymmetric.load_certificate(certificate)
-            public_key = loaded_cert.public_key
-            key_type = loaded_cert.algorithm
+        loaded_cert = asymmetric.load_certificate(matching_certificate.chosen)
+        public_key = loaded_cert.public_key
+        key_type = loaded_cert.algorithm
+        # Verify the signature
+        try:
+            if key_type == 'rsa':
+                asymmetric.rsa_pkcs1v15_verify(public_key, signature, signed_data, hash_algorithm=digest_algorithm)
+            elif key_type == 'dsa':
+                asymmetric.dsa_verify(public_key, signature, signed_data, hash_algorithm=digest_algorithm)
+            elif key_type == 'ec':
+                asymmetric.ecdsa_verify(public_key, signature, signed_data, hash_algorithm=digest_algorithm)
+            else:
+                raise ValueError(f"Unsupported key algorithm: {key_type}")
+            matching_certificate_verified = matching_certificate.chosen.dump()
+        except errors.SignatureError:
+            logger.info(
+                f"The public key of the certificate:{hashlib.sha256(matching_certificate.chosen.dump()).hexdigest()} is not associated with the signature!")
+        return matching_certificate_verified
 
-            # Verify the signature
-            try:
-                if key_type == 'rsa':
-                    asymmetric.rsa_pkcs1v15_verify(public_key, signature, sf_obj, hash_algorithm=digest_algorithm)
-                elif key_type == 'dsa':
-                    asymmetric.dsa_verify(public_key, signature, sf_obj, hash_algorithm=digest_algorithm)
-                elif key_type == 'ec':
-                    asymmetric.ecdsa_verify(public_key, signature, sf_obj, hash_algorithm=digest_algorithm)
-                else:
-                    raise ValueError(f"Unsupported key algorithm: {key_type}")
-                ret_cert = certificate.dump()
-            except errors.SignatureError:
-                logger.warning(f"The public key of the certificate:{hashlib.sha256(certificate.dump()).hexdigest()} is not associated with the signature!")
-        if not ret_cert:
-            logger.warning(f"Out of the {len(certificates)} Certificates discovered, there was none associated with "
-                           "the provided signature! Returning the first certificate!")
-            ret_cert = pkcs7obj['content']['certificates'][0].chosen.dump()
-        return ret_cert
+    @staticmethod
+    def find_certificate(signed_data_certificates, signer_info):
+        # From the bag of certs, obtain the certificate referenced by the SignerInfo
+        matching_certificate = None
+        issuer_and_serial_number = signer_info['sid'].native
+        issuer = issuer_and_serial_number['issuer']
+        serial_number = issuer_and_serial_number['serial_number']
+        for cert in signed_data_certificates:
+            cert_native = cert.native
+            if cert_native['tbs_certificate']['issuer'] == issuer and cert_native['tbs_certificate']['serial_number'] == serial_number:
+                matching_certificate = cert
+                break
+        return matching_certificate
 
-
-
-
-    def get_certificate(self, filename:str) -> x509.Certificate: 
+    def get_certificate(self, filename:str) -> x509.Certificate:
         """
         Return a X.509 certificate object by giving the name in the apk file
 

@@ -190,6 +190,21 @@ class APKTest(unittest.TestCase):
             "debuggable-resource.apk",
             "mismatched-compression-method.apk",
         ]
+        
+        v1_only_signed_attrs_fail = [
+            "v1-only-with-signed-attrs-missing-content-type.apk",
+            "v1-only-with-signed-attrs-missing-digest.apk",
+            "v1-only-with-signed-attrs-multiple-good-digests.apk",
+            "v1-only-with-signed-attrs-signerInfo1-missing-content-type-signerInfo2-good.apk",
+            "v1-only-with-signed-attrs-signerInfo1-missing-digest-signerInfo2-good.apk",
+            "v1-only-with-signed-attrs-signerInfo1-multiple-good-digests-signerInfo2-good.apk",
+            "v1-only-with-signed-attrs-signerInfo1-wrong-content-type-signerInfo2-good.apk",
+            "v1-only-with-signed-attrs-signerInfo1-wrong-digest-signerInfo2-good.apk",
+            "v1-only-with-signed-attrs-signerInfo1-wrong-signature-signerInfo2-good.apk",
+            "v1-only-with-signed-attrs-wrong-content-type.apk",
+            "v1-only-with-signed-attrs-wrong-digest.apk",
+            "v1-only-with-signed-attrs-wrong-signature.apk"
+        ]
 
         # Collect possible hashes for certificates
         # Unfortunately, not all certificates are supplied...
@@ -262,10 +277,11 @@ class APKTest(unittest.TestCase):
                             self.assertNotIn(h, certfp.values())
                             # print([apath, h]) # I do not know, why put this file?
                             der = a.get_certificate_der(sig)
-                            apk.show_Certificate(c, True)
-                            apk.show_Certificate(c, False)
                             self.assertEqual(hashlib.sha256(der).hexdigest(), h)
-                        pass
+                    elif apath in v1_only_signed_attrs_fail:
+                        for sig in a.get_signature_names():
+                            c = a.get_certificate_der(sig)
+                            self.assertEqual(c, None)
                     else:
                         for sig in a.get_signature_names():
                             c = a.get_certificate(sig)
