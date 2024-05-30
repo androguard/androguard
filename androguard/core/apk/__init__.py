@@ -23,7 +23,7 @@ from androguard.core.axml import (ARSCParser,
     AXMLPrinter,
     ARSCResTableConfig,
     AXMLParser,
-    format_value, 
+    format_value,
     START_TAG,
     END_TAG,
     TEXT,
@@ -1011,7 +1011,11 @@ class APK:
             ):
                 return [xml]
             return []
-        tags = xml.findall(".//" + tag_name)
+        tags = set()
+        tags.update(xml.findall(".//" + tag_name))
+        # Sample 4c7d2912ba24e4bf1dab1175ee435f85ec223ac86967fc61a3dacbd1a97ee329
+        # permission declared using tag <android:uses-permission...
+        tags.update(xml.findall(".//" + NS_ANDROID + tag_name))
         return [
             tag for tag in tags if self.is_tag_matched(
                 tag, **attribute_filter
@@ -1307,7 +1311,7 @@ class APK:
         filled_permissions = permissions.copy()
         for permission in filled_permissions:
             protection_level, label, description = filled_permissions[permission]
-            if ((not label or not description) 
+            if ((not label or not description)
                 and permission in self.permission_module_min_sdk):
                 x = self.permission_module_min_sdk[permission]
                 protection_level = self._update_permission_protection_level(
@@ -1513,7 +1517,7 @@ class APK:
         cert = pkcs7obj['content']['certificates'][0].chosen.dump()
         return cert
 
-    def get_certificate(self, filename:str) -> x509.Certificate: 
+    def get_certificate(self, filename:str) -> x509.Certificate:
         """
         Return a X.509 certificate object by giving the name in the apk file
 
