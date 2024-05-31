@@ -988,7 +988,19 @@ class AXMLPrinter:
                         cur[-1].append(etree.Comment(comment))
 
                 logger.debug("START_TAG: {} (line={})".format(tag, self.axml.m_lineNumber))
-                elem = etree.Element(tag, nsmap=self.axml.nsmap)
+
+                try:
+                    elem = etree.Element(tag, nsmap=self.axml.nsmap)
+                except ValueError as e:
+                    logger.warning(e)
+                    # sample 6a2f19dba563ca02b3a55edd74798e97db83bcc58cd77bef6a627af69facb401
+                    # nsmap= {'<!--': 'http://schemas.android.com/apk/res/android'}
+                    if 'Invalid namespace prefix' in str(e):
+                        corrected_nsmap = self.clean_and_replace_nsmap(self.axml.nsmap, str(e).split("'")[1])
+                        elem = etree.Element(tag, nsmap=corrected_nsmap)
+                    else:
+                        raise
+
 
                 for i in range(self.axml.getAttributeCount()):
                     uri = self._print_namespace(self.axml.getAttributeNamespace(i))
@@ -1028,6 +1040,16 @@ class AXMLPrinter:
                 if len(self.axml.namespaces) > 0:
                     logger.warning("Not all namespace mappings were closed! Malformed AXML?")
                 break
+
+    def clean_and_replace_nsmap(self, nsmap, invalid_prefix):
+        correct_prefix = 'android'
+        corrected_nsmap = {}
+        for prefix, uri in nsmap.items():
+            if prefix.startswith(invalid_prefix):
+                corrected_nsmap[correct_prefix] = uri
+            else:
+                corrected_nsmap[prefix] = uri
+        return corrected_nsmap
 
     def get_buff(self) -> bytes:
         """
