@@ -1013,6 +1013,7 @@ class APK:
             return []
         tags = set()
         tags.update(xml.findall(".//" + tag_name))
+
         # Sample 4c7d2912ba24e4bf1dab1175ee435f85ec223ac86967fc61a3dacbd1a97ee329
         # permission declared using tag <android:uses-permission...
         tags.update(xml.findall(".//" + NS_ANDROID + tag_name))
