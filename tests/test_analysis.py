@@ -37,7 +37,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(len(list(dx.get_external_methods())), 3116)    # difficult to check
 
         # TODO: the DEX header says 12795 here, but 9676 + 3116 adds up to 12792
-        # JADX corroborates 9676, so I think 3116 is off, and a few unncessary
+        # JADX corroborates 9676, so I think 3116 is off, and a few unnecessary
         # ExternalMethods are added somewhere
         self.assertEqual(len(list(dx.get_methods())), 12792)            # dex header header->headerItem->methodIdsSize
         

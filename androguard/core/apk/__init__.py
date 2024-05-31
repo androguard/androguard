@@ -29,7 +29,7 @@ from androguard.core.axml import (ARSCParser,
     TEXT,
     END_DOCUMENT)
 
-# External dependecies
+# External dependencies
 from lxml.etree import Element
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
@@ -746,7 +746,7 @@ class APK:
 
         At the same time, the CRC32 are calculated for the files.
 
-        :rtype: a dictionnary
+        :rtype: a dictionary
         """
         if self._files == {}:
             # Generate File Types / CRC List

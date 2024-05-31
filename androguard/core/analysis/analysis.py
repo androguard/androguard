@@ -227,7 +227,7 @@ class DEXBasicBlock:
 
     def get_method(self) -> dex.EncodedMethod:
         """
-        Returns the originiating method
+        Returns the originating method
 
         :return: the method
         :rtype: androguard.core.dex.EncodedMethod
@@ -1462,7 +1462,7 @@ class Analysis:
 
         logger.info("Adding DEX file version {}".format(vm.version))
 
-        # TODO: This step can easily be multithreaded, as there is no dependecy between the objects at this stage
+        # TODO: This step can easily be multithreaded, as there is no dependency between the objects at this stage
         tic = time.time()
         for i, current_class in enumerate(vm.get_classes()):
             # seed ClassAnalysis objects into classes attribute and add as new class
