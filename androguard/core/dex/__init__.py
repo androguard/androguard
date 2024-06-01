@@ -530,7 +530,7 @@ class HeaderItem:
             self.dex_version = 35  # assume a common version...
 
         if zlib.adler32(read_at(buff, self.offset + 12)) != self.checksum:
-            raise ValueError("Wrong Adler32 checksum for DEX file!")
+            logger.warning("Wrong Adler32 checksum for DEX file!")
 
         if self.file_size != buff.raw.getbuffer().nbytes:
             # Maybe raise an error here too...
