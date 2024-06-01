@@ -22,7 +22,7 @@ from androguard.core.dex.dex_types import TYPE_DESCRIPTOR
 from loguru import logger
 
 
-def array_access(arr, ind):
+def array_access(arr, ind) -> list:
     return ['ArrayAccess', [arr, ind]]
 
 
@@ -68,7 +68,7 @@ def parenthesis(expr):
     return ['Parenthesis', [expr]]
 
 
-def typen(baset, dim):
+def typen(baset: str, dim: int) -> list:
     return ['TypeName', (baset, dim)]
 
 
@@ -141,7 +141,7 @@ def _append(sb, stmt):
         sb[2].append(stmt)
 
 
-def parse_descriptor(desc):
+def parse_descriptor(desc: str) -> list:
     dim = 0
     while desc and desc[0] == '[':
         desc = desc[1:]

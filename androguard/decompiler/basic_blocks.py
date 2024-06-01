@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from collections import defaultdict
+
 from androguard.decompiler.opcode_ins import INSTRUCTION_SET
 from androguard.decompiler.instruction import MoveExceptionExpression
 from androguard.decompiler.node import Node
@@ -25,7 +26,7 @@ from loguru import logger
 
 
 class BasicBlock(Node):
-    def __init__(self, name, block_ins):
+    def __init__(self, name: str, block_ins: list) -> None:
         super().__init__(name)
         self.ins = block_ins
         self.ins_range = None
@@ -33,26 +34,26 @@ class BasicBlock(Node):
         self.var_to_declare = set()
         self.catch_type = None
 
-    def get_ins(self):
+    def get_ins(self) -> list:
         return self.ins
 
-    def get_loc_with_ins(self):
+    def get_loc_with_ins(self) -> list:
         if self.loc_ins is None:
             self.loc_ins = list(zip(range(*self.ins_range), self.ins))
         return self.loc_ins
 
-    def remove_ins(self, loc, ins):
+    def remove_ins(self, loc, ins) -> None:
         self.ins.remove(ins)
         self.loc_ins.remove((loc, ins))
 
-    def add_ins(self, new_ins_list):
+    def add_ins(self, new_ins_list: list) -> None:
         for new_ins in new_ins_list:
             self.ins.append(new_ins)
 
     def add_variable_declaration(self, variable):
         self.var_to_declare.add(variable)
 
-    def number_ins(self, num):
+    def number_ins(self, num: int) -> int:
         last_ins_num = num + len(self.ins)
         self.ins_range = [num, last_ins_num]
         self.loc_ins = None
