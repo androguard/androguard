@@ -992,9 +992,8 @@ class AXMLPrinter:
                 try:
                     elem = etree.Element(tag, nsmap=self.axml.nsmap)
                 except ValueError as e:
-                    logger.warning(e)
-                    # sample 6a2f19dba563ca02b3a55edd74798e97db83bcc58cd77bef6a627af69facb401
-                    # nsmap= {'<!--': 'http://schemas.android.com/apk/res/android'}
+                    logger.error(e)
+                    # nsmap= {'<!--': 'http://schemas.android.com/apk/res/android'} | pull/1056
                     if 'Invalid namespace prefix' in str(e):
                         corrected_nsmap = self.clean_and_replace_nsmap(self.axml.nsmap, str(e).split("'")[1])
                         elem = etree.Element(tag, nsmap=corrected_nsmap)
