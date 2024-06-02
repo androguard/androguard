@@ -690,7 +690,7 @@ class APKTest(unittest.TestCase):
         self.assertEqual(list(a.get_all_attribute_value("activity", "name"))[0], 'com.android.galaxy4.Galaxy4')
         self.assertEqual(list(a.get_all_attribute_value("activity", "name", format_value=False))[0], '.Galaxy4')
 
-        # Test some formattings
+        # Test some formatting
         self.assertEqual(a._format_value('foo'), 'com.android.galaxy4.foo')
         self.assertEqual(a._format_value('.foo'), 'com.android.galaxy4.foo')
         self.assertEqual(a._format_value('com.android.galaxy4.foo'), 'com.android.galaxy4.foo')

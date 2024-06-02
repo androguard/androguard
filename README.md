@@ -14,7 +14,7 @@ pip install androguard
 ~~~~
 
 > [!IMPORTANT]
-> Versions >= 4.0.0 are new releases after a long time, where the project has substantial differences from the previous stable version 3.3.5 from 2019. This means that certain functionalities have been removed. If you notice an issue with your project using tha latest version, please open up an [issue](https://github.com/androguard/androguard/issues).
+> Versions >= 4.0.0 are new releases after a long time, where the project has substantial differences from the previous stable version 3.3.5 from 2019. This means that certain functionalities have been removed. If you notice an issue with your project using the latest version, please open up an [issue](https://github.com/androguard/androguard/issues).
 
 ## Documentation
 **Documentation contains outdated information - In progress of updating**

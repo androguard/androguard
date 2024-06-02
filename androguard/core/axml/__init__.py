@@ -101,7 +101,7 @@ def complexToFloat(xcomplex) -> float:
 class StringBlock:
     """
     StringBlock is a CHUNK inside an AXML File: `ResStringPool_header`
-    It contains all strings, which are used by referecing to ID's
+    It contains all strings, which are used by referencing to ID's
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#436
     """
@@ -694,7 +694,7 @@ class AXMLParser:
     @property
     def name(self) -> str:
         """
-        Return the String assosciated with the tag name
+        Return the String associated with the tag name
         """
         if self.m_name == -1 or (self.m_event != START_TAG and self.m_event != END_TAG):
             return ''
