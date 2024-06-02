@@ -1014,7 +1014,7 @@ class APK:
         tags = set()
         tags.update(xml.findall(".//" + tag_name))
 
-        # Sample 4c7d2912ba24e4bf1dab1175ee435f85ec223ac86967fc61a3dacbd1a97ee329
+        # https://github.com/androguard/androguard/pull/1053
         # permission declared using tag <android:uses-permission...
         tags.update(xml.findall(".//" + NS_ANDROID + tag_name))
         return [
