@@ -394,7 +394,7 @@ class Session:
 
     def get_objects_dex(self) -> Iterator[tuple[str, dex.DEX, Analysis]]:
         """
-        Yields all dex objects inclduing their Analysis objects
+        Yields all dex objects including their Analysis objects
 
         :returns: tuple of (sha256, DEX, Analysis)
         """

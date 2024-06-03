@@ -2,7 +2,7 @@
 name = "androguard"
 description = "Androguard is a full python tool to play with Android files."
 authors = ["desnos <desnos@t0t0.fr>"]
-version = "4.1.1"
+version = "4.1.2"
 license = "Apache Licence, Version 2.0"
 readme = "README.md"
 homepage = "https://github.com/androguard/androguard"
@@ -27,14 +27,6 @@ loguru = "*"
 apkInspector = ">=1.1.7"
 matplotlib = "*"
 networkx = "*"
-PyQt5 = "*"
-# address inconsistencies with pyqt5-qt5 binary release files
-# > 5.15.2 exclusively contains releases for macosx
-# 5.15.2 contains release for all, but not arm64 macosx
-PyQt5-Qt5 = [
-    {version = "*", markers = "sys_platform == 'darwin'"},
-    {version = "5.15.2", markers = "sys_platform != 'darwin'"}
-]
 pyyaml = "*"
 oscrypto = ">=1.3.0"
 

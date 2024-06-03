@@ -31,7 +31,7 @@ from androguard.core.axml import (ARSCParser,
     TEXT,
     END_DOCUMENT)
 
-# External dependecies
+# External dependencies
 from lxml.etree import Element
 import lxml.sax
 from xml.dom.pulldom import SAX2DOM
@@ -748,7 +748,7 @@ class APK:
 
         At the same time, the CRC32 are calculated for the files.
 
-        :rtype: a dictionnary
+        :rtype: a dictionary
         """
         if self._files == {}:
             # Generate File Types / CRC List
@@ -1013,7 +1013,12 @@ class APK:
             ):
                 return [xml]
             return []
-        tags = xml.findall(".//" + tag_name)
+        tags = set()
+        tags.update(xml.findall(".//" + tag_name))
+
+        # https://github.com/androguard/androguard/pull/1053
+        # permission declared using tag <android:uses-permission...
+        tags.update(xml.findall(".//" + NS_ANDROID + tag_name))
         return [
             tag for tag in tags if self.is_tag_matched(
                 tag, **attribute_filter
@@ -1309,7 +1314,7 @@ class APK:
         filled_permissions = permissions.copy()
         for permission in filled_permissions:
             protection_level, label, description = filled_permissions[permission]
-            if ((not label or not description) 
+            if ((not label or not description)
                 and permission in self.permission_module_min_sdk):
                 x = self.permission_module_min_sdk[permission]
                 protection_level = self._update_permission_protection_level(

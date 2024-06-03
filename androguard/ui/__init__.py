@@ -218,7 +218,7 @@ class DynamicUI:
 
     def get_available_blocks(self):
         blocks: list[Message] = []
-        # Retrieve every unhandled block currently avilable in the queue
+        # Retrieve every unhandled block currently available in the queue
         try:
             for _ in range(10):
                 blocks.append(self.input_queue.get_nowait())

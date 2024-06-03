@@ -12,6 +12,5 @@ loguru
 apkInspector>=1.2.1
 matplotlib
 networkx
-PyQt5
 pyyaml
 oscrypto>=1.3.0
