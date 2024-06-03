@@ -1498,14 +1498,14 @@ class APK:
         """
         return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
-    def get_certificate_der(self, filename:str) -> bytes:
+    def get_certificate_der(self, filename:str) -> Union[bytes, None]:
         """
         Return the DER coded X.509 certificate from the signature file.
         If minSdkVersion is prior to Android N only the first SignerInfo is used.
         If signed attributes are present, they are taken into account
 
         :param filename: Signature filename in APK
-        :returns: DER coded X.509 certificate as binary
+        :returns: DER coded X.509 certificate as binary or None
         """
 
         # Get the signature
@@ -1524,32 +1524,39 @@ class APK:
         # to verify all SignerInfos and then picks the first verified SignerInfo.
         min_sdk_version = self.get_min_sdk_version()
         if min_sdk_version is None or int(min_sdk_version) < 24:  # AndroidSdkVersion.N
-            logger.info(f"minsdkversion: {min_sdk_version} is less than 24. Getting the first signerInfo only!")
+            logger.info(f"minSdkVersion: {min_sdk_version} is less than 24. Getting the first signerInfo only!")
             unverified_signer_infos_to_try = [signer_infos[0]]
         else:
             unverified_signer_infos_to_try = signer_infos
 
         # Extract certificates from the PKCS7 object
         certificates = signed_data['content']['certificates']
-        matching_certificate_verified = None
+        return_certificate = None
+        list_certificates_verified = []
         for signer_info in unverified_signer_infos_to_try:
-            matching_certificate_verified = self.verify_signer_info_against_sig_file(
-                signed_data,
-                certificates,
-                signer_info,
-                sf_object)
+            try:
+                matching_certificate_verified = self.verify_signer_info_against_sig_file(
+                    signed_data,
+                    certificates,
+                    signer_info,
+                    sf_object)
+            except ValueError as e:
+                logger.error(f"The following exception was raised while verifying the certificate: {e}")
+                break  # the validation stops due to the exception raised!
             if matching_certificate_verified is not None:
-                # Return the first certificate that was verified
-                break
-        if not matching_certificate_verified:
-            logger.warning(f"minSdkVersion: {min_sdk_version}, # of SignerInfos: {len(unverified_signer_infos_to_try)}. None Verified!")
-        return matching_certificate_verified
+                list_certificates_verified.append(matching_certificate_verified)
+        if not list_certificates_verified:
+            logger.error(f"minSdkVersion: {min_sdk_version}, # of SignerInfos: {len(unverified_signer_infos_to_try)}. None Verified!")
+        else:
+            return_certificate = list_certificates_verified[0]
+        return return_certificate
 
     def verify_signer_info_against_sig_file(self, signed_data, certificates, signer_info, sf_object):
         matching_certificate = self.find_certificate(certificates, signer_info)
         matching_certificate_verified = None
+        digest_algorithm = self.get_hash_algorithm(signer_info)
         if matching_certificate is None:
-            logger.info("Signing certificate referenced in SignerInfo not found in SignedData")
+            raise ValueError("Signing certificate referenced in SignerInfo not found in SignedData")
         else:
             if signer_info['signed_attrs'].native:
                 logger.info("Signed Attributes detected!")
@@ -1557,8 +1564,7 @@ class APK:
                 signed_attrs_dict = OrderedDict()
                 for attr in signed_attrs:
                     if attr['type'].dotted in signed_attrs_dict:
-                        logger.error(f"Duplicate signed attribute: {attr['type'].dotted}")
-                        return None
+                        raise ValueError(f"Duplicate signed attribute: {attr['type'].dotted}")
                     signed_attrs_dict[attr['type'].dotted] = attr['values']
 
                 # Check content type attribute (for Android N and newer)
@@ -1566,8 +1572,7 @@ class APK:
                 if max_sdk_version is None or int(max_sdk_version) >= 24:
                     content_type_oid = '1.2.840.113549.1.9.3'  # OID for contentType
                     if content_type_oid not in signed_attrs_dict:
-                        logger.error("No Content Type in signed attributes. Continuing to next SignerInfo, if any.")
-                        return None
+                        raise ValueError("No Content Type in signed attributes")
                     content_type = signed_attrs_dict[content_type_oid][0].native
                     if content_type != signed_data['content']['encap_content_info']['content_type'].native:
                         logger.error("Content Type mismatch. Continuing to next SignerInfo, if any.")
@@ -1576,10 +1581,9 @@ class APK:
                 # Check message digest attribute
                 message_digest_oid = '1.2.840.113549.1.9.4'  # OID for messageDigest
                 if message_digest_oid not in signed_attrs_dict:
-                    logger.error("No Message Digest in signed attributes. Continuing to next SignerInfo, if any.")
-                    return None
+                    raise ValueError("No content digest in signed attributes")
                 expected_signature_file_digest = signed_attrs_dict[message_digest_oid][0].native
-                hash_algo = hashlib.new(signer_info['digest_algorithm']['algorithm'].native)
+                hash_algo = hashlib.new(digest_algorithm)
                 hash_algo.update(sf_object)
                 actual_digest = hash_algo.digest()
 
@@ -1588,32 +1592,20 @@ class APK:
                     logger.error("Digest mismatch. Continuing to next SignerInfo, if any.")
                     return None
 
-                signed_data = signed_attrs.dump()
+                signed_attrs_dump = signed_attrs.dump()
                 # Modify the first byte to 0x31 for UNIVERSAL SET
-                signed_data = b'\x31' + signed_data[1:]
-                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, signed_data)
+                signed_attrs_dump = b'\x31' + signed_attrs_dump[1:]
+                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate,
+                                                                      signed_attrs_dump, digest_algorithm)
             else:
-                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, sf_object)
+                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, sf_object,
+                                                                      digest_algorithm)
         return matching_certificate_verified
 
     @staticmethod
-    def verify_signature(signer_info, matching_certificate, signed_data):
+    def verify_signature(signer_info, matching_certificate, signed_data, digest_algorithm):
         matching_certificate_verified = None
         signature = signer_info['signature'].native
-        # Determine the hash algorithm from the SignerInfo
-        digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
-        # Map the digest algorithm to a hash function
-        hash_algorithms = {
-            'md5': md5,
-            'sha1': sha1,
-            'sha256': sha256,
-            'sha224': sha224,
-            'sha384': sha384,
-            'sha512': sha512
-        }
-        if digest_algorithm not in hash_algorithms:
-            raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
-
         loaded_cert = asymmetric.load_certificate(matching_certificate.chosen)
         public_key = loaded_cert.public_key
         key_type = loaded_cert.algorithm
@@ -1634,20 +1626,61 @@ class APK:
         return matching_certificate_verified
 
     @staticmethod
+    def get_hash_algorithm(signer_info):
+        # Determine the hash algorithm from the SignerInfo
+        digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
+        # Map the digest algorithm to a hash function
+        hash_algorithms = {
+            'md5': md5,
+            'sha1': sha1,
+            'sha256': sha256,
+            'sha224': sha224,
+            'sha384': sha384,
+            'sha512': sha512
+        }
+        if digest_algorithm not in hash_algorithms:
+            raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
+        return digest_algorithm
+
+    @staticmethod
     def find_certificate(signed_data_certificates, signer_info):
-        # From the bag of certs, obtain the certificate referenced by the SignerInfo
+        """
+        From the bag of certs, obtain the certificate referenced by the SignerInfo.
+
+        Args:
+            signed_data_certificates: List of certificates in the SignedData.
+            signer_info: SignerInfo object containing the issuer and serial number reference.
+
+        Returns:
+            The matching certificate if found, otherwise None.
+        """
         matching_certificate = None
         issuer_and_serial_number = signer_info['sid'].native
         issuer = issuer_and_serial_number['issuer']
         serial_number = issuer_and_serial_number['serial_number']
+
+        # Create an x509.Name object for the issuer in the SignerInfo
+        issuer_name = x509.Name.build(issuer)
+        issuer_str = issuer_name.human_friendly
+
         for cert in signed_data_certificates:
-            cert_native = cert.native
-            if cert_native['tbs_certificate']['issuer'] == issuer and cert_native['tbs_certificate']['serial_number'] == serial_number:
-                matching_certificate = cert
-                break
+            if cert.name == 'certificate':
+                cert_native = cert.native
+                cert_issuer = cert_native['tbs_certificate']['issuer']
+                cert_serial_number = cert_native['tbs_certificate']['serial_number']
+
+                # Create an x509.Name object for the issuer in the certificate
+                cert_issuer_name = x509.Name.build(cert_issuer)
+                cert_issuer_str = cert_issuer_name.human_friendly
+
+                # Compare the canonical string representations of the issuers and the serial numbers
+                if cert_issuer_str == issuer_str and cert_serial_number == serial_number:
+                    matching_certificate = cert
+                    break
+
         return matching_certificate
 
-    def get_certificate(self, filename:str) -> x509.Certificate:
+    def get_certificate(self, filename:str) -> Union[x509.Certificate, None]:
         """
         Return a X.509 certificate object by giving the name in the apk file
 
@@ -1655,8 +1688,10 @@ class APK:
         :returns: a :class:`Certificate` certificate
         """
         cert = self.get_certificate_der(filename)
-        certificate = x509.Certificate.load(cert)
-
+        if cert:
+            certificate = x509.Certificate.load(cert)
+        else:
+            certificate = None
         return certificate
 
     def new_zip(self, filename:str, deleted_files:Union[str,None]=None, new_files:dict={}) -> None:
@@ -2161,7 +2196,7 @@ class APK:
         """
         return [ x509.Certificate.load(cert) for cert in self.get_certificates_der_v2()]
 
-    def get_certificates_v1(self) -> list[x509.Certificate]:
+    def get_certificates_v1(self) -> list[Union[x509.Certificate, None]]:
         """
         Return a list of :class:`asn1crypto.x509.Certificate` which are found
         in the META-INF folder (v1 signing).
