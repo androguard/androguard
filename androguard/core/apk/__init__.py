@@ -1518,7 +1518,8 @@ class APK:
         # Locate the SignerInfo structure
         signer_infos = signed_data['content']['signer_infos']
         if not signer_infos:
-            raise ValueError('No signer information found in the PKCS7 object. The APK may not be properly signed.')
+            logger.error('No signer information found in the PKCS7 object. The APK may not be properly signed.')
+            return None
 
         # Prior to Android N, Android attempts to verify only the first SignerInfo. From N onwards, Android attempts
         # to verify all SignerInfos and then picks the first verified SignerInfo.
@@ -1540,9 +1541,9 @@ class APK:
                     certificates,
                     signer_info,
                     sf_object)
-            except ValueError as e:
+            except (ValueError, TypeError, OSError, errors.SignatureError) as e:
                 logger.error(f"The following exception was raised while verifying the certificate: {e}")
-                break  # the validation stops due to the exception raised!
+                return None  # the validation stops due to the exception raised!
             if matching_certificate_verified is not None:
                 list_certificates_verified.append(matching_certificate_verified)
         if not list_certificates_verified:
@@ -2198,15 +2199,14 @@ class APK:
 
     def get_certificates_v1(self) -> list[Union[x509.Certificate, None]]:
         """
-        Return a list of :class:`asn1crypto.x509.Certificate` which are found
+        Return a list of verified :class:`asn1crypto.x509.Certificate` which are found
         in the META-INF folder (v1 signing).
-        Note that we simply extract all certificates regardless of the signer.
-        Therefore this is just a list of all certificates found in all signers.
         """
         certs = []
         for x in self.get_signature_names():
-            certs.append(x509.Certificate.load(self.get_certificate_der(x)))
-
+            cc = self.get_certificate_der(x)
+            if cc is not None:
+                certs.append(x509.Certificate.load(cc))
         return certs
 
     def get_certificates(self) -> list[x509.Certificate]:
@@ -2215,6 +2215,7 @@ class APK:
         in v1, v2 and v3 signing
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
+        Exception is v1, for which the certificate returned is verified.
         """
         fps = []
         certs = []
