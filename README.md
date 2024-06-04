@@ -14,7 +14,7 @@ pip install androguard
 ~~~~
 
 > [!IMPORTANT]
-> Versions >= 4.0.0 are new releases after a long time, where the project has substantial differences from the previous stable version 3.3.5 from 2019. This means that certain functionalities have been removed. If you notice an issue with your project using tha latest version, please open up an [issue](https://github.com/androguard/androguard/issues).
+> Versions >= 4.0.0 are new releases after a long time, where the project has substantial differences from the previous stable version 3.3.5 from 2019. This means that certain functionalities have been removed. If you notice an issue with your project using the latest version, please open up an [issue](https://github.com/androguard/androguard/issues).
 
 ## Documentation
 **Documentation contains outdated information - In progress of updating**
@@ -59,6 +59,7 @@ In alphabetical order
 * [MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
 * [qiew](https://github.com/mtivadar/qiew)
 * [Quark-Engine](https://github.com/quark-engine/quark-engine)
+* [Virustotal](https://virustotal.readme.io/reference/androguard)
 * [Viper Framework](https://github.com/viper-framework/viper)
 * ... and many more!
 
@@ -68,7 +69,7 @@ You are using Androguard and are not listed here? Just create a [ticket](https:/
 
 ### Androguard
 
-Copyright (C) 2012 - 2023, Anthony Desnos (desnos at t0t0.fr)
+Copyright (C) 2012 - 2024, Anthony Desnos (desnos at t0t0.fr)
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");

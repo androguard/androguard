@@ -552,7 +552,6 @@ def cg(
     from androguard.core.analysis.analysis import ExternalMethod
 
     import matplotlib.pyplot as plt
-    import networkx as nx
 
     a, d, dx = AnalyzeAPK(file_)
 
@@ -569,8 +568,13 @@ def cg(
         no_isolated,
         entry_points
     )
-        
+
     if show:
+        try:
+            import PyQt5
+        except ImportError:
+            print("PyQt5 is not installed. In most OS you can install it by running 'pip install PyQt5'.\n")
+            exit()
         pos = nx.spring_layout(callgraph)
         internal = []
         external = []

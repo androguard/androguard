@@ -470,7 +470,7 @@ class InstructionTest(unittest.TestCase):
             self.assertEqual(ins.get_output(), 'v{}, {}'.format(reg, lit))
 
     def testInstruction31i(self):
-        """Test functionaltiy of Instruction31i (const, const-wide/32)"""
+        """Test functionality of Instruction31i (const, const-wide/32)"""
 
         # const is often used to load resources...
         tests = [

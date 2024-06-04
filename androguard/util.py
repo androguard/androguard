@@ -3,7 +3,7 @@
 import sys
 from typing import Union, BinaryIO
 
-#  External dependecies
+#  External dependencies
 # import asn1crypto
 from asn1crypto.x509 import Name
 from loguru import logger
