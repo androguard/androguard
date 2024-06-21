@@ -14,14 +14,13 @@ from pygments.formatters.terminal import TerminalFormatter
 from oscrypto import asymmetric
 
 # internal modules
-from androguard.core.axml import ARSCParser
 from androguard.session import Session
 from androguard.core import androconf
 from androguard.core import apk
-from androguard.core.axml import AXMLPrinter
 from androguard.core.dex import get_bytecodes_method
 from androguard.util import readFile
 from androguard.ui import DynamicUI
+import pyaxml
 
 def androaxml_main(
         inp:str,
@@ -36,11 +35,11 @@ def androaxml_main(
                 logger.error("The APK does not contain a file called '{}'".format(resource), file=sys.stderr)
                 sys.exit(1)
 
-            axml = AXMLPrinter(a.get_file(resource)).get_xml_obj()
+            axml = pyaxml.AXML.from_axml(a.get_file(resource))[0].to_xml()
         else:
             axml = a.get_android_manifest_xml()
     elif ".xml" in inp:
-        axml = AXMLPrinter(readFile(inp)).get_xml_obj()
+        axml = pyaxml.AXML.from_axml(readFile(inp))[0].to_xml()
     else:
         logger.error("Unknown file type")
         sys.exit(1)
@@ -54,37 +53,32 @@ def androaxml_main(
 
 
 def androarsc_main(
-        arscobj: ARSCParser,
+        arscobj: pyaxml.ARSC,
         outp:Union[str,None]=None,
         package:Union[str,None]=None,
         typ:Union[str,None]=None,
         locale:Union[str,None]=None) -> None:
     
-    package = package or arscobj.get_packages_names()[0]
-    ttype = typ or "public"
-    locale = locale or '\x00\x00'
+    #package = package or arscobj.get_packages()[0]
+    #ttype = typ or "public"
+    #locale = locale or '\x00\x00'
 
     # TODO: be able to dump all locales of a specific type
     # TODO: be able to recreate the structure of files when developing, eg a
     # res folder with all the XML files
 
-    if not hasattr(arscobj, "get_{}_resources".format(ttype)):
-        print("No decoder found for type: '{}'! Please open a bug report."
-              .format(ttype),
-              file=sys.stderr)
-        sys.exit(1)
-
-    x = getattr(arscobj, "get_" + ttype + "_resources")(package, locale)
-
-    buff = etree.tostring(etree.fromstring(x),
-                          pretty_print=True,
-                          encoding="UTF-8")
+    #if not hasattr(arscobj, "get_{}_resources".format(ttype)):
+    #    print("No decoder found for type: '{}'! Please open a bug report."
+    #          .format(ttype),
+    #          file=sys.stderr)
+    #    sys.exit(1)
+    buff = arscobj.list_packages()
 
     if outp:
-        with open(outp, "wb") as fd:
+        with open(outp, "w") as fd:
             fd.write(buff)
     else:
-        sys.stdout.write(highlight(buff.decode("UTF-8"), get_lexer_by_name("xml"), TerminalFormatter()))
+        sys.stdout.write(highlight(buff, get_lexer_by_name("xml"), TerminalFormatter()))
 
 
 def export_apps_to_format(
