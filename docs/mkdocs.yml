@@ -1,0 +1,65 @@
+site_name: androguard
+site_author: androguard
+site_description: androguard Documentation
+copyright: Copyright © 2024 androguard
+site_url: https://github.com/androguard/androguard
+repo_url: https://github.com/androguard/androguard
+
+theme:
+  name: material
+  features:
+    - navigation.tracking
+    - content.code.copy
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+plugins:
+  - autorefs
+  - offline
+  - search
+  - gen-files:
+      scripts:
+      - scripts/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          load_external_modules: false
+          options:
+            docstring_style: sphinx
+            show_bases: true
+            # show_inheritance_diagram: true        # requires sponsor
+  - glightbox
+  - table-reader
+  # - with-pdf:
+  #     output_path: ./androguard-docs.pdf
+      # cover_logo: 
+
+markdown_extensions:
+  - toc:
+      permalink: "#"
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+nav:
+  - Home: index.md
+  - Development:
+    - API Reference: reference/
+      # - Worker API: development/api/worker.md
+      # - Ghidra Worker API: development/api/ghidra_worker.md
+      # - Periodic Worker API: development/api/periodic_worker.md
+      # - Model API: development/api/model.md

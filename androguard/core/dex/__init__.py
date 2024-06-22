@@ -726,7 +726,7 @@ class AnnotationOffItem:
     def get_length(self) -> int:
         return len(self.get_obj())
 
-    def get_annotation_item(self) -> list[AnnotationItem]:
+    def get_annotation_item(self) -> AnnotationItem:
         return self.CM.get_annotation_item(self.get_annotation_off())
 
 
@@ -7148,7 +7148,7 @@ class MapItem:
     def get_obj(self) -> object:
         """
         Return the associated item itself.
-        Might return None, if :meth:`parse` was not called yet.
+        Might return None, if :meth:`androguard.core.dex.MapItem.parse` was not called yet.
 
         This method is the same as :meth:`get_item`.
         """

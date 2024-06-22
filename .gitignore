@@ -3,6 +3,7 @@ __pycache__/
 *.pyo
 
 docs/build
+docs/site
 
 .idea/
 
