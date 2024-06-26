@@ -9,6 +9,7 @@ import hashlib
 import io
 import os
 import re
+import unicodedata
 from struct import unpack
 from typing import Iterator, Union
 import zipfile
@@ -1508,6 +1509,8 @@ class APK:
         Return the DER coded X.509 certificate from the signature file.
         If minSdkVersion is prior to Android N only the first SignerInfo is used.
         If signed attributes are present, they are taken into account
+        Note that unsupported critical extensions and key usage are not verified!
+        https://android.googlesource.com/platform/tools/apksig/+/refs/tags/platform-tools-34.0.5/src/main/java/com/android/apksig/internal/apk/v1/V1SchemeVerifier.java#668
 
         :param filename: Signature filename in APK
         :returns: DER coded X.509 certificate as binary or None
@@ -1665,9 +1668,10 @@ class APK:
         issuer = issuer_and_serial_number['issuer']
         serial_number = issuer_and_serial_number['serial_number']
 
-        # Create an x509.Name object for the issuer in the SignerInfo
+        # Create a x509.Name object for the issuer in the SignerInfo
         issuer_name = x509.Name.build(issuer)
         issuer_str = issuer_name.human_friendly
+        issuer_str = unicodedata.normalize('NFKD', issuer_str.upper().lower())
 
         for cert in signed_data_certificates:
             if cert.name == 'certificate':
@@ -1675,10 +1679,10 @@ class APK:
                 cert_issuer = cert_native['tbs_certificate']['issuer']
                 cert_serial_number = cert_native['tbs_certificate']['serial_number']
 
-                # Create an x509.Name object for the issuer in the certificate
+                # Create a x509.Name object for the issuer in the certificate
                 cert_issuer_name = x509.Name.build(cert_issuer)
                 cert_issuer_str = cert_issuer_name.human_friendly
-
+                cert_issuer_str = unicodedata.normalize('NFKD', cert_issuer_str.upper().lower())
                 # Compare the canonical string representations of the issuers and the serial numbers
                 if cert_issuer_str == issuer_str and cert_serial_number == serial_number:
                     matching_certificate = cert
