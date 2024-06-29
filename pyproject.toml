@@ -28,7 +28,7 @@ apkInspector = ">=1.1.7"
 matplotlib = "*"
 networkx = "*"
 pyyaml = "*"
-pyaxml = ">=0.0.12"
+pyaxml = ">=0.0.13"
 oscrypto = ">=1.3.0"
 
 [tool.setuptools.package_data]

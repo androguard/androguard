@@ -5,7 +5,7 @@ from lxml import etree
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
-from androguard.core import apk, axml
+from androguard.core import apk
 from operator import itemgetter
 
 TEST_APP_NAME = "TestsAndroguardApplication"
@@ -49,7 +49,7 @@ class ARSCTest(unittest.TestCase):
     def testStrings(self):
         arsc = self.apk.get_android_resources()
 
-        p = arsc.get_packages_names()[0]
+        p = arsc.get_packages()[0]
         l = "\x00\x00"
 
         e = etree.fromstring(arsc.get_string_resources(p, l))
@@ -82,7 +82,7 @@ class ARSCTest(unittest.TestCase):
 
         arsc = a.get_android_resources()
 
-        p = arsc.get_packages_names()[0]
+        p = arsc.get_packages()[0]
 
         self.assertEqual(sorted(["\x00\x00", "da", "de", "el", "fr", "ja", "ru"]),
                          sorted(arsc.get_locales(p)))

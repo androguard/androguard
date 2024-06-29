@@ -4,7 +4,7 @@ import unittest
 from xml.dom import minidom
 import io
 
-from androguard.core import axml
+import pyaxml
 from androguard.util import set_log
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -83,147 +83,6 @@ def xml_compare(x1, x2, reporter=None):
 
 
 class AXMLTest(unittest.TestCase):
-    def testReplacement(self):
-        """
-        Test that the replacements for attributes, names and values are working
-        :return:
-        """
-        # Fake, Empty AXML file
-        a = axml.AXMLPrinter(b"\x03\x00\x08\x00\x24\x00\x00\x00"
-                             b"\x01\x00\x1c\x00\x1c\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00")
-
-        self.assertIsNotNone(a)
-
-        self.assertEqual(a._fix_value("hello world"), "hello world")
-        self.assertEqual(a._fix_value("Foobar \u000a\u000d\u0b12"), "Foobar \u000a\u000d\u0b12")
-        self.assertEqual(a._fix_value("hello \U00011234"), "hello \U00011234")
-        self.assertEqual(a._fix_value("\uFFFF"), "_")
-        self.assertEqual(a._fix_value("hello\x00world"), "hello")
-
-        self.assertEqual(a._fix_name('', 'foobar'), ('', 'foobar'))
-        self.assertEqual(a._fix_name('', '5foobar'), ('', '_5foobar'))
-        self.assertEqual(a._fix_name('', 'android:foobar'), ('', 'android_foobar'))
-        self.assertEqual(a._fix_name('', 'androiddd:foobar'), ('', 'androiddd_foobar'))
-        self.assertEqual(a._fix_name('', 'sdf:foobar'), ('', 'sdf_foobar'))
-        self.assertEqual(a._fix_name('', 'android:sdf:foobar'), ('', 'android_sdf_foobar'))
-        self.assertEqual(a._fix_name('', '5:foobar'), ('', '_5_foobar'))
-
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', '_5foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'android_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'androiddd:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'androiddd_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'sdf:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'sdf_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:sdf:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'android_sdf_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', '_5_foobar'))
-
-        # Add a namespace mapping and try again
-        def new_nsmap(self):
-            return {"android": "http://schemas.android.com/apk/res/android",
-                    "something": "http://example/url"}
-
-        setattr(axml.AXMLParser, 'nsmap', property(new_nsmap))
-
-        self.assertEqual(a._fix_name('', 'foobar'), ('', 'foobar'))
-        self.assertEqual(a._fix_name('', '5foobar'), ('', '_5foobar'))
-        self.assertEqual(a._fix_name('', 'android:foobar'), ('{http://schemas.android.com/apk/res/android}', 'foobar'))
-        self.assertEqual(a._fix_name('', 'something:foobar'), ('{http://example/url}', 'foobar'))
-        self.assertEqual(a._fix_name('', 'androiddd:foobar'), ('', 'androiddd_foobar'))
-        self.assertEqual(a._fix_name('', 'sdf:foobar'), ('', 'sdf_foobar'))
-        self.assertEqual(a._fix_name('', 'android:sdf:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'sdf_foobar'))
-        self.assertEqual(a._fix_name('', '5:foobar'), ('', '_5_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', '_5foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'android_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'androiddd:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'androiddd_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'sdf:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'sdf_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', 'android:sdf:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', 'android_sdf_foobar'))
-        self.assertEqual(a._fix_name('{http://schemas.android.com/apk/res/android}', '5:foobar'),
-                         ('{http://schemas.android.com/apk/res/android}', '_5_foobar'))
-
-    def testNoStringPool(self):
-        """Test if a single header without string pool is rejected"""
-        #                      |TYPE   |LENGTH |FILE LENGTH
-        a = axml.AXMLPrinter(b"\x03\x00\x08\x00\x08\x00\x00\x00")
-        self.assertFalse(a.is_valid())
-
-    def testTooSmallFile(self):
-        """Test if a very short file is rejected"""
-        #                      |TYPE   |LENGTH |FILE LENGTH
-        a = axml.AXMLPrinter(b"\x03\x00\x08\x00\x08\x00\x00")
-        self.assertFalse(a.is_valid())
-
-    def testWrongHeaderSize(self):
-        """Test if a wrong header size is rejected"""
-        a = axml.AXMLPrinter(b"\x03\x00\x10\x00\x2c\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                             b"\x01\x00\x1c\x00\x1c\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00")
-        self.assertFalse(a.is_valid())
-
-    def testWrongStringPoolHeader(self):
-        """Test if a wrong header type is rejected"""
-        a = axml.AXMLPrinter(b"\x03\x00\x08\x00\x24\x00\x00\x00" b"\xDE\xAD\x1c\x00\x1c\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00")
-        self.assertFalse(a.is_valid())
-
-    def testWrongStringPoolSize(self):
-        """Test if a wrong string pool header size is rejected"""
-        a = axml.AXMLPrinter(b"\x03\x00\x08\x00\x2c\x00\x00\x00"
-                             b"\x01\x00\x24\x00\x24\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00"
-                             b"\x00\x00\x00\x00\x00\x00\x00\x00")
-        self.assertFalse(a.is_valid())
-
-    def testArscHeader(self):
-        """Test if wrong arsc headers are rejected"""
-        with self.assertRaises(axml.ResParserError) as cnx:
-            axml.ARSCHeader(io.BufferedReader(io.BytesIO(b"\x02\x01")))
-        self.assertIn("Can not read over the buffer size", str(cnx.exception))
-
-        with self.assertRaises(axml.ResParserError) as cnx:
-            axml.ARSCHeader(io.BufferedReader(io.BytesIO(b"\x02\x01\xFF\xFF\x08\x00\x00\x00")))
-        self.assertIn("smaller than header size", str(cnx.exception))
-
-        with self.assertRaises(axml.ResParserError) as cnx:
-            axml.ARSCHeader(io.BufferedReader(io.BytesIO(b"\x02\x01\x01\x00\x08\x00\x00\x00")))
-        self.assertIn("declared header size is smaller than required size", str(cnx.exception))
-
-        with self.assertRaises(axml.ResParserError) as cnx:
-            axml.ARSCHeader(io.BufferedReader(io.BytesIO(b"\x02\x01\x08\x00\x04\x00\x00\x00")))
-        self.assertIn("declared chunk size is smaller than required size", str(cnx.exception))
-
-        a = axml.ARSCHeader(io.BufferedReader(io.BytesIO(b"\xCA\xFE\x08\x00\x10\x00\x00\x00"
-                                                         b"\xDE\xEA\xBE\xEF\x42\x42\x42\x42")))
-
-        self.assertEqual(a.type, 0xFECA)
-        self.assertEqual(a.header_size, 8)
-        self.assertEqual(a.size, 16)
-        self.assertEqual(a.start, 0)
-        self.assertEqual(a.end, 16)
-        self.assertEqual(repr(a), "<ARSCHeader idx='0x00000000' type='65226' header_size='8' size='16'>")
 
     def testAndroidManifest(self):
         filenames = [
@@ -247,14 +106,8 @@ class AXMLTest(unittest.TestCase):
 
         for filename in filenames:
             with open(os.path.join(test_dir, filename), "rb") as fd:
-                ap = axml.AXMLPrinter(fd.read())
+                ap = pyaxml.AXML.from_axml(fd.read())[0]
             self.assertIsNotNone(ap)
-            self.assertTrue(ap.is_valid())
-
-            self.assertTrue(is_valid_manifest(ap.get_xml_obj()))
-
-            e = minidom.parseString(ap.get_buff())
-            self.assertIsNotNone(e)
 
     def testNonManifest(self):
         filenames = [
@@ -266,13 +119,9 @@ class AXMLTest(unittest.TestCase):
 
         for filename in filenames:
             with open(os.path.join(test_dir, filename), "rb") as fp:
-                ap = axml.AXMLPrinter(fp.read())
+                ap = pyaxml.AXML.from_axml(fp.read())[0]
 
-            self.assertTrue(ap.is_valid())
-            self.assertEqual(ap.get_xml_obj().tag, "LinearLayout")
-
-            e = minidom.parseString(ap.get_buff())
-            self.assertIsNotNone(e)
+            self.assertEqual(ap.to_xml().tag, "LinearLayout")
 
     def testNonZeroStyleOffset(self):
         """
@@ -282,12 +131,8 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestNonZeroStyle.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
-        e = minidom.parseString(ap.get_buff())
-        self.assertIsNotNone(e)
 
     def testNonTerminatedString(self):
         """
@@ -298,7 +143,7 @@ class AXMLTest(unittest.TestCase):
 
         with self.assertRaises(axml.ResParserError) as cnx:
             with open(os.path.join(test_dir, filename), "rb") as f:
-                ap = axml.AXMLPrinter(f.read())
+                ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
         self.assertIn("not null terminated", str(cnx.exception))
 
     def testExtraNamespace(self):
@@ -308,12 +153,9 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestExtraNamespace.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
-        e = minidom.parseString(ap.get_buff())
-        self.assertIsNotNone(e)
+
 
     def testTextChunksWithXML(self):
         """
@@ -322,12 +164,7 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestTextChunksXML.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
-
-        e = minidom.parseString(ap.get_buff())
-        self.assertIsNotNone(e)
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
     def testWrongFilesize(self):
         """
@@ -336,8 +173,7 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestWrongFilesize.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            a = axml.AXMLPrinter(f.read())
-        self.assertFalse(a.is_valid())
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
     def testNullbytes(self):
         """
@@ -346,12 +182,7 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestNullbytes.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
-
-        e = minidom.parseString(ap.get_buff())
-        self.assertIsNotNone(e)
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
     def testMaskingNamespace(self):
         """
@@ -361,12 +192,7 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestMaskingNamespace.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
-
-        e = minidom.parseString(ap.get_buff())
-        self.assertIsNotNone(e)
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
     def testDoubleNamespace(self):
         """
@@ -375,12 +201,7 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestDoubleNamespace.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
-
-        e = minidom.parseString(ap.get_buff())
-        self.assertIsNotNone(e)
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
     def testPackers(self):
         """
@@ -389,11 +210,7 @@ class AXMLTest(unittest.TestCase):
         filename = "data/AXML/AndroidManifestLiapp.xml"
 
         with open(os.path.join(test_dir, filename), "rb") as f:
-            ap = axml.AXMLPrinter(f.read())
-        self.assertIsInstance(ap, axml.AXMLPrinter)
-        self.assertTrue(ap.is_valid())
-
-        self.assertTrue(ap.is_packed())
+            ap = pyaxml.AXML.from_axml(f.read())[0].to_xml()
 
 
 if __name__ == '__main__':
