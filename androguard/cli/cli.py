@@ -22,6 +22,8 @@ from androguard.cli.main import (androarsc_main,
 
 import networkx as nx
 
+import pyaxml
+
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
 @click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
@@ -148,7 +150,7 @@ def arsc(input_,
     """
 
     from androguard.core import androconf
-    from androguard.core import axml, apk
+    from androguard.core import apk
 
     if file_ and input_:
         logger.info("Can not give --input and positional argument! Please use only one of them!")
@@ -172,7 +174,7 @@ def arsc(input_,
             sys.exit(0)
     elif ret_type == "ARSC":
         with open(fname, 'rb') as fp:
-            arscobj = axml.ARSCParser(fp.read())
+            arscobj = pyaxml.ARSC.from_axml(fp.read())[0]
             if not arscobj:
                 logger.error("The resources file seems to be invalid!")
                 sys.exit(1)
@@ -206,11 +208,11 @@ def arsc(input_,
         sys.exit(0)
 
     if list_packages:
-        print("\n".join(arscobj.get_packages_names()))
+        print("\n".join(arscobj.get_packages()))
         sys.exit(0)
 
     if list_locales:
-        for p in arscobj.get_packages_names():
+        for p in arscobj.get_packages():
             print("In Package:", p)
             print("\n".join(map(lambda x: "  \\x00\\x00"
             if x == "\x00\x00"
@@ -219,7 +221,7 @@ def arsc(input_,
         sys.exit(0)
 
     if list_types:
-        for p in arscobj.get_packages_names():
+        for p in arscobj.get_packages():
             print("In Package:", p)
             for locale in sorted(arscobj.get_locales(p)):
                 print("  In Locale: {}".format("\\x00\\x00"

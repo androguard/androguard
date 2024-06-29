@@ -19,15 +19,7 @@ from androguard.core import androconf
 from androguard.util import get_certificate_name_string
 from apkInspector.headers import ZipEntry
 
-from androguard.core.axml import (ARSCParser,
-    AXMLPrinter,
-    ARSCResTableConfig,
-    AXMLParser,
-    format_value,
-    START_TAG,
-    END_TAG,
-    TEXT,
-    END_DOCUMENT)
+import pyaxml
 
 # External dependencies
 from lxml.etree import Element
@@ -361,17 +353,15 @@ class APK:
         except KeyError:
             logger.warning("Missing AndroidManifest.xml. Is this an APK file?")
         else:
-            ap = AXMLPrinter(manifest_data)
+            ap = pyaxml.AXML.from_axml(manifest_data)[0]
 
-            if not ap.is_valid():
-                logger.error("Error while parsing AndroidManifest.xml - is the file valid?")
-                return
+            #if not ap.is_valid():
+            #    logger.error("Error while parsing AndroidManifest.xml - is the file valid?")
+            #    return
 
             self.axml[i] = ap
-            self.xml[i] = self.axml[i].get_xml_obj()
+            self.xml[i] = self.axml[i].to_xml()
 
-            if self.axml[i].is_packed():
-                logger.warning("XML Seems to be packed, operations on the AndroidManifest.xml might fail.")
 
             if self.xml[i] is not None:
                 if self.xml[i].tag != "manifest":
@@ -457,7 +447,7 @@ class APK:
         if not res_parser:
             return ''
         string_value = ''
-        for package_name in res_parser.get_packages_names():
+        for package_name in res_parser.get_packages():
             extracted_values = res_parser.get_string(package_name, string_key)
             if extracted_values:
                 string_value = extracted_values[1]
@@ -546,7 +536,8 @@ class APK:
                     return app_name
 
             try:
-                config = ARSCResTableConfig(None, locale=locale) if locale else ARSCResTableConfig.default_config()
+                config = pyaxml.ARSCResTableConfig()
+                config.set_language_and_region(locale)
                 app_name = res_parser.get_resolved_res_configs(
                     res_id,
                     config)[0][1]
@@ -1571,11 +1562,11 @@ class APK:
                 zout.writestr(item, buffer)
         zout.close()
 
-    def get_android_manifest_axml(self) -> Union[AXMLPrinter,None]:
+    def get_android_manifest_axml(self) -> Union[pyaxml.AXML,None]:
         """
-            Return the :class:`AXMLPrinter` object which corresponds to the AndroidManifest.xml file
+            Return the :class:`pyaxml.AXML` object which corresponds to the AndroidManifest.xml file
 
-            :rtype: :class:`~androguard.core.axml.AXMLPrinter`
+            :rtype: :class:`~pyaxml.AXML`
         """
         try:
             return self.axml["AndroidManifest.xml"]
@@ -1593,11 +1584,11 @@ class APK:
         except KeyError:
             return None
 
-    def get_android_resources(self) -> Union[ARSCParser,None]:
+    def get_android_resources(self) -> Union[pyaxml.ARSC,None]:
         """
-        Return the :class:`~androguard.core.axml.ARSCParser` object which corresponds to the resources.arsc file
+        Return the :class:`~pyaxml.ARSC` object which corresponds to the resources.arsc file
 
-        :rtype: :class:`~androguard.core.axml.ARSCParser`
+        :rtype: :class:`~pyaxml.ARSC`
         """
         try:
             return self.arsc["resources.arsc"]
@@ -1606,7 +1597,7 @@ class APK:
                 # There is a rare case, that no resource file is supplied.
                 # Maybe it was added manually, thus we check here
                 return None
-            self.arsc["resources.arsc"] = ARSCParser(self.zip.read("resources.arsc"))
+            self.arsc["resources.arsc"] = pyaxml.ARSC.from_axml(self.zip.read("resources.arsc"))[0]
             return self.arsc["resources.arsc"]
 
     def is_signed(self) -> bool:
@@ -2186,7 +2177,7 @@ def show_Certificate(cert, short:bool=False) -> None:
     print("Subject: {}".format(get_certificate_name_string(cert.subject.native, short=short)))
 
 
-def ensure_final_value(packageName:str, arsc:ARSCParser, value:str) -> str:
+def ensure_final_value(packageName:str, arsc:pyaxml.ARSC, value:str) -> str:
     """Ensure incoming value is always the value, not the resid
 
     androguard will sometimes return the Android "resId" aka
@@ -2202,7 +2193,7 @@ def ensure_final_value(packageName:str, arsc:ARSCParser, value:str) -> str:
             try:  # can be a literal value or a resId
                 res_id = int('0x' + value[1:], 16)
                 res_id = arsc.get_id(packageName, res_id)[1]
-                returnValue = arsc.get_string(packageName, res_id)[1]
+                returnValue = arsc.get_value(packageName, res_id)[1]
             except (ValueError, TypeError):
                 pass
         return returnValue
@@ -2229,33 +2220,10 @@ def get_apkid(apkfile: str) -> tuple[str,str,str]:
     versionName = None
     apk = ZipEntry.parse(apkfile, False)
     manifest = apk.read('AndroidManifest.xml')
-    axml = AXMLParser(manifest)
-    count = 0
-    while axml.is_valid():
-        _type = next(axml)
-        count += 1
-        if _type == START_TAG:
-            for i in range(0, axml.getAttributeCount()):
-                name = axml.getAttributeName(i)
-                _type = axml.getAttributeValueType(i)
-                _data = axml.getAttributeValueData(i)
-                value = format_value(_type, _data, lambda _: axml.getAttributeValue(i))
-                if appid is None and name == 'package':
-                    appid = value
-                elif versionCode is None and name == 'versionCode':
-                    if value.startswith('0x'):
-                        versionCode = str(int(value, 16))
-                    else:
-                        versionCode = value
-                elif versionName is None and name == 'versionName':
-                    versionName = value
-
-            if axml.name == 'manifest':
-                break
-        elif _type == END_TAG or _type == TEXT or _type == END_DOCUMENT:
-            raise RuntimeError('{path}: <manifest> must be the first element in AndroidManifest.xml'
-                               .format(path=apkfile))
-
+    axml = pyaxml.AXML.from_axml(manifest)[0].to_xml()
+    appid = axml.attrib['package'] if 'package' in axml.attrib else None
+    versionCode = axml.attrib['{http://schemas.android.com/apk/res/android}versionCode'] if '{http://schemas.android.com/apk/res/android}versionCode' in axml.attrib else None
+    versionName = axml.attrib['{http://schemas.android.com/apk/res/android}versionName'] if '{http://schemas.android.com/apk/res/android}versionName' in axml.attrib else None
     if not versionName or versionName[0] == '@':
         a = APK(apkfile)
         versionName = ensure_final_value(a.package, a.get_android_resources(), a.get_androidversion_name())

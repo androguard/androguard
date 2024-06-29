@@ -7,12 +7,12 @@ import hashlib
 import binascii
 from unittest.mock import patch, MagicMock
 
-from androguard.core import apk, axml
+from androguard.core import apk
 from androguard.core.analysis.analysis import Analysis
 from androguard.core.apk import APK
-from androguard.core.axml import AXMLPrinter
 from androguard.core.dex import DEX
 from androguard.misc import AnalyzeAPK
+import pyaxml
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -585,7 +585,7 @@ class APKTest(unittest.TestCase):
         a = APK(os.path.join(test_dir, 'data/APK/com.android.example.text.styling.apk'))
 
         self.assertEqual(a.get_app_icon(), "res/mipmap-anydpi-v26/ic_launcher.xml")
-        x = AXMLPrinter(a.get_file(a.get_app_icon())).get_xml().decode("UTF-8")
+        x = pyaxml.AXML.from_axml(a.get_file(a.get_app_icon()))[0].to_xml().tostring(self.root, encoding="utf-8", pretty_print=pretty).decode("UTF-8")
         self.assertIn("adaptive-icon", x)
 
         # * ldpi (low) ~120dpi
