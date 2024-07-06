@@ -11,7 +11,7 @@ import os
 import re
 import unicodedata
 from struct import unpack
-from typing import Iterator, Union
+from typing import Iterator, Union, Any, List, Tuple
 import zipfile
 from zlib import crc32
 
@@ -1651,8 +1651,7 @@ class APK:
             raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
         return digest_algorithm
 
-    @staticmethod
-    def find_certificate(signed_data_certificates, signer_info):
+    def find_certificate(self, signed_data_certificates, signer_info):
         """
         From the bag of certs, obtain the certificate referenced by the SignerInfo.
 
@@ -1670,21 +1669,17 @@ class APK:
 
         # Create a x509.Name object for the issuer in the SignerInfo
         issuer_name = x509.Name.build(issuer)
-        issuer_str = issuer_name.human_friendly
-        issuer_str = unicodedata.normalize('NFKD', issuer_str.upper().lower())
+        issuer_str = issuer_name.hashable.replace(' ', '')
+        issuer_str = unicodedata.normalize('NFKD', issuer_str.upper().lower()).strip()
 
         for cert in signed_data_certificates:
             if cert.name == 'certificate':
                 cert_native = cert.native
-                cert_issuer = cert_native['tbs_certificate']['issuer']
+                cert_issuer = self.canonical_name(cert.chosen['tbs_certificate']['issuer'])
                 cert_serial_number = cert_native['tbs_certificate']['serial_number']
 
-                # Create a x509.Name object for the issuer in the certificate
-                cert_issuer_name = x509.Name.build(cert_issuer)
-                cert_issuer_str = cert_issuer_name.human_friendly
-                cert_issuer_str = unicodedata.normalize('NFKD', cert_issuer_str.upper().lower())
                 # Compare the canonical string representations of the issuers and the serial numbers
-                if cert_issuer_str == issuer_str and cert_serial_number == serial_number:
+                if cert_issuer == issuer_str and cert_serial_number == serial_number:
                     matching_certificate = cert
                     break
 
@@ -1703,6 +1698,62 @@ class APK:
         else:
             certificate = None
         return certificate
+
+    def canonical_name(self, name: Any) -> str:
+        """Canonical representation of x509.Name as str."""
+        return ",".join("+".join(f"{t}:{v}" for _, t, v in avas) for avas in self.comparison_name(name))
+
+    @staticmethod
+    def comparison_name(name: Any, android: bool = False) -> List[List[Tuple[int, str, str]]]:
+        """
+        Canonical representation of x509.Name as nested list.
+        Returns a list of RDNs which are a list of AVAs which are a (oid, type,
+        value) tuple, where oid is 0 for standard names and 1 for dotted OIDs, type
+        is the standard name or dotted OID, and value is the string representation
+        of the value.
+        https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)
+        https://android.googlesource.com/platform/libcore/+/refs/heads/android14-release/ojluni/src/main/java/sun/security/x509/RDN.java#481
+        https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/sun/security/x509/RDN.java#L456
+        """
+
+        def key(pair: Tuple[int, str, str]) -> Tuple[int, Union[str, List[int]], str]:
+            o, t, v = pair
+            if android and o:
+                return o, [int(x) for x in t.split(".")], v
+            return pair
+
+        DS, U8, PS = x509.DirectoryString, x509.UTF8String, x509.PrintableString
+        oids = {
+            "2.5.4.3": ("common_name", "cn"),
+            "2.5.4.6": ("country_name", "c"),
+            "2.5.4.7": ("locality_name", "l"),
+            "2.5.4.8": ("state_or_province_name", "st"),
+            "2.5.4.9": ("street_address", "street"),
+            "2.5.4.10": ("organization_name", "o"),
+            "2.5.4.11": ("organizational_unit_name", "ou"),
+            "0.9.2342.19200300.100.1.1": ("user_id", "uid"),
+            "0.9.2342.19200300.100.1.25": ("domain_component", "dc"),
+        }
+        esc = {ord(c): f"\\{c}" for c in ",+<>;\"\\"}
+        data = []
+        for rdn in reversed(name.chosen):
+            avas = []
+            for ava in rdn:
+                at, av = ava["type"], ava["value"]
+                if at.dotted in oids:
+                    o, t = 0, oids[at.dotted][0]  # order standard before OID
+                else:
+                    o, t = 1, at.dotted
+                if not (isinstance(av, DS) and isinstance(av.chosen, (U8, PS))):
+                    v = "#" + binascii.hexlify(av.dump()).decode()
+                else:
+                    v = (av.native or "").translate(esc)
+                    if v.startswith("#"):
+                        v = "\\" + v
+                    v = unicodedata.normalize("NFKD", re.sub(r" +", " ", v).strip().upper().lower())
+                avas.append((o, t, v))
+            data.append(sorted(avas, key=key))
+        return data
 
     def new_zip(self, filename:str, deleted_files:Union[str,None]=None, new_files:dict={}) -> None:
         """
