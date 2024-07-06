@@ -1669,8 +1669,7 @@ class APK:
 
         # Create a x509.Name object for the issuer in the SignerInfo
         issuer_name = x509.Name.build(issuer)
-        issuer_str = issuer_name.hashable.replace(' ', '')
-        issuer_str = unicodedata.normalize('NFKD', issuer_str.upper().lower()).strip()
+        issuer_str = self.canonical_name(issuer_name)
 
         for cert in signed_data_certificates:
             if cert.name == 'certificate':
