@@ -1504,7 +1504,7 @@ class APK:
         """
         return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
-    def get_certificate_der(self, filename:str) -> Union[bytes, None]:
+    def get_certificate_der(self, filename: str, max_sdk_version: int = None) -> Union[bytes, None]:
         """
         Return the DER coded X.509 certificate from the signature file.
         If minSdkVersion is prior to Android N only the first SignerInfo is used.
@@ -1513,6 +1513,7 @@ class APK:
         https://android.googlesource.com/platform/tools/apksig/+/refs/tags/platform-tools-34.0.5/src/main/java/com/android/apksig/internal/apk/v1/V1SchemeVerifier.java#668
 
         :param filename: Signature filename in APK
+        :param max_sdk_version: An optional integer parameter for the max sdk version
         :returns: DER coded X.509 certificate as binary or None
         """
 
@@ -1548,7 +1549,8 @@ class APK:
                     signed_data,
                     certificates,
                     signer_info,
-                    sf_object)
+                    sf_object,
+                    max_sdk_version)
             except (ValueError, TypeError, OSError, errors.SignatureError) as e:
                 logger.error(f"The following exception was raised while verifying the certificate: {e}")
                 return None  # the validation stops due to the exception raised!
@@ -1560,7 +1562,7 @@ class APK:
             return_certificate = list_certificates_verified[0]
         return return_certificate
 
-    def verify_signer_info_against_sig_file(self, signed_data, certificates, signer_info, sf_object):
+    def verify_signer_info_against_sig_file(self, signed_data, certificates, signer_info, sf_object, max_sdk_version):
         matching_certificate = self.find_certificate(certificates, signer_info)
         matching_certificate_verified = None
         digest_algorithm = self.get_hash_algorithm(signer_info)
@@ -1577,7 +1579,6 @@ class APK:
                     signed_attrs_dict[attr['type'].dotted] = attr['values']
 
                 # Check content type attribute (for Android N and newer)
-                max_sdk_version = self.get_max_sdk_version()
                 if max_sdk_version is None or int(max_sdk_version) >= 24:
                     content_type_oid = '1.2.840.113549.1.9.3'  # OID for contentType
                     if content_type_oid not in signed_attrs_dict:
@@ -1663,19 +1664,18 @@ class APK:
             The matching certificate if found, otherwise None.
         """
         matching_certificate = None
-        issuer_and_serial_number = signer_info['sid'].native
-        issuer = issuer_and_serial_number['issuer']
-        serial_number = issuer_and_serial_number['serial_number']
+        issuer_and_serial_number = signer_info['sid']
+        issuer_str = self.canonical_name(issuer_and_serial_number.chosen['issuer'])
+        serial_number = issuer_and_serial_number.native['serial_number']
 
-        # Create a x509.Name object for the issuer in the SignerInfo
-        issuer_name = x509.Name.build(issuer)
-        issuer_str = self.canonical_name(issuer_name)
+        # # Create a x509.Name object for the issuer in the SignerInfo
+        # issuer_name = x509.Name.build(issuer)
+        # issuer_str = self.canonical_name(issuer_name)
 
         for cert in signed_data_certificates:
             if cert.name == 'certificate':
-                cert_native = cert.native
                 cert_issuer = self.canonical_name(cert.chosen['tbs_certificate']['issuer'])
-                cert_serial_number = cert_native['tbs_certificate']['serial_number']
+                cert_serial_number = cert.native['tbs_certificate']['serial_number']
 
                 # Compare the canonical string representations of the issuers and the serial numbers
                 if cert_issuer == issuer_str and cert_serial_number == serial_number:
@@ -1699,12 +1699,25 @@ class APK:
         return certificate
 
     def canonical_name(self, name: Any) -> str:
-        """Canonical representation of x509.Name as str."""
+        """
+        /*
+         * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
+         * The original author has granted permission to use this code snippet under the
+         * Apache License 2.0 for inclusion in this project.
+         * https://gist.github.com/obfusk/b337e4f641991cc88a24d3f9567db80f#file-canonical_name-py
+         */
+         Canonical representation of x509.Name as str."""
         return ",".join("+".join(f"{t}:{v}" for _, t, v in avas) for avas in self.comparison_name(name))
 
     @staticmethod
     def comparison_name(name: Any, android: bool = False) -> List[List[Tuple[int, str, str]]]:
         """
+        /*
+         * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
+         * The original author has granted permission to use this code snippet under the
+         * Apache License 2.0 for inclusion in this project.
+         * https://gist.github.com/obfusk/b337e4f641991cc88a24d3f9567db80f#file-canonical_name-py
+         */
         Canonical representation of x509.Name as nested list.
         Returns a list of RDNs which are a list of AVAs which are a (oid, type,
         value) tuple, where oid is 0 for standard names and 1 for dotted OIDs, type
