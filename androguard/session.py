@@ -23,7 +23,7 @@ class Session:
     >>> Should we go back to pickling or proceed further with the dataset ?<<<
     """
 
-    def __init__(self, export_ipython:bool=False) -> None:
+    def __init__(self, export_ipython:bool=False, db_url:str='sqlite:///androguard.db') -> None:
         """
         Create a new Session object
 
@@ -33,7 +33,7 @@ class Session:
         self._setup_objects()
         self.export_ipython = export_ipython
 
-        self.db = dataset.connect('sqlite:///androguard.db')
+        self.db = dataset.connect(db_url)
         logger.info("Opening database {}".format(self.db))
         self.table_information = self.db["information"]
         self.table_session = self.db["session"]
