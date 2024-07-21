@@ -1527,22 +1527,52 @@ class ARSCParser:
                     elif pkg_chunk_header.type == RES_TABLE_TYPE_TYPE:
                         # Parse a RES_TABLE_TYPE
                         # http://androidxref.com/9.0.0_r3/xref/frameworks/base/tools/aapt2/format/binary/BinaryResourceParser.cpp#311
+                        start_of_chunk = self.buff.tell() - 8
+                        expected_end_of_chunk = start_of_chunk + pkg_chunk_header.size
                         a_res_type = ARSCResType(self.buff, pc)
                         self.packages[package_name].append(a_res_type)
                         self.resource_configs[package_name][a_res_type].add(a_res_type.config)
 
                         logger.debug("Config: {}".format(a_res_type.config))
 
+                        # here it starts parsing the entry offsets
                         entries = []
+                        FLAG_OFFSET16 = 0x02
+                        NO_ENTRY_16 = 0xFFFF
+                        NO_ENTRY_32 = 0xFFFFFFFF
+                        expected_entries_start = start_of_chunk + a_res_type.entriesStart
+
+                        # Helper function to convert 16-bit offset to 32-bit
+                        def offset_from16(off16):
+                            return NO_ENTRY_16 if off16 == NO_ENTRY_16 else off16 * 4
+
                         for i in range(0, a_res_type.entryCount):
                             current_package.mResId = current_package.mResId & 0xffff0000 | i
-                            entries.append((unpack('<i', self.buff.read(4))[0], current_package.mResId))
+                            # Check if FLAG_OFFSET16 is set
+                            # https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1473
+                            if a_res_type.flags & FLAG_OFFSET16:
+                                # Read as 16-bit offset
+                                offset_16 = unpack('<H', self.buff.read(2))[0]
+                                offset = offset_from16(offset_16)
+                                if offset == NO_ENTRY_16:
+                                    continue
+                            else:
+                                # Read as 32-bit offset
+                                offset = unpack('<I', self.buff.read(4))[0]
+                                if offset == NO_ENTRY_32:
+                                    continue
+                            entries.append((offset, current_package.mResId))
 
                         self.packages[package_name].append(entries)
-
-                        for entry, res_id in entries:
-                            if entry != -1:
-                                ate = ARSCResTableEntry(self.buff, res_id, pc)
+                        
+                        base_offset = self.buff.tell()
+                        # we should be right before entries start!
+                        if base_offset != expected_entries_start:
+                            logger.warning("Something is off here! We are not where the entries should start.")
+                            base_offset = expected_entries_start
+                        for entry_offset, res_id in entries:
+                            if entry_offset != -1:
+                                ate = ARSCResTableEntry(self.buff, base_offset + entry_offset, expected_end_of_chunk, res_id, pc)
                                 self.packages[package_name].append(ate)
                                 if ate.is_weak():
                                     # FIXME we are not sure how to implement the FLAG_WEAK!
@@ -2024,7 +2054,7 @@ class ARSCParser:
                 else:
                     result.append((config, item.format_value()))
 
-    def get_resolved_res_configs(self, rid:int, config:Union[ARSCTableResConfig, None]=None) -> list[tuple[ARSCResTableConfig, str]]:
+    def get_resolved_res_configs(self, rid:int, config:Union[ARSCResTableConfig, None]=None) -> list[tuple[ARSCResTableConfig, str]]:
         """
         Return a list of resolved resource IDs with their corresponding configuration.
         It has a similar return type as :meth:`get_res_configs` but also handles complex entries
@@ -2930,7 +2960,7 @@ class ARSCResTableEntry:
     """
     A `ResTable_entry`.
 
-    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1458
+    See https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1522;drc=442fcb158a5b2e23340b74ce2e29e5e1f5bf9d66;bpv=0;bpt=0
     """
     # If set, this is a complex entry, holding a set of name/value
     # mappings.  It is followed by an array of ResTable_map structures.
@@ -2945,19 +2975,38 @@ class ARSCResTableEntry:
     # linking with other resource tables.
     FLAG_WEAK = 4
 
-    def __init__(self, buff:BinaryIO, mResId:int, parent:Union[PackageContext, None]=None) -> None:
-        self.start = buff.tell()
+    # If set, this is a compact entry with data type and value directly
+    # encoded in this entry
+    FLAG_COMPACT = 8
+
+    def __init__(self, buff:BinaryIO, entry_offset:int, expected_end_of_chunk:int, mResId:int, parent:Union[PackageContext, None]=None) -> None:
+        self.start = buff.seek(entry_offset)
         self.mResId = mResId
         self.parent = parent
-
-        self.size = unpack('<H', buff.read(2))[0]
+        # Make sure size of ResTable_entry::Full and ResTable_entry::Compact
+        # be the same as ResTable_entry. This is to allow iteration of entries
+        # to work in either cases.
+        #
+        # The offset of flags must be at the same place for both structures,
+        # to ensure the correct reading to decide whether this is a full entry
+        # or a compact entry.
+        # https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1615
+        first_two = unpack('<H', buff.read(2))[0]
         self.flags = unpack('<H', buff.read(2))[0]
-        # This is a ResStringPool_ref
-        self.index = unpack('<I', buff.read(4))[0]
-
+        first_four = unpack('<I', buff.read(4))[0]
         if self.is_complex():
-            self.item = ARSCComplex(buff, parent)
+            self.size = first_two
+            # This is a ResStringPool_ref
+            self.index = first_four
+            self.item = ARSCComplex(buff, expected_end_of_chunk, parent)
+        elif self.is_compact():
+            self.index = first_two
+            self.data = first_four
+            # If FLAG_COMPLEX is not set, a Res_value structure will follow
+            self.key = ARSCResStringPoolRef(buff, self.parent)
         else:
+            self.size = first_two
+            self.index = first_four
             # If FLAG_COMPLEX is not set, a Res_value structure will follow
             self.key = ARSCResStringPoolRef(buff, self.parent)
 
@@ -2979,16 +3028,17 @@ class ARSCResTableEntry:
     def is_complex(self) -> bool:
         return (self.flags & self.FLAG_COMPLEX) != 0
 
+    def is_compact(self) -> bool:
+        return (self.flags & self.FLAG_COMPACT) != 0
+
     def is_weak(self) -> bool:
         return (self.flags & self.FLAG_WEAK) != 0
 
     def __repr__(self):
-        return "<ARSCResTableEntry idx='0x{:08x}' mResId='0x{:08x}' size='{}' flags='0x{:02x}' index='0x{:x}' holding={}>".format(
+        return "<ARSCResTableEntry idx='0x{:08x}' mResId='0x{:08x}' flags='0x{:02x}' holding={}>".format(
             self.start,
             self.mResId,
-            self.size,
             self.flags,
-            self.index,
             self.item if self.is_complex() else self.key)
 
 
@@ -3002,7 +3052,7 @@ class ARSCComplex:
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1485 for `ResTable_map_entry`
     and http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1498 for `ResTable_map`
     """
-    def __init__(self, buff:BinaryIO, parent:Union[PackageContext,None]=None) -> None:
+    def __init__(self, buff:BinaryIO, expected_end_of_chunk:int, parent:Union[PackageContext,None]=None) -> None:
         self.start = buff.tell()
         self.parent = parent
 
@@ -3014,6 +3064,9 @@ class ARSCComplex:
         # these are structs of ResTable_ref and Res_value
         # ResTable_ref is a uint32_t.
         for i in range(0, self.count):
+            if buff.tell() + 4 > expected_end_of_chunk:
+                print(f"We are out of bound with this complex entry. Count: {self.count}")
+                break
             self.items.append((unpack('<I', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent)))
 
     def __repr__(self):
