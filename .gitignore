@@ -24,4 +24,3 @@ ak_androguard.egg-info
 *.db
 *.db-*
 *DS_Store*
-*.txt
