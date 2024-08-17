@@ -445,7 +445,7 @@ class AXMLParser:
             # The file can still be parsed up to the point where the chunk should end.
             self.axml_tampered = True
             logger.warning("Declared filesize ({}) is smaller than total file size ({}). "
-                        "Was something appended to the file? Trying to parse it anyways.".format(self.filesize, self.buff.size()))
+                        "Was something appended to the file? Trying to parse it anyways.".format(self.filesize, self.buff_size))
 
         # Not that severe of an error, we have plenty files where this is not
         # set correctly
@@ -1407,7 +1407,7 @@ class ARSCParser:
         self.buff_size = self.buff.raw.getbuffer().nbytes
 
         if self.buff_size < 8 or self.buff_size > 0xFFFFFFFF:
-            raise ResParserError("Invalid file size {} for a resources.arsc file!".format(self.buff.size()))
+            raise ResParserError("Invalid file size {} for a resources.arsc file!".format(self.buff_size))
 
         self.analyzed = False
         self._resolved_strings = None

@@ -8262,7 +8262,7 @@ class DEX:
 
         :rtype: a list with all strings used in the format (types, names ...)
         """
-        return [i.get() for i in self.strings]
+        return [i.get() for i in self.strings] if self.strings is not None else []
 
     def get_len_strings(self) -> int:
         """
