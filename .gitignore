@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 *.pyo
 
+# mkdocs build artifacts
 docs/build
 docs/site
 
