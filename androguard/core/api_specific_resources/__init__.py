@@ -26,7 +26,7 @@ def load_permissions(apilevel:Union[str,int], permtype:str='permissions') -> dic
 
     :param apilevel:  integer value of the API level
     :param permtype: either load permissions (:code:`'permissions'`) or
-    permission groups (:code:`'groups'`)
+    permission groups (`'groups'`)
     :return: a dictionary of {Permission Name: {Permission info}
     """
 
