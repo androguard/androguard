@@ -19,6 +19,7 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
+  logo: assets/androguardwithname.jpg
 
 plugins:
   - autorefs
@@ -26,23 +27,24 @@ plugins:
   - search
   - gen-files:
       scripts:
-      - scripts/gen_ref_pages.py
+      - scripts/gen_ref_pages.py  # https://github.com/oprypin/mkdocs-gen-files, this gathers all modules and generates md files are build time containing docstring docs
   - literate-nav:
       nav_file: SUMMARY.md
   - section-index
   - mkdocstrings:
       handlers:
         python:
-          load_external_modules: false
+          load_external_modules: true
           options:
             docstring_style: sphinx
             show_bases: true
             # show_inheritance_diagram: true        # requires sponsor
   - glightbox
   - table-reader
-  # - with-pdf:
+  # - with-pdf:   # takes a very long time
   #     output_path: ./androguard-docs.pdf
-      # cover_logo: 
+  #     cover_logo: assets/androguardwithname.jpg
+  #     cover_title: Androguard
 
 markdown_extensions:
   - toc:
