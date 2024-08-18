@@ -8558,8 +8558,9 @@ class ODEX(DEX):
         :type buff: bytes
         :type decompiler: object
 
-        :Example:
-          ODEX( read("classes.odex") )
+        Example:
+
+            ODEX( read("classes.odex") )
     """
 
     def _preload(self, buff: BinaryIO):
