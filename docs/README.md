@@ -5,6 +5,11 @@ serve (dev only)
 mkdocs serve
 ```
 
+# gh-pages
+
+```bash
+mkdocs gh-deploy
+```
 
 ## Notes
 
