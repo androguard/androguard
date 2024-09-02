@@ -6,6 +6,7 @@ site_url: https://github.com/androguard/androguard
 repo_url: https://github.com/androguard/androguard
 
 theme:
+  logo: assets/androguard.png
   name: material
   features:
     - navigation.tracking
@@ -19,7 +20,6 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
-  logo: assets/androguardwithname.jpg
 
 plugins:
   - autorefs

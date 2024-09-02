@@ -17,10 +17,20 @@ class MyFilter:
         return record["level"].no >= levelno
 
 
-def set_log(level:int) -> None:
+def set_log(level:str) -> None:
     """
     Sets the log for loguru based on the level being passed.
-    The possible values are TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+    The possible string values are:
+     
+    * `TRACE`
+    * `DEBUG`
+    * `INFO`
+    * `SUCCESS`
+    * `WARNING`
+    * `ERROR`
+    * `CRITICAL`
+    
+    :param level: the log level string
     """
     logger.remove(0)
     my_filter = MyFilter(level)
@@ -41,8 +51,8 @@ def readFile(filename: str, binary:bool=True) -> bytes:
     """
     Open and read a file
     :param filename: filename to open and read
-    :param binary: True if the file should be read as binary
-    :return: bytes if binary is True, str otherwise
+    :param binary: `True` if the file should be read as binary
+    :return: bytes if binary is `True`, str otherwise
     """
     with open(filename, 'rb' if binary else 'r') as f:
         return f.read()
@@ -56,11 +66,7 @@ def get_certificate_name_string(name:Union[dict,Name], short:bool=False, delimit
     :param short: Use short form (default: False)
     :param delimiter: Delimiter string or character between two parts (default: ', ')
 
-    :type name: dict or :class:`asn1crypto.x509.Name`
-    :type short: boolean
-    :type delimiter: str
-
-    :rtype: str
+    :returns: the name string
     """
     if isinstance(name, Name):#asn1crypto.x509.Name):
         name = name.native

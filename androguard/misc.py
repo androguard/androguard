@@ -17,10 +17,10 @@ from androguard.core.analysis.analysis import Analysis
 
 def get_default_session() -> Session:
     """
-    Return the default Session from the configuration
-    or create a new one, if the session in the configuration is None.
+    Return the default [Session][androguard.session.Session] from the configuration
+    or create a new one, if the session in the configuration is `None`.
 
-    :rtype: androguard.session.Session
+    :returns: `androguard.session.Session` object
     """
     if androconf.CONF["SESSION"] is None:
         androconf.CONF["SESSION"] = Session()
@@ -31,17 +31,16 @@ def AnalyzeAPK(_file: Union[str,bytes], session:Union[Session,None]=None, raw:bo
     """
     Analyze an android application and setup all stuff for a more quickly
     analysis!
-    If session is None, no session is used at all. This is the default
+    If session is `None`, no session is used at all. This is the default
     behaviour.
     If you like to continue your work later, it might be a good idea to use a
     session.
-    A default session can be created by using :meth:`~get_default_session`.
+    A default session can be created by using [get_default_session][androguard.misc.get_default_session].
 
     :param _file: the filename of the android application or a buffer which represents the application
-    :type _file: string (for filename) or bytes (for raw)
     :param session: A session (default: None)
     :param raw: boolean if raw bytes are supplied instead of a filename
-    :rtype: return the :class:`~androguard.core.apk.APK`, list of :class:`~androguard.core.dex.DEX`, and :class:`~androguard.core.analysis.analysis.Analysis` objects
+    :returns: the `androguard.core.apk.APK`, list of `androguard.core.dex.DEX`, and `androguard.core.analysis.analysis.Analysis` objects
     """
     logger.debug("AnalyzeAPK")
 
@@ -81,11 +80,10 @@ def AnalyzeDex(filename: str, session:Session=None, raw:bool=False) -> tuple[str
     Analyze an android dex file and setup all stuff for a more quickly analysis !
 
     :param filename: the filename of the android dex file or a buffer which represents the dex file
-    :type filename: string
-    :param session: A session (Default None)
-    :param raw: If set, ``filename`` will be used as the odex's data (bytes). Defaults to ``False``
+    :param session: A session (Default `None`)
+    :param raw: If set, `filenam`` will be used as the odex's data (bytes). Defaults to `False`
 
-    :rtype: return a tuple of (sha256hash, :class:`DEX`, :class:`Analysis`)
+    :returns: a tuple of (sha256hash, `DEX`, `Analysis`)
     """
     logger.debug("AnalyzeDex")
 
@@ -134,10 +132,10 @@ def clean_file_name(filename: str, unique:bool=True, replace:str="_", force_nt:b
     The intention of this function is to allow distribution of files to different OSes.
 
     :param filename: string to clean
-    :param unique: check if the filename is already taken and append an integer to be unique (default: True)
+    :param unique: check if the filename is already taken and append an integer to be unique (default: `True`)
     :param replace: replacement character. (default: '_')
-    :param force_nt: Force shortening of paths like on NT systems (default: False)
-    :return: clean string
+    :param force_nt: Force shortening of paths like on NT systems (default: `False`)
+    :returns: clean string
     """
 
     if re.match(r'[<>:"/\\|?* .\x00-\x1f]', replace):

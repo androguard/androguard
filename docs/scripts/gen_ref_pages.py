@@ -1,4 +1,7 @@
-"""Generate the code reference pages and navigation."""
+"""Generate the code reference pages and navigation.
+
+reference: https://oprypin.github.io/mkdocs-gen-files/
+"""
 
 from glob import glob
 from pathlib import Path
@@ -10,6 +13,8 @@ nav = mkdocs_gen_files.Nav()
 root = Path(__file__).parent.parent
 src = root / "src"
 print(src)
+
+# Generate MD stub for each module
 
 # Pathlib.glob() does not follow symlinks, so use old glob for now
 # for path in sorted(src.rglob("*.py")):

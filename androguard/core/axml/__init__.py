@@ -380,9 +380,9 @@ class StringBlock:
 
 class AXMLParser:
     """
-    AXMLParser reads through all chunks in the AXML file
+    `AXMLParser` reads through all chunks in the AXML file
     and implements a state machine to return information about
-    the current chunk, which can then be read by :class:`~AXMLPrinter`.
+    the current chunk, which can then be read by [AXMLPrinter][androguard.core.axml.AXMLPrinter].
 
     An AXML file is a file which contains multiple chunks of data, defined
     by the `ResChunk_header`.
@@ -392,11 +392,11 @@ class AXMLParser:
     But there are several examples where the `type` is set to something
     else, probably in order to fool parsers.
 
-    Typically the AXMLParser is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
+    Typically the `AXMLParser` is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
     You can use the `next()` function to get the next chunk.
     Note that not all chunk types are yielded from the iterator! Some chunks are processed in
-    the AXMLParser only.
-    The parser will set `is_valid()` to False if it parses something not valid.
+    the `AXMLParser` only.
+    The parser will set [is_valid][androguard.core.axml.AXMLParser.is_valid] to `False` if it parses something not valid.
     Messages what is wrong are logged.
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
@@ -492,9 +492,9 @@ class AXMLParser:
         """
         Get the state of the [AXMLPrinter][androguard.core.axml.AXMLPrinter].
         if an error happend somewhere in the process of parsing the file,
-        this flag is set to False.
+        this flag is set to `False`.
 
-        :returns: True if the `AXMLPrinter` finished parsing, or False if an error occurred
+        :returns: `True` if the `AXMLPrinter` finished parsing, or `False` if an error occurred
         """
         logger.debug(self._valid)
         return self._valid
@@ -788,21 +788,21 @@ class AXMLParser:
     def getName(self) -> str:
         """
         Legacy only!
-        use [name][androguard.core.bytecodes.AXMLParser.name] instead
+        use `name` attribute instead
         """
         return self.name
 
     def getText(self) -> str:
         """
         Legacy only!
-        use [text][androguard.core.bytecodes.AXMLParser.text] instead
+        use `text` attribute instead
         """
         return self.text
 
     def getPrefix(self) -> str:
         """
         Legacy only!
-        use [namespace][androguard.core.bytecodes.AXMLParser.namespace] instead
+        use `namespace` attribute instead
         """
         return self.namespace
 
@@ -908,14 +908,14 @@ class AXMLParser:
         offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
 
-    def getAttributeValue(self, index: int):
+    def getAttributeValue(self, index: int) -> str:
         """
         This function is only used to look up strings
         All other work is done by
-        [format_value][androguard.core.bytecodes.axml.format_value]
+        [format_value][androguard.core.axml.format_value]
         # FIXME should unite those functions
         :param index: index of the attribute
-        :return:
+        :returns: the string
         """
         logger.debug(index)
 
@@ -930,13 +930,14 @@ class AXMLParser:
 def format_value(_type: int, _data: int, lookup_string=lambda ix: "<string>") -> str:
     """
     Format a value based on type and data.
-    By default, no strings are looked up and "<string>" is returned.
+    By default, no strings are looked up and `"<string>"` is returned.
     You need to define `lookup_string` in order to actually lookup strings from
     the string table.
 
     :param _type: The numeric type of the value
     :param _data: The numeric data of the value
     :param lookup_string: A function how to resolve strings from integer IDs
+    :returns: the formatted string
     """
 
     # Function to prepend android prefix for attributes/references from the
@@ -1106,10 +1107,10 @@ class AXMLPrinter:
     def is_valid(self) -> bool:
         """
         Return the state of the [AXMLParser][androguard.core.axml.AXMLParser].
-        If this flag is set to False, the parsing has failed, thus
+        If this flag is set to `False`, the parsing has failed, thus
         the resulting XML will not work or will even be empty.
 
-        :returns: True if the `AXMLParser` finished parsing, or False if an error occurred
+        :returns: `True` if the `AXMLParser` finished parsing, or `False` if an error occurred
         """
         return self.axml.is_valid()
 
@@ -1158,7 +1159,6 @@ class AXMLPrinter:
         :param name: Name of the attribute or tag
         :param prefix: The existing prefix uri as found in the AXML chunk
         :return: a fixed version of prefix and name
-        :rtype: tuple
         """
         if not name[0].isalpha() and name[0] != "_":
             logger.warning("Invalid start for name '{}'. "
@@ -1424,10 +1424,10 @@ class ARSCParser:
     The ARSC File is, like the binary XML format, a chunk based format.
     Both formats are actually identical but use different chunks in order to store the data.
 
-    The most outer chunk in the ARSC file is a chunk of type RES_TABLE_TYPE.
+    The most outer chunk in the ARSC file is a chunk of type `RES_TABLE_TYPE`.
     Inside this chunk is a StringPool and at least one package.
 
-    Each package is a chunk of type [RES_TABLE_PACKAGE_TYPE][androguard.core.axml.RES_TABLE_PACKAGE_TYPE].
+    Each package is a chunk of type `RES_TABLE_PACKAGE_TYPE`.
     It contains again many more chunks.
     """
     def __init__(self, raw_buff:bytes) -> None:
@@ -2191,9 +2191,9 @@ class ARSCParser:
     @staticmethod
     def parse_id(name:str) -> tuple[str,str]:
         """
-        Resolves an id from a binary XML file in the form "@[package:]DEADBEEF"
+        Resolves an id from a binary XML file in the form `@[package:]DEADBEEF`
         and returns a tuple of package name and resource id.
-        If no package name was given, i.e. the ID has the form "@DEADBEEF",
+        If no package name was given, i.e. the ID has the form `@DEADBEEF`,
         the package name is set to None.
 
         :raises ValueError: if the id is malformed.
@@ -2224,7 +2224,7 @@ class ARSCParser:
 
     def get_resource_xml_name(self, r_id:int, package:Union[str,None]=None) -> str:
         """
-        Returns the XML name for a resource, including the package name if package is None.
+        Returns the XML name for a resource, including the package name if package is `None`.
         A full name might look like `@com.example:string/foobar`
         Otherwise the name is only looked up in the specified package and is returned without
         the package name.
@@ -2695,7 +2695,8 @@ class ARSCResTableConfig:
         """
         Here for legacy reasons.
 
-        use [get_qualifier][androguard.core.axml.get_qualifier] instead.
+        use [get_qualifier][androguard.core.axml.ARSCResTableConfig.get_qualifier] instead.
+        :returns: the qualifier string
         """
         return self.get_qualifier()
 
@@ -2703,6 +2704,7 @@ class ARSCResTableConfig:
         """
         Return resource name qualifier for the current configuration.
         for example
+
         * `ldpi-v4`
         * `hdpi-v4`
 

@@ -275,15 +275,8 @@ class APK:
         :param filename: specify the path of the file, or raw data
         :param raw: specify if the filename is a path or raw data (optional)
         :param magic_file: specify the magic file (not used anymore - legacy only)
-        :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: False)
-        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default False)
-
-        :type filename: string
-        :type raw: boolean
-        :type magic_file: string
-        :type skip_analysis: boolean
-        :type testzip: boolean
-
+        :param skip_analysis: Skip the analysis, e.g. no manifest files are read. (default: `False`)
+        :param testzip: Test the APK for integrity, e.g. if the ZIP file is broken. Throw an exception on failure (default `False`)
         """
         if magic_file:
             logger.warning("You set magic_file but this parameter is actually unused. You should remove it.")
@@ -352,7 +345,7 @@ class APK:
         Run analysis on the APK file.
 
         This method is usually called by __init__ except if skip_analysis is False.
-        It will then parse the AndroidManifest.xml and set all fields in the APK class which can be
+        It will then parse the `AndroidManifest.xml` and set all fields in the APK class which can be
         extracted from the Manifest.
         """
         i = "AndroidManifest.xml"
@@ -477,12 +470,12 @@ class APK:
 
     def is_valid_APK(self) -> bool:
         """
-        Return true if the APK is valid, false otherwise.
-        An APK is seen as valid, if the AndroidManifest.xml could be successful parsed.
+        Return `True` if the APK is valid, `False` otherwise.
+        An APK is seen as valid, if the `AndroidManifest.xml` could be successful parsed.
         This does not mean that the APK has a valid signature nor that the APK
         can be installed on an Android system.
 
-        :returns: True if the APK is valid, False otherwise.
+        :returns: `True` if the APK is valid, `False` otherwise.
         """
         return self.valid_apk
 
@@ -497,9 +490,9 @@ class APK:
     def get_app_name(self, locale=None) -> str:
         """
         Return the appname of the APK
-        This name is read from the AndroidManifest.xml
-        using the application android:label.
-        If no label exists, the android:label of the main activity is used.
+        This name is read from the `AndroidManifest.xml`
+        using the application `android:label`.
+        If no label exists, the `android:label` of the main activity is used.
 
         If there is also no main activity label, an empty string is returned.
 
@@ -560,7 +553,7 @@ class APK:
         unless exact icon resolution is set in the manifest, in which case
         return the exact file.
 
-        This information is read from the AndroidManifest.xml
+        This information is read from the `AndroidManifest.xml`
 
         From https://developer.android.com/guide/practices/screens_support.html
         and https://developer.android.com/ndk/reference/group___configuration.html
@@ -646,7 +639,7 @@ class APK:
         """
         Return the name of the package
 
-        This information is read from the AndroidManifest.xml
+        This information is read from the `AndroidManifest.xml`
 
         :returns: the name of the package
         """
@@ -656,7 +649,7 @@ class APK:
         """
         Return the android version code
 
-        This information is read from the AndroidManifest.xml
+        This information is read from the `AndroidManifest.xml`
 
         :returns: the android version code
         """
@@ -666,7 +659,7 @@ class APK:
         """
         Return the android version name
 
-        This information is read from the AndroidManifest.xml
+        This information is read from the `AndroidManifest.xml`
 
         :returns: the android version name
         """
@@ -858,7 +851,7 @@ class APK:
         """
         Return the names of all DEX files found in the APK.
         This method only accounts for "offical" dex files, i.e. all files
-        in the root directory of the APK named classes.dex or classes[0-9]+.dex
+        in the root directory of the APK named `classes.dex` or `classes[0-9]+.dex`
 
         :returns: the names of all DEX files found in the APK
         """
@@ -886,10 +879,10 @@ class APK:
     def _format_value(self, value):
         """
         Format a value with packagename, if not already set.
-        For example, the name :code:`'.foobar'` will be transformed into :code:`'package.name.foobar'`.
+        For example, the name `'.foobar'` will be transformed into `'package.name.foobar'`.
 
         Names which do not contain any dots are assumed to be packagename-less as well:
-        :code:`foobar` will also transform into :code:`package.name.foobar`.
+        `foobar` will also transform into `package.name.foobar`.
 
         :param value: string value to format with the packaname
         :returns: the formatted package name
@@ -949,7 +942,7 @@ class APK:
 
         This function will always try to get the attribute with a android: prefix first,
         and will try to return the attribute without the prefix, if the attribute could not be found.
-        This is useful for some broken AndroidManifest.xml, where no android namespace is set,
+        This is useful for some broken `AndroidManifest.xml`, where no android namespace is set,
         but could also indicate malicious activity (i.e. wrongly repackaged files).
         A warning is printed if the attribute is found without a namespace prefix.
 
@@ -992,7 +985,7 @@ class APK:
         """
         Return a list of all the matched tags in all available xml
 
-        :param str tag: specify the tag name
+        :param tag_name: specify the tag name
 
         :returns: the matched tags
         """
@@ -1036,12 +1029,12 @@ class APK:
             )
         ]
 
-    def is_tag_matched(self, tag: str, **attribute_filter) -> bool:
+    def is_tag_matched(self, tag: lxml.etree.Element, **attribute_filter) -> bool:
         r"""
-        Return true if the attributes matches in attribute filter.
+        Return `True` if the attributes matches in attribute filter.
 
         An attribute filter is a dictionary containing: {attribute_name: value}.
-        This function will return True if and only if all attributes have the same value.
+        This function will return `True` if and only if all attributes have the same value.
         This function allows to set the dictionary via kwargs, thus you can filter like this:
 
         Example:
@@ -1050,13 +1043,13 @@ class APK:
 
         This function uses a fallback for attribute searching. It will by default use
         the namespace variant but fall back to the non-namespace variant.
-        Thus specifiying :code:`{"name": "foobar"}` will match on :code:`<bla name="foobar" \>`
-        as well as on :code:`<bla android:name="foobar" \>`.
+        Thus specifiying `{"name": "foobar"}` will match on `<bla name="foobar" \>`
+        as well as on `<bla android:name="foobar" \>`.
 
-        :param lxml.etree.Element tag: specify the tag element
+        :param tag: specify the tag element
         :param attribute_filter: specify the attribute filter as dictionary
 
-        :returns: True if the attributes matches in attribute filter, else False
+        :returns: `True` if the attributes matches in attribute filter, else `False`
         """
         if len(attribute_filter) <= 0:
             return True
@@ -1070,7 +1063,7 @@ class APK:
         """
         Return names of the main activities
 
-        These values are read from the AndroidManifest.xml
+        These values are read from the `AndroidManifest.xml`
 
         :returns: names of the main activities
         """
@@ -1114,7 +1107,7 @@ class APK:
         """
         Return the name of the main activity
 
-        This value is read from the AndroidManifest.xml
+        This value is read from the `AndroidManifest.xml`
 
         :returns: the name of the main activity
         """
@@ -1258,11 +1251,11 @@ class APK:
 
     def get_permissions(self) -> list[str]:
         """
-        Return permissions names declared in the AndroidManifest.xml.
+        Return permissions names declared in the `AndroidManifest.xml`.
 
         It is possible that permissions are returned multiple times,
         as this function does not filter the permissions, i.e. it shows you
-        exactly what was defined in the AndroidManifest.xml.
+        exactly what was defined in the `AndroidManifest.xml`.
 
         Implied permissions, which are granted automatically, are not returned
         here. Use [get_uses_implied_permission_list][androguard.core.apk.APK.get_uses_implied_permission_list] if you need a list
@@ -1428,37 +1421,37 @@ class APK:
 
     def get_max_sdk_version(self) -> str:
         """
-            Return the android:maxSdkVersion attribute
+            Return the `android:maxSdkVersion` attribute
 
-            :returns: the android:maxSdkVersion attribute
+            :returns: the `android:maxSdkVersion` attribute
         """
         return self.get_attribute_value("uses-sdk", "maxSdkVersion")
 
     def get_min_sdk_version(self) -> str:
         """
-            Return the android:minSdkVersion attribute
+            Return the `android:minSdkVersion` attribute
 
-            :returns: the android:minSdkVersion attribute
+            :returns: the `android:minSdkVersion` attribute
         """
         return self.get_attribute_value("uses-sdk", "minSdkVersion")
 
     def get_target_sdk_version(self) -> str:
         """
-            Return the android:targetSdkVersion attribute
+            Return the `android:targetSdkVersion` attribute
 
-            :returns: the android:targetSdkVersion attribute
+            :returns: the `android:targetSdkVersion` attribute
         """
         return self.get_attribute_value("uses-sdk", "targetSdkVersion")
 
     def get_effective_target_sdk_version(self) -> int:
         """
-            Return the effective targetSdkVersion, always returns int > 0.
+            Return the effective `targetSdkVersion`, always returns int > 0.
 
-            If the targetSdkVersion is not set, it defaults to 1.  This is
+            If the `targetSdkVersion` is not set, it defaults to 1.  This is
             set based on defaults as defined in:
             https://developer.android.com/guide/topics/manifest/uses-sdk-element.html
 
-            :returns: the effective targetSdkVersion
+            :returns: the effective `targetSdkVersion`
         """
         target_sdk_version = self.get_target_sdk_version()
         if not target_sdk_version:
@@ -1470,18 +1463,18 @@ class APK:
 
     def get_libraries(self) -> list[str]:
         """
-            Return the android:name attributes for libraries
+            Return the `android:name` attributes for libraries
 
-            :returns: the android:name attributes
+            :returns: the `android:name` attributes
         """
         return list(self.get_all_attribute_value("uses-library", "name"))
 
     def get_features(self) -> list[str]:
         """
         Return a list of all android:names found for the tag uses-feature
-        in the AndroidManifest.xml
+        in the `AndroidManifest.xml`
 
-        :returns: the android:names found
+        :returns: the `android:names` found
         """
         return list(self.get_all_attribute_value("uses-feature", "name"))
 
@@ -1494,7 +1487,7 @@ class APK:
         Not every app is setting this feature (not even the example Google provides),
         so it might be wise to not 100% rely on this feature.
 
-        :returns: True if wearable, False otherwise
+        :returns: `True` if wearable, `False` otherwise
         """
         return 'android.hardware.type.watch' in self.get_features()
 
@@ -1503,7 +1496,7 @@ class APK:
         Checks if this application is build for TV (Leanback support)
         by checkin if it uses the feature 'android.software.leanback'
 
-        :returns: True if leanback feature is used, False otherwise
+        :returns: `True` if leanback feature is used, `False` otherwise
         """
         return 'android.software.leanback' in self.get_features()
 
@@ -1513,7 +1506,7 @@ class APK:
         as this is the rule to get into the TV section of the Play Store
         See: https://developer.android.com/training/tv/start/start.html for more information.
 
-        :returns: True if 'android.hardware.touchscreen' is not required, False otherwise
+        :returns: `True` if 'android.hardware.touchscreen' is not required, `False` otherwise
         """
         return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
@@ -1548,15 +1541,11 @@ class APK:
 
     def new_zip(self, filename:str, deleted_files:Union[str,None]=None, new_files:dict={}) -> None:
         """
-            Create a new zip file
+        Create a new zip file
 
-            :param filename: the output filename of the zip
-            :param deleted_files: a regex pattern to remove specific file
-            :param new_files: a dictionnary of new files
-
-            :type filename: string
-            :type deleted_files: None or a string
-            :type new_files: a dictionnary (key:filename, value:content of the file)
+        :param filename: the output filename of the zip
+        :param deleted_files: a regex pattern to remove specific file, or `None`
+        :param new_files: a dictionnary of new files (key:filename, value:content of the file)
         """
         zout = zipfile.ZipFile(filename, 'w')
 
@@ -1611,7 +1600,7 @@ class APK:
 
     def get_android_resources(self) -> Union[ARSCParser,None]:
         """
-        Return the [ARSCParser][androguard.core.axml.ARSCParser] object which corresponds to the resources.arsc file
+        Return the [ARSCParser][androguard.core.axml.ARSCParser] object which corresponds to the `resources.arsc` file
 
         :returns: the `ARSCParser` object
         """
@@ -1635,23 +1624,23 @@ class APK:
 
     def is_signed_v1(self) -> bool:
         """
-        Returns true if a v1 / JAR signature was found.
+        Returns `True` if a v1 / JAR signature was found.
 
         Returning `True` does not mean that the file is properly signed!
         It just says that there is a signature file which needs to be validated.
 
-        :returns: True if a v1 / JAR signature was found, else False
+        :returns: `True` if a v1 / JAR signature was found, else `False`
         """
         return self.get_signature_name() is not None
 
     def is_signed_v2(self) -> bool:
         """
-        Returns true of a v2 / APK signature was found.
+        Returns `True` of a v2 / APK signature was found.
 
         Returning `True` does not mean that the file is properly signed!
         It just says that there is a signature file which needs to be validated.
 
-        :returns: True of a v2 / APK signature was found, else False
+        :returns: `True` of a v2 / APK signature was found, else `False`
         """
         if self._is_signed_v2 is None:
             self.parse_v2_v3_signature()
@@ -1660,12 +1649,12 @@ class APK:
 
     def is_signed_v3(self) -> bool:
         """
-        Returns true of a v3 / APK signature was found.
+        Returns `True` of a v3 / APK signature was found.
 
         Returning `True` does not mean that the file is properly signed!
         It just says that there is a signature file which needs to be validated.
 
-        :returns: True of a v3 / APK signature was found, else False
+        :returns: `True` of a v3 / APK signature was found, else `False`
         """
         if self._is_signed_v3 is None:
             self.parse_v2_v3_signature()

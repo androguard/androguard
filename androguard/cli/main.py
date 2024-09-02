@@ -213,11 +213,11 @@ def create_directory(pathdir:str) -> None:
         os.makedirs(pathdir)
 
 
-def androlyze_main(session:Session, filename:str) -> None:
+def androlyze_main(filename:str, session:Union[Session,None]=None) -> None:
     """
     Start an interactive shell
 
-    :param session: Session file to load
+    :param session: Not currently supported
     :param filename: File to analyze, can be APK or DEX (or ODEX)
     """
     from colorama import Fore
