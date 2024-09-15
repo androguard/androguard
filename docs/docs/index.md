@@ -1,1 +1,1 @@
-# Welcome to the Androguard Development Docs!
+# Welcome to the Androguard Docs!
