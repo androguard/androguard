@@ -872,7 +872,7 @@ class AXMLParser:
 
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
-        if name <= len(self.m_resourceIDs):
+        if name < len(self.m_resourceIDs):
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
                 res = public.SYSTEM_RESOURCES['attributes']['inverse'][attr].replace("_",
