@@ -4,32 +4,27 @@
 
 To begin contributing to Androguard:
 
-1. Clone Androguard
-
+1.  Clone Androguard:
 ```bash
 git clone https://github.com/androguard/androguard.git
 ```
 
-2. Install `poetry`
-
+2.  Install `poetry`:
 ```bash
 pip3 install poetry
 ```
 
-3. Install Androguard
-
+3.  Install Androguard:
 ```bash
 poetry install
 ```
 
-4. Verify succesful installation by running the unit tests.  From the Androguard root directory:
-
+4.  Verify succesful installation by running the unit tests.  From the Androguard root directory:
 ```bash
 poetry run python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-5. Building docs (optional)
-
+5.  Building docs (optional):
 ```bash
 cd docs && pip3 install -r requirements.docs.txt
 mkdocs serve
