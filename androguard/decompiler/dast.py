@@ -116,10 +116,6 @@ def loop_stmt(isdo, cond_expr, body):
     return [type_, None, cond_expr, body]
 
 
-def try_stmt(tryb, pairs):
-    return ['TryStatement', None, tryb, pairs]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -407,7 +403,7 @@ class JSONWriter:
                 self.visit_node(catch_node.catch_start)
             pairs.append((catch_decl, body))
 
-        self.add(try_stmt(tryb, pairs))
+        self.add(self.try_stmt(tryb, pairs))
         self.visit_node(self.try_follow.pop())
 
     def visit_return_node(self, ret):
@@ -706,3 +702,7 @@ class JSONWriter:
     @staticmethod
     def if_stmt(cond_expr, scopes):
         return ['IfStatement', None, cond_expr, scopes]
+
+    @staticmethod
+    def try_stmt(tryb, pairs):
+        return ['TryStatement', None, tryb, pairs]
