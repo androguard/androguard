@@ -42,10 +42,6 @@ def binary_infix(op, left, right):
     return ['BinaryInfix', [left, right], op]
 
 
-def cast(tn, arg):
-    return ['Cast', [tn, arg]]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -427,7 +423,8 @@ class JSONWriter:
 
         if isinstance(op, instruction.CheckCastExpression):
             lhs = op.var_map.get(op.arg)
-            return self.parenthesis(cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs)))
+            return self.parenthesis(self.cast(self.parse_descriptor(op.clsdesc),
+                                              self.visit_expr(lhs)))
         if isinstance(op, instruction.ConditionalExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
@@ -536,7 +533,7 @@ class JSONWriter:
         if isinstance(op, instruction.UnaryExpression):
             lhs = op.var_map.get(op.arg)
             if isinstance(op, instruction.CastExpression):
-                expr = cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs))
+                expr = self.cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs))
             else:
                 expr = self.unary_prefix(op.op, self.visit_expr(lhs))
             return self.parenthesis(expr)
@@ -703,3 +700,7 @@ class JSONWriter:
     @staticmethod
     def field_access(triple, left):
         return ['FieldAccess', [left], triple]
+
+    @staticmethod
+    def cast(tn, arg):
+        return ['Cast', [tn, arg]]
