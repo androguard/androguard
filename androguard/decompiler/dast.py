@@ -377,42 +377,6 @@ def visit_expr(op):
     return dummy('??? Unexpected op: ' + type(op).__name__)
 
 
-def visit_ins(op, isCtor=False):
-    if isinstance(op, instruction.ReturnInstruction):
-        expr = None if op.arg is None else visit_expr(op.var_map[op.arg])
-        return return_stmt(expr)
-    elif isinstance(op, instruction.ThrowExpression):
-        return throw_stmt(visit_expr(op.var_map[op.ref]))
-    elif isinstance(op, instruction.NopExpression):
-        return None
-
-    # Local var decl statements
-    if isinstance(op, (instruction.AssignExpression, instruction.MoveExpression,
-                       instruction.MoveResultExpression)):
-        lhs = op.var_map.get(op.lhs)
-        rhs = op.rhs if isinstance(
-            op, instruction.AssignExpression) else op.var_map.get(op.rhs)
-        if isinstance(lhs, instruction.Variable) and not lhs.declared:
-            lhs.declared = True
-            expr = visit_expr(rhs)
-            return visit_decl(lhs, expr)
-
-    # skip this() at top of constructors
-    if isCtor and isinstance(op, instruction.AssignExpression):
-        op2 = op.rhs
-        if op.lhs is None and isinstance(op2, instruction.InvokeInstruction):
-            if op2.name == '<init>' and len(op2.args) == 0:
-                if isinstance(op2.var_map[op2.base], instruction.ThisParam):
-                    return None
-
-    # MoveExpression is skipped when lhs = rhs
-    if isinstance(op, instruction.MoveExpression):
-        if op.var_map.get(op.lhs) is op.var_map.get(op.rhs):
-            return None
-
-    return expression_stmt(visit_expr(op))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -448,7 +412,7 @@ class JSONWriter:
         _append(self.context[-1], val)
 
     def visit_ins(self, op):
-        self.add(visit_ins(op, isCtor=self.constructor))
+        self.add(self._visit_ins(op, isCtor=self.constructor))
 
     # Note: this is a mutating operation
     def get_ast(self):
@@ -711,3 +675,38 @@ class JSONWriter:
     def visit_throw_node(self, throw):
         for ins in throw.get_ins():
             self.visit_ins(ins)
+
+    def _visit_ins(self, op, isCtor=False):
+        if isinstance(op, instruction.ReturnInstruction):
+            expr = None if op.arg is None else visit_expr(op.var_map[op.arg])
+            return return_stmt(expr)
+        elif isinstance(op, instruction.ThrowExpression):
+            return throw_stmt(visit_expr(op.var_map[op.ref]))
+        elif isinstance(op, instruction.NopExpression):
+            return None
+
+        # Local var decl statements
+        if isinstance(op, (instruction.AssignExpression, instruction.MoveExpression,
+                           instruction.MoveResultExpression)):
+            lhs = op.var_map.get(op.lhs)
+            rhs = op.rhs if isinstance(
+                op, instruction.AssignExpression) else op.var_map.get(op.rhs)
+            if isinstance(lhs, instruction.Variable) and not lhs.declared:
+                lhs.declared = True
+                expr = visit_expr(rhs)
+                return visit_decl(lhs, expr)
+
+        # skip this() at top of constructors
+        if isCtor and isinstance(op, instruction.AssignExpression):
+            op2 = op.rhs
+            if op.lhs is None and isinstance(op2, instruction.InvokeInstruction):
+                if op2.name == '<init>' and len(op2.args) == 0:
+                    if isinstance(op2.var_map[op2.base], instruction.ThisParam):
+                        return None
+
+        # MoveExpression is skipped when lhs = rhs
+        if isinstance(op, instruction.MoveExpression):
+            if op.var_map.get(op.lhs) is op.var_map.get(op.rhs):
+                return None
+
+        return expression_stmt(visit_expr(op))
