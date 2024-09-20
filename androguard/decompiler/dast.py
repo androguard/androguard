@@ -80,10 +80,6 @@ def unary_postfix(left, op):
     return ['Unary', [left], op, True]
 
 
-def var_decl(typen, var):
-    return [typen, var]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -143,7 +139,7 @@ class JSONWriter:
         for ptype, name in zip(m.params_type, params):
             t = self.parse_descriptor(ptype)
             v = local('p{}'.format(name))
-            paramdecls.append(var_decl(t, v))
+            paramdecls.append(self.var_decl(t, v))
 
         if self.graph is None:
             body = None
@@ -365,7 +361,7 @@ class JSONWriter:
             else:
                 ctype = catch_node.catch_type
                 name = '_'
-            catch_decl = var_decl(self.parse_descriptor(ctype), local(name))
+            catch_decl = self.var_decl(self.parse_descriptor(ctype), local(name))
 
             with self as body:
                 self.visit_node(catch_node.catch_start)
@@ -598,7 +594,7 @@ class JSONWriter:
     def visit_decl(self, var, init_expr=None):
         t = self.parse_descriptor(var.get_type())
         v = local('v{}'.format(var.name))
-        return self.local_decl_stmt(init_expr, var_decl(t, v))
+        return self.local_decl_stmt(init_expr, self.var_decl(t, v))
 
     @staticmethod
     def literal_null():
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def dummy(*args):
         return ['Dummy', args]
+
+    @staticmethod
+    def var_decl(typen, var):
+        return [typen, var]
