@@ -134,13 +134,6 @@ def statement_block():
     return ['BlockStatement', None, []]
 
 
-# Add a statement to the end of a statement block
-def _append(sb, stmt):
-    assert (sb[0] == 'BlockStatement')
-    if stmt is not None:
-        sb[2].append(stmt)
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -173,7 +166,7 @@ class JSONWriter:
 
     # Add a statement to the current context
     def add(self, val):
-        _append(self.context[-1], val)
+        self._append(self.context[-1], val)
 
     def visit_ins(self, op):
         self.add(self._visit_ins(op, isCtor=self.constructor))
@@ -706,3 +699,10 @@ class JSONWriter:
             return typen(desc[1:-1], dim)
         # invalid descriptor (probably None)
         return dummy(str(desc))
+
+    @staticmethod
+    def _append(sb, stmt):
+        # Add a statement to the end of a statement block
+        assert (sb[0] == 'BlockStatement')
+        if stmt is not None:
+            sb[2].append(stmt)
