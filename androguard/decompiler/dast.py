@@ -155,11 +155,6 @@ def parse_descriptor(desc: str) -> list:
     return dummy(str(desc))
 
 
-# Note: the literal_foo functions (and dummy) are also imported by decompile.py
-def literal_string(s):
-    return literal(str(s), ('java/lang/String', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -565,7 +560,7 @@ class JSONWriter:
 
         if isinstance(op, instruction.Constant):
             if op.type == 'Ljava/lang/String;':
-                return literal_string(op.cst)
+                return self.literal_string(op.cst)
             elif op.type == 'Z':
                 return self.literal_bool(op.cst == 0)
             elif op.type in 'ISCB':
@@ -707,3 +702,7 @@ class JSONWriter:
     @staticmethod
     def literal_class(desc):
         return literal(parse_descriptor(desc), ('java/lang/Class', 0))
+
+    @staticmethod
+    def literal_string(s):
+        return literal(str(s), ('java/lang/String', 0))

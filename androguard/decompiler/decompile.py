@@ -38,7 +38,6 @@ from androguard.decompiler.control_flow import identify_structures
 from androguard.decompiler.dast import (
     JSONWriter,
     parse_descriptor,
-    literal_string,
     dummy
 )
 from androguard.decompiler.dataflow import (
@@ -66,7 +65,7 @@ def get_field_ast(field: EncodedField) -> dict:
 
         if val is not None:
             if field.get_descriptor() == 'Ljava/lang/String;':
-                expr = literal_string(val)
+                expr = JSONWriter.literal_string(val)
             elif field.proto == 'B':
                 expr = JSONWriter.literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
 
