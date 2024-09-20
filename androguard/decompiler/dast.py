@@ -211,172 +211,6 @@ def visit_arr_data(value):
     return array_initializer(list(map(literal_int, tab)))
 
 
-def write_inplace_if_possible(lhs, rhs):
-    if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
-        exp_rhs = rhs.var_map[rhs.arg2]
-        # post increment/decrement
-        if rhs.op in '+-' and isinstance(exp_rhs, instruction.Constant) and exp_rhs.get_int_value() == 1:
-            return unary_postfix(visit_expr(lhs), rhs.op * 2)
-        # compound assignment
-        return assignment(visit_expr(lhs), visit_expr(exp_rhs), op=rhs.op)
-    return assignment(visit_expr(lhs), visit_expr(rhs))
-
-
-def visit_expr(op):
-    if isinstance(op, instruction.ArrayLengthExpression):
-        expr = visit_expr(op.var_map[op.array])
-        return field_access([None, 'length', None], expr)
-    if isinstance(op, instruction.ArrayLoadExpression):
-        array_expr = visit_expr(op.var_map[op.array])
-        index_expr = visit_expr(op.var_map[op.idx])
-        return array_access(array_expr, index_expr)
-    if isinstance(op, instruction.ArrayStoreInstruction):
-        array_expr = visit_expr(op.var_map[op.array])
-        index_expr = visit_expr(op.var_map[op.index])
-        rhs = visit_expr(op.var_map[op.rhs])
-        return assignment(array_access(array_expr, index_expr), rhs)
-
-    if isinstance(op, instruction.AssignExpression):
-        lhs = op.var_map.get(op.lhs)
-        rhs = op.rhs
-        if lhs is None:
-            return visit_expr(rhs)
-        return write_inplace_if_possible(lhs, rhs)
-
-    if isinstance(op, instruction.BaseClass):
-        if op.clsdesc is None:
-            assert (op.cls == "super")
-            return local(op.cls)
-        return parse_descriptor(op.clsdesc)
-    if isinstance(op, instruction.BinaryExpression):
-        lhs = op.var_map.get(op.arg1)
-        rhs = op.var_map.get(op.arg2)
-        expr = binary_infix(op.op, visit_expr(lhs), visit_expr(rhs))
-        if not isinstance(op, instruction.BinaryCompExpression):
-            expr = parenthesis(expr)
-        return expr
-
-    if isinstance(op, instruction.CheckCastExpression):
-        lhs = op.var_map.get(op.arg)
-        return parenthesis(cast(parse_descriptor(op.clsdesc), visit_expr(lhs)))
-    if isinstance(op, instruction.ConditionalExpression):
-        lhs = op.var_map.get(op.arg1)
-        rhs = op.var_map.get(op.arg2)
-        return binary_infix(op.op, visit_expr(lhs), visit_expr(rhs))
-    if isinstance(op, instruction.ConditionalZExpression):
-        arg = op.var_map[op.arg]
-        if isinstance(arg, instruction.BinaryCompExpression):
-            arg.op = op.op
-            return visit_expr(arg)
-
-        expr = visit_expr(arg)
-        atype = str(arg.get_type())
-        if atype == 'Z':
-            if op.op == opcode_ins.Op.EQUAL:
-                expr = unary_prefix('!', expr)
-        elif atype in 'VBSCIJFD':
-            expr = binary_infix(op.op, expr, literal_int(0))
-        else:
-            expr = binary_infix(op.op, expr, literal_null())
-        return expr
-
-    if isinstance(op, instruction.Constant):
-        if op.type == 'Ljava/lang/String;':
-            return literal_string(op.cst)
-        elif op.type == 'Z':
-            return literal_bool(op.cst == 0)
-        elif op.type in 'ISCB':
-            return literal_int(op.cst2)
-        elif op.type in 'J':
-            return literal_long(op.cst2)
-        elif op.type in 'F':
-            return literal_float(op.cst)
-        elif op.type in 'D':
-            return literal_double(op.cst)
-        elif op.type == 'Ljava/lang/Class;':
-            return literal_class(op.clsdesc)
-        return dummy('??? Unexpected constant: ' + str(op.type))
-
-    if isinstance(op, instruction.FillArrayExpression):
-        array_expr = visit_expr(op.var_map[op.reg])
-        rhs = visit_arr_data(op.value)
-        return assignment(array_expr, rhs)
-    if isinstance(op, instruction.FilledArrayExpression):
-        tn = parse_descriptor(op.type)
-        params = [visit_expr(op.var_map[x]) for x in op.args]
-        return array_initializer(params, tn)
-    if isinstance(op, instruction.InstanceExpression):
-        triple = op.clsdesc[1:-1], op.name, op.ftype
-        expr = visit_expr(op.var_map[op.arg])
-        return field_access(triple, expr)
-    if isinstance(op, instruction.InstanceInstruction):
-        triple = op.clsdesc[1:-1], op.name, op.atype
-        lhs = field_access(triple, visit_expr(op.var_map[op.lhs]))
-        rhs = visit_expr(op.var_map[op.rhs])
-        return assignment(lhs, rhs)
-
-    if isinstance(op, instruction.InvokeInstruction):
-        base = op.var_map[op.base]
-        params = [op.var_map[arg] for arg in op.args]
-        params = list(map(visit_expr, params))
-        if op.name == '<init>':
-            if isinstance(base, instruction.ThisParam):
-                keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
-                return method_invocation(op.triple, keyword, None, params)
-            elif isinstance(base, instruction.NewInstance):
-                return ['ClassInstanceCreation', op.triple, params,
-                        parse_descriptor(base.type)]
-            else:
-                assert (isinstance(base, instruction.Variable))
-                # fallthrough to create dummy <init> call
-        return method_invocation(op.triple, op.name, visit_expr(base), params)
-    # for unmatched monitor instructions, just create dummy expressions
-    if isinstance(op, instruction.MonitorEnterExpression):
-        return dummy("monitor enter(", visit_expr(op.var_map[op.ref]), ")")
-    if isinstance(op, instruction.MonitorExitExpression):
-        return dummy("monitor exit(", visit_expr(op.var_map[op.ref]), ")")
-    if isinstance(op, instruction.MoveExpression):
-        lhs = op.var_map.get(op.lhs)
-        rhs = op.var_map.get(op.rhs)
-        return write_inplace_if_possible(lhs, rhs)
-    if isinstance(op, instruction.MoveResultExpression):
-        lhs = op.var_map.get(op.lhs)
-        rhs = op.var_map.get(op.rhs)
-        return assignment(visit_expr(lhs), visit_expr(rhs))
-    if isinstance(op, instruction.NewArrayExpression):
-        tn = parse_descriptor(op.type[1:])
-        expr = visit_expr(op.var_map[op.size])
-        return array_creation(tn, [expr], 1)
-    # create dummy expression for unmatched newinstance
-    if isinstance(op, instruction.NewInstance):
-        return dummy("new ", parse_descriptor(op.type))
-    if isinstance(op, instruction.Param):
-        if isinstance(op, instruction.ThisParam):
-            return local('this')
-        return local('p{}'.format(op.v))
-    if isinstance(op, instruction.StaticExpression):
-        triple = op.clsdesc[1:-1], op.name, op.ftype
-        return field_access(triple, parse_descriptor(op.clsdesc))
-    if isinstance(op, instruction.StaticInstruction):
-        triple = op.clsdesc[1:-1], op.name, op.ftype
-        lhs = field_access(triple, parse_descriptor(op.clsdesc))
-        rhs = visit_expr(op.var_map[op.rhs])
-        return assignment(lhs, rhs)
-    if isinstance(op, instruction.SwitchExpression):
-        return visit_expr(op.var_map[op.src])
-    if isinstance(op, instruction.UnaryExpression):
-        lhs = op.var_map.get(op.arg)
-        if isinstance(op, instruction.CastExpression):
-            expr = cast(parse_descriptor(op.clsdesc), visit_expr(lhs))
-        else:
-            expr = unary_prefix(op.op, visit_expr(lhs))
-        return parenthesis(expr)
-    if isinstance(op, instruction.Variable):
-        # assert(op.declared)
-        return local('v{}'.format(op.name))
-    return dummy('??? Unexpected op: ' + type(op).__name__)
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -470,7 +304,7 @@ class JSONWriter:
         else:
             assert (type(node) == basic_blocks.CondBlock)
             assert (len(node.ins) == 1)
-            return visit_expr(node.ins[-1])
+            return self.visit_expr(node.ins[-1])
 
     def visit_node(self, node):
         if node in (self.if_follow[-1], self.switch_follow[-1],
@@ -590,7 +424,7 @@ class JSONWriter:
             self.visit_ins(ins)
         switch_ins = switch.get_ins()[-1]
 
-        cond_expr = visit_expr(switch_ins)
+        cond_expr = self.visit_expr(switch_ins)
         ksv_pairs = []
 
         follow = switch.follow['switch']
@@ -678,10 +512,10 @@ class JSONWriter:
 
     def _visit_ins(self, op, isCtor=False):
         if isinstance(op, instruction.ReturnInstruction):
-            expr = None if op.arg is None else visit_expr(op.var_map[op.arg])
+            expr = None if op.arg is None else self.visit_expr(op.var_map[op.arg])
             return return_stmt(expr)
         elif isinstance(op, instruction.ThrowExpression):
-            return throw_stmt(visit_expr(op.var_map[op.ref]))
+            return throw_stmt(self.visit_expr(op.var_map[op.ref]))
         elif isinstance(op, instruction.NopExpression):
             return None
 
@@ -693,7 +527,7 @@ class JSONWriter:
                 op, instruction.AssignExpression) else op.var_map.get(op.rhs)
             if isinstance(lhs, instruction.Variable) and not lhs.declared:
                 lhs.declared = True
-                expr = visit_expr(rhs)
+                expr = self.visit_expr(rhs)
                 return visit_decl(lhs, expr)
 
         # skip this() at top of constructors
@@ -709,4 +543,169 @@ class JSONWriter:
             if op.var_map.get(op.lhs) is op.var_map.get(op.rhs):
                 return None
 
-        return expression_stmt(visit_expr(op))
+        return expression_stmt(self.visit_expr(op))
+
+    def write_inplace_if_possible(self, lhs, rhs):
+        if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
+            exp_rhs = rhs.var_map[rhs.arg2]
+            # post increment/decrement
+            if rhs.op in '+-' and isinstance(exp_rhs,
+                                             instruction.Constant) and exp_rhs.get_int_value() == 1:
+                return unary_postfix(self.visit_expr(lhs), rhs.op * 2)
+            # compound assignment
+            return assignment(self.visit_expr(lhs), self.visit_expr(exp_rhs), op=rhs.op)
+        return assignment(self.visit_expr(lhs), self.visit_expr(rhs))
+
+    def visit_expr(self, op):
+        if isinstance(op, instruction.ArrayLengthExpression):
+            expr = self.visit_expr(op.var_map[op.array])
+            return field_access([None, 'length', None], expr)
+        if isinstance(op, instruction.ArrayLoadExpression):
+            array_expr = self.visit_expr(op.var_map[op.array])
+            index_expr = self.visit_expr(op.var_map[op.idx])
+            return array_access(array_expr, index_expr)
+        if isinstance(op, instruction.ArrayStoreInstruction):
+            array_expr = self.visit_expr(op.var_map[op.array])
+            index_expr = self.visit_expr(op.var_map[op.index])
+            rhs = self.visit_expr(op.var_map[op.rhs])
+            return assignment(array_access(array_expr, index_expr), rhs)
+
+        if isinstance(op, instruction.AssignExpression):
+            lhs = op.var_map.get(op.lhs)
+            rhs = op.rhs
+            if lhs is None:
+                return self.visit_expr(rhs)
+            return self.write_inplace_if_possible(lhs, rhs)
+
+        if isinstance(op, instruction.BaseClass):
+            if op.clsdesc is None:
+                assert (op.cls == "super")
+                return local(op.cls)
+            return parse_descriptor(op.clsdesc)
+        if isinstance(op, instruction.BinaryExpression):
+            lhs = op.var_map.get(op.arg1)
+            rhs = op.var_map.get(op.arg2)
+            expr = binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
+            if not isinstance(op, instruction.BinaryCompExpression):
+                expr = parenthesis(expr)
+            return expr
+
+        if isinstance(op, instruction.CheckCastExpression):
+            lhs = op.var_map.get(op.arg)
+            return parenthesis(cast(parse_descriptor(op.clsdesc), self.visit_expr(lhs)))
+        if isinstance(op, instruction.ConditionalExpression):
+            lhs = op.var_map.get(op.arg1)
+            rhs = op.var_map.get(op.arg2)
+            return binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
+        if isinstance(op, instruction.ConditionalZExpression):
+            arg = op.var_map[op.arg]
+            if isinstance(arg, instruction.BinaryCompExpression):
+                arg.op = op.op
+                return self.visit_expr(arg)
+
+            expr = self.visit_expr(arg)
+            atype = str(arg.get_type())
+            if atype == 'Z':
+                if op.op == opcode_ins.Op.EQUAL:
+                    expr = unary_prefix('!', expr)
+            elif atype in 'VBSCIJFD':
+                expr = binary_infix(op.op, expr, literal_int(0))
+            else:
+                expr = binary_infix(op.op, expr, literal_null())
+            return expr
+
+        if isinstance(op, instruction.Constant):
+            if op.type == 'Ljava/lang/String;':
+                return literal_string(op.cst)
+            elif op.type == 'Z':
+                return literal_bool(op.cst == 0)
+            elif op.type in 'ISCB':
+                return literal_int(op.cst2)
+            elif op.type in 'J':
+                return literal_long(op.cst2)
+            elif op.type in 'F':
+                return literal_float(op.cst)
+            elif op.type in 'D':
+                return literal_double(op.cst)
+            elif op.type == 'Ljava/lang/Class;':
+                return literal_class(op.clsdesc)
+            return dummy('??? Unexpected constant: ' + str(op.type))
+
+        if isinstance(op, instruction.FillArrayExpression):
+            array_expr = self.visit_expr(op.var_map[op.reg])
+            rhs = visit_arr_data(op.value)
+            return assignment(array_expr, rhs)
+        if isinstance(op, instruction.FilledArrayExpression):
+            tn = parse_descriptor(op.type)
+            params = [self.visit_expr(op.var_map[x]) for x in op.args]
+            return array_initializer(params, tn)
+        if isinstance(op, instruction.InstanceExpression):
+            triple = op.clsdesc[1:-1], op.name, op.ftype
+            expr = self.visit_expr(op.var_map[op.arg])
+            return field_access(triple, expr)
+        if isinstance(op, instruction.InstanceInstruction):
+            triple = op.clsdesc[1:-1], op.name, op.atype
+            lhs = field_access(triple, self.visit_expr(op.var_map[op.lhs]))
+            rhs = self.visit_expr(op.var_map[op.rhs])
+            return assignment(lhs, rhs)
+
+        if isinstance(op, instruction.InvokeInstruction):
+            base = op.var_map[op.base]
+            params = [op.var_map[arg] for arg in op.args]
+            params = list(map(self.visit_expr, params))
+            if op.name == '<init>':
+                if isinstance(base, instruction.ThisParam):
+                    keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
+                    return method_invocation(op.triple, keyword, None, params)
+                elif isinstance(base, instruction.NewInstance):
+                    return ['ClassInstanceCreation', op.triple, params,
+                            parse_descriptor(base.type)]
+                else:
+                    assert (isinstance(base, instruction.Variable))
+                    # fallthrough to create dummy <init> call
+            return method_invocation(op.triple, op.name, self.visit_expr(base), params)
+        # for unmatched monitor instructions, just create dummy expressions
+        if isinstance(op, instruction.MonitorEnterExpression):
+            return dummy("monitor enter(", self.visit_expr(op.var_map[op.ref]), ")")
+        if isinstance(op, instruction.MonitorExitExpression):
+            return dummy("monitor exit(", self.visit_expr(op.var_map[op.ref]), ")")
+        if isinstance(op, instruction.MoveExpression):
+            lhs = op.var_map.get(op.lhs)
+            rhs = op.var_map.get(op.rhs)
+            return self.write_inplace_if_possible(lhs, rhs)
+        if isinstance(op, instruction.MoveResultExpression):
+            lhs = op.var_map.get(op.lhs)
+            rhs = op.var_map.get(op.rhs)
+            return assignment(self.visit_expr(lhs), self.visit_expr(rhs))
+        if isinstance(op, instruction.NewArrayExpression):
+            tn = parse_descriptor(op.type[1:])
+            expr = self.visit_expr(op.var_map[op.size])
+            return array_creation(tn, [expr], 1)
+        # create dummy expression for unmatched newinstance
+        if isinstance(op, instruction.NewInstance):
+            return dummy("new ", parse_descriptor(op.type))
+        if isinstance(op, instruction.Param):
+            if isinstance(op, instruction.ThisParam):
+                return local('this')
+            return local('p{}'.format(op.v))
+        if isinstance(op, instruction.StaticExpression):
+            triple = op.clsdesc[1:-1], op.name, op.ftype
+            return field_access(triple, parse_descriptor(op.clsdesc))
+        if isinstance(op, instruction.StaticInstruction):
+            triple = op.clsdesc[1:-1], op.name, op.ftype
+            lhs = field_access(triple, parse_descriptor(op.clsdesc))
+            rhs = self.visit_expr(op.var_map[op.rhs])
+            return assignment(lhs, rhs)
+        if isinstance(op, instruction.SwitchExpression):
+            return self.visit_expr(op.var_map[op.src])
+        if isinstance(op, instruction.UnaryExpression):
+            lhs = op.var_map.get(op.arg)
+            if isinstance(op, instruction.CastExpression):
+                expr = cast(parse_descriptor(op.clsdesc), self.visit_expr(lhs))
+            else:
+                expr = unary_prefix(op.op, self.visit_expr(lhs))
+            return parenthesis(expr)
+        if isinstance(op, instruction.Variable):
+            # assert(op.declared)
+            return local('v{}'.format(op.name))
+        return dummy('??? Unexpected op: ' + type(op).__name__)
