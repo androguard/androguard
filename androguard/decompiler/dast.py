@@ -88,13 +88,6 @@ def dummy(*args):
     return ['Dummy', args]
 
 
-################################################################################
-
-
-def expression_stmt(expr):
-    return ['ExpressionStatement', expr]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -250,7 +243,7 @@ class JSONWriter:
 
         follow = cond.follow['if']
         if cond.false is cond.true:
-            self.add(expression_stmt(self.get_cond(cond)))
+            self.add(self.expression_stmt(self.get_cond(cond)))
             self.visit_node(cond.true)
             return
 
@@ -427,7 +420,7 @@ class JSONWriter:
             if op.var_map.get(op.lhs) is op.var_map.get(op.rhs):
                 return None
 
-        return expression_stmt(self.visit_expr(op))
+        return self.expression_stmt(self.visit_expr(op))
 
     def write_inplace_if_possible(self, lhs, rhs):
         if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
@@ -706,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def local_decl_stmt(expr, decl):
         return ['LocalDeclarationStatement', expr, decl]
+
+    @staticmethod
+    def expression_stmt(expr):
+        return ['ExpressionStatement', expr]
