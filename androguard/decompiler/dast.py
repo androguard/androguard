@@ -46,10 +46,6 @@ def cast(tn, arg):
     return ['Cast', [tn, arg]]
 
 
-def field_access(triple, left):
-    return ['FieldAccess', [left], triple]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -398,7 +394,7 @@ class JSONWriter:
     def visit_expr(self, op):
         if isinstance(op, instruction.ArrayLengthExpression):
             expr = self.visit_expr(op.var_map[op.array])
-            return field_access([None, 'length', None], expr)
+            return self.field_access([None, 'length', None], expr)
         if isinstance(op, instruction.ArrayLoadExpression):
             array_expr = self.visit_expr(op.var_map[op.array])
             index_expr = self.visit_expr(op.var_map[op.idx])
@@ -481,10 +477,10 @@ class JSONWriter:
         if isinstance(op, instruction.InstanceExpression):
             triple = op.clsdesc[1:-1], op.name, op.ftype
             expr = self.visit_expr(op.var_map[op.arg])
-            return field_access(triple, expr)
+            return self.field_access(triple, expr)
         if isinstance(op, instruction.InstanceInstruction):
             triple = op.clsdesc[1:-1], op.name, op.atype
-            lhs = field_access(triple, self.visit_expr(op.var_map[op.lhs]))
+            lhs = self.field_access(triple, self.visit_expr(op.var_map[op.lhs]))
             rhs = self.visit_expr(op.var_map[op.rhs])
             return assignment(lhs, rhs)
 
@@ -529,10 +525,10 @@ class JSONWriter:
             return self.local('p{}'.format(op.v))
         if isinstance(op, instruction.StaticExpression):
             triple = op.clsdesc[1:-1], op.name, op.ftype
-            return field_access(triple, self.parse_descriptor(op.clsdesc))
+            return self.field_access(triple, self.parse_descriptor(op.clsdesc))
         if isinstance(op, instruction.StaticInstruction):
             triple = op.clsdesc[1:-1], op.name, op.ftype
-            lhs = field_access(triple, self.parse_descriptor(op.clsdesc))
+            lhs = self.field_access(triple, self.parse_descriptor(op.clsdesc))
             rhs = self.visit_expr(op.var_map[op.rhs])
             return assignment(lhs, rhs)
         if isinstance(op, instruction.SwitchExpression):
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def literal(result, tt):
         return ['Literal', result, tt]
+
+    @staticmethod
+    def field_access(triple, left):
+        return ['FieldAccess', [left], triple]
