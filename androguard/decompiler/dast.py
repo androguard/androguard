@@ -99,10 +99,6 @@ def local_decl_stmt(expr, decl):
     return ['LocalDeclarationStatement', expr, decl]
 
 
-def return_stmt(expr):
-    return ['ReturnStatement', expr]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -405,7 +401,7 @@ class JSONWriter:
     def _visit_ins(self, op, isCtor=False):
         if isinstance(op, instruction.ReturnInstruction):
             expr = None if op.arg is None else self.visit_expr(op.var_map[op.arg])
-            return return_stmt(expr)
+            return self.return_stmt(expr)
         elif isinstance(op, instruction.ThrowExpression):
             return self.throw_stmt(self.visit_expr(op.var_map[op.ref]))
         elif isinstance(op, instruction.NopExpression):
@@ -706,3 +702,7 @@ class JSONWriter:
     @staticmethod
     def throw_stmt(expr):
         return ['ThrowStatement', expr]
+
+    @staticmethod
+    def return_stmt(expr):
+        return ['ReturnStatement', expr]
