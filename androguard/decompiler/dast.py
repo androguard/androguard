@@ -184,10 +184,6 @@ def literal_float(f):
     return literal(str(f) + 'f', ('.float', 0))
 
 
-def literal_double(f):
-    return literal(str(f), ('.double', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -603,7 +599,7 @@ class JSONWriter:
             elif op.type in 'F':
                 return literal_float(op.cst)
             elif op.type in 'D':
-                return literal_double(op.cst)
+                return self.literal_double(op.cst)
             elif op.type == 'Ljava/lang/Class;':
                 return literal_class(op.clsdesc)
             return dummy('??? Unexpected constant: ' + str(op.type))
@@ -707,3 +703,7 @@ class JSONWriter:
     @staticmethod
     def literal_null():
         return literal('null', ('.null', 0))
+
+    @staticmethod
+    def literal_double(f):
+        return literal(str(f), ('.double', 0))
