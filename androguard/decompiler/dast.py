@@ -34,10 +34,6 @@ def array_initializer(params, tn=None):
     return ['ArrayInitializer', params, tn]
 
 
-def assignment(lhs, rhs, op=''):
-    return ['Assignment', [lhs, rhs], op]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -380,8 +376,8 @@ class JSONWriter:
                                              instruction.Constant) and exp_rhs.get_int_value() == 1:
                 return self.unary_postfix(self.visit_expr(lhs), rhs.op * 2)
             # compound assignment
-            return assignment(self.visit_expr(lhs), self.visit_expr(exp_rhs), op=rhs.op)
-        return assignment(self.visit_expr(lhs), self.visit_expr(rhs))
+            return self.assignment(self.visit_expr(lhs), self.visit_expr(exp_rhs), op=rhs.op)
+        return self.assignment(self.visit_expr(lhs), self.visit_expr(rhs))
 
     def visit_expr(self, op):
         if isinstance(op, instruction.ArrayLengthExpression):
@@ -395,7 +391,7 @@ class JSONWriter:
             array_expr = self.visit_expr(op.var_map[op.array])
             index_expr = self.visit_expr(op.var_map[op.index])
             rhs = self.visit_expr(op.var_map[op.rhs])
-            return assignment(array_access(array_expr, index_expr), rhs)
+            return self.assignment(array_access(array_expr, index_expr), rhs)
 
         if isinstance(op, instruction.AssignExpression):
             lhs = op.var_map.get(op.lhs)
@@ -462,7 +458,7 @@ class JSONWriter:
         if isinstance(op, instruction.FillArrayExpression):
             array_expr = self.visit_expr(op.var_map[op.reg])
             rhs = self.visit_arr_data(op.value)
-            return assignment(array_expr, rhs)
+            return self.assignment(array_expr, rhs)
         if isinstance(op, instruction.FilledArrayExpression):
             tn = self.parse_descriptor(op.type)
             params = [self.visit_expr(op.var_map[x]) for x in op.args]
@@ -475,7 +471,7 @@ class JSONWriter:
             triple = op.clsdesc[1:-1], op.name, op.atype
             lhs = self.field_access(triple, self.visit_expr(op.var_map[op.lhs]))
             rhs = self.visit_expr(op.var_map[op.rhs])
-            return assignment(lhs, rhs)
+            return self.assignment(lhs, rhs)
 
         if isinstance(op, instruction.InvokeInstruction):
             base = op.var_map[op.base]
@@ -504,7 +500,7 @@ class JSONWriter:
         if isinstance(op, instruction.MoveResultExpression):
             lhs = op.var_map.get(op.lhs)
             rhs = op.var_map.get(op.rhs)
-            return assignment(self.visit_expr(lhs), self.visit_expr(rhs))
+            return self.assignment(self.visit_expr(lhs), self.visit_expr(rhs))
         if isinstance(op, instruction.NewArrayExpression):
             tn = self.parse_descriptor(op.type[1:])
             expr = self.visit_expr(op.var_map[op.size])
@@ -523,7 +519,7 @@ class JSONWriter:
             triple = op.clsdesc[1:-1], op.name, op.ftype
             lhs = self.field_access(triple, self.parse_descriptor(op.clsdesc))
             rhs = self.visit_expr(op.var_map[op.rhs])
-            return assignment(lhs, rhs)
+            return self.assignment(lhs, rhs)
         if isinstance(op, instruction.SwitchExpression):
             return self.visit_expr(op.var_map[op.src])
         if isinstance(op, instruction.UnaryExpression):
@@ -704,3 +700,7 @@ class JSONWriter:
     @staticmethod
     def binary_infix(op, left, right):
         return ['BinaryInfix', [left, right], op]
+
+    @staticmethod
+    def assignment(lhs, rhs, op=''):
+        return ['Assignment', [lhs, rhs], op]
