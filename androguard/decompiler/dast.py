@@ -128,12 +128,6 @@ def switch_stmt(cond_expr, ksv_pairs):
     return ['SwitchStatement', None, cond_expr, ksv_pairs]
 
 
-# Create empty statement block (statements to be appended later)
-# Note, the code below assumes this can be modified in place
-def statement_block():
-    return ['BlockStatement', None, []]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -157,7 +151,7 @@ class JSONWriter:
     # which pushes a statement block on to the context stack and assigns it to foo
     # within the with block, all added instructions will be added to foo
     def __enter__(self):
-        self.context.append(statement_block())
+        self.context.append(self.statement_block())
         return self.context[-1]
 
     def __exit__(self, *args):
@@ -706,3 +700,9 @@ class JSONWriter:
         assert (sb[0] == 'BlockStatement')
         if stmt is not None:
             sb[2].append(stmt)
+
+    @staticmethod
+    def statement_block():
+        # Create empty statement block (statements to be appended later)
+        # Note, the code below assumes this can be modified in place
+        return ['BlockStatement', None, []]
