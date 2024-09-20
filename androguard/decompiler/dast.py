@@ -54,10 +54,6 @@ def literal(result, tt):
     return ['Literal', result, tt]
 
 
-def local(name):
-    return ['Local', name]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -116,7 +112,7 @@ class JSONWriter:
         paramdecls = []
         for ptype, name in zip(m.params_type, params):
             t = self.parse_descriptor(ptype)
-            v = local('p{}'.format(name))
+            v = self.local('p{}'.format(name))
             paramdecls.append(self.var_decl(t, v))
 
         if self.graph is None:
@@ -339,7 +335,7 @@ class JSONWriter:
             else:
                 ctype = catch_node.catch_type
                 name = '_'
-            catch_decl = self.var_decl(self.parse_descriptor(ctype), local(name))
+            catch_decl = self.var_decl(self.parse_descriptor(ctype), self.local(name))
 
             with self as body:
                 self.visit_node(catch_node.catch_start)
@@ -427,7 +423,7 @@ class JSONWriter:
         if isinstance(op, instruction.BaseClass):
             if op.clsdesc is None:
                 assert (op.cls == "super")
-                return local(op.cls)
+                return self.local(op.cls)
             return self.parse_descriptor(op.clsdesc)
         if isinstance(op, instruction.BinaryExpression):
             lhs = op.var_map.get(op.arg1)
@@ -533,8 +529,8 @@ class JSONWriter:
             return self.dummy("new ", self.parse_descriptor(op.type))
         if isinstance(op, instruction.Param):
             if isinstance(op, instruction.ThisParam):
-                return local('this')
-            return local('p{}'.format(op.v))
+                return self.local('this')
+            return self.local('p{}'.format(op.v))
         if isinstance(op, instruction.StaticExpression):
             triple = op.clsdesc[1:-1], op.name, op.ftype
             return field_access(triple, self.parse_descriptor(op.clsdesc))
@@ -554,7 +550,7 @@ class JSONWriter:
             return self.parenthesis(expr)
         if isinstance(op, instruction.Variable):
             # assert(op.declared)
-            return local('v{}'.format(op.name))
+            return self.local('v{}'.format(op.name))
         return self.dummy('??? Unexpected op: ' + type(op).__name__)
 
     def visit_arr_data(self, value):
@@ -571,7 +567,7 @@ class JSONWriter:
 
     def visit_decl(self, var, init_expr=None):
         t = self.parse_descriptor(var.get_type())
-        v = local('v{}'.format(var.name))
+        v = self.local('v{}'.format(var.name))
         return self.local_decl_stmt(init_expr, self.var_decl(t, v))
 
     @staticmethod
@@ -703,3 +699,7 @@ class JSONWriter:
         if base is None:
             return ['MethodInvocation', params, triple, name, False]
         return ['MethodInvocation', [base] + params, triple, name, True]
+
+    @staticmethod
+    def local(name):
+        return ['Local', name]
