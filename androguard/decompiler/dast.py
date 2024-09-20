@@ -68,10 +68,6 @@ def parenthesis(expr):
     return ['Parenthesis', [expr]]
 
 
-def typen(baset: str, dim: int) -> list:
-    return ['TypeName', (baset, dim)]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -632,9 +628,9 @@ class JSONWriter:
             dim += 1
 
         if desc in TYPE_DESCRIPTOR:
-            return typen('.' + TYPE_DESCRIPTOR[desc], dim)
+            return JSONWriter.typen('.' + TYPE_DESCRIPTOR[desc], dim)
         if desc and desc[0] == 'L' and desc[-1] == ';':
-            return typen(desc[1:-1], dim)
+            return JSONWriter.typen(desc[1:-1], dim)
         # invalid descriptor (probably None)
         return JSONWriter.dummy(str(desc))
 
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def unary_prefix(op, left):
         return ['Unary', [left], op, False]
+
+    @staticmethod
+    def typen(baset: str, dim: int) -> list:
+        return ['TypeName', (baset, dim)]
