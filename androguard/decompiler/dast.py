@@ -26,10 +26,6 @@ def array_access(arr, ind) -> list:
     return ['ArrayAccess', [arr, ind]]
 
 
-def array_creation(tn, params, dim):
-    return ['ArrayCreation', [tn] + params, dim]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -500,7 +496,7 @@ class JSONWriter:
         if isinstance(op, instruction.NewArrayExpression):
             tn = self.parse_descriptor(op.type[1:])
             expr = self.visit_expr(op.var_map[op.size])
-            return array_creation(tn, [expr], 1)
+            return self.array_creation(tn, [expr], 1)
         # create dummy expression for unmatched newinstance
         if isinstance(op, instruction.NewInstance):
             return self.dummy("new ", self.parse_descriptor(op.type))
@@ -704,3 +700,7 @@ class JSONWriter:
     @staticmethod
     def array_initializer(params, tn=None):
         return ['ArrayInitializer', params, tn]
+
+    @staticmethod
+    def array_creation(tn, params, dim):
+        return ['ArrayCreation', [tn] + params, dim]
