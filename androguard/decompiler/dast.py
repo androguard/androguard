@@ -95,10 +95,6 @@ def expression_stmt(expr):
     return ['ExpressionStatement', expr]
 
 
-def local_decl_stmt(expr, decl):
-    return ['LocalDeclarationStatement', expr, decl]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -613,7 +609,7 @@ class JSONWriter:
     def visit_decl(self, var, init_expr=None):
         t = self.parse_descriptor(var.get_type())
         v = local('v{}'.format(var.name))
-        return local_decl_stmt(init_expr, var_decl(t, v))
+        return self.local_decl_stmt(init_expr, var_decl(t, v))
 
     @staticmethod
     def literal_null():
@@ -706,3 +702,7 @@ class JSONWriter:
     @staticmethod
     def return_stmt(expr):
         return ['ReturnStatement', expr]
+
+    @staticmethod
+    def local_decl_stmt(expr, decl):
+        return ['LocalDeclarationStatement', expr, decl]
