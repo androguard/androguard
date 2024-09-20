@@ -50,10 +50,6 @@ def field_access(triple, left):
     return ['FieldAccess', [left], triple]
 
 
-def literal(result, tt):
-    return ['Literal', result, tt]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -572,39 +568,39 @@ class JSONWriter:
 
     @staticmethod
     def literal_null():
-        return literal('null', ('.null', 0))
+        return JSONWriter.literal('null', ('.null', 0))
 
     @staticmethod
     def literal_double(f):
-        return literal(str(f), ('.double', 0))
+        return JSONWriter.literal(str(f), ('.double', 0))
 
     @staticmethod
     def literal_float(f):
-        return literal(str(f) + 'f', ('.float', 0))
+        return JSONWriter.literal(str(f) + 'f', ('.float', 0))
 
     @staticmethod
     def literal_long(b):
-        return literal(str(b) + 'L', ('.long', 0))
+        return JSONWriter.literal(str(b) + 'L', ('.long', 0))
 
     @staticmethod
     def literal_hex_int(b):
-        return literal(hex(b), ('.int', 0))
+        return JSONWriter.literal(hex(b), ('.int', 0))
 
     @staticmethod
     def literal_int(b):
-        return literal(str(b), ('.int', 0))
+        return JSONWriter.literal(str(b), ('.int', 0))
 
     @staticmethod
     def literal_bool(b):
-        return literal(str(b).lower(), ('.boolean', 0))
+        return JSONWriter.literal(str(b).lower(), ('.boolean', 0))
 
     @staticmethod
     def literal_class(desc):
-        return literal(JSONWriter.parse_descriptor(desc), ('java/lang/Class', 0))
+        return JSONWriter.literal(JSONWriter.parse_descriptor(desc), ('java/lang/Class', 0))
 
     @staticmethod
     def literal_string(s):
-        return literal(str(s), ('java/lang/String', 0))
+        return JSONWriter.literal(str(s), ('java/lang/String', 0))
 
     @staticmethod
     def parse_descriptor(desc: str) -> list:
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def local(name):
         return ['Local', name]
+
+    @staticmethod
+    def literal(result, tt):
+        return ['Literal', result, tt]
