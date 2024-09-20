@@ -111,11 +111,6 @@ def jump_stmt(keyword):
     return ['JumpStatement', keyword, None]
 
 
-def loop_stmt(isdo, cond_expr, body):
-    type_ = 'DoStatement' if isdo else 'WhileStatement'
-    return [type_, None, cond_expr, body]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -261,7 +256,7 @@ class JSONWriter:
                 self.visit_node(loop.latch)
 
         assert (cond_expr is not None and isDo is not None)
-        self.add(loop_stmt(isDo, cond_expr, body))
+        self.add(self.loop_stmt(isDo, cond_expr, body))
         if follow is not None:
             self.visit_node(follow)
 
@@ -706,3 +701,8 @@ class JSONWriter:
     @staticmethod
     def try_stmt(tryb, pairs):
         return ['TryStatement', None, tryb, pairs]
+
+    @staticmethod
+    def loop_stmt(isdo, cond_expr, body):
+        type_ = 'DoStatement' if isdo else 'WhileStatement'
+        return [type_, None, cond_expr, body]
