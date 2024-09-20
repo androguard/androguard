@@ -64,10 +64,6 @@ def method_invocation(triple, name, base, params):
     return ['MethodInvocation', [base] + params, triple, name, True]
 
 
-def parenthesis(expr):
-    return ['Parenthesis', [expr]]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -147,8 +143,8 @@ class JSONWriter:
     def _visit_condition(self, cond):
         if cond.isnot:
             cond.cond1.neg()
-        left = parenthesis(self.get_cond(cond.cond1))
-        right = parenthesis(self.get_cond(cond.cond2))
+        left = self.parenthesis(self.get_cond(cond.cond1))
+        right = self.parenthesis(self.get_cond(cond.cond2))
         op = '&&' if cond.isand else '||'
         res = binary_infix(op, left, right)
         return res
@@ -444,12 +440,12 @@ class JSONWriter:
             rhs = op.var_map.get(op.arg2)
             expr = binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
             if not isinstance(op, instruction.BinaryCompExpression):
-                expr = parenthesis(expr)
+                expr = self.parenthesis(expr)
             return expr
 
         if isinstance(op, instruction.CheckCastExpression):
             lhs = op.var_map.get(op.arg)
-            return parenthesis(cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs)))
+            return self.parenthesis(cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs)))
         if isinstance(op, instruction.ConditionalExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
@@ -561,7 +557,7 @@ class JSONWriter:
                 expr = cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs))
             else:
                 expr = self.unary_prefix(op.op, self.visit_expr(lhs))
-            return parenthesis(expr)
+            return self.parenthesis(expr)
         if isinstance(op, instruction.Variable):
             # assert(op.declared)
             return local('v{}'.format(op.name))
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def typen(baset: str, dim: int) -> list:
         return ['TypeName', (baset, dim)]
+
+    @staticmethod
+    def parenthesis(expr):
+        return ['Parenthesis', [expr]]
