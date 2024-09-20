@@ -164,10 +164,6 @@ def literal_class(desc):
     return literal(parse_descriptor(desc), ('java/lang/Class', 0))
 
 
-def literal_bool(b):
-    return literal(str(b).lower(), ('.boolean', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -294,7 +290,7 @@ class JSONWriter:
 
         elif loop.looptype.is_endless:
             isDo = False
-            cond_expr = literal_bool(True)
+            cond_expr = self.literal_bool(True)
 
         with self as body:
             self.loop_follow.append(follow)
@@ -575,7 +571,7 @@ class JSONWriter:
             if op.type == 'Ljava/lang/String;':
                 return literal_string(op.cst)
             elif op.type == 'Z':
-                return literal_bool(op.cst == 0)
+                return self.literal_bool(op.cst == 0)
             elif op.type in 'ISCB':
                 return self.literal_int(op.cst2)
             elif op.type in 'J':
@@ -707,3 +703,7 @@ class JSONWriter:
     @staticmethod
     def literal_int(b):
         return literal(str(b), ('.int', 0))
+
+    @staticmethod
+    def literal_bool(b):
+        return literal(str(b).lower(), ('.boolean', 0))
