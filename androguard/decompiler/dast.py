@@ -160,10 +160,6 @@ def literal_string(s):
     return literal(str(s), ('java/lang/String', 0))
 
 
-def literal_class(desc):
-    return literal(parse_descriptor(desc), ('java/lang/Class', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -581,7 +577,7 @@ class JSONWriter:
             elif op.type in 'D':
                 return self.literal_double(op.cst)
             elif op.type == 'Ljava/lang/Class;':
-                return literal_class(op.clsdesc)
+                return self.literal_class(op.clsdesc)
             return dummy('??? Unexpected constant: ' + str(op.type))
 
         if isinstance(op, instruction.FillArrayExpression):
@@ -707,3 +703,7 @@ class JSONWriter:
     @staticmethod
     def literal_bool(b):
         return literal(str(b).lower(), ('.boolean', 0))
+
+    @staticmethod
+    def literal_class(desc):
+        return literal(parse_descriptor(desc), ('java/lang/Class', 0))
