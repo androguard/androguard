@@ -76,10 +76,6 @@ def unary_prefix(op, left):
     return ['Unary', [left], op, False]
 
 
-def unary_postfix(left, op):
-    return ['Unary', [left], op, True]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -420,7 +416,7 @@ class JSONWriter:
             # post increment/decrement
             if rhs.op in '+-' and isinstance(exp_rhs,
                                              instruction.Constant) and exp_rhs.get_int_value() == 1:
-                return unary_postfix(self.visit_expr(lhs), rhs.op * 2)
+                return self.unary_postfix(self.visit_expr(lhs), rhs.op * 2)
             # compound assignment
             return assignment(self.visit_expr(lhs), self.visit_expr(exp_rhs), op=rhs.op)
         return assignment(self.visit_expr(lhs), self.visit_expr(rhs))
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def var_decl(typen, var):
         return [typen, var]
+
+    @staticmethod
+    def unary_postfix(left, op):
+        return ['Unary', [left], op, True]
