@@ -39,7 +39,6 @@ from androguard.decompiler.dast import (
     JSONWriter,
     parse_descriptor,
     literal_string,
-    literal_hex_int,
     dummy
 )
 from androguard.decompiler.dataflow import (
@@ -69,7 +68,7 @@ def get_field_ast(field: EncodedField) -> dict:
             if field.get_descriptor() == 'Ljava/lang/String;':
                 expr = literal_string(val)
             elif field.proto == 'B':
-                expr = literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
+                expr = JSONWriter.literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
 
     return {
         'triple': triple,
