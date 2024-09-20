@@ -22,10 +22,6 @@ from androguard.core.dex.dex_types import TYPE_DESCRIPTOR
 from loguru import logger
 
 
-def array_access(arr, ind) -> list:
-    return ['ArrayAccess', [arr, ind]]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -378,12 +374,12 @@ class JSONWriter:
         if isinstance(op, instruction.ArrayLoadExpression):
             array_expr = self.visit_expr(op.var_map[op.array])
             index_expr = self.visit_expr(op.var_map[op.idx])
-            return array_access(array_expr, index_expr)
+            return self.array_access(array_expr, index_expr)
         if isinstance(op, instruction.ArrayStoreInstruction):
             array_expr = self.visit_expr(op.var_map[op.array])
             index_expr = self.visit_expr(op.var_map[op.index])
             rhs = self.visit_expr(op.var_map[op.rhs])
-            return self.assignment(array_access(array_expr, index_expr), rhs)
+            return self.assignment(self.array_access(array_expr, index_expr), rhs)
 
         if isinstance(op, instruction.AssignExpression):
             lhs = op.var_map.get(op.lhs)
@@ -704,3 +700,7 @@ class JSONWriter:
     @staticmethod
     def array_creation(tn, params, dim):
         return ['ArrayCreation', [tn] + params, dim]
+
+    @staticmethod
+    def array_access(arr, ind) -> list:
+        return ['ArrayAccess', [arr, ind]]
