@@ -84,10 +84,6 @@ def var_decl(typen, var):
     return [typen, var]
 
 
-def dummy(*args):
-    return ['Dummy', args]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -506,7 +502,7 @@ class JSONWriter:
                 return self.literal_double(op.cst)
             elif op.type == 'Ljava/lang/Class;':
                 return self.literal_class(op.clsdesc)
-            return dummy('??? Unexpected constant: ' + str(op.type))
+            return self.dummy('??? Unexpected constant: ' + str(op.type))
 
         if isinstance(op, instruction.FillArrayExpression):
             array_expr = self.visit_expr(op.var_map[op.reg])
@@ -543,9 +539,9 @@ class JSONWriter:
             return method_invocation(op.triple, op.name, self.visit_expr(base), params)
         # for unmatched monitor instructions, just create dummy expressions
         if isinstance(op, instruction.MonitorEnterExpression):
-            return dummy("monitor enter(", self.visit_expr(op.var_map[op.ref]), ")")
+            return self.dummy("monitor enter(", self.visit_expr(op.var_map[op.ref]), ")")
         if isinstance(op, instruction.MonitorExitExpression):
-            return dummy("monitor exit(", self.visit_expr(op.var_map[op.ref]), ")")
+            return self.dummy("monitor exit(", self.visit_expr(op.var_map[op.ref]), ")")
         if isinstance(op, instruction.MoveExpression):
             lhs = op.var_map.get(op.lhs)
             rhs = op.var_map.get(op.rhs)
@@ -560,7 +556,7 @@ class JSONWriter:
             return array_creation(tn, [expr], 1)
         # create dummy expression for unmatched newinstance
         if isinstance(op, instruction.NewInstance):
-            return dummy("new ", self.parse_descriptor(op.type))
+            return self.dummy("new ", self.parse_descriptor(op.type))
         if isinstance(op, instruction.Param):
             if isinstance(op, instruction.ThisParam):
                 return local('this')
@@ -585,7 +581,7 @@ class JSONWriter:
         if isinstance(op, instruction.Variable):
             # assert(op.declared)
             return local('v{}'.format(op.name))
-        return dummy('??? Unexpected op: ' + type(op).__name__)
+        return self.dummy('??? Unexpected op: ' + type(op).__name__)
 
     def visit_arr_data(self, value):
         data = value.get_data()
@@ -652,7 +648,7 @@ class JSONWriter:
         if desc and desc[0] == 'L' and desc[-1] == ';':
             return typen(desc[1:-1], dim)
         # invalid descriptor (probably None)
-        return dummy(str(desc))
+        return JSONWriter.dummy(str(desc))
 
     @staticmethod
     def _append(sb, stmt):
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def expression_stmt(expr):
         return ['ExpressionStatement', expr]
+
+    @staticmethod
+    def dummy(*args):
+        return ['Dummy', args]

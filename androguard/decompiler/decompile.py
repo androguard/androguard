@@ -35,10 +35,7 @@ import androguard.decompiler.util as util
 from androguard.core.analysis import analysis
 from androguard.core import apk, dex
 from androguard.decompiler.control_flow import identify_structures
-from androguard.decompiler.dast import (
-    JSONWriter,
-    dummy
-)
+from androguard.decompiler.dast import JSONWriter
 from androguard.decompiler.dataflow import (
     build_def_use,
     place_declarations,
@@ -60,7 +57,7 @@ def get_field_ast(field: EncodedField) -> dict:
     expr = None
     if field.init_value:
         val = field.init_value.value
-        expr = dummy(str(val))
+        expr = JSONWriter.dummy(str(val))
 
         if val is not None:
             if field.get_descriptor() == 'Ljava/lang/String;':
