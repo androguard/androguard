@@ -1,7 +1,9 @@
 
-
 import sys
 from typing import Union, BinaryIO
+from asn1crypto import keys, x509
+import hashlib
+import binascii
 
 #  External dependencies
 # import asn1crypto
@@ -93,3 +95,95 @@ def get_certificate_name_string(name:Union[dict,Name], short:bool=False, delimit
         'organization_identifier': ("organizationIdentifier", "organizationIdentifier"),
     }
     return delimiter.join(["{}={}".format(_.get(attr, (attr, attr))[0 if short else 1], name[attr]) for attr in name])
+
+
+def parse_public(data):
+    from asn1crypto import pem, keys, x509
+    """
+    Loads a public key from a DER or PEM-formatted input.
+    Supports RSA, DSA, EC public keys, and X.509 certificates.
+
+    :param data: A byte string of the public key or certificate
+    :raises ValueError: If the input data is not a known format
+    :return: A keys.PublicKeyInfo object containing the parsed public key
+    """
+
+    # Check if the data is in PEM format (starts with "-----")
+    if pem.detect(data):
+        type_name, _, der_bytes = pem.unarmor(data)
+        if type_name in ['PRIVATE KEY', 'RSA PRIVATE KEY']:
+            raise ValueError("The data specified appears to be a private key, not a public key.")
+    else:
+        # If not PEM, assume it's DER-encoded
+        der_bytes = data
+
+    # Try to parse the data as PublicKeyInfo (standard public key structure)
+    try:
+        public_key_info = keys.PublicKeyInfo.load(der_bytes)
+        public_key_info.native  # Fully parse the object (asn1crypto is lazy)
+        return public_key_info
+    except ValueError:
+        pass  # Not a PublicKeyInfo structure
+
+    # Try to parse the data as an X.509 certificate
+    try:
+        certificate = x509.Certificate.load(der_bytes)
+        public_key_info = certificate['tbs_certificate']['subject_public_key_info']
+        public_key_info.native  # Fully parse the object
+        return public_key_info
+    except ValueError:
+        pass  # Not a certificate
+
+    # Try to parse the data as RSAPublicKey
+    try:
+        rsa_public_key = keys.RSAPublicKey.load(der_bytes)
+        rsa_public_key.native  # Fully parse the object
+        # Wrap the RSAPublicKey in PublicKeyInfo
+        return keys.PublicKeyInfo.wrap(rsa_public_key, 'rsa')
+    except ValueError:
+        pass  # Not an RSAPublicKey structure
+
+    raise ValueError("The data specified does not appear to be a known public key or certificate format.")
+
+
+def calculate_fingerprint(key_object):
+    """
+    Calculates a SHA-256 fingerprint of the public key based on its components.
+
+    :param key_object: A keys.PublicKeyInfo object containing the parsed public key
+    :return: The fingerprint of the public key as a byte string
+    """
+
+    to_hash = None
+
+    # RSA Public Key
+    if key_object.algorithm == 'rsa':
+        key = key_object['public_key'].parsed
+        # Prepare string with modulus and public exponent
+        to_hash = '%d:%d' % (key['modulus'].native, key['public_exponent'].native)
+
+    # DSA Public Key
+    elif key_object.algorithm == 'dsa':
+        key = key_object['public_key'].parsed
+        params = key_object['algorithm']['parameters']
+        # Prepare string with p, q, g, and public key
+        to_hash = '%d:%d:%d:%d' % (
+            params['p'].native,
+            params['q'].native,
+            params['g'].native,
+            key.native,
+        )
+
+    # EC Public Key
+    elif key_object.algorithm == 'ec':
+        public_key = key_object['public_key'].native
+        # Prepare byte string with curve name and public key
+        to_hash = '%s:' % key_object.curve[1]
+        to_hash = to_hash.encode('utf-8') + public_key
+
+    # Ensure to_hash is encoded as bytes if it's a string
+    if isinstance(to_hash, str):
+        to_hash = to_hash.encode('utf-8')
+
+    # Return the SHA-256 hash of the formatted key data
+    return hashlib.sha256(to_hash).digest()

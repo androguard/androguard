@@ -11,7 +11,6 @@ from loguru import logger
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters.terminal import TerminalFormatter
-from oscrypto import asymmetric
 
 # internal modules
 from androguard.core.axml import ARSCParser
@@ -22,6 +21,7 @@ from androguard.core.axml import AXMLPrinter
 from androguard.core.dex import get_bytecodes_method
 from androguard.util import readFile
 from androguard.ui import DynamicUI
+from androguard.util import parse_public, calculate_fingerprint
 
 def androaxml_main(
         inp:str,
@@ -375,12 +375,12 @@ def androsign_main(args_apk:list[str], args_hash:str, args_all:bool, show:bool) 
 
             for public_key in pkeys:
                 if show:
-                    x509_public_key = asymmetric.load_public_key(public_key)
-                    print("PublicKey Algorithm:", x509_public_key.algorithm)
-                    print("Bit Size:", x509_public_key.bit_size)
-                    print("Fingerprint:", binascii.hexlify(x509_public_key.fingerprint))
+                    parsed_key = parse_public(public_key)
+                    print(f"Algorithm: {parsed_key.algorithm}")
+                    print(f"Bit size: {parsed_key.bit_size}")
+                    print(f"Fingerprint: {calculate_fingerprint(parsed_key).hex()}")
                     try:
-                        print("Hash Algorithm:", x509_public_key.asn1.hash_algo)
+                        print(f"Hash Algorithm: {parsed_key.hash_algo}")
                     except ValueError as ve:
                         # RSA pkey does not have a hash algorithm
                         pass
