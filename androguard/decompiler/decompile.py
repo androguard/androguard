@@ -37,7 +37,6 @@ from androguard.core import apk, dex
 from androguard.decompiler.control_flow import identify_structures
 from androguard.decompiler.dast import (
     JSONWriter,
-    parse_descriptor,
     dummy
 )
 from androguard.decompiler.dataflow import (
@@ -71,7 +70,7 @@ def get_field_ast(field: EncodedField) -> dict:
 
     return {
         'triple': triple,
-        'type': parse_descriptor(field.get_descriptor()),
+        'type': JSONWriter.parse_descriptor(field.get_descriptor()),
         'flags': util.get_access_field(field.get_access_flags()),
         'expr': expr,
     }
@@ -312,11 +311,11 @@ class DvClass:
         isInterface = 'interface' in self.access
         return {
             'rawname': self.thisclass[1:-1],
-            'name': parse_descriptor(self.thisclass),
-            'super': parse_descriptor(self.superclass),
+            'name': JSONWriter.parse_descriptor(self.thisclass),
+            'super': JSONWriter.parse_descriptor(self.superclass),
             'flags': self.access,
             'isInterface': isInterface,
-            'interfaces': list(map(parse_descriptor, self.interfaces)),
+            'interfaces': list(map(JSONWriter.parse_descriptor, self.interfaces)),
             'fields': fields,
             'methods': methods,
         }

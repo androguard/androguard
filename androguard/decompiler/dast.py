@@ -141,20 +141,6 @@ def _append(sb, stmt):
         sb[2].append(stmt)
 
 
-def parse_descriptor(desc: str) -> list:
-    dim = 0
-    while desc and desc[0] == '[':
-        desc = desc[1:]
-        dim += 1
-
-    if desc in TYPE_DESCRIPTOR:
-        return typen('.' + TYPE_DESCRIPTOR[desc], dim)
-    if desc and desc[0] == 'L' and desc[-1] == ';':
-        return typen(desc[1:-1], dim)
-    # invalid descriptor (probably None)
-    return dummy(str(desc))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -212,7 +198,7 @@ class JSONWriter:
 
         paramdecls = []
         for ptype, name in zip(m.params_type, params):
-            t = parse_descriptor(ptype)
+            t = self.parse_descriptor(ptype)
             v = local('p{}'.format(name))
             paramdecls.append(var_decl(t, v))
 
@@ -225,7 +211,7 @@ class JSONWriter:
         return {
             'triple': m.triple,
             'flags': flags,
-            'ret': parse_descriptor(m.type),
+            'ret': self.parse_descriptor(m.type),
             'params': paramdecls,
             'comments': [],
             'body': body,
@@ -436,7 +422,7 @@ class JSONWriter:
             else:
                 ctype = catch_node.catch_type
                 name = '_'
-            catch_decl = var_decl(parse_descriptor(ctype), local(name))
+            catch_decl = var_decl(self.parse_descriptor(ctype), local(name))
 
             with self as body:
                 self.visit_node(catch_node.catch_start)
@@ -525,7 +511,7 @@ class JSONWriter:
             if op.clsdesc is None:
                 assert (op.cls == "super")
                 return local(op.cls)
-            return parse_descriptor(op.clsdesc)
+            return self.parse_descriptor(op.clsdesc)
         if isinstance(op, instruction.BinaryExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
@@ -536,7 +522,7 @@ class JSONWriter:
 
         if isinstance(op, instruction.CheckCastExpression):
             lhs = op.var_map.get(op.arg)
-            return parenthesis(cast(parse_descriptor(op.clsdesc), self.visit_expr(lhs)))
+            return parenthesis(cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs)))
         if isinstance(op, instruction.ConditionalExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
@@ -580,7 +566,7 @@ class JSONWriter:
             rhs = self.visit_arr_data(op.value)
             return assignment(array_expr, rhs)
         if isinstance(op, instruction.FilledArrayExpression):
-            tn = parse_descriptor(op.type)
+            tn = self.parse_descriptor(op.type)
             params = [self.visit_expr(op.var_map[x]) for x in op.args]
             return array_initializer(params, tn)
         if isinstance(op, instruction.InstanceExpression):
@@ -603,7 +589,7 @@ class JSONWriter:
                     return method_invocation(op.triple, keyword, None, params)
                 elif isinstance(base, instruction.NewInstance):
                     return ['ClassInstanceCreation', op.triple, params,
-                            parse_descriptor(base.type)]
+                            self.parse_descriptor(base.type)]
                 else:
                     assert (isinstance(base, instruction.Variable))
                     # fallthrough to create dummy <init> call
@@ -622,22 +608,22 @@ class JSONWriter:
             rhs = op.var_map.get(op.rhs)
             return assignment(self.visit_expr(lhs), self.visit_expr(rhs))
         if isinstance(op, instruction.NewArrayExpression):
-            tn = parse_descriptor(op.type[1:])
+            tn = self.parse_descriptor(op.type[1:])
             expr = self.visit_expr(op.var_map[op.size])
             return array_creation(tn, [expr], 1)
         # create dummy expression for unmatched newinstance
         if isinstance(op, instruction.NewInstance):
-            return dummy("new ", parse_descriptor(op.type))
+            return dummy("new ", self.parse_descriptor(op.type))
         if isinstance(op, instruction.Param):
             if isinstance(op, instruction.ThisParam):
                 return local('this')
             return local('p{}'.format(op.v))
         if isinstance(op, instruction.StaticExpression):
             triple = op.clsdesc[1:-1], op.name, op.ftype
-            return field_access(triple, parse_descriptor(op.clsdesc))
+            return field_access(triple, self.parse_descriptor(op.clsdesc))
         if isinstance(op, instruction.StaticInstruction):
             triple = op.clsdesc[1:-1], op.name, op.ftype
-            lhs = field_access(triple, parse_descriptor(op.clsdesc))
+            lhs = field_access(triple, self.parse_descriptor(op.clsdesc))
             rhs = self.visit_expr(op.var_map[op.rhs])
             return assignment(lhs, rhs)
         if isinstance(op, instruction.SwitchExpression):
@@ -645,7 +631,7 @@ class JSONWriter:
         if isinstance(op, instruction.UnaryExpression):
             lhs = op.var_map.get(op.arg)
             if isinstance(op, instruction.CastExpression):
-                expr = cast(parse_descriptor(op.clsdesc), self.visit_expr(lhs))
+                expr = cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs))
             else:
                 expr = unary_prefix(op.op, self.visit_expr(lhs))
             return parenthesis(expr)
@@ -667,7 +653,7 @@ class JSONWriter:
         return array_initializer(list(map(self.literal_int, tab)))
 
     def visit_decl(self, var, init_expr=None):
-        t = parse_descriptor(var.get_type())
+        t = self.parse_descriptor(var.get_type())
         v = local('v{}'.format(var.name))
         return local_decl_stmt(init_expr, var_decl(t, v))
 
@@ -701,8 +687,22 @@ class JSONWriter:
 
     @staticmethod
     def literal_class(desc):
-        return literal(parse_descriptor(desc), ('java/lang/Class', 0))
+        return literal(JSONWriter.parse_descriptor(desc), ('java/lang/Class', 0))
 
     @staticmethod
     def literal_string(s):
         return literal(str(s), ('java/lang/String', 0))
+
+    @staticmethod
+    def parse_descriptor(desc: str) -> list:
+        dim = 0
+        while desc and desc[0] == '[':
+            desc = desc[1:]
+            dim += 1
+
+        if desc in TYPE_DESCRIPTOR:
+            return typen('.' + TYPE_DESCRIPTOR[desc], dim)
+        if desc and desc[0] == 'L' and desc[-1] == ';':
+            return typen(desc[1:-1], dim)
+        # invalid descriptor (probably None)
+        return dummy(str(desc))
