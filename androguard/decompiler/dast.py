@@ -103,10 +103,6 @@ def return_stmt(expr):
     return ['ReturnStatement', expr]
 
 
-def throw_stmt(expr):
-    return ['ThrowStatement', expr]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -411,7 +407,7 @@ class JSONWriter:
             expr = None if op.arg is None else self.visit_expr(op.var_map[op.arg])
             return return_stmt(expr)
         elif isinstance(op, instruction.ThrowExpression):
-            return throw_stmt(self.visit_expr(op.var_map[op.ref]))
+            return self.throw_stmt(self.visit_expr(op.var_map[op.ref]))
         elif isinstance(op, instruction.NopExpression):
             return None
 
@@ -706,3 +702,7 @@ class JSONWriter:
     @staticmethod
     def jump_stmt(keyword):
         return ['JumpStatement', keyword, None]
+
+    @staticmethod
+    def throw_stmt(expr):
+        return ['ThrowStatement', expr]
