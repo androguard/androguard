@@ -176,10 +176,6 @@ def literal_hex_int(b):
     return literal(hex(b), ('.int', 0))
 
 
-def literal_long(b):
-    return literal(str(b) + 'L', ('.long', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -591,7 +587,7 @@ class JSONWriter:
             elif op.type in 'ISCB':
                 return literal_int(op.cst2)
             elif op.type in 'J':
-                return literal_long(op.cst2)
+                return self.literal_long(op.cst2)
             elif op.type in 'F':
                 return self.literal_float(op.cst)
             elif op.type in 'D':
@@ -707,3 +703,7 @@ class JSONWriter:
     @staticmethod
     def literal_float(f):
         return literal(str(f) + 'f', ('.float', 0))
+
+    @staticmethod
+    def literal_long(b):
+        return literal(str(b) + 'L', ('.long', 0))
