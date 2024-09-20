@@ -168,10 +168,6 @@ def literal_bool(b):
     return literal(str(b).lower(), ('.boolean', 0))
 
 
-def literal_int(b):
-    return literal(str(b), ('.int', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -570,7 +566,7 @@ class JSONWriter:
                 if op.op == opcode_ins.Op.EQUAL:
                     expr = unary_prefix('!', expr)
             elif atype in 'VBSCIJFD':
-                expr = binary_infix(op.op, expr, literal_int(0))
+                expr = binary_infix(op.op, expr, self.literal_int(0))
             else:
                 expr = binary_infix(op.op, expr, self.literal_null())
             return expr
@@ -581,7 +577,7 @@ class JSONWriter:
             elif op.type == 'Z':
                 return literal_bool(op.cst == 0)
             elif op.type in 'ISCB':
-                return literal_int(op.cst2)
+                return self.literal_int(op.cst2)
             elif op.type in 'J':
                 return self.literal_long(op.cst2)
             elif op.type in 'F':
@@ -681,7 +677,7 @@ class JSONWriter:
         else:  # FIXME: other cases
             for i in range(value.size):
                 tab.append(data[i])
-        return array_initializer(list(map(literal_int, tab)))
+        return array_initializer(list(map(self.literal_int, tab)))
 
     def visit_decl(self, var, init_expr=None):
         t = parse_descriptor(var.get_type())
@@ -707,3 +703,7 @@ class JSONWriter:
     @staticmethod
     def literal_hex_int(b):
         return literal(hex(b), ('.int', 0))
+
+    @staticmethod
+    def literal_int(b):
+        return literal(str(b), ('.int', 0))
