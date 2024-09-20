@@ -58,12 +58,6 @@ def local(name):
     return ['Local', name]
 
 
-def method_invocation(triple, name, base, params):
-    if base is None:
-        return ['MethodInvocation', params, triple, name, False]
-    return ['MethodInvocation', [base] + params, triple, name, True]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -509,14 +503,14 @@ class JSONWriter:
             if op.name == '<init>':
                 if isinstance(base, instruction.ThisParam):
                     keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
-                    return method_invocation(op.triple, keyword, None, params)
+                    return self.method_invocation(op.triple, keyword, None, params)
                 elif isinstance(base, instruction.NewInstance):
                     return ['ClassInstanceCreation', op.triple, params,
                             self.parse_descriptor(base.type)]
                 else:
                     assert (isinstance(base, instruction.Variable))
                     # fallthrough to create dummy <init> call
-            return method_invocation(op.triple, op.name, self.visit_expr(base), params)
+            return self.method_invocation(op.triple, op.name, self.visit_expr(base), params)
         # for unmatched monitor instructions, just create dummy expressions
         if isinstance(op, instruction.MonitorEnterExpression):
             return self.dummy("monitor enter(", self.visit_expr(op.var_map[op.ref]), ")")
@@ -703,3 +697,9 @@ class JSONWriter:
     @staticmethod
     def parenthesis(expr):
         return ['Parenthesis', [expr]]
+
+    @staticmethod
+    def method_invocation(triple, name, base, params):
+        if base is None:
+            return ['MethodInvocation', params, triple, name, False]
+        return ['MethodInvocation', [base] + params, triple, name, True]
