@@ -180,10 +180,6 @@ def literal_long(b):
     return literal(str(b) + 'L', ('.long', 0))
 
 
-def literal_float(f):
-    return literal(str(f) + 'f', ('.float', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -597,7 +593,7 @@ class JSONWriter:
             elif op.type in 'J':
                 return literal_long(op.cst2)
             elif op.type in 'F':
-                return literal_float(op.cst)
+                return self.literal_float(op.cst)
             elif op.type in 'D':
                 return self.literal_double(op.cst)
             elif op.type == 'Ljava/lang/Class;':
@@ -707,3 +703,7 @@ class JSONWriter:
     @staticmethod
     def literal_double(f):
         return literal(str(f), ('.double', 0))
+
+    @staticmethod
+    def literal_float(f):
+        return literal(str(f) + 'f', ('.float', 0))
