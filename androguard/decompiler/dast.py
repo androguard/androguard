@@ -198,19 +198,6 @@ def visit_decl(var, init_expr=None):
     return local_decl_stmt(init_expr, var_decl(t, v))
 
 
-def visit_arr_data(value):
-    data = value.get_data()
-    tab = []
-    elem_size = value.element_width
-    if elem_size == 4:
-        for i in range(0, value.size * 4, 4):
-            tab.append(struct.unpack('<i', data[i:i + 4])[0])
-    else:  # FIXME: other cases
-        for i in range(value.size):
-            tab.append(data[i])
-    return array_initializer(list(map(literal_int, tab)))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -633,7 +620,7 @@ class JSONWriter:
 
         if isinstance(op, instruction.FillArrayExpression):
             array_expr = self.visit_expr(op.var_map[op.reg])
-            rhs = visit_arr_data(op.value)
+            rhs = self.visit_arr_data(op.value)
             return assignment(array_expr, rhs)
         if isinstance(op, instruction.FilledArrayExpression):
             tn = parse_descriptor(op.type)
@@ -709,3 +696,15 @@ class JSONWriter:
             # assert(op.declared)
             return local('v{}'.format(op.name))
         return dummy('??? Unexpected op: ' + type(op).__name__)
+
+    def visit_arr_data(self, value):
+        data = value.get_data()
+        tab = []
+        elem_size = value.element_width
+        if elem_size == 4:
+            for i in range(0, value.size * 4, 4):
+                tab.append(struct.unpack('<i', data[i:i + 4])[0])
+        else:  # FIXME: other cases
+            for i in range(value.size):
+                tab.append(data[i])
+        return array_initializer(list(map(literal_int, tab)))
