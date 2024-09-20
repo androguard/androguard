@@ -30,10 +30,6 @@ def array_creation(tn, params, dim):
     return ['ArrayCreation', [tn] + params, dim]
 
 
-def array_initializer(params, tn=None):
-    return ['ArrayInitializer', params, tn]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -462,7 +458,7 @@ class JSONWriter:
         if isinstance(op, instruction.FilledArrayExpression):
             tn = self.parse_descriptor(op.type)
             params = [self.visit_expr(op.var_map[x]) for x in op.args]
-            return array_initializer(params, tn)
+            return self.array_initializer(params, tn)
         if isinstance(op, instruction.InstanceExpression):
             triple = op.clsdesc[1:-1], op.name, op.ftype
             expr = self.visit_expr(op.var_map[op.arg])
@@ -544,7 +540,7 @@ class JSONWriter:
         else:  # FIXME: other cases
             for i in range(value.size):
                 tab.append(data[i])
-        return array_initializer(list(map(self.literal_int, tab)))
+        return self.array_initializer(list(map(self.literal_int, tab)))
 
     def visit_decl(self, var, init_expr=None):
         t = self.parse_descriptor(var.get_type())
@@ -704,3 +700,7 @@ class JSONWriter:
     @staticmethod
     def assignment(lhs, rhs, op=''):
         return ['Assignment', [lhs, rhs], op]
+
+    @staticmethod
+    def array_initializer(params, tn=None):
+        return ['ArrayInitializer', params, tn]
