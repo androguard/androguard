@@ -124,10 +124,6 @@ def if_stmt(cond_expr, scopes):
     return ['IfStatement', None, cond_expr, scopes]
 
 
-def switch_stmt(cond_expr, ksv_pairs):
-    return ['SwitchStatement', None, cond_expr, ksv_pairs]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -375,7 +371,7 @@ class JSONWriter:
                 self.visit_node(default)
             ksv_pairs.append(([None], body))
 
-        self.add(switch_stmt(cond_expr, ksv_pairs))
+        self.add(self.switch_stmt(cond_expr, ksv_pairs))
         self.switch_follow.pop()
         self.visit_node(follow)
 
@@ -706,3 +702,7 @@ class JSONWriter:
         # Create empty statement block (statements to be appended later)
         # Note, the code below assumes this can be modified in place
         return ['BlockStatement', None, []]
+
+    @staticmethod
+    def switch_stmt(cond_expr, ksv_pairs):
+        return ['SwitchStatement', None, cond_expr, ksv_pairs]
