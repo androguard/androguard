@@ -38,10 +38,6 @@ def assignment(lhs, rhs, op=''):
     return ['Assignment', [lhs, rhs], op]
 
 
-def binary_infix(op, left, right):
-    return ['BinaryInfix', [left, right], op]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -124,7 +120,7 @@ class JSONWriter:
         left = self.parenthesis(self.get_cond(cond.cond1))
         right = self.parenthesis(self.get_cond(cond.cond2))
         op = '&&' if cond.isand else '||'
-        res = binary_infix(op, left, right)
+        res = self.binary_infix(op, left, right)
         return res
 
     def get_cond(self, node):
@@ -416,7 +412,7 @@ class JSONWriter:
         if isinstance(op, instruction.BinaryExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
-            expr = binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
+            expr = self.binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
             if not isinstance(op, instruction.BinaryCompExpression):
                 expr = self.parenthesis(expr)
             return expr
@@ -428,7 +424,7 @@ class JSONWriter:
         if isinstance(op, instruction.ConditionalExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
-            return binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
+            return self.binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
         if isinstance(op, instruction.ConditionalZExpression):
             arg = op.var_map[op.arg]
             if isinstance(arg, instruction.BinaryCompExpression):
@@ -441,9 +437,9 @@ class JSONWriter:
                 if op.op == opcode_ins.Op.EQUAL:
                     expr = self.unary_prefix('!', expr)
             elif atype in 'VBSCIJFD':
-                expr = binary_infix(op.op, expr, self.literal_int(0))
+                expr = self.binary_infix(op.op, expr, self.literal_int(0))
             else:
-                expr = binary_infix(op.op, expr, self.literal_null())
+                expr = self.binary_infix(op.op, expr, self.literal_null())
             return expr
 
         if isinstance(op, instruction.Constant):
@@ -704,3 +700,7 @@ class JSONWriter:
     @staticmethod
     def cast(tn, arg):
         return ['Cast', [tn, arg]]
+
+    @staticmethod
+    def binary_infix(op, left, right):
+        return ['BinaryInfix', [left, right], op]
