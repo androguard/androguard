@@ -188,10 +188,6 @@ def literal_double(f):
     return literal(str(f), ('.double', 0))
 
 
-def literal_null():
-    return literal('null', ('.null', 0))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -592,7 +588,7 @@ class JSONWriter:
             elif atype in 'VBSCIJFD':
                 expr = binary_infix(op.op, expr, literal_int(0))
             else:
-                expr = binary_infix(op.op, expr, literal_null())
+                expr = binary_infix(op.op, expr, self.literal_null())
             return expr
 
         if isinstance(op, instruction.Constant):
@@ -707,3 +703,7 @@ class JSONWriter:
         t = parse_descriptor(var.get_type())
         v = local('v{}'.format(var.name))
         return local_decl_stmt(init_expr, var_decl(t, v))
+
+    @staticmethod
+    def literal_null():
+        return literal('null', ('.null', 0))
