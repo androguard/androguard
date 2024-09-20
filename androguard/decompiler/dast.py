@@ -107,10 +107,6 @@ def throw_stmt(expr):
     return ['ThrowStatement', expr]
 
 
-def jump_stmt(keyword):
-    return ['JumpStatement', keyword, None]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -277,7 +273,7 @@ class JSONWriter:
         if self.loop_follow[-1] in (cond.true, cond.false):
             cond_expr = self.get_cond(cond)
             with self as scope:
-                self.add(jump_stmt('break'))
+                self.add(self.jump_stmt('break'))
             scopes.append(scope)
 
             with self as scope:
@@ -348,7 +344,7 @@ class JSONWriter:
             with self as body:
                 self.visit_node(node)
                 if self.need_break:
-                    self.add(jump_stmt('break'))
+                    self.add(self.jump_stmt('break'))
                 else:
                     self.need_break = True
             ksv_pairs.append((cur_ks, body))
@@ -368,7 +364,7 @@ class JSONWriter:
             self.visit_ins(ins)
         if len(sucs) == 1:
             if sucs[0] is self.loop_follow[-1]:
-                self.add(jump_stmt('break'))
+                self.add(self.jump_stmt('break'))
             elif sucs[0] is self.next_case:
                 self.need_break = False
             else:
@@ -706,3 +702,7 @@ class JSONWriter:
     def loop_stmt(isdo, cond_expr, body):
         type_ = 'DoStatement' if isdo else 'WhileStatement'
         return [type_, None, cond_expr, body]
+
+    @staticmethod
+    def jump_stmt(keyword):
+        return ['JumpStatement', keyword, None]
