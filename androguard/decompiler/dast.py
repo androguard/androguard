@@ -192,12 +192,6 @@ def literal_null():
     return literal('null', ('.null', 0))
 
 
-def visit_decl(var, init_expr=None):
-    t = parse_descriptor(var.get_type())
-    v = local('v{}'.format(var.name))
-    return local_decl_stmt(init_expr, var_decl(t, v))
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -303,7 +297,7 @@ class JSONWriter:
         self.visited_nodes.add(node)
         for var in node.var_to_declare:
             if not var.declared:
-                self.add(visit_decl(var))
+                self.add(self.visit_decl(var))
             var.declared = True
         node.visit(self)
 
@@ -515,7 +509,7 @@ class JSONWriter:
             if isinstance(lhs, instruction.Variable) and not lhs.declared:
                 lhs.declared = True
                 expr = self.visit_expr(rhs)
-                return visit_decl(lhs, expr)
+                return self.visit_decl(lhs, expr)
 
         # skip this() at top of constructors
         if isCtor and isinstance(op, instruction.AssignExpression):
@@ -708,3 +702,8 @@ class JSONWriter:
             for i in range(value.size):
                 tab.append(data[i])
         return array_initializer(list(map(literal_int, tab)))
+
+    def visit_decl(self, var, init_expr=None):
+        t = parse_descriptor(var.get_type())
+        v = local('v{}'.format(var.name))
+        return local_decl_stmt(init_expr, var_decl(t, v))
