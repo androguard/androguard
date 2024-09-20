@@ -72,10 +72,6 @@ def typen(baset: str, dim: int) -> list:
     return ['TypeName', (baset, dim)]
 
 
-def unary_prefix(op, left):
-    return ['Unary', [left], op, False]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -472,7 +468,7 @@ class JSONWriter:
             atype = str(arg.get_type())
             if atype == 'Z':
                 if op.op == opcode_ins.Op.EQUAL:
-                    expr = unary_prefix('!', expr)
+                    expr = self.unary_prefix('!', expr)
             elif atype in 'VBSCIJFD':
                 expr = binary_infix(op.op, expr, self.literal_int(0))
             else:
@@ -568,7 +564,7 @@ class JSONWriter:
             if isinstance(op, instruction.CastExpression):
                 expr = cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs))
             else:
-                expr = unary_prefix(op.op, self.visit_expr(lhs))
+                expr = self.unary_prefix(op.op, self.visit_expr(lhs))
             return parenthesis(expr)
         if isinstance(op, instruction.Variable):
             # assert(op.declared)
@@ -703,3 +699,7 @@ class JSONWriter:
     @staticmethod
     def unary_postfix(left, op):
         return ['Unary', [left], op, True]
+
+    @staticmethod
+    def unary_prefix(op, left):
+        return ['Unary', [left], op, False]
