@@ -120,10 +120,6 @@ def try_stmt(tryb, pairs):
     return ['TryStatement', None, tryb, pairs]
 
 
-def if_stmt(cond_expr, scopes):
-    return ['IfStatement', None, cond_expr, scopes]
-
-
 class JSONWriter:
     def __init__(self, graph, method):
         self.graph = graph
@@ -297,7 +293,7 @@ class JSONWriter:
                 self.visit_node(cond.false)
             scopes.append(scope)
 
-            self.add(if_stmt(cond_expr, scopes))
+            self.add(self.if_stmt(cond_expr, scopes))
         elif follow is not None:
             if cond.true in (follow, self.next_case) or \
                             cond.num > cond.true.num:
@@ -318,7 +314,7 @@ class JSONWriter:
                 scopes.append(scope)
             self.if_follow.pop()
 
-            self.add(if_stmt(cond_expr, scopes))
+            self.add(self.if_stmt(cond_expr, scopes))
             self.visit_node(follow)
         else:
             cond_expr = self.get_cond(cond)
@@ -329,7 +325,7 @@ class JSONWriter:
             with self as scope:
                 self.visit_node(cond.false)
             scopes.append(scope)
-            self.add(if_stmt(cond_expr, scopes))
+            self.add(self.if_stmt(cond_expr, scopes))
 
     def visit_switch_node(self, switch):
         lins = switch.get_ins()
@@ -706,3 +702,7 @@ class JSONWriter:
     @staticmethod
     def switch_stmt(cond_expr, ksv_pairs):
         return ['SwitchStatement', None, cond_expr, ksv_pairs]
+
+    @staticmethod
+    def if_stmt(cond_expr, scopes):
+        return ['IfStatement', None, cond_expr, scopes]
