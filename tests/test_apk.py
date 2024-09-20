@@ -714,5 +714,16 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a.get_app_name(locale='ru-rRU'), "values-ru-rRU")
 
 
+    def testPublicKeysofApk(self):
+        a = APK(os.path.join(test_dir, 'data/APK/com.example.android.wearable.wear.weardrawers.apk'))
+        pkeys = set(a.get_public_keys_der_v3() + a.get_public_keys_der_v2())
+        for public_key in pkeys:
+            from androguard.util import parse_public
+            from androguard.util import calculate_fingerprint
+            parsed_key = parse_public(public_key)
+            self.assertEqual(parsed_key.algorithm, 'rsa')
+            self.assertEqual(parsed_key.bit_size, 2048)
+            self.assertEqual(calculate_fingerprint(parsed_key).hex(), '98917cd03c6277d73d58b661d614c442f2981a35a5aa122a61049215ba85c1d4')
+
 if __name__ == '__main__':
     unittest.main(failfast=True)
