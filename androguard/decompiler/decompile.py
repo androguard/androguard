@@ -35,13 +35,7 @@ import androguard.decompiler.util as util
 from androguard.core.analysis import analysis
 from androguard.core import apk, dex
 from androguard.decompiler.control_flow import identify_structures
-from androguard.decompiler.dast import (
-    JSONWriter,
-    parse_descriptor,
-    literal_string,
-    literal_hex_int,
-    dummy
-)
+from androguard.decompiler.dast import JSONWriter
 from androguard.decompiler.dataflow import (
     build_def_use,
     place_declarations,
@@ -63,17 +57,17 @@ def get_field_ast(field: EncodedField) -> dict:
     expr = None
     if field.init_value:
         val = field.init_value.value
-        expr = dummy(str(val))
+        expr = JSONWriter.dummy(str(val))
 
         if val is not None:
             if field.get_descriptor() == 'Ljava/lang/String;':
-                expr = literal_string(val)
+                expr = JSONWriter.literal_string(val)
             elif field.proto == 'B':
-                expr = literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
+                expr = JSONWriter.literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
 
     return {
         'triple': triple,
-        'type': parse_descriptor(field.get_descriptor()),
+        'type': JSONWriter.parse_descriptor(field.get_descriptor()),
         'flags': util.get_access_field(field.get_access_flags()),
         'expr': expr,
     }
@@ -314,11 +308,11 @@ class DvClass:
         isInterface = 'interface' in self.access
         return {
             'rawname': self.thisclass[1:-1],
-            'name': parse_descriptor(self.thisclass),
-            'super': parse_descriptor(self.superclass),
+            'name': JSONWriter.parse_descriptor(self.thisclass),
+            'super': JSONWriter.parse_descriptor(self.superclass),
             'flags': self.access,
             'isInterface': isInterface,
-            'interfaces': list(map(parse_descriptor, self.interfaces)),
+            'interfaces': list(map(JSONWriter.parse_descriptor, self.interfaces)),
             'fields': fields,
             'methods': methods,
         }
