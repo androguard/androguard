@@ -976,6 +976,9 @@ class AXMLPrinter:
             logger.debug("DEBUG ARSC TYPE {}".format(_type))
 
             if _type == START_TAG:
+                if not self.axml.name:  # Check if the name is empty
+                    logger.debug("Empty tag name, skipping to next element")
+                    continue  # Skip this iteration
                 uri = self._print_namespace(self.axml.namespace)
                 uri, name = self._fix_name(uri, self.axml.name)
                 tag = "{}{}".format(uri, name)
@@ -1024,6 +1027,10 @@ class AXMLPrinter:
             if _type == END_TAG:
                 if not cur:
                     logger.warning("Too many END_TAG! No more elements available to attach to!")
+                else:
+                    if not self.axml.name:  # Check if the name is empty
+                        logger.debug("Empty tag name at END_TAG, skipping to next element")
+                        continue
 
                 name = self.axml.name
                 uri = self._print_namespace(self.axml.namespace)
