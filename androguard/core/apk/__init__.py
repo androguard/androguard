@@ -1348,7 +1348,7 @@ class APK:
                         "Unknown permission from android reference"]
             else:
                 # Is there a valid case not belonging to the above two?
-                logger.error(f"Unknown permission {i}")
+                logger.info(f"Unknown permission {i}")
         return self._fill_deprecated_permissions(l)
 
     def get_requested_aosp_permissions(self) -> list[str]:
