@@ -445,7 +445,7 @@ class AXMLParser:
             # The file can still be parsed up to the point where the chunk should end.
             self.axml_tampered = True
             logger.warning("Declared filesize ({}) is smaller than total file size ({}). "
-                        "Was something appended to the file? Trying to parse it anyways.".format(self.filesize, self.buff.size()))
+                        "Was something appended to the file? Trying to parse it anyways.".format(self.filesize, self.buff_size))
 
         # Not that severe of an error, we have plenty files where this is not
         # set correctly
@@ -843,7 +843,7 @@ class AXMLParser:
 
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
-        if name <= len(self.m_resourceIDs):
+        if name < len(self.m_resourceIDs):
             attr = self.m_resourceIDs[name]
             if attr in public.SYSTEM_RESOURCES['attributes']['inverse']:
                 res = public.SYSTEM_RESOURCES['attributes']['inverse'][attr].replace("_",
@@ -976,6 +976,9 @@ class AXMLPrinter:
             logger.debug("DEBUG ARSC TYPE {}".format(_type))
 
             if _type == START_TAG:
+                if not self.axml.name:  # Check if the name is empty
+                    logger.debug("Empty tag name, skipping to next element")
+                    continue  # Skip this iteration
                 uri = self._print_namespace(self.axml.namespace)
                 uri, name = self._fix_name(uri, self.axml.name)
                 tag = "{}{}".format(uri, name)
@@ -1024,6 +1027,10 @@ class AXMLPrinter:
             if _type == END_TAG:
                 if not cur:
                     logger.warning("Too many END_TAG! No more elements available to attach to!")
+                else:
+                    if not self.axml.name:  # Check if the name is empty
+                        logger.debug("Empty tag name at END_TAG, skipping to next element")
+                        continue
 
                 name = self.axml.name
                 uri = self._print_namespace(self.axml.namespace)
@@ -1407,7 +1414,7 @@ class ARSCParser:
         self.buff_size = self.buff.raw.getbuffer().nbytes
 
         if self.buff_size < 8 or self.buff_size > 0xFFFFFFFF:
-            raise ResParserError("Invalid file size {} for a resources.arsc file!".format(self.buff.size()))
+            raise ResParserError("Invalid file size {} for a resources.arsc file!".format(self.buff_size))
 
         self.analyzed = False
         self._resolved_strings = None

@@ -6,6 +6,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/androguard)
 ![Static Badge](https://img.shields.io/badge/Documentation-InProgress-red)
 
+New tool: Goauld [Dynamic injection tool for Linux/Android ](https://github.com/androguard/goauld)
 
 ## Installation
 Quick installation:
