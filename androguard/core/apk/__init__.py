@@ -19,7 +19,6 @@ from zlib import crc32
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string
 from apkInspector.headers import ZipEntry
-from oscrypto import asymmetric, errors
 from hashlib import md5, sha1, sha256, sha224, sha384, sha512
 
 from androguard.core.axml import (ARSCParser,
@@ -39,6 +38,12 @@ from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
 from asn1crypto.util import OrderedDict
+from cryptography.hazmat.primitives.asymmetric import rsa, dsa, ec
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from loguru import logger
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
@@ -1551,7 +1556,7 @@ class APK:
                     signer_info,
                     sf_object,
                     max_sdk_version)
-            except (ValueError, TypeError, OSError, errors.SignatureError) as e:
+            except (ValueError, TypeError, OSError, InvalidSignature) as e:
                 logger.error(f"The following exception was raised while verifying the certificate: {e}")
                 return None  # the validation stops due to the exception raised!
             if matching_certificate_verified is not None:
@@ -1565,7 +1570,7 @@ class APK:
     def verify_signer_info_against_sig_file(self, signed_data, certificates, signer_info, sf_object, max_sdk_version):
         matching_certificate = self.find_certificate(certificates, signer_info)
         matching_certificate_verified = None
-        digest_algorithm = self.get_hash_algorithm(signer_info)
+        digest_algorithm, crypto_hash_algorithm = self.get_hash_algorithm(signer_info)
         if matching_certificate is None:
             raise ValueError("Signing certificate referenced in SignerInfo not found in SignedData")
         else:
@@ -1593,7 +1598,7 @@ class APK:
                 if message_digest_oid not in signed_attrs_dict:
                     raise ValueError("No content digest in signed attributes")
                 expected_signature_file_digest = signed_attrs_dict[message_digest_oid][0].native
-                hash_algo = hashlib.new(digest_algorithm)
+                hash_algo = digest_algorithm()
                 hash_algo.update(sf_object)
                 actual_digest = hash_algo.digest()
 
@@ -1606,33 +1611,64 @@ class APK:
                 # Modify the first byte to 0x31 for UNIVERSAL SET
                 signed_attrs_dump = b'\x31' + signed_attrs_dump[1:]
                 matching_certificate_verified = self.verify_signature(signer_info, matching_certificate,
-                                                                      signed_attrs_dump, digest_algorithm)
+                                                                      signed_attrs_dump, crypto_hash_algorithm)
             else:
                 matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, sf_object,
-                                                                      digest_algorithm)
+                                                                      crypto_hash_algorithm)
         return matching_certificate_verified
 
+
     @staticmethod
-    def verify_signature(signer_info, matching_certificate, signed_data, digest_algorithm):
+    def verify_signature(signer_info, matching_certificate, signed_data, crypto_hash_algorithm):
         matching_certificate_verified = None
         signature = signer_info['signature'].native
-        loaded_cert = asymmetric.load_certificate(matching_certificate.chosen)
-        public_key = loaded_cert.public_key
-        key_type = loaded_cert.algorithm
-        # Verify the signature
+
+        # Load the certificate using asn1crypto as it can handle more cases (v1-only-with-rsa-1024-cert-not-der.apk)
+        cert = x509.Certificate.load(matching_certificate.chosen.dump())
+        public_key_info = cert.public_key
+
+        # Convert the ASN.1 public key to a cryptography-compatible object
+        public_key_der = public_key_info.dump()
+        public_key = serialization.load_der_public_key(public_key_der, backend=default_backend())
+
         try:
-            if key_type == 'rsa':
-                asymmetric.rsa_pkcs1v15_verify(public_key, signature, signed_data, hash_algorithm=digest_algorithm)
-            elif key_type == 'dsa':
-                asymmetric.dsa_verify(public_key, signature, signed_data, hash_algorithm=digest_algorithm)
-            elif key_type == 'ec':
-                asymmetric.ecdsa_verify(public_key, signature, signed_data, hash_algorithm=digest_algorithm)
+            # RSA Key
+            if isinstance(public_key, rsa.RSAPublicKey):
+                public_key.verify(
+                    signature,
+                    signed_data,
+                    padding.PKCS1v15(),
+                    crypto_hash_algorithm()
+                )
+
+            # DSA Key
+            elif isinstance(public_key, dsa.DSAPublicKey):
+                public_key.verify(
+                    signature,
+                    signed_data,
+                    crypto_hash_algorithm()
+                )
+
+            # EC Key
+            elif isinstance(public_key, ec.EllipticCurvePublicKey):
+                public_key.verify(
+                    signature,
+                    signed_data,
+                    ec.ECDSA(crypto_hash_algorithm())
+                )
+
             else:
-                raise ValueError(f"Unsupported key algorithm: {key_type}")
+                raise ValueError(f"Unsupported key algorithm: {public_key.__class__.__name__.lower()}")
+
+            # If verification succeeds, return the certificate
             matching_certificate_verified = matching_certificate.chosen.dump()
-        except errors.SignatureError:
+
+        except InvalidSignature:
             logger.info(
-                f"The public key of the certificate:{hashlib.sha256(matching_certificate.chosen.dump()).hexdigest()} is not associated with the signature!")
+                f"The public key of the certificate: {hashlib.sha256(matching_certificate.chosen.dump()).hexdigest()} "
+                f"is not associated with the signature!"
+            )
+
         return matching_certificate_verified
 
     @staticmethod
@@ -1641,16 +1677,16 @@ class APK:
         digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
         # Map the digest algorithm to a hash function
         hash_algorithms = {
-            'md5': md5,
-            'sha1': sha1,
-            'sha256': sha256,
-            'sha224': sha224,
-            'sha384': sha384,
-            'sha512': sha512
+            'md5': (md5, hashes.MD5),
+            'sha1': (sha1, hashes.SHA1),
+            'sha224': (sha224, hashes.SHA224),
+            'sha256': (sha256, hashes.SHA256),
+            'sha384': (sha384, hashes.SHA384),
+            'sha512': (sha512, hashes.SHA512)
         }
         if digest_algorithm not in hash_algorithms:
             raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
-        return digest_algorithm
+        return hash_algorithms[digest_algorithm]
 
     def find_certificate(self, signed_data_certificates, signer_info):
         """
