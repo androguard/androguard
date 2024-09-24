@@ -74,6 +74,10 @@ class Graph:
             lpreds.append(e1)
 
     def add_catch_edge(self, e1, e2):
+        # Ensure nodes always inherit non-empty catch types from each other.
+        active_type = e1.catch_type or e2.catch_type
+        e1.set_catch_type(active_type)
+        e2.set_catch_type(active_type)
         lsucs = self.catch_edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
