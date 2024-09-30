@@ -147,6 +147,7 @@ class Interval:
             for suc in graph.sucs(node):
                 if suc not in self.content:
                     self.end = node
+        self.end = self.end or self.head
 
     def get_end(self):
         return self.end.get_end()
