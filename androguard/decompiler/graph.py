@@ -74,6 +74,10 @@ class Graph:
             lpreds.append(e1)
 
     def add_catch_edge(self, e1, e2):
+        # Ensure nodes always inherit non-empty catch types from each other.
+        active_type = e1.catch_type or e2.catch_type
+        e1.set_catch_type(active_type)
+        e2.set_catch_type(active_type)
         lsucs = self.catch_edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
@@ -443,9 +447,10 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
             if exception_node is None:
                 exception_node = build_node_from_block(exception_target, vmap,
                                                        gen_ret, _type)
-                exception_node.set_catch_type(_type)
                 exception_node.in_catch = True
                 block_to_node[exception_target] = exception_node
+            node.set_catch_type(_type)
+            exception_node.set_catch_type(_type)
             graph.add_catch_edge(node, exception_node)
     for _, _, child_block in block.childs:
         child_node = block_to_node.get(child_block)
