@@ -1534,15 +1534,27 @@ class ARSCParser:
                         logger.debug("Config: {}".format(a_res_type.config))
 
                         entries = []
+                        no_entry = 0xffffffff
                         for i in range(0, a_res_type.entryCount):
                             current_package.mResId = current_package.mResId & 0xffff0000 | i
-                            entries.append((unpack('<i', self.buff.read(4))[0], current_package.mResId))
+                            if a_res_type.flags == 0x02:
+                                no_entry = 0xffff
+                                entries.append((unpack('<H', self.buff.read(2))[
+                                               0], current_package.mResId))
+                            else:
+                                entries.append((unpack('<i', self.buff.read(4))[0], current_package.mResId))
 
                         self.packages[package_name].append(entries)
+                        logger.debug(f'[ARSCParser] current: {hex(self.buff.tell())}, target: {hex(pkg_chunk_header.start + a_res_type.entriesStart)}')
+                        if self.buff.tell() < pkg_chunk_header.start + a_res_type.entriesStart:
+                            self.buff.seek(pkg_chunk_header.start + a_res_type.entriesStart)
 
                         for entry, res_id in entries:
-                            if entry != -1:
-                                ate = ARSCResTableEntry(self.buff, res_id, pc)
+                            if entry != no_entry:
+                                if self.buff.tell() == pkg_chunk_header.start + pkg_chunk_header.size:
+                                    print(f'End of chunk hit. Skipping remaining entries ({res_id}) in type: {pkg_chunk_header.type}')
+                                    break
+                                ate = ARSCResTableEntry(self.buff, res_id, pc) #bug 1517  此结构应该在 entries 后面解析，而不是 entry 的偏移项
                                 self.packages[package_name].append(ate)
                                 if ate.is_weak():
                                     # FIXME we are not sure how to implement the FLAG_WEAK!
@@ -2409,7 +2421,7 @@ class ARSCResType:
     """
     This is a `ResTable_type` without it's `ResChunk_header`.
     It contains a `ResTable_config`
-
+    flags FLAG_SPARSE==0x01, FLAG_OFFSET16=0x02
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1364
     """
     def __init__(self, buff: BinaryIO, parent:Union[PackageContext,None]=None) -> None:
@@ -2945,18 +2957,37 @@ class ARSCResTableEntry:
     # linking with other resource tables.
     FLAG_WEAK = 4
 
+    # If set, this is a compact entry with data type and value directly
+    # encoded in the this entry, see ResTable_entry::compact
+    FLAG_COMPACT = 8
+
     def __init__(self, buff:BinaryIO, mResId:int, parent:Union[PackageContext, None]=None) -> None:
+        NO_ENTRY = 0xFFFFFFFF
+
         self.start = buff.tell()
         self.mResId = mResId
         self.parent = parent
 
         self.size = unpack('<H', buff.read(2))[0]
         self.flags = unpack('<H', buff.read(2))[0]
-        # This is a ResStringPool_ref
-        self.index = unpack('<I', buff.read(4))[0]
 
-        if self.is_complex():
-            self.item = ARSCComplex(buff, parent)
+        # isComplex = self.flags == self.FLAG_COMPLEX
+        # isCompact = self.flags == self.FLAG_COMPACT
+
+        # This is a ResStringPool_ref
+        try:
+            self.index = unpack('<I', buff.read(4))[0]   #bug 2928
+        except Exception as e:
+            logger.error(f'[ARSCParser] pos: {self.start}, f_size: {hex(self.size)}, f_flags: {hex(self.flags)}')
+
+        if self.index == NO_ENTRY and self.is_compact():
+            return
+
+        if self.is_compact():
+            self.key = ARSCCompact(buff, self.size, self.flags, self.index)
+            self.mResId = self.size   ## debug
+        elif self.is_complex():
+            self.item = ARSCComplex(buff, parent)  #bug 2989
         else:
             # If FLAG_COMPLEX is not set, a Res_value structure will follow
             self.key = ARSCResStringPoolRef(buff, self.parent)
@@ -2978,6 +3009,9 @@ class ARSCResTableEntry:
 
     def is_complex(self) -> bool:
         return (self.flags & self.FLAG_COMPLEX) != 0
+
+    def is_compact(self) -> bool:
+        return (self.flags & self.FLAG_COMPACT) != 0
 
     def is_weak(self) -> bool:
         return (self.flags & self.FLAG_WEAK) != 0
@@ -3013,11 +3047,32 @@ class ARSCComplex:
         # Parse self.count number of `ResTable_map`
         # these are structs of ResTable_ref and Res_value
         # ResTable_ref is a uint32_t.
-        for i in range(0, self.count):
-            self.items.append((unpack('<I', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent)))
+        try:
+            for i in range(0, self.count):
+                self.items.append((unpack('<I', buff.read(4))[0], ARSCResStringPoolRef(buff, self.parent))) #bug 2989
+        except Exception as e:
+            import pdb;pdb.set_trace()
 
     def __repr__(self):
         return "<ARSCComplex idx='0x{:08x}' parent='{}' count='{}'>".format(self.start, self.id_parent, self.count)
+
+
+class ARSCCompact:
+    def __init__(self, buff:BinaryIO, key:int, flags:int, data:int) -> None:
+        self.start = buff.tell()
+        self.key = key
+        self.flags = flags
+        self.data = data
+        '''
+        TYPE_REFERENCE = 0x01
+        TYPE_ATTRIBUTE = 0x02
+        TYPE_STRING = 0x03
+        ...
+        '''
+        type = (self.flags >> 8) & 0xff
+
+    def __repr__(self):
+        return "<ARSCCompact idx='0x{:08x}' key='{}' flags='{}' type='{}' data='{}'>".format(self.start, self.key, self.flags, type, self.data)
 
 
 class ARSCResStringPoolRef:
