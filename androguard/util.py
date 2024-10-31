@@ -1,17 +1,18 @@
-
-import sys
-from typing import Union, BinaryIO
-from asn1crypto import keys, x509
-import hashlib
 import binascii
+import hashlib
+import sys
+from typing import BinaryIO, Union
+
+from asn1crypto import keys, x509
 
 #  External dependencies
 # import asn1crypto
 from asn1crypto.x509 import Name
 from loguru import logger
 
+
 class MyFilter:
-    def __init__(self, level:int) -> None:
+    def __init__(self, level: int) -> None:
         self.level = level
 
     def __call__(self, record):
@@ -19,7 +20,7 @@ class MyFilter:
         return record["level"].no >= levelno
 
 
-def set_log(level:int) -> None:
+def set_log(level: int) -> None:
     """
     Sets the log for loguru based on the level being passed.
     The possible values are TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
@@ -31,7 +32,8 @@ def set_log(level:int) -> None:
 
 # Stuff that might be useful
 
-def read_at(buff: BinaryIO, offset:int, size:int=-1) -> bytes:
+
+def read_at(buff: BinaryIO, offset: int, size: int = -1) -> bytes:
     idx = buff.tell()
     buff.seek(offset)
     d = buff.read(size)
@@ -39,7 +41,7 @@ def read_at(buff: BinaryIO, offset:int, size:int=-1) -> bytes:
     return d
 
 
-def readFile(filename: str, binary:bool=True) -> bytes:
+def readFile(filename: str, binary: bool = True) -> bytes:
     """
     Open and read a file
     :param filename: filename to open and read
@@ -50,7 +52,9 @@ def readFile(filename: str, binary:bool=True) -> bytes:
         return f.read()
 
 
-def get_certificate_name_string(name:Union[dict,Name], short:bool=False, delimiter:str=', ') -> str:
+def get_certificate_name_string(
+    name: Union[dict, Name], short: bool = False, delimiter: str = ', '
+) -> str:
     """
     Format the Name type of a X509 Certificate in a human readable form.
 
@@ -64,7 +68,7 @@ def get_certificate_name_string(name:Union[dict,Name], short:bool=False, delimit
 
     :rtype: str
     """
-    if isinstance(name, Name):#asn1crypto.x509.Name):
+    if isinstance(name, Name):  # asn1crypto.x509.Name):
         name = name.native
 
     # For the shortform, we have a lookup table
@@ -92,13 +96,24 @@ def get_certificate_name_string(name:Union[dict,Name], short:bool=False, delimit
         'email_address': ("E", "emailAddress"),
         'domain_component': ("DC", "domainComponent"),
         'name_distinguisher': ("nameDistinguisher", "nameDistinguisher"),
-        'organization_identifier': ("organizationIdentifier", "organizationIdentifier"),
+        'organization_identifier': (
+            "organizationIdentifier",
+            "organizationIdentifier",
+        ),
     }
-    return delimiter.join(["{}={}".format(_.get(attr, (attr, attr))[0 if short else 1], name[attr]) for attr in name])
+    return delimiter.join(
+        [
+            "{}={}".format(
+                _.get(attr, (attr, attr))[0 if short else 1], name[attr]
+            )
+            for attr in name
+        ]
+    )
 
 
 def parse_public(data):
-    from asn1crypto import pem, keys, x509
+    from asn1crypto import keys, pem, x509
+
     """
     Loads a public key from a DER or PEM-formatted input.
     Supports RSA, DSA, EC public keys, and X.509 certificates.
@@ -112,7 +127,9 @@ def parse_public(data):
     if pem.detect(data):
         type_name, _, der_bytes = pem.unarmor(data)
         if type_name in ['PRIVATE KEY', 'RSA PRIVATE KEY']:
-            raise ValueError("The data specified appears to be a private key, not a public key.")
+            raise ValueError(
+                "The data specified appears to be a private key, not a public key."
+            )
     else:
         # If not PEM, assume it's DER-encoded
         der_bytes = data
@@ -128,7 +145,9 @@ def parse_public(data):
     # Try to parse the data as an X.509 certificate
     try:
         certificate = x509.Certificate.load(der_bytes)
-        public_key_info = certificate['tbs_certificate']['subject_public_key_info']
+        public_key_info = certificate['tbs_certificate'][
+            'subject_public_key_info'
+        ]
         public_key_info.native  # Fully parse the object
         return public_key_info
     except ValueError:
@@ -143,7 +162,9 @@ def parse_public(data):
     except ValueError:
         pass  # Not an RSAPublicKey structure
 
-    raise ValueError("The data specified does not appear to be a known public key or certificate format.")
+    raise ValueError(
+        "The data specified does not appear to be a known public key or certificate format."
+    )
 
 
 def calculate_fingerprint(key_object):
@@ -160,7 +181,10 @@ def calculate_fingerprint(key_object):
     if key_object.algorithm == 'rsa':
         key = key_object['public_key'].parsed
         # Prepare string with modulus and public exponent
-        to_hash = '%d:%d' % (key['modulus'].native, key['public_exponent'].native)
+        to_hash = '%d:%d' % (
+            key['modulus'].native,
+            key['public_exponent'].native,
+        )
 
     # DSA Public Key
     elif key_object.algorithm == 'dsa':

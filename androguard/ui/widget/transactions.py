@@ -1,21 +1,25 @@
 import csv
 import io
 
-#import pyperclip
-
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.dimension import AnyDimension, Dimension
 from prompt_toolkit.layout import AnyContainer
+from prompt_toolkit.layout.dimension import AnyDimension, Dimension
 
 from androguard.ui import table
 from androguard.ui.selection import SelectionViewList
 from androguard.ui.widget.frame import SelectableFrame
 
+# import pyperclip
+
+
+
 
 class TransactionFrame:
 
-    def __init__(self, transactions: SelectionViewList, height: AnyDimension = None) -> None:
+    def __init__(
+        self, transactions: SelectionViewList, height: AnyDimension = None
+    ) -> None:
         self.transactions = transactions
         self.transactions.on_update_event += self.update_table
 
@@ -56,18 +60,28 @@ class TransactionFrame:
 
     def update_table(self, _):
         self.table.children.clear()
-        self.table.add_row(self.headings, "class:transactions.heading", id(self.headings))
-        for i in range(self.transactions.view.start, self.transactions.view.end):
+        self.table.add_row(
+            self.headings, "class:transactions.heading", id(self.headings)
+        )
+        for i in range(
+            self.transactions.view.start, self.transactions.view.end
+        ):
             row, style = self._to_row(self.transactions[i])
             self.table.add_row(
                 row,
-                f"{style} reverse" if i == self.transactions.selection else style,
-                (id(self.transactions[i]), i == self.transactions.selection)
+                (
+                    f"{style} reverse"
+                    if i == self.transactions.selection
+                    else style
+                ),
+                (id(self.transactions[i]), i == self.transactions.selection),
             )
         self.pad_table()
 
     def pad_table(self):
-        padding = self.transactions.max_view_size - self.transactions.view.size()
+        padding = (
+            self.transactions.max_view_size - self.transactions.view.size()
+        )
         empty_row = [
             table.Label(""),
             table.Label(""),
@@ -76,8 +90,9 @@ class TransactionFrame:
             table.Label(""),
         ]
         for _ in range(padding):
-            self.table.add_row(empty_row, "class:transaction.default", id(empty_row))
-
+            self.table.add_row(
+                empty_row, "class:transaction.default", id(empty_row)
+            )
 
     def key_bindings(self) -> KeyBindings:
         kb = KeyBindings()
@@ -104,7 +119,9 @@ class TransactionFrame:
 
         @kb.add('end', filter=Condition(lambda: self.activated))
         def _(event):
-            self.transactions.move_selection(len(self.transactions) - self.transactions.selection)
+            self.transactions.move_selection(
+                len(self.transactions) - self.transactions.selection
+            )
 
         return kb
 
@@ -117,8 +134,7 @@ class TransactionFrame:
     def activated(self, value):
         self.container.activated = value
 
-
-    #def copy_to_clipboard(self):
+    # def copy_to_clipboard(self):
     #    if self.transactions.selection_valid():
     #        output = io.StringIO()
     #        writer = csv.writer(output, quoting=csv.QUOTE_NONE)
@@ -131,14 +147,13 @@ class TransactionFrame:
     #            ])
     #        pyperclip.copy(output.getvalue())
 
-
     def _to_row(self, transaction):
         # TODO: Cache the rows so we don't need to recreate them.
         return [
             table.Label(transaction.direction_indicator),
             table.Label(str(transaction.index)),
             table.Label(transaction.from_method),
-            table.Label(transaction.to_method)
+            table.Label(transaction.to_method),
         ], transaction.style()
 
     def __pt_container__(self) -> AnyContainer:

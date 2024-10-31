@@ -1,19 +1,27 @@
 import json
-
 from typing import Optional
 
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import AnyContainer, Dimension, HSplit, FormattedTextControl, Window
+from prompt_toolkit.layout import (
+    AnyContainer,
+    Dimension,
+    FormattedTextControl,
+    HSplit,
+    Window,
+)
 from prompt_toolkit.layout.dimension import AnyDimension
 
-from androguard.ui.selection import SelectionViewList
 from androguard.ui.data_types import DisplayTransaction
+from androguard.ui.selection import SelectionViewList
 from androguard.ui.widget.frame import SelectableFrame
 
+
 class DetailsFrame:
-    def __init__(self, transactions: SelectionViewList, max_lines: int) -> None:
+    def __init__(
+        self, transactions: SelectionViewList, max_lines: int
+    ) -> None:
         self.transactions = transactions
         self.max_lines = max_lines
 
@@ -25,7 +33,7 @@ class DetailsFrame:
             title="Details",
             body=self.get_content,
             width=Dimension(min=56, preferred=100, max=100),
-            height=Dimension(preferred=max_lines)
+            height=Dimension(preferred=max_lines),
         )
 
     @property
@@ -47,14 +55,18 @@ class DetailsFrame:
                     ignore_content_height=True,
                     content=FormattedTextControl(
                         text=self.get_current_details()
-                    )
+                    ),
                 ),
             ]
         )
-    
+
     def get_current_details(self):
         if self.transactions.selection_valid():
-            return json.dumps(self.transactions.selected().params, indent=2) + '\n' + json.dumps(self.transactions.selected().ret_value, indent=2)
+            return (
+                json.dumps(self.transactions.selected().params, indent=2)
+                + '\n'
+                + json.dumps(self.transactions.selected().ret_value, indent=2)
+            )
         return ''
 
     def __pt_container__(self) -> AnyContainer:

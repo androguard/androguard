@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import unittest
-import os
+import binascii
 import glob
 import hashlib
-import binascii
-from unittest.mock import patch, MagicMock
+import os
+import unittest
+from unittest.mock import MagicMock, patch
 
 from androguard.core import apk, axml
 from androguard.core.analysis.analysis import Analysis
@@ -16,6 +16,7 @@ from androguard.misc import AnalyzeAPK
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
+
 class APKTest(unittest.TestCase):
     def testAPK(self):
         for f in glob.glob(os.path.join(test_dir, 'data/APK/*.apk')):
@@ -24,7 +25,9 @@ class APKTest(unittest.TestCase):
                 self.assertTrue(a)
 
     def testAPKWrapper(self):
-        a, d, dx = AnalyzeAPK(os.path.join(test_dir, 'data/APK/TestActivity.apk'))
+        a, d, dx = AnalyzeAPK(
+            os.path.join(test_dir, 'data/APK/TestActivity.apk')
+        )
 
         self.assertIsInstance(a, APK)
         self.assertIsInstance(d[0], DEX)
@@ -37,8 +40,8 @@ class APKTest(unittest.TestCase):
 
     def testAPKWrapperRaw(self):
         with open(
-                os.path.join(test_dir, 'data/APK/TestActivity.apk'), 'rb') \
-                as file_obj:
+            os.path.join(test_dir, 'data/APK/TestActivity.apk'), 'rb'
+        ) as file_obj:
             file_contents = file_obj.read()
         a, d, dx = AnalyzeAPK(file_contents, raw=True)
         self.assertIsInstance(a, APK)
@@ -51,7 +54,9 @@ class APKTest(unittest.TestCase):
         self.assertIsNotNone(a.get_certificate(a.get_signature_name()))
 
     def testMultiDexAPK(self):
-        a, d, dx = AnalyzeAPK(os.path.join(test_dir, 'data/APK/app-prod-debug.apk'))
+        a, d, dx = AnalyzeAPK(
+            os.path.join(test_dir, 'data/APK/app-prod-debug.apk')
+        )
 
         self.assertIsInstance(a, APK)
         self.assertIsInstance(d[0], DEX)
@@ -63,26 +68,33 @@ class APKTest(unittest.TestCase):
         Test if certificates are correctly unpacked from the SignatureBlock files
         :return:
         """
-        a = APK(os.path.join(test_dir, 'data/APK/TestActivity.apk'), skip_analysis=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/TestActivity.apk'),
+            skip_analysis=True,
+        )
         cert = a.get_certificate_der(a.get_signature_name())
-        expected = "308201E53082014EA00302010202045114FECF300D06092A864886F70D010105" \
-                   "05003037310B30090603550406130255533110300E060355040A1307416E6472" \
-                   "6F6964311630140603550403130D416E64726F6964204465627567301E170D31" \
-                   "33303230383133333430375A170D3433303230313133333430375A3037310B30" \
-                   "090603550406130255533110300E060355040A1307416E64726F696431163014" \
-                   "0603550403130D416E64726F696420446562756730819F300D06092A864886F7" \
-                   "0D010101050003818D00308189028181009903975EC93F0F3CCB54BD1A415ECF" \
-                   "3505993715B8B9787F321104ACC7397D186F01201341BCC5771BB28695318E00" \
-                   "6E47C888D3C7EE9D952FF04DF06EDAB1B511F51AACDCD02E0ECF5AA7EC6B51BA" \
-                   "08C601074CF2DA579BD35054E4F77BAAAAF0AA67C33C1F1C3EEE05B5862952C0" \
-                   "888D39179C0EDD785BA4F47FB7DF5D5F030203010001300D06092A864886F70D" \
-                   "0101050500038181006B571D685D41E77744F5ED20822AE1A14199811CE649BB" \
-                   "B29248EB2F3CC7FB70F184C2A3D17C4F86B884FCA57EEB289ECB5964A1DDBCBD" \
-                   "FCFC60C6B7A33D189927845067C76ED29B42D7F2C7F6E2389A4BC009C01041A3" \
-                   "6E666D76D1D66467416E68659D731DC7328CB4C2E989CF59BB6D2D2756FDE7F2" \
-                   "B3FB733EBB4C00FD3B"
+        expected = (
+            "308201E53082014EA00302010202045114FECF300D06092A864886F70D010105"
+            "05003037310B30090603550406130255533110300E060355040A1307416E6472"
+            "6F6964311630140603550403130D416E64726F6964204465627567301E170D31"
+            "33303230383133333430375A170D3433303230313133333430375A3037310B30"
+            "090603550406130255533110300E060355040A1307416E64726F696431163014"
+            "0603550403130D416E64726F696420446562756730819F300D06092A864886F7"
+            "0D010101050003818D00308189028181009903975EC93F0F3CCB54BD1A415ECF"
+            "3505993715B8B9787F321104ACC7397D186F01201341BCC5771BB28695318E00"
+            "6E47C888D3C7EE9D952FF04DF06EDAB1B511F51AACDCD02E0ECF5AA7EC6B51BA"
+            "08C601074CF2DA579BD35054E4F77BAAAAF0AA67C33C1F1C3EEE05B5862952C0"
+            "888D39179C0EDD785BA4F47FB7DF5D5F030203010001300D06092A864886F70D"
+            "0101050500038181006B571D685D41E77744F5ED20822AE1A14199811CE649BB"
+            "B29248EB2F3CC7FB70F184C2A3D17C4F86B884FCA57EEB289ECB5964A1DDBCBD"
+            "FCFC60C6B7A33D189927845067C76ED29B42D7F2C7F6E2389A4BC009C01041A3"
+            "6E666D76D1D66467416E68659D731DC7328CB4C2E989CF59BB6D2D2756FDE7F2"
+            "B3FB733EBB4C00FD3B"
+        )
 
-        self.assertEqual(binascii.hexlify(cert).decode("ascii").upper(), expected)
+        self.assertEqual(
+            binascii.hexlify(cert).decode("ascii").upper(), expected
+        )
 
     def testAPKCertFingerprint(self):
         """
@@ -92,7 +104,11 @@ class APKTest(unittest.TestCase):
         """
 
         from hashlib import md5, sha1, sha256
-        a = APK(os.path.join(test_dir, 'data/APK/TestActivity.apk'), skip_analysis=True)
+
+        a = APK(
+            os.path.join(test_dir, 'data/APK/TestActivity.apk'),
+            skip_analysis=True,
+        )
         # this one is not signed v2, it is v1 only
         self.assertTrue(a.is_signed_v1())
         self.assertFalse(a.is_signed_v2())
@@ -107,18 +123,29 @@ class APKTest(unittest.TestCase):
         cert_der = a.get_certificate_der(a.get_signature_name())
 
         # Keytool are the hashes collected by keytool -printcert -file CERT.RSA
-        for h2, keytool in [(md5, "99:FF:FC:37:D3:64:87:DD:BA:AB:F1:7F:94:59:89:B5"),
-                            (sha1, "1E:0B:E4:01:F9:34:60:E0:8D:89:A3:EF:6E:27:25:55:6B:E1:D1:6B"),
-                            (sha256,
-                             "6F:5C:31:60:8F:1F:9E:28:5E:B6:34:3C:7C:8A:F0:7D:E8:1C:1F:B2:14:8B:53:49:BE:C9:06:44:41:44:57:6D")]:
+        for h2, keytool in [
+            (md5, "99:FF:FC:37:D3:64:87:DD:BA:AB:F1:7F:94:59:89:B5"),
+            (
+                sha1,
+                "1E:0B:E4:01:F9:34:60:E0:8D:89:A3:EF:6E:27:25:55:6B:E1:D1:6B",
+            ),
+            (
+                sha256,
+                "6F:5C:31:60:8F:1F:9E:28:5E:B6:34:3C:7C:8A:F0:7D:E8:1C:1F:B2:14:8B:53:49:BE:C9:06:44:41:44:57:6D",
+            ),
+        ]:
             x = h2()
             x.update(cert_der)
             hash_hashlib = x.hexdigest()
 
-            self.assertEqual(hash_hashlib.lower(), keytool.replace(":", "").lower())
+            self.assertEqual(
+                hash_hashlib.lower(), keytool.replace(":", "").lower()
+            )
 
     def testAPKv2Signature(self):
-        a = APK(os.path.join(test_dir, 'data/APK/TestActivity_signed_both.apk'))
+        a = APK(
+            os.path.join(test_dir, 'data/APK/TestActivity_signed_both.apk')
+        )
 
         self.assertTrue(a.is_signed_v1())
         self.assertTrue(a.is_signed_v2())
@@ -129,14 +156,19 @@ class APKTest(unittest.TestCase):
         self.assertEqual(len(a.get_certificates_der_v2()), 1)
         # As we signed with the same certificate, both methods should return the
         # same content
-        self.assertEqual(a.get_certificate_der(a.get_signature_name()),
-                         a.get_certificates_der_v2()[0])
+        self.assertEqual(
+            a.get_certificate_der(a.get_signature_name()),
+            a.get_certificates_der_v2()[0],
+        )
 
         from asn1crypto import x509
+
         self.assertIsInstance(a.get_certificates_v2()[0], x509.Certificate)
 
         # Test if the certificate is also the same as on disk
-        with open(os.path.join(test_dir, 'data/APK/certificate.der'), "rb") as f:
+        with open(
+            os.path.join(test_dir, 'data/APK/certificate.der'), "rb"
+        ) as f:
             cert = f.read()
         cert_der_v1 = a.get_certificate_der(a.get_signature_name())
         cert_der_v2 = a.get_certificates_der_v2()[0]
@@ -153,7 +185,8 @@ class APKTest(unittest.TestCase):
     def testApksignAPKs(self):
         # These APKs are from the apksign testcases and cover
         # all different signature algorithms as well as some error cases
-        from asn1crypto import x509, pem
+        from asn1crypto import pem, x509
+
         root = os.path.join(test_dir, 'data/APK/apksig')
 
         # Correct values generated with openssl:
@@ -214,9 +247,11 @@ class APKTest(unittest.TestCase):
 
                 # Test if the correct method returns True, while others return
                 # False
-                m_tests = {'1': a.is_signed_v1,
-                           '2': a.is_signed_v2,
-                           '3': a.is_signed_v3}
+                m_tests = {
+                    '1': a.is_signed_v1,
+                    '2': a.is_signed_v2,
+                    '3': a.is_signed_v3,
+                }
 
                 # These APKs will raise an error
                 excluded = [
@@ -249,7 +284,10 @@ class APKTest(unittest.TestCase):
                     with self.assertRaises(apk.BrokenAPKError):
                         a.is_signed_v2()
                     continue
-                elif apath == "v3-only-with-rsa-pkcs1-sha512-4096-apk-sig-block-size-mismatch.apk":
+                elif (
+                    apath
+                    == "v3-only-with-rsa-pkcs1-sha512-4096-apk-sig-block-size-mismatch.apk"
+                ):
                     with self.assertRaises(apk.BrokenAPKError):
                         a.is_signed_v3()
                     continue
@@ -264,7 +302,9 @@ class APKTest(unittest.TestCase):
                             der = a.get_certificate_der(sig)
                             apk.show_Certificate(c, True)
                             apk.show_Certificate(c, False)
-                            self.assertEqual(hashlib.sha256(der).hexdigest(), h)
+                            self.assertEqual(
+                                hashlib.sha256(der).hexdigest(), h
+                            )
                         pass
                     else:
                         for sig in a.get_signature_names():
@@ -274,13 +314,18 @@ class APKTest(unittest.TestCase):
 
                             # Check that we get the same signature if we take the DER
                             der = a.get_certificate_der(sig)
-                            self.assertEqual(hashlib.sha256(der).hexdigest(), h)
+                            self.assertEqual(
+                                hashlib.sha256(der).hexdigest(), h
+                            )
 
                 if a.is_signed_v2():
                     if apath == "weird-compression-method.apk":
                         with self.assertRaises(NotImplementedError):
                             a.get_certificates_der_v2()
-                    elif apath == "v2-only-with-rsa-pkcs1-sha256-1024-cert-not-der.apk":
+                    elif (
+                        apath
+                        == "v2-only-with-rsa-pkcs1-sha256-1024-cert-not-der.apk"
+                    ):
                         # FIXME
                         # Not sure what this one should do... but the certificate fingerprint is weird
                         # as the hash over the DER is not the same when using the certificate
@@ -288,7 +333,9 @@ class APKTest(unittest.TestCase):
                     else:
                         for c in a.get_certificates_der_v2():
                             cert = x509.Certificate.load(c)
-                            h = cert.sha256_fingerprint.replace(" ", "").lower()
+                            h = cert.sha256_fingerprint.replace(
+                                " ", ""
+                            ).lower()
                             self.assertIn(h, certfp.values())
                             # Check that we get the same signature if we take the DER
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
@@ -297,21 +344,30 @@ class APKTest(unittest.TestCase):
                     if apath == "weird-compression-method.apk":
                         with self.assertRaises(NotImplementedError):
                             a.get_certificates_der_v3()
-                    elif apath == "v3-only-with-rsa-pkcs1-sha256-3072-sig-does-not-verify.apk" or \
-                            apath == "v3-only-cert-and-public-key-mismatch.apk":
-                        cert = x509.Certificate.load(a.get_certificates_der_v3()[0])
+                    elif (
+                        apath
+                        == "v3-only-with-rsa-pkcs1-sha256-3072-sig-does-not-verify.apk"
+                        or apath == "v3-only-cert-and-public-key-mismatch.apk"
+                    ):
+                        cert = x509.Certificate.load(
+                            a.get_certificates_der_v3()[0]
+                        )
                         h = cert.sha256_fingerprint.replace(" ", "").lower()
                         self.assertNotIn(h, certfp.values())
                     else:
                         for c in a.get_certificates_der_v3():
                             cert = x509.Certificate.load(c)
-                            h = cert.sha256_fingerprint.replace(" ", "").lower()
+                            h = cert.sha256_fingerprint.replace(
+                                " ", ""
+                            ).lower()
                             self.assertIn(h, certfp.values())
                             # Check that we get the same signature if we take the DER
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
 
     def testAPKWrapperUnsigned(self):
-        a, d, dx = AnalyzeAPK(os.path.join(test_dir, 'data/APK/TestActivity_unsigned.apk'))
+        a, d, dx = AnalyzeAPK(
+            os.path.join(test_dir, 'data/APK/TestActivity_unsigned.apk')
+        )
         self.assertIsInstance(a, APK)
         self.assertIsInstance(d[0], DEX)
         self.assertIsInstance(dx, Analysis)
@@ -320,14 +376,24 @@ class APKTest(unittest.TestCase):
         self.assertEqual(a.get_signature_names(), [])
 
     def testAPKManifest(self):
-        a = APK(os.path.join(test_dir, 'data/APK/TestActivity.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/TestActivity.apk'), testzip=True
+        )
         self.assertEqual(a.get_app_name(), "TestsAndroguardApplication")
         self.assertEqual(a.get_app_icon(), "res/drawable-hdpi/icon.png")
-        self.assertEqual(a.get_app_icon(max_dpi=120), "res/drawable-ldpi/icon.png")
-        self.assertEqual(a.get_app_icon(max_dpi=160), "res/drawable-mdpi/icon.png")
-        self.assertEqual(a.get_app_icon(max_dpi=240), "res/drawable-hdpi/icon.png")
+        self.assertEqual(
+            a.get_app_icon(max_dpi=120), "res/drawable-ldpi/icon.png"
+        )
+        self.assertEqual(
+            a.get_app_icon(max_dpi=160), "res/drawable-mdpi/icon.png"
+        )
+        self.assertEqual(
+            a.get_app_icon(max_dpi=240), "res/drawable-hdpi/icon.png"
+        )
         self.assertIsNone(a.get_app_icon(max_dpi=1))
-        self.assertEqual(a.get_main_activity(), "tests.androguard.TestActivity")
+        self.assertEqual(
+            a.get_main_activity(), "tests.androguard.TestActivity"
+        )
         self.assertEqual(a.get_package(), "tests.androguard")
         self.assertEqual(a.get_androidversion_code(), '1')
         self.assertEqual(a.get_androidversion_name(), "1.0")
@@ -339,36 +405,52 @@ class APKTest(unittest.TestCase):
         self.assertTrue(a.is_valid_APK())
 
     def testAPKPermissions(self):
-        a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True
+        )
 
         self.assertEqual(a.get_package(), "a2dp.Vol")
-        self.assertListEqual(sorted(a.get_permissions()), sorted(["android.permission.RECEIVE_BOOT_COMPLETED",
-                                                                  "android.permission.CHANGE_WIFI_STATE",
-                                                                  "android.permission.ACCESS_WIFI_STATE",
-                                                                  "android.permission.KILL_BACKGROUND_PROCESSES",
-                                                                  "android.permission.BLUETOOTH",
-                                                                  "android.permission.BLUETOOTH_ADMIN",
-                                                                  "com.android.launcher.permission.READ_SETTINGS",
-                                                                  "android.permission.RECEIVE_SMS",
-                                                                  "android.permission.MODIFY_AUDIO_SETTINGS",
-                                                                  "android.permission.READ_CONTACTS",
-                                                                  "android.permission.ACCESS_COARSE_LOCATION",
-                                                                  "android.permission.ACCESS_FINE_LOCATION",
-                                                                  "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
-                                                                  "android.permission.WRITE_EXTERNAL_STORAGE",
-                                                                  "android.permission.READ_PHONE_STATE",
-                                                                  "android.permission.BROADCAST_STICKY",
-                                                                  "android.permission.GET_ACCOUNTS"]))
+        self.assertListEqual(
+            sorted(a.get_permissions()),
+            sorted(
+                [
+                    "android.permission.RECEIVE_BOOT_COMPLETED",
+                    "android.permission.CHANGE_WIFI_STATE",
+                    "android.permission.ACCESS_WIFI_STATE",
+                    "android.permission.KILL_BACKGROUND_PROCESSES",
+                    "android.permission.BLUETOOTH",
+                    "android.permission.BLUETOOTH_ADMIN",
+                    "com.android.launcher.permission.READ_SETTINGS",
+                    "android.permission.RECEIVE_SMS",
+                    "android.permission.MODIFY_AUDIO_SETTINGS",
+                    "android.permission.READ_CONTACTS",
+                    "android.permission.ACCESS_COARSE_LOCATION",
+                    "android.permission.ACCESS_FINE_LOCATION",
+                    "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+                    "android.permission.WRITE_EXTERNAL_STORAGE",
+                    "android.permission.READ_PHONE_STATE",
+                    "android.permission.BROADCAST_STICKY",
+                    "android.permission.GET_ACCOUNTS",
+                ]
+            ),
+        )
 
     def testAPKActivitiesAreString(self):
-        a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True
+        )
         activities = a.get_activities()
-        self.assertTrue(isinstance(activities[0], str), 'activities[0] is not of type str')
+        self.assertTrue(
+            isinstance(activities[0], str), 'activities[0] is not of type str'
+        )
 
     def testAPKIntentFilters(self):
         from androguard.util import set_log
+
         set_log("ERROR")
-        a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True
+        )
         activities = a.get_activities()
         receivers = a.get_receivers()
         services = a.get_services()
@@ -377,73 +459,143 @@ class APKTest(unittest.TestCase):
             filters = a.get_intent_filters("activity", i)
             if len(filters) > 0:
                 filter_list.append(filters)
-        self.assertEqual([{'action': ['android.intent.action.MAIN'], 'category': ['android.intent.category.LAUNCHER']}],
-                         filter_list)
-        filter_list = []
-        for i in receivers:
-            filters = a.get_intent_filters("receiver", i)
-            if len(filters) > 0:
-                filter_list.append(filters)
-        for expected in [{
-            'action': ['android.intent.action.BOOT_COMPLETED', 'android.intent.action.MY_PACKAGE_REPLACED'],
-            'category': ['android.intent.category.HOME']}, {'action': ['android.appwidget.action.APPWIDGET_UPDATE']}]:
-            assert expected in filter_list
-        filter_list = []
-        for i in services:
-            filters = a.get_intent_filters("service", i)
-            if len(filters) > 0:
-                filter_list.append(filters)
-        self.assertEqual(filter_list, [{'action': ['android.service.notification.NotificationListenerService']}])
-
-        a = APK(os.path.join(test_dir, 'data/APK/com.test.intent_filter.apk'), testzip=True)
-
-        activities = a.get_activities()
-        receivers = a.get_receivers()
-        services = a.get_services()
-        filter_list = []
-        for i in activities:
-            filters = a.get_intent_filters("activity", i)
-            if len(filters) > 0:
-                filter_list.append(filters)
-        for expected in [{
-            'action': ['android.intent.action.VIEW'],
-            'category': [
-                'android.intent.category.APP_BROWSER',
-                'android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'
+        self.assertEqual(
+            [
+                {
+                    'action': ['android.intent.action.MAIN'],
+                    'category': ['android.intent.category.LAUNCHER'],
+                }
             ],
-            'data': [{
-                'scheme': 'testscheme',
-                'host': 'testhost',
-                'port': '0301',
-                'path': '/testpath',
-                'pathPattern': 'testpattern',
-                'mimeType': 'text/html'
-            }]
-        }, {
-            'action': ['android.intent.action.MAIN'],
-            'category': ['android.intent.category.LAUNCHER']
-        }]:
+            filter_list,
+        )
+        filter_list = []
+        for i in receivers:
+            filters = a.get_intent_filters("receiver", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        for expected in [
+            {
+                'action': [
+                    'android.intent.action.BOOT_COMPLETED',
+                    'android.intent.action.MY_PACKAGE_REPLACED',
+                ],
+                'category': ['android.intent.category.HOME'],
+            },
+            {'action': ['android.appwidget.action.APPWIDGET_UPDATE']},
+        ]:
+            assert expected in filter_list
+        filter_list = []
+        for i in services:
+            filters = a.get_intent_filters("service", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        self.assertEqual(
+            filter_list,
+            [
+                {
+                    'action': [
+                        'android.service.notification.NotificationListenerService'
+                    ]
+                }
+            ],
+        )
+
+        a = APK(
+            os.path.join(test_dir, 'data/APK/com.test.intent_filter.apk'),
+            testzip=True,
+        )
+
+        activities = a.get_activities()
+        receivers = a.get_receivers()
+        services = a.get_services()
+        filter_list = []
+        for i in activities:
+            filters = a.get_intent_filters("activity", i)
+            if len(filters) > 0:
+                filter_list.append(filters)
+        for expected in [
+            {
+                'action': ['android.intent.action.VIEW'],
+                'category': [
+                    'android.intent.category.APP_BROWSER',
+                    'android.intent.category.DEFAULT',
+                    'android.intent.category.BROWSABLE',
+                ],
+                'data': [
+                    {
+                        'scheme': 'testscheme',
+                        'host': 'testhost',
+                        'port': '0301',
+                        'path': '/testpath',
+                        'pathPattern': 'testpattern',
+                        'mimeType': 'text/html',
+                    }
+                ],
+            },
+            {
+                'action': ['android.intent.action.MAIN'],
+                'category': ['android.intent.category.LAUNCHER'],
+            },
+        ]:
             assert expected in filter_list
         filter_list = []
         for i in receivers:
             filters = a.get_intent_filters("receiver", i)
             if len(filters) > 0:
                 filter_list.append(filters)
-        self.assertEqual(filter_list, [{'action': ['android.intent.action.VIEW'],
-                                        'category': ['android.intent.category.DEFAULT',
-                                                     'android.intent.category.BROWSABLE'], 'data': [
-                {'scheme': 'testhost', 'host': 'testscheme', 'port': '0301', 'path': '/testpath',
-                 'pathPattern': 'testpattern', 'mimeType': 'text/html'}]}])
+        self.assertEqual(
+            filter_list,
+            [
+                {
+                    'action': ['android.intent.action.VIEW'],
+                    'category': [
+                        'android.intent.category.DEFAULT',
+                        'android.intent.category.BROWSABLE',
+                    ],
+                    'data': [
+                        {
+                            'scheme': 'testhost',
+                            'host': 'testscheme',
+                            'port': '0301',
+                            'path': '/testpath',
+                            'pathPattern': 'testpattern',
+                            'mimeType': 'text/html',
+                        }
+                    ],
+                }
+            ],
+        )
         filter_list = []
         for i in services:
             filters = a.get_intent_filters("service", i)
             if len(filters) > 0:
                 filter_list.append(filters)
-        self.assertEqual(filter_list, [{'action': ['android.intent.action.RESPOND_VIA_MESSAGE'], 'data': [
-            {'scheme': 'testhost', 'host': 'testscheme', 'port': '0301', 'path': '/testpath',
-             'pathPattern': 'testpattern', 'mimeType': 'text/html'},
-            {'scheme': 'testscheme2', 'host': 'testhost2', 'port': '0301', 'path': '/testpath2',
-             'pathPattern': 'testpattern2', 'mimeType': 'image/png'}]}])
+        self.assertEqual(
+            filter_list,
+            [
+                {
+                    'action': ['android.intent.action.RESPOND_VIA_MESSAGE'],
+                    'data': [
+                        {
+                            'scheme': 'testhost',
+                            'host': 'testscheme',
+                            'port': '0301',
+                            'path': '/testpath',
+                            'pathPattern': 'testpattern',
+                            'mimeType': 'text/html',
+                        },
+                        {
+                            'scheme': 'testscheme2',
+                            'host': 'testhost2',
+                            'port': '0301',
+                            'path': '/testpath2',
+                            'pathPattern': 'testpattern2',
+                            'mimeType': 'image/png',
+                        },
+                    ],
+                }
+            ],
+        )
 
     def testEffectiveTargetSdkVersion(self):
 
@@ -477,7 +629,11 @@ class APKTest(unittest.TestCase):
         a = APK(os.path.join(test_dir, 'data/APK/hello-world.apk'))
         self.assertEqual(25, a.get_effective_target_sdk_version())
 
-        a = APK(os.path.join(test_dir, 'data/APK/duplicate.permisssions_9999999.apk'))
+        a = APK(
+            os.path.join(
+                test_dir, 'data/APK/duplicate.permisssions_9999999.apk'
+            )
+        )
         self.assertEqual(27, a.get_effective_target_sdk_version())
 
         a = APK(os.path.join(test_dir, 'data/APK/com.politedroid_4.apk'))
@@ -486,58 +642,96 @@ class APKTest(unittest.TestCase):
     def testUsesImpliedPermissions(self):
 
         a = APK(os.path.join(test_dir, 'data/APK/app-prod-debug.apk'))
-        self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/Invalid.apk'))
-        self.assertEqual([],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual([], a.get_uses_implied_permission_list())
         a = APK(os.path.join(test_dir, 'data/APK/TC-debug.apk'))
-        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
-                          ['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                ['android.permission.READ_PHONE_STATE', None],
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/TCDiff-debug.apk'))
-        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
-                          ['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                ['android.permission.READ_PHONE_STATE', None],
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/TestActivity.apk'))
-        self.assertEqual([],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual([], a.get_uses_implied_permission_list())
         a = APK(os.path.join(test_dir, 'data/APK/TestActivity_unsigned.apk'))
-        self.assertEqual([],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual([], a.get_uses_implied_permission_list())
         a = APK(os.path.join(test_dir, 'data/APK/Test-debug.apk'))
-        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
-                          ['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                ['android.permission.READ_PHONE_STATE', None],
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/Test-debug-unaligned.apk'))
-        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
-                          ['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                ['android.permission.READ_PHONE_STATE', None],
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'))
-        self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/com.politedroid_4.apk'))
-        self.assertEqual([['android.permission.WRITE_EXTERNAL_STORAGE', None],
-                          ['android.permission.READ_PHONE_STATE', None],
-                          ['android.permission.READ_EXTERNAL_STORAGE', None], ],
-                         a.get_uses_implied_permission_list())
-        a = APK(os.path.join(test_dir, 'data/APK/duplicate.permisssions_9999999.apk'))
-        self.assertEqual([['android.permission.READ_EXTERNAL_STORAGE', 18], ],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual(
+            [
+                ['android.permission.WRITE_EXTERNAL_STORAGE', None],
+                ['android.permission.READ_PHONE_STATE', None],
+                ['android.permission.READ_EXTERNAL_STORAGE', None],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
+        a = APK(
+            os.path.join(
+                test_dir, 'data/APK/duplicate.permisssions_9999999.apk'
+            )
+        )
+        self.assertEqual(
+            [
+                ['android.permission.READ_EXTERNAL_STORAGE', 18],
+            ],
+            a.get_uses_implied_permission_list(),
+        )
         a = APK(os.path.join(test_dir, 'data/APK/hello-world.apk'))
-        self.assertEqual([],
-                         a.get_uses_implied_permission_list())
+        self.assertEqual([], a.get_uses_implied_permission_list())
 
-        a = APK(os.path.join(test_dir, 'data/APK/urzip-πÇÇπÇÇ现代汉语通用字-български-عربي1234.apk'))
-        self.assertEqual([],
-                         a.get_uses_implied_permission_list())
+        a = APK(
+            os.path.join(
+                test_dir,
+                'data/APK/urzip-πÇÇπÇÇ现代汉语通用字-български-عربي1234.apk',
+            )
+        )
+        self.assertEqual([], a.get_uses_implied_permission_list())
 
     def testNewZipWithoutModification(self):
-        a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True
+        )
         with patch('zipfile.ZipFile') as zipFile:
             mockZip = MagicMock()
             zipFile.return_value = mockZip
@@ -546,7 +740,9 @@ class APKTest(unittest.TestCase):
             self.assertTrue(mockZip.close.called)
 
     def testNewZipWithDeletedFile(self):
-        a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True
+        )
         with patch('zipfile.ZipFile') as zipFile:
             mockZip = MagicMock()
             zipFile.return_value = mockZip
@@ -555,36 +751,64 @@ class APKTest(unittest.TestCase):
             self.assertTrue(mockZip.close.called)
 
     def testNewZipWithNewFile(self):
-        a = APK(os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/a2dp.Vol_137.apk'), testzip=True
+        )
         with patch('zipfile.ZipFile') as zipFile:
             mockZip = MagicMock()
             zipFile.return_value = mockZip
-            a.new_zip("testout.apk", new_files={'res/menu/menu.xml': 'content'})
+            a.new_zip(
+                "testout.apk", new_files={'res/menu/menu.xml': 'content'}
+            )
             self.assertEqual(mockZip.writestr.call_count, 48)
             self.assertTrue(mockZip.close.called)
 
     def testFeatures(self):
-        a = APK(os.path.join(test_dir, 'data/APK/com.example.android.tvleanback.apk'))
-        self.assertListEqual(sorted(list(a.get_features())), ["android.hardware.microphone",
-                                                      "android.hardware.touchscreen",
-                                                      "android.software.leanback"])
+        a = APK(
+            os.path.join(
+                test_dir, 'data/APK/com.example.android.tvleanback.apk'
+            )
+        )
+        self.assertListEqual(
+            sorted(list(a.get_features())),
+            [
+                "android.hardware.microphone",
+                "android.hardware.touchscreen",
+                "android.software.leanback",
+            ],
+        )
         self.assertTrue(a.is_androidtv())
         self.assertFalse(a.is_wearable())
         self.assertTrue(a.is_leanback())
 
         # Second Demo App
-        a = APK(os.path.join(test_dir, 'data/APK/com.example.android.wearable.wear.weardrawers.apk'))
-        self.assertListEqual(list(a.get_features()), ["android.hardware.type.watch"])
+        a = APK(
+            os.path.join(
+                test_dir,
+                'data/APK/com.example.android.wearable.wear.weardrawers.apk',
+            )
+        )
+        self.assertListEqual(
+            list(a.get_features()), ["android.hardware.type.watch"]
+        )
         self.assertTrue(a.is_wearable())
         self.assertFalse(a.is_leanback())
         self.assertFalse(a.is_androidtv())
-        self.assertListEqual(list(a.get_libraries()), ["com.google.android.wearable"])
+        self.assertListEqual(
+            list(a.get_libraries()), ["com.google.android.wearable"]
+        )
 
     def testAdaptiveIcon(self):
         # See https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive.html
-        a = APK(os.path.join(test_dir, 'data/APK/com.android.example.text.styling.apk'))
+        a = APK(
+            os.path.join(
+                test_dir, 'data/APK/com.android.example.text.styling.apk'
+            )
+        )
 
-        self.assertEqual(a.get_app_icon(), "res/mipmap-anydpi-v26/ic_launcher.xml")
+        self.assertEqual(
+            a.get_app_icon(), "res/mipmap-anydpi-v26/ic_launcher.xml"
+        )
         x = AXMLPrinter(a.get_file(a.get_app_icon())).get_xml().decode("UTF-8")
         self.assertIn("adaptive-icon", x)
 
@@ -605,7 +829,10 @@ class APKTest(unittest.TestCase):
         self.assertIn(".xml", a.get_app_icon(max_dpi=65534))
 
     def testPartialSignature(self):
-        a = APK(os.path.join(test_dir, 'data/APK/partialsignature.apk'), skip_analysis=True)
+        a = APK(
+            os.path.join(test_dir, 'data/APK/partialsignature.apk'),
+            skip_analysis=True,
+        )
 
         self.assertIn("META-INF/CERT.RSA", a.get_files())
         self.assertIn("META-INF/6AD89F48.RSA", a.get_files())
@@ -614,19 +841,34 @@ class APKTest(unittest.TestCase):
         self.assertIn("META-INF/6AD89F48.RSA", a.get_signature_names())
 
     def testFrameworkResAPK(self):
-        a = APK(os.path.join(test_dir, 'data/APK/lineageos_nexus5_framework-res.apk'))
+        a = APK(
+            os.path.join(
+                test_dir, 'data/APK/lineageos_nexus5_framework-res.apk'
+            )
+        )
 
         self.assertEqual(a.get_app_name(), 'Android System')
         self.assertEqual(a.get_package(), 'android')
 
     def testPermissionLoading(self):
         """Test if fallbacks for permission lists are working"""
-        from androguard.core.api_specific_resources import load_permissions
-        from androguard.core.androconf import load_api_specific_resource_module, InvalidResourceError, CONF
         import re
-        aosp_permissions = os.path.join(test_dir, '../androguard/core/api_specific_resources/aosp_permissions')
-        levels = filter(lambda x: re.match(r'^permissions_\d+\.json$', x),
-                        os.listdir(aosp_permissions))
+
+        from androguard.core.androconf import (
+            CONF,
+            InvalidResourceError,
+            load_api_specific_resource_module,
+        )
+        from androguard.core.api_specific_resources import load_permissions
+
+        aosp_permissions = os.path.join(
+            test_dir,
+            '../androguard/core/api_specific_resources/aosp_permissions',
+        )
+        levels = filter(
+            lambda x: re.match(r'^permissions_\d+\.json$', x),
+            os.listdir(aosp_permissions),
+        )
         levels = list(map(lambda x: int(x[:-5].split('_')[1]), levels))
 
         min_level = min(levels)
@@ -646,8 +888,12 @@ class APKTest(unittest.TestCase):
         self.assertNotEqual(load_permissions(min_level + 1), {})
         self.assertNotEqual(load_permissions(min_level + 1, 'groups'), {})
 
-        self.assertEqual(load_permissions(min_level - 1), load_permissions(min_level))
-        self.assertEqual(load_permissions(max_level + 1), load_permissions(max_level))
+        self.assertEqual(
+            load_permissions(min_level - 1), load_permissions(min_level)
+        )
+        self.assertEqual(
+            load_permissions(max_level + 1), load_permissions(max_level)
+        )
 
         self.assertEqual(load_permissions(0), load_permissions(min_level))
         self.assertEqual(load_permissions(1337), load_permissions(max_level))
@@ -658,8 +904,14 @@ class APKTest(unittest.TestCase):
         with self.assertRaises(InvalidResourceError):
             load_api_specific_resource_module('blablabla')
 
-        self.assertEqual(load_permissions(16), load_api_specific_resource_module('aosp_permissions', 16))
-        self.assertEqual(load_permissions(CONF['DEFAULT_API']), load_api_specific_resource_module('aosp_permissions'))
+        self.assertEqual(
+            load_permissions(16),
+            load_api_specific_resource_module('aosp_permissions', 16),
+        )
+        self.assertEqual(
+            load_permissions(CONF['DEFAULT_API']),
+            load_api_specific_resource_module('aosp_permissions'),
+        )
 
         for level in levels:
             perm = load_permissions(level)
@@ -668,16 +920,31 @@ class APKTest(unittest.TestCase):
             self.assertIsInstance(perm['android.permission.INTERNET'], dict)
             self.assertIn('description', perm['android.permission.INTERNET'])
             self.assertIn('label', perm['android.permission.INTERNET'])
-            self.assertIn('protectionLevel', perm['android.permission.INTERNET'])
-            self.assertIn('permissionGroup', perm['android.permission.INTERNET'])
+            self.assertIn(
+                'protectionLevel', perm['android.permission.INTERNET']
+            )
+            self.assertIn(
+                'permissionGroup', perm['android.permission.INTERNET']
+            )
 
     def testCustomPermissionProtectionLevel(self):
-        a = APK(os.path.join(test_dir, 'data/APK/com.example.android.tvleanback.apk'))
-        self.assertEqual(a.get_details_permissions()["com.example.android.tvleanback.ACCESS_VIDEO_DATA"][0], 'signature')
+        a = APK(
+            os.path.join(
+                test_dir, 'data/APK/com.example.android.tvleanback.apk'
+            )
+        )
+        self.assertEqual(
+            a.get_details_permissions()[
+                "com.example.android.tvleanback.ACCESS_VIDEO_DATA"
+            ][0],
+            'signature',
+        )
 
     def testShortNamesInManifest(self):
         """Test if shortnames are correctly handled"""
-        a = apk.APK(os.path.join(test_dir, 'data/APK/AndroidManifest_ShortName.apk'))
+        a = apk.APK(
+            os.path.join(test_dir, 'data/APK/AndroidManifest_ShortName.apk')
+        )
 
         self.assertEqual(a.get_package(), 'com.android.galaxy4')
 
@@ -685,45 +952,73 @@ class APKTest(unittest.TestCase):
         self.assertEqual(len(a.get_services()), 1)
 
         self.assertEqual(a.get_activities()[0], 'com.android.galaxy4.Galaxy4')
-        self.assertEqual(a.get_services()[0], 'com.android.galaxy4.Galaxy4Wallpaper')
+        self.assertEqual(
+            a.get_services()[0], 'com.android.galaxy4.Galaxy4Wallpaper'
+        )
 
-        self.assertEqual(list(a.get_all_attribute_value("activity", "name"))[0], 'com.android.galaxy4.Galaxy4')
-        self.assertEqual(list(a.get_all_attribute_value("activity", "name", format_value=False))[0], '.Galaxy4')
+        self.assertEqual(
+            list(a.get_all_attribute_value("activity", "name"))[0],
+            'com.android.galaxy4.Galaxy4',
+        )
+        self.assertEqual(
+            list(
+                a.get_all_attribute_value(
+                    "activity", "name", format_value=False
+                )
+            )[0],
+            '.Galaxy4',
+        )
 
         # Test some formatting
         self.assertEqual(a._format_value('foo'), 'com.android.galaxy4.foo')
         self.assertEqual(a._format_value('.foo'), 'com.android.galaxy4.foo')
-        self.assertEqual(a._format_value('com.android.galaxy4.foo'), 'com.android.galaxy4.foo')
+        self.assertEqual(
+            a._format_value('com.android.galaxy4.foo'),
+            'com.android.galaxy4.foo',
+        )
         self.assertEqual(a._format_value('bla.bar.foo'), 'bla.bar.foo')
         self.assertEqual(a._format_value(None), None)
 
         a.package = None
         self.assertEqual(a._format_value('foo'), 'foo')
         self.assertEqual(a._format_value('.foo'), '.foo')
-        self.assertEqual(a._format_value('com.android.galaxy4.foo'), 'com.android.galaxy4.foo')
+        self.assertEqual(
+            a._format_value('com.android.galaxy4.foo'),
+            'com.android.galaxy4.foo',
+        )
         self.assertEqual(a._format_value('bla.bar.foo'), 'bla.bar.foo')
         self.assertEqual(a._format_value(None), None)
 
     def testMultipleLocaleAppName(self):
         """Test multiple locale appname"""
-        a = apk.APK(os.path.join(test_dir, 'data/APK/multiple_locale_appname_test.apk'))
+        a = apk.APK(
+            os.path.join(test_dir, 'data/APK/multiple_locale_appname_test.apk')
+        )
         self.assertEqual(a.get_app_name(), "values")
         self.assertEqual(a.get_app_name(locale='en'), "values-en")
         self.assertEqual(a.get_app_name(locale='zh-rCN'), "values-zh-rCN")
         self.assertEqual(a.get_app_name(locale='zh-rTW'), "values-zh-rTW")
         self.assertEqual(a.get_app_name(locale='ru-rRU'), "values-ru-rRU")
 
-
     def testPublicKeysofApk(self):
-        a = APK(os.path.join(test_dir, 'data/APK/com.example.android.wearable.wear.weardrawers.apk'))
+        a = APK(
+            os.path.join(
+                test_dir,
+                'data/APK/com.example.android.wearable.wear.weardrawers.apk',
+            )
+        )
         pkeys = set(a.get_public_keys_der_v3() + a.get_public_keys_der_v2())
         for public_key in pkeys:
-            from androguard.util import parse_public
-            from androguard.util import calculate_fingerprint
+            from androguard.util import calculate_fingerprint, parse_public
+
             parsed_key = parse_public(public_key)
             self.assertEqual(parsed_key.algorithm, 'rsa')
             self.assertEqual(parsed_key.bit_size, 2048)
-            self.assertEqual(calculate_fingerprint(parsed_key).hex(), '98917cd03c6277d73d58b661d614c442f2981a35a5aa122a61049215ba85c1d4')
+            self.assertEqual(
+                calculate_fingerprint(parsed_key).hex(),
+                '98917cd03c6277d73d58b661d614c442f2981a35a5aa122a61049215ba85c1d4',
+            )
+
 
 if __name__ == '__main__':
     unittest.main(failfast=True)

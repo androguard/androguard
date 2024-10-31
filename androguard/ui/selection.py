@@ -15,7 +15,9 @@ class View:
     def size(self):
         return self.end - self.start
 
+
 _T = TypeVar('_T')
+
 
 class SelectionViewList(UserList[_T]):
 
@@ -53,7 +55,7 @@ class SelectionViewList(UserList[_T]):
         return self.data[self.selection]
 
     def view_slice(self):
-        return self.data[self.view.start:self.view.end]
+        return self.data[self.view.start : self.view.end]
 
     def resize_view(self, view_size):
         if self.selection_valid():
@@ -81,7 +83,9 @@ class SelectionViewList(UserList[_T]):
 
             # We're adding a negative here so although it looks a bit odd we are moving the view backwards
             self.view.start = max(self.view.start + step, 0)
-            self.view.end = min(len(self), self.view.start + self.max_view_size)
+            self.view.end = min(
+                len(self), self.view.start + self.max_view_size
+            )
         self.on_update_event()
 
     def __delitem__(self, i: int):
@@ -89,7 +93,9 @@ class SelectionViewList(UserList[_T]):
         self._delete_from_view(i)
 
     def _expand_view(self):
-        self.view.end = self.view.start + min(self.max_view_size, len(self) - self.view.start)
+        self.view.end = self.view.start + min(
+            self.max_view_size, len(self) - self.view.start
+        )
         if not self.selection_valid():
             self.selection = 0
             self.on_selection_change()
@@ -104,16 +110,16 @@ class SelectionViewList(UserList[_T]):
             self.move_selection(-1)
 
         self.on_update_event()
-            # TODO: once the selection is within padding of the start of the window it shoud move up
-            # if i <= self.view.end:
-            #     self.view.end = min(self.view.end, len(self))
-            # if i < self.selection:
-            #     self.selection -= 1
-            # elif i == self.selection:
-            #     self.selection = min(self.selection, len(self))
-            # if i <= self.view.start:
-            #     self.view.start = max(0, self.view.start - 1)
-            #     self.view.end -= 1
+        # TODO: once the selection is within padding of the start of the window it shoud move up
+        # if i <= self.view.end:
+        #     self.view.end = min(self.view.end, len(self))
+        # if i < self.selection:
+        #     self.selection -= 1
+        # elif i == self.selection:
+        #     self.selection = min(self.selection, len(self))
+        # if i <= self.view.start:
+        #     self.view.start = max(0, self.view.start - 1)
+        #     self.view.end -= 1
 
     def append(self, item: _T):
         super().append(item)
@@ -156,4 +162,3 @@ class SelectionViewList(UserList[_T]):
         self.clear()
         self.data += items
         self._reset_view()
-

@@ -19,7 +19,9 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from androguard.core.analysis.analysis import Analysis, MethodAnalysis
     from androguard.core.dex import EncodedField
@@ -32,27 +34,34 @@ from loguru import logger
 
 import androguard.core.androconf as androconf
 import androguard.decompiler.util as util
-from androguard.core.analysis import analysis
 from androguard.core import apk, dex
+from androguard.core.analysis import analysis
 from androguard.decompiler.control_flow import identify_structures
 from androguard.decompiler.dast import JSONWriter
 from androguard.decompiler.dataflow import (
     build_def_use,
-    place_declarations,
     dead_code_elimination,
+    place_declarations,
     register_propagation,
-    split_variables
+    split_variables,
 )
 from androguard.decompiler.graph import construct, simplify, split_if_nodes
 from androguard.decompiler.instruction import Param, ThisParam
 from androguard.decompiler.writer import Writer
 from androguard.util import readFile
 
-logger.add(sys.stderr, format="{time} {level} {message}", filter="dad", level="INFO")
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="dad", level="INFO"
+)
+
 
 # No seperate DvField class currently
 def get_field_ast(field: EncodedField) -> dict:
-    triple = field.get_class_name()[1:-1], field.get_name(), field.get_descriptor()
+    triple = (
+        field.get_class_name()[1:-1],
+        field.get_name(),
+        field.get_descriptor(),
+    )
 
     expr = None
     if field.init_value:
@@ -63,7 +72,9 @@ def get_field_ast(field: EncodedField) -> dict:
             if field.get_descriptor() == 'Ljava/lang/String;':
                 expr = JSONWriter.literal_string(val)
             elif field.proto == 'B':
-                expr = JSONWriter.literal_hex_int(struct.unpack('<b', struct.pack("B", val))[0])
+                expr = JSONWriter.literal_hex_int(
+                    struct.unpack('<b', struct.pack("B", val))[0]
+                )
 
     return {
         'triple': triple,
@@ -80,6 +91,7 @@ class DvMethod:
 
     :param androguard.core.analysis.analysis.MethodAnalysis methanalysis:
     """
+
     def __init__(self, methanalysis: MethodAnalysis) -> None:
         method = methanalysis.get_method()
         self.method = method
@@ -119,10 +131,16 @@ class DvMethod:
 
         if not __debug__:
             from androguard.core import bytecode
-            # TODO: use tempfile to create a correct tempfile (cross platform compatible)
-            bytecode.method2png('/tmp/dad/graphs/{}#{}.png'.format(self.cls_name.split('/')[-1][:-1], self.name), methanalysis)
 
-    def process(self, doAST:bool=False) -> None:
+            # TODO: use tempfile to create a correct tempfile (cross platform compatible)
+            bytecode.method2png(
+                '/tmp/dad/graphs/{}#{}.png'.format(
+                    self.cls_name.split('/')[-1][:-1], self.name
+                ),
+                methanalysis,
+            )
+
+    def process(self, doAST: bool = False) -> None:
         """
         Processes the method and decompile the code.
 
@@ -182,13 +200,17 @@ class DvMethod:
 
         if not __debug__:
             # TODO: use tempfile to create a correct tempfile (cross platform compatible)
-            util.create_png(self.cls_name, self.name, graph, '/tmp/dad/pre-structured')
+            util.create_png(
+                self.cls_name, self.name, graph, '/tmp/dad/pre-structured'
+            )
 
         identify_structures(graph, graph.immediate_dominators())
 
         if not __debug__:
             # TODO: use tempfile to create a correct tempfile (cross platform compatible)
-            util.create_png(self.cls_name, self.name, graph, '/tmp/dad/structured')
+            util.create_png(
+                self.cls_name, self.name, graph, '/tmp/dad/structured'
+            )
 
         if doAST:
             self.ast = JSONWriter(graph, self).get_ast()
@@ -243,7 +265,10 @@ class DvClass:
     :param androguard.core.dex.ClassDefItem dvclass: the class item
     :param androguard.core.analysis.analysis.Analysis vma: an Analysis object
     """
-    def __init__(self, dvclass: dex.ClassDefItem, vma: analysis.Analysis) -> None:
+
+    def __init__(
+        self, dvclass: dex.ClassDefItem, vma: analysis.Analysis
+    ) -> None:
         name = dvclass.get_name()
         if name.find('/') > 0:
             pckg, name = name.rsplit('/', 1)
@@ -277,13 +302,15 @@ class DvClass:
         logger.debug('Class : %s', self.name)
         logger.debug('Methods added :')
         for meth in self.methods:
-            logger.debug('%s (%s, %s)', meth.get_method_idx(), self.name, meth.name)
+            logger.debug(
+                '%s (%s, %s)', meth.get_method_idx(), self.name, meth.name
+            )
         logger.debug('')
 
     def get_methods(self) -> list[dex.EncodedMethod]:
         return self.methods
 
-    def process_method(self, num: int, doAST:bool=False) -> None:
+    def process_method(self, num: int, doAST: bool = False) -> None:
         method = self.methods[num]
         if not isinstance(method, DvMethod):
             self.methods[num] = DvMethod(self.vma.get_method(method))
@@ -291,13 +318,15 @@ class DvClass:
         else:
             method.process(doAST=doAST)
 
-    def process(self, doAST:bool=False) -> None:
+    def process(self, doAST: bool = False) -> None:
         for i in range(len(self.methods)):
             try:
                 self.process_method(i, doAST=doAST)
             except Exception as e:
                 # FIXME: too broad exception?
-                logger.warning('Error decompiling method %s: %s', self.methods[i], e)
+                logger.warning(
+                    'Error decompiling method %s: %s', self.methods[i], e
+                )
 
     def get_ast(self) -> dict:
         fields = [get_field_ast(f) for f in self.fields]
@@ -312,7 +341,9 @@ class DvClass:
             'super': JSONWriter.parse_descriptor(self.superclass),
             'flags': self.access,
             'isInterface': isInterface,
-            'interfaces': list(map(JSONWriter.parse_descriptor, self.interfaces)),
+            'interfaces': list(
+                map(JSONWriter.parse_descriptor, self.interfaces)
+            ),
             'fields': fields,
             'methods': methods,
         }
@@ -329,7 +360,8 @@ class DvClass:
 
         if len(self.interfaces) > 0:
             prototype += ' implements %s' % ', '.join(
-                [str(n[1:-1].replace('/', '.')) for n in self.interfaces])
+                [str(n[1:-1].replace('/', '.')) for n in self.interfaces]
+            )
 
         source.append('%s {\n' % prototype)
         for field in self.fields:
@@ -345,7 +377,9 @@ class DvClass:
                 value = init_value.value
                 if f_type == 'String':
                     if value:
-                        value = '"%s"' % str(value).encode("unicode-escape").decode("ascii")
+                        value = '"%s"' % str(value).encode(
+                            "unicode-escape"
+                        ).decode("ascii")
                     else:
                         # FIXME we can not check if this value here is null or ""
                         # In both cases we end up here...
@@ -369,11 +403,19 @@ class DvClass:
         source = []
         if not self.inner and self.package:
             source.append(
-                ('PACKAGE', [('PACKAGE_START', 'package '), (
-                    'NAME_PACKAGE', '%s' % self.package), ('PACKAGE_END', ';\n')
-                             ]))
-        list_proto = [('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)),
-                      ('NAME_PROTOTYPE', '%s' % self.name, self.package)]
+                (
+                    'PACKAGE',
+                    [
+                        ('PACKAGE_START', 'package '),
+                        ('NAME_PACKAGE', '%s' % self.package),
+                        ('PACKAGE_END', ';\n'),
+                    ],
+                )
+            )
+        list_proto = [
+            ('PROTOTYPE_ACCESS', '%s class ' % ' '.join(self.access)),
+            ('NAME_PROTOTYPE', '%s' % self.name, self.package),
+        ]
         superclass = self.superclass
         if superclass is not None and superclass != 'Ljava/lang/Object;':
             superclass = superclass[1:-1].replace('/', '.')
@@ -386,15 +428,18 @@ class DvClass:
                 if i != 0:
                     list_proto.append(('COMMA', ', '))
                 list_proto.append(
-                    ('NAME_INTERFACE', interface[1:-1].replace('/', '.')))
+                    ('NAME_INTERFACE', interface[1:-1].replace('/', '.'))
+                )
         list_proto.append(('PROTOTYPE_END', ' {\n'))
         source.append(("PROTOTYPE", list_proto))
 
         for field in self.fields:
             field_access_flags = field.get_access_flags()
-            access = [util.ACCESS_FLAGS_FIELDS[flag]
-                      for flag in util.ACCESS_FLAGS_FIELDS
-                      if flag & field_access_flags]
+            access = [
+                util.ACCESS_FLAGS_FIELDS[flag]
+                for flag in util.ACCESS_FLAGS_FIELDS
+                if flag & field_access_flags
+            ]
             f_type = util.get_type(field.get_descriptor())
             name = field.get_name()
             if access:
@@ -408,28 +453,47 @@ class DvClass:
                 value = init_value.value
                 if f_type == 'String':
                     if value:
-                        value = ' = "%s"' % value.encode("unicode-escape").decode("ascii")
+                        value = ' = "%s"' % value.encode(
+                            "unicode-escape"
+                        ).decode("ascii")
                     else:
                         # FIXME we can not check if this value here is null or ""
                         # In both cases we end up here...
                         value = ' = ""'
                 elif field.proto == 'B':
                     # a byte
-                    value = ' = %s' % hex(struct.unpack("b", struct.pack("B", value))[0])
+                    value = ' = %s' % hex(
+                        struct.unpack("b", struct.pack("B", value))[0]
+                    )
                 else:
                     value = ' = %s' % str(value)
             if value:
                 source.append(
-                    ('FIELD', [('FIELD_ACCESS', access_str), (
-                        'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                                   'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_VALUE', value), ('FIELD_END',
-                                                                                                       ';\n')]))
+                    (
+                        'FIELD',
+                        [
+                            ('FIELD_ACCESS', access_str),
+                            ('FIELD_TYPE', '%s' % f_type),
+                            ('SPACE', ' '),
+                            ('NAME_FIELD', '%s' % name, f_type, field),
+                            ('FIELD_VALUE', value),
+                            ('FIELD_END', ';\n'),
+                        ],
+                    )
+                )
             else:
                 source.append(
-                    ('FIELD', [('FIELD_ACCESS', access_str), (
-                        'FIELD_TYPE', '%s' % f_type), ('SPACE', ' '), (
-                                   'NAME_FIELD', '%s' % name, f_type, field), ('FIELD_END',
-                                                                               ';\n')]))
+                    (
+                        'FIELD',
+                        [
+                            ('FIELD_ACCESS', access_str),
+                            ('FIELD_TYPE', '%s' % f_type),
+                            ('SPACE', ' '),
+                            ('NAME_FIELD', '%s' % name, f_type, field),
+                            ('FIELD_END', ';\n'),
+                        ],
+                    )
+                )
 
         for method in self.methods:
             if isinstance(method, DvMethod):
@@ -455,6 +519,7 @@ class DvMachine:
     At first, :py:attr:`classes` contains only :class:`~androguard.core.dex.ClassDefItem` as values.
     Then these objects are replaced by :class:`DvClass` items successively.
     """
+
     def __init__(self, name: str) -> None:
         """
 
@@ -474,7 +539,10 @@ class DvMachine:
         else:
             raise ValueError("Format not recognised for filename '%s'" % name)
 
-        self.classes = {dvclass.orig_class.get_name(): dvclass.orig_class for dvclass in self.vma.get_classes()}
+        self.classes = {
+            dvclass.orig_class.get_name(): dvclass.orig_class
+            for dvclass in self.vma.get_classes()
+        }
         # TODO why not?
         # util.merge_inner(self.classes)
 

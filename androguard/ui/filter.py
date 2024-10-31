@@ -16,11 +16,13 @@ class Filter:
         interface: Optional[str] = None,
         method: Optional[str] = None,
         types: Optional[list[str]] = None,
-        include: bool = True
+        include: bool = True,
     ):
         self.interface = interface
         self.method = method
-        self.types = types or []  # List of associated types of the filter (call, return, etc)
+        self.types = (
+            types or []
+        )  # List of associated types of the filter (call, return, etc)
         self.inclusive = include
 
     def passes(self):
@@ -34,12 +36,12 @@ class Filter:
                 The code checks if the filter passes the checks, and then tailors the output to the filter_mode
                 The type is either Inclusive ("Incl") or Exclusive ("Excl")
         """
-        #matches = (
+        # matches = (
         #    (not self.types or block.type() in self.types) and
         #    (not self.interface or self.interface in block.interface) and
         #    (not self.method or self.method in block.method)
-        #)
-        #return not matches ^ self.inclusive
+        # )
+        # return not matches ^ self.inclusive
         return False
 
     def toggle_inclusivity(self):
@@ -51,6 +53,7 @@ class Filter:
         types = "|".join(self.types) if self.types else "*"
 
         return f"interface={interface}, method={method}, types={types}"
+
 
 _T = TypeVar('_T', bound=Filter)
 

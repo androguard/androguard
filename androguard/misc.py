@@ -2,6 +2,7 @@
 # in Python >= 3.7
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
+
 import hashlib
 import os
 import re
@@ -9,11 +10,11 @@ from typing import Union
 
 from loguru import logger
 
-from androguard.session import Session
-from androguard.decompiler import decompiler
-from androguard.core import androconf
-from androguard.core import apk, dex
+from androguard.core import androconf, apk, dex
 from androguard.core.analysis.analysis import Analysis
+from androguard.decompiler import decompiler
+from androguard.session import Session
+
 
 def get_default_session() -> Session:
     """
@@ -27,7 +28,11 @@ def get_default_session() -> Session:
     return androconf.CONF["SESSION"]
 
 
-def AnalyzeAPK(_file: Union[str,bytes], session:Union[Session,None]=None, raw:bool=False) -> tuple[apk.APK, list[dex.DEX], Analysis]:
+def AnalyzeAPK(
+    _file: Union[str, bytes],
+    session: Union[Session, None] = None,
+    raw: bool = False,
+) -> tuple[apk.APK, list[dex.DEX], Analysis]:
     """
     Analyze an android application and setup all stuff for a more quickly
     analysis!
@@ -76,7 +81,9 @@ def AnalyzeAPK(_file: Union[str,bytes], session:Union[Session,None]=None, raw:bo
         return a, d, dx
 
 
-def AnalyzeDex(filename: str, session:Session=None, raw:bool=False) -> tuple[str, dex.DEX, Analysis]:
+def AnalyzeDex(
+    filename: str, session: Session = None, raw: bool = False
+) -> tuple[str, dex.DEX, Analysis]:
     """
     Analyze an android dex file and setup all stuff for a more quickly analysis !
 
@@ -126,7 +133,12 @@ def AnalyzeDex(filename: str, session:Session=None, raw:bool=False) -> tuple[str
 #     return session.addDEY(filename, data) # <- this function is missing
 
 
-def clean_file_name(filename: str, unique:bool=True, replace:str="_", force_nt:bool=False) -> str:
+def clean_file_name(
+    filename: str,
+    unique: bool = True,
+    replace: str = "_",
+    force_nt: bool = False,
+) -> str:
     """
     Return a filename version, which has no characters in it which are forbidden.
     On Windows these are for example <, /, ?, ...
@@ -167,7 +179,7 @@ def clean_file_name(filename: str, unique:bool=True, replace:str="_", force_nt:b
     if len(fname) > PATH_MAX_LENGTH:
         if "." in fname:
             f, ext = fname.rsplit(".", 1)
-            fname = "{}.{}".format(f[:PATH_MAX_LENGTH-(len(ext)+1)], ext)
+            fname = "{}.{}".format(f[: PATH_MAX_LENGTH - (len(ext) + 1)], ext)
         else:
             fname = fname[:PATH_MAX_LENGTH]
 
@@ -175,7 +187,7 @@ def clean_file_name(filename: str, unique:bool=True, replace:str="_", force_nt:b
         # Special behaviour... On Windows, there is also a problem with the maximum path length in explorer.exe
         # maximum length is limited to 260 chars, so use 250 to have room for other stuff
         if len(os.path.abspath(os.path.join(path, fname))) > 250:
-            fname = fname[:250 - (len(os.path.abspath(path)) + 1)]
+            fname = fname[: 250 - (len(os.path.abspath(path)) + 1)]
 
     if unique:
         counter = 0
@@ -190,5 +202,3 @@ def clean_file_name(filename: str, unique:bool=True, replace:str="_", force_nt:b
             counter += 1
 
     return os.path.join(path, fname)
-
-
