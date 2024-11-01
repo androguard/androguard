@@ -4,6 +4,7 @@ import unittest
 from xml.dom import minidom
 
 from androguard.core import axml
+from androguard.core.apk import APK
 from androguard.util import set_log
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -530,6 +531,14 @@ class AXMLTest(unittest.TestCase):
         self.assertTrue(ap.is_valid())
 
         self.assertTrue(ap.is_packed())
+
+    def testCompactResource(self):
+        """
+        Assert that app name from compact resource is read correctly
+        """
+        filename = "data/AXML/compact-entry.apk"
+        a = APK(filename)
+        self.assertEqual(a.get_app_name(), "erev0s.com-CompactEntry")
 
 
 if __name__ == '__main__':
