@@ -536,8 +536,7 @@ class AXMLTest(unittest.TestCase):
         """
         Assert that app name from compact resource is read correctly
         """
-        filename = "data/AXML/compact-entry.apk"
-        a = APK(filename)
+        a = APK(os.path.join(test_dir, "data/AXML/compact-entry.apk"))
         self.assertEqual(a.get_app_name(), "erev0s.com-CompactEntry")
 
 
