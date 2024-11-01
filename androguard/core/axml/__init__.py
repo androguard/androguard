@@ -207,7 +207,7 @@ class StringBlock:
         if idx in self._cache:
             return self._cache[idx]
 
-        if idx < 0 or not self.m_stringOffsets or idx > self.stringCount:
+        if idx < 0 or not self.m_stringOffsets or idx >= self.stringCount:
             return ""
 
         offset = self.m_stringOffsets[idx]
@@ -1535,7 +1535,6 @@ class ARSCParser:
 
                         logger.debug("Config: {}".format(a_res_type.config))
 
-                        # here it starts parsing the entry offsets
                         entries = []
                         FLAG_OFFSET16 = 0x02
                         NO_ENTRY_16 = 0xFFFF
@@ -1549,7 +1548,6 @@ class ARSCParser:
                         for i in range(0, a_res_type.entryCount):
                             current_package.mResId = current_package.mResId & 0xffff0000 | i
                             # Check if FLAG_OFFSET16 is set
-                            # https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1473
                             if a_res_type.flags & FLAG_OFFSET16:
                                 # Read as 16-bit offset
                                 offset_16 = unpack('<H', self.buff.read(2))[0]
@@ -1566,8 +1564,8 @@ class ARSCParser:
                         self.packages[package_name].append(entries)
                         
                         base_offset = self.buff.tell()
-                        # we should be right before entries start!
                         if base_offset != expected_entries_start:
+                            # FIXME: seems like I am missing 2 bytes here in some cases, though it does not affect the result
                             logger.warning("Something is off here! We are not where the entries should start.")
                             base_offset = expected_entries_start
                         for entry_offset, res_id in entries:
@@ -1640,26 +1638,30 @@ class ARSCParser:
                                         self.get_resource_string(ate))
 
                                 elif a_res_type.get_type() == "id":
-                                    if not ate.is_complex():
+                                    if not ate.is_complex() and not ate.is_compact():
                                         c_value["id"].append(
                                             self.get_resource_id(ate))
 
                                 elif a_res_type.get_type() == "bool":
-                                    if not ate.is_complex():
+                                    if not ate.is_complex() and not ate.is_compact():
                                         c_value["bool"].append(
                                             self.get_resource_bool(ate))
 
                                 elif a_res_type.get_type() == "integer":
-                                    c_value["integer"].append(
-                                        self.get_resource_integer(ate))
+                                    if ate.is_compact():
+                                        c_value["integer"].append(ate.data)
+                                    else:
+                                        c_value["integer"].append(self.get_resource_integer(ate))
 
                                 elif a_res_type.get_type() == "color":
-                                    c_value["color"].append(
-                                        self.get_resource_color(ate))
+                                    if not ate.is_compact():
+                                        c_value["color"].append(
+                                            self.get_resource_color(ate))
 
                                 elif a_res_type.get_type() == "dimen":
-                                    c_value["dimen"].append(
-                                        self.get_resource_dimen(ate))
+                                    if not ate.is_compact():
+                                        c_value["dimen"].append(
+                                            self.get_resource_dimen(ate))
 
                                 nb_i += 1
                         nb += 3 + nb_i - 1  # -1 to account for the nb+=1 on the next line
@@ -2024,35 +2026,42 @@ class ARSCParser:
                 result.append((config, complex_array))
                 for _, item in ate.item.items:
                     self.put_item_value(complex_array, item, config, ate, complex_=True)
+            elif ate.is_compact():
+                self.put_item_value(result, ate.data, config, ate, complex_=False, compact_=True)
             else:
                 self.put_item_value(result, ate.key, config, ate, complex_=False)
 
-        def put_item_value(self, result:list, item:ARSCResStringPoolRef, config:ARSCResTableConfig, parent:ARSCResTableEntry, complex_:bool)->None:
+        def put_item_value(self, result:list, item:Union[ARSCResStringPoolRef, int], config:ARSCResTableConfig, parent:ARSCResTableEntry, complex_:bool, compact_:bool=False)->None:
             """
             Put the tuple (ARSCResTableConfig, resolved string) into the result set
 
             :param list result: the result set
-            :param ARSCResStringPoolRef item:
+            :param ARSCResStringPoolRef | int item:
             :param ARSCResTableConfig config:
             :param ARSCResTableEntry parent: the originating entry
             :param bool complex_: True if the originating :class:`ARSCResTableEntry` was complex
+            :param bool compact_: True if the originating :class:`ARSCResTableEntry` was compact
             :return:
             """
-            if item.is_reference():
-                res_id = item.get_data()
-                if res_id:
-                    # Infinite loop detection:
-                    # TODO should this stay here or should be detect the loop much earlier?
-                    if res_id == parent.mResId:
-                        logger.warning("Infinite loop detected at resource item {}. It references itself!".format(parent))
-                        return
+            if isinstance(item, ARSCResStringPoolRef):
+                if item.is_reference():
+                    res_id = item.get_data()
+                    if res_id:
+                        # Infinite loop detection:
+                        # TODO should this stay here or should be detect the loop much earlier?
+                        if res_id == parent.mResId:
+                            logger.warning("Infinite loop detected at resource item {}. It references itself!".format(parent))
+                            return
 
-                    self._resolve_into_result(result, item.get_data(), self.wanted_config)
-            else:
-                if complex_:
-                    result.append(item.format_value())
+                        self._resolve_into_result(result, item.get_data(), self.wanted_config)
                 else:
-                    result.append((config, item.format_value()))
+                    if complex_:
+                        result.append(item.format_value())
+                    else:
+                        result.append((config, item.format_value()))
+            else:
+                if compact_:
+                    result.append((config, parent.parent.stringpool_main.getString(item)))
 
     def get_resolved_res_configs(self, rid:int, config:Union[ARSCResTableConfig, None]=None) -> list[tuple[ARSCResTableConfig, str]]:
         """
@@ -2983,30 +2992,19 @@ class ARSCResTableEntry:
         self.start = buff.seek(entry_offset)
         self.mResId = mResId
         self.parent = parent
-        # Make sure size of ResTable_entry::Full and ResTable_entry::Compact
-        # be the same as ResTable_entry. This is to allow iteration of entries
-        # to work in either cases.
-        #
-        # The offset of flags must be at the same place for both structures,
-        # to ensure the correct reading to decide whether this is a full entry
-        # or a compact entry.
-        # https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1615
-        first_two = unpack('<H', buff.read(2))[0]
+
+        self.size = unpack('<H', buff.read(2))[0]
         self.flags = unpack('<H', buff.read(2))[0]
-        first_four = unpack('<I', buff.read(4))[0]
+        # This is a ResStringPool_ref
+        self.index = unpack('<I', buff.read(4))[0]
+
         if self.is_complex():
-            self.size = first_two
-            # This is a ResStringPool_ref
-            self.index = first_four
             self.item = ARSCComplex(buff, expected_end_of_chunk, parent)
         elif self.is_compact():
-            self.index = first_two
-            self.data = first_four
-            # If FLAG_COMPLEX is not set, a Res_value structure will follow
-            self.key = ARSCResStringPoolRef(buff, self.parent)
+            self.key = self.size
+            self.data = self.index
+            self.datatype = (self.flags >> 8) & 0xFF
         else:
-            self.size = first_two
-            self.index = first_four
             # If FLAG_COMPLEX is not set, a Res_value structure will follow
             self.key = ARSCResStringPoolRef(buff, self.parent)
 
@@ -3020,7 +3018,10 @@ class ARSCResTableEntry:
         return self.parent.mKeyStrings.getString(self.index)
 
     def get_key_data(self) -> str:
-        return self.key.get_data_value()
+        if self.is_compact():
+            return self.parent.stringpool_main.getString(self.key)
+        else:
+            return self.key.get_data_value()
 
     def is_public(self) -> bool:
         return (self.flags & self.FLAG_PUBLIC) != 0
