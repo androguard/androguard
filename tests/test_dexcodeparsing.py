@@ -1,11 +1,11 @@
 import os
-import unittest
-from binascii import hexlify
-from difflib import Differ
-
-import parse_dex
 
 from androguard.core import dex
+import parse_dex
+
+from binascii import hexlify
+import unittest
+from difflib import Differ
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,25 +32,25 @@ class TestDexCodeParsing(unittest.TestCase):
                 continue
 
             code = hexlify(m.get_code().get_raw())
-            self.assertEqual(
-                parsed.methods[m.get_method_idx()],
-                code,
-                "incorrect code for "
-                "[{}]: {} --> {}:\n"
-                "{}\ntries_size: {}, insns_size: {}\nSHOULD BE {}\n{}\n{}".format(
-                    m.get_method_idx(),
-                    m.get_class_name(),
-                    m.get_name(),
-                    "".join(
-                        dif.compare(parsed.methods[m.get_method_idx()], code)
-                    ),
-                    m.get_code().tries_size,
-                    m.get_code().insns_size,
-                    hexlify(m.get_code().get_raw()),
-                    parsed.methods[m.get_method_idx()],
-                    hexlify(m.get_code().code.get_raw()),
-                ),
-            )
+            self.assertEqual(parsed.methods[m.get_method_idx()],
+                             code,
+                             "incorrect code for "
+                             "[{}]: {} --> {}:\n"
+                             "{}\ntries_size: {}, insns_size: {}\nSHOULD BE {}\n{}\n{}".format(m.get_method_idx(),
+                                                                                               m.get_class_name(),
+                                                                                               m.get_name(),
+                                                                                               "".join(dif.compare(
+                                                                                                   parsed.methods[
+                                                                                                       m.get_method_idx()],
+                                                                                                   code)),
+                                                                                               m.get_code().tries_size,
+                                                                                               m.get_code().insns_size,
+                                                                                               hexlify(
+                                                                                                   m.get_code().get_raw()),
+                                                                                               parsed.methods[
+                                                                                                   m.get_method_idx()],
+                                                                                               hexlify(
+                                                                                                   m.get_code().code.get_raw())))
 
     def testClassManager(self):
         """Test if the classmanager has the same items"""
@@ -74,17 +74,13 @@ class TestDexCodeParsing(unittest.TestCase):
         for idx in range(parsed.string_ids_size):
             self.assertNotEqual(cm.get_string(idx), ERR_STR)
             self.assertNotEqual(cm.get_raw_string(idx), ERR_STR)
-            self.assertEqual(
-                cm.get_raw_string(idx), decode(parsed.str_raw[idx])
-            )
+            self.assertEqual(cm.get_raw_string(idx), decode(parsed.str_raw[idx]))
 
         self.assertEqual(cm.get_string(parsed.string_ids_size), ERR_STR)
         self.assertEqual(cm.get_raw_string(parsed.string_ids_size), ERR_STR)
 
         self.assertEqual(cm.get_string(parsed.string_ids_size + 100), ERR_STR)
-        self.assertEqual(
-            cm.get_raw_string(parsed.string_ids_size + 100), ERR_STR
-        )
+        self.assertEqual(cm.get_raw_string(parsed.string_ids_size + 100), ERR_STR)
 
 
 if __name__ == '__main__':

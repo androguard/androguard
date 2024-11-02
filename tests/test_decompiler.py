@@ -1,9 +1,10 @@
-import os
-import re
 import unittest
 
-from androguard.decompiler.decompile import DvClass, DvMethod
-from androguard.misc import AnalyzeAPK, AnalyzeDex
+from androguard.misc import AnalyzeDex
+import os
+import re
+from androguard.misc import AnalyzeAPK
+from androguard.decompiler.decompile import DvMethod, DvClass
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -12,16 +13,14 @@ class DecompilerTest(unittest.TestCase):
     def testSimplification(self):
         h, d, dx = AnalyzeDex(os.path.join(test_dir, 'data/APK/Test.dex'))
 
-        (z,) = d.get_classes()
+        z, = d.get_classes()
 
         self.assertIn("return ((23 - p3) | ((p3 + 66) & 26));", z.get_source())
 
     def testArrays(self):
-        h, d, dx = AnalyzeDex(
-            os.path.join(test_dir, 'data/APK/FillArrays.dex')
-        )
+        h, d, dx = AnalyzeDex(os.path.join(test_dir, 'data/APK/FillArrays.dex'))
 
-        (z,) = d.get_classes()
+        z, = d.get_classes()
 
         self.assertIn("{20, 30, 40, 50};", z.get_source())
         self.assertIn("{1, 2, 3, 4, 5, 999, 10324234};", z.get_source())
@@ -34,9 +33,7 @@ class DecompilerTest(unittest.TestCase):
 
     def test_all_decompiler(self):
         # Generate test cases for this APK:
-        a, d, dx = AnalyzeAPK(
-            os.path.join(test_dir, 'data/APK/hello-world.apk')
-        )
+        a, d, dx = AnalyzeAPK(os.path.join(test_dir, 'data/APK/hello-world.apk'))
         for c in d[0].get_classes():
             test_name = re.sub("[^a-zA-Z0-9_]", "_", str(c.get_name())[1:-1])
             # Test the decompilation of a single class

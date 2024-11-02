@@ -1,11 +1,15 @@
 """Tests for def_use."""
 
-import collections
 import os
-import unittest
 from unittest import mock
 
-from androguard.decompiler import basic_blocks, dataflow, graph, instruction
+import collections
+import unittest
+
+from androguard.decompiler import dataflow
+from androguard.decompiler import graph
+from androguard.decompiler import instruction
+from androguard.decompiler import basic_blocks
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,8 +23,8 @@ class DataflowTest(unittest.TestCase):
 
     def _CreateMockNode(self, node_name, start_ins_idx, lins):
         mock_node = mock.create_autospec(
-            basic_blocks.BasicBlock, _name=node_name
-        )
+            basic_blocks.BasicBlock,
+            _name=node_name)
         mock_node.__repr__ = mock.Mock(return_value=node_name)
         loc_ins = []
         ins_idx = start_ins_idx
@@ -88,7 +92,7 @@ class DataflowTest(unittest.TestCase):
             n5: [n6, n7],
             n6: [n8],
             n7: [n8],
-            n8: [n9],
+            n8: [n9]
         }
         preds = collections.defaultdict(list)
         for pred, lsucs in sucs.items():
@@ -125,7 +129,7 @@ class DataflowTest(unittest.TestCase):
             n7: {-2, -1, 0, 7},
             n8: {-2, -1, 0, 1, 6, 7, 8},
             n9: {-2, -1, 0, 1, 3, 6, 7, 8},
-            dummy_exit_mock: {-2, -1, 0, 1, 3, 6, 7, 8},
+            dummy_exit_mock: {-2, -1, 0, 1, 3, 6, 7, 8}
         }
         expected_R = {
             n1: {-2, -1},
@@ -137,14 +141,14 @@ class DataflowTest(unittest.TestCase):
             n7: {-2, -1, 0, 1},
             n8: {-2, -1, 0, 1, 6, 7},
             n9: {-2, -1, 0, 1, 3, 6, 7, 8},
-            dummy_exit_mock: {-2, -1, 0, 1, 3, 6, 7, 8},
+            dummy_exit_mock: {-2, -1, 0, 1, 3, 6, 7, 8}
         }
         expected_def_to_loc = {
             'a': {-1},
             'b': {-2},
             'c': {0, 6},
             'd': {1, 7},
-            'ret': {3, 8},
+            'ret': {3, 8}
         }
         self.assertDictEqual(analysis.A, expected_A)
         self.assertDictEqual(analysis.R, expected_R)
@@ -172,10 +176,11 @@ class DataflowTest(unittest.TestCase):
             'b': {-2},
             'c': {0, 6},
             'd': {1, 7},
-            'ret': {3, 8},
+            'ret': {3, 8}
         }
         mock_analysis.defs = {
-            n1: {'c': {0}, 'd': {1}},
+            n1: {'c': {0},
+                 'd': {1}},
             n2: {},
             n3: {'ret': {3}},
             n4: {},
@@ -183,7 +188,7 @@ class DataflowTest(unittest.TestCase):
             n6: {'c': {6}},
             n7: {'d': {7}},
             n8: {'ret': {8}},
-            n9: {},
+            n9: {}
         }
         mock_analysis.R = {
             n1: {-2, -1},
@@ -194,7 +199,7 @@ class DataflowTest(unittest.TestCase):
             n6: {-2, -1, 0, 1},
             n7: {-2, -1, 0, 1},
             n8: {-2, -1, 0, 1, 6, 7},
-            n9: {-2, -1, 0, 1, 3, 6, 7, 8},
+            n9: {-2, -1, 0, 1, 3, 6, 7, 8}
         }
         expected_du = {
             ('a', -1): [0],
@@ -203,7 +208,7 @@ class DataflowTest(unittest.TestCase):
             ('c', 6): [8],
             ('d', 1): [3, 4, 5, 6, 7],
             ('ret', 3): [9],
-            ('ret', 8): [9],
+            ('ret', 8): [9]
         }
         expected_ud = {
             ('a', 0): [-1],
@@ -218,7 +223,7 @@ class DataflowTest(unittest.TestCase):
             ('d', 5): [1],
             ('d', 6): [1],
             ('d', 7): [1],
-            ('ret', 9): [3, 8],
+            ('ret', 9): [3, 8]
         }
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
@@ -243,15 +248,21 @@ class DataflowTest(unittest.TestCase):
         graph_mock.rpo = [n1, n2, n3, n4, n5, n6, n7]
 
         mock_analysis = mock_reach_def.return_value
-        mock_analysis.def_to_loc = {0: {0, 4, 5, 7}, 1: {6}, 2: {-1}, 3: {-2}}
+        mock_analysis.def_to_loc = {
+            0: {0, 4, 5, 7},
+            1: {6},
+            2: {-1},
+            3: {-2}
+        }
         mock_analysis.defs = {
             n1: {0: {0}},
             n2: {},
             n3: {},
             n4: {0: {4}},
             n5: {0: {5}},
-            n6: {0: {7}, 1: {6}},
-            n7: {},
+            n6: {0: {7},
+                 1: {6}},
+            n7: {}
         }
 
         mock_analysis.R = {
@@ -261,7 +272,7 @@ class DataflowTest(unittest.TestCase):
             n4: {0, -2, -1},
             n5: {0, -2, -1},
             n6: {0, -1, -2},
-            n7: {4, -1, 6, 7, -2, 5},
+            n7: {4, -1, 6, 7, -2, 5}
         }
 
         expected_du = {
@@ -271,7 +282,7 @@ class DataflowTest(unittest.TestCase):
             (0, 7): [8],
             (1, 6): [7],
             (2, -1): [6, 1],
-            (3, -2): [2, 3],
+            (3, -2): [2, 3]
         }
         expected_ud = {
             (0, 5): [0],
@@ -281,7 +292,7 @@ class DataflowTest(unittest.TestCase):
             (2, 1): [-1],
             (2, 6): [-1],
             (3, 2): [-2],
-            (3, 3): [-2],
+            (3, 3): [-2]
         }
 
         ud, du = dataflow.build_def_use(graph_mock, mock.sentinel)
@@ -296,7 +307,7 @@ class DataflowTest(unittest.TestCase):
             ('c', 6): [8],
             ('d', 1): [3, 4, 5, 6, 7],
             ('ret', 3): [9],
-            ('ret', 8): [9],
+            ('ret', 8): [9]
         }
         ud = {
             ('a', 0): [-1],
@@ -311,14 +322,14 @@ class DataflowTest(unittest.TestCase):
             ('d', 5): [1],
             ('d', 6): [1],
             ('d', 7): [1],
-            ('ret', 9): [3, 8],
+            ('ret', 9): [3, 8]
         }
         expected_groups = {
             'a': [([-1], [0])],
             'b': [([-2], [1])],
             'c': [([0, 6], [8, 2, 5, 6, 7])],
             'd': [([1], [3, 4, 5, 6, 7])],
-            'ret': [([3, 8], [9])],
+            'ret': [([3, 8], [9])]
         }
         groups = dataflow.group_variables(['a', 'b', 'c', 'd', 'ret'], du, ud)
         self.assertCountEqual(groups, expected_groups)
@@ -331,7 +342,7 @@ class DataflowTest(unittest.TestCase):
             (0, 7): [8],
             (1, 6): [7],
             (2, -1): [6, 1],
-            (3, -2): [2, 3],
+            (3, -2): [2, 3]
         }
         ud = {
             (0, 5): [0],
@@ -341,14 +352,14 @@ class DataflowTest(unittest.TestCase):
             (2, 1): [-1],
             (2, 6): [-1],
             (3, 2): [-2],
-            (3, 3): [-2],
+            (3, 3): [-2]
         }
         groups = dataflow.group_variables([0, 1, 2, 3], du, ud)
         expected_groups = {
             0: [([0], [5, 7]), ([4, 5, 7], [8])],
             1: [([6], [7])],
             2: [([-1], [1, 6])],
-            3: [([-2], [2, 3])],
+            3: [([-2], [2, 3])]
         }
         self.assertCountEqual(groups, expected_groups)
         for entry in groups:
@@ -361,12 +372,11 @@ class DataflowTest(unittest.TestCase):
             'b': [([-2], [1])],
             'c': [([0, 6], [2, 5, 6, 7, 8])],
             'd': [([1], [3, 4, 5, 6, 7])],
-            'ret': [([3, 8], [9])],
+            'ret': [([3, 8], [9])]
         }
         group_variables_mock.return_value = group
         dataflow.split_variables(
-            mock.sentinel, [0, 1, 2, 3, 4], mock.sentinel, mock.sentinel
-        )
+            mock.sentinel, [0, 1, 2, 3, 4], mock.sentinel, mock.sentinel)
 
     @mock.patch.object(dataflow, 'group_variables')
     def testSplitVariablesIfBool(self, group_variables_mock):
@@ -374,7 +384,7 @@ class DataflowTest(unittest.TestCase):
             0: [([0], [5, 7]), ([4, 5, 7], [8])],
             1: [([6], [7])],
             2: [([-1], [1, 6])],
-            3: [([-2], [2, 3])],
+            3: [([-2], [2, 3])]
         }
         group_variables_mock.return_value = group
         param1_mock = mock.Mock()
@@ -389,7 +399,7 @@ class DataflowTest(unittest.TestCase):
             (0, 7): [8],
             (1, 6): [7],
             (2, -1): [6, 1],
-            (3, -2): [2, 3],
+            (3, -2): [2, 3]
         }
         ud = {
             (0, 5): [0],
@@ -399,7 +409,7 @@ class DataflowTest(unittest.TestCase):
             (2, 1): [-1],
             (2, 6): [-1],
             (3, 2): [-2],
-            (3, 3): [-2],
+            (3, 3): [-2]
         }
         graph_mock = mock.Mock()
         dataflow.split_variables(graph_mock, lvars, du, ud)
@@ -411,7 +421,7 @@ class DataflowTest(unittest.TestCase):
             (4, 0): [7, 5],
             (5, 4): [8],
             (5, 5): [8],
-            (5, 7): [8],
+            (5, 7): [8]
         }
         expected_ud = {
             (1, 7): [6],
@@ -421,7 +431,7 @@ class DataflowTest(unittest.TestCase):
             (3, 3): [-2],
             (4, 5): [0],
             (4, 7): [0],
-            (5, 8): [4, 5, 7],
+            (5, 8): [4, 5, 7]
         }
         self.assertEqual(du, expected_du)
         self.assertEqual(ud, expected_ud)

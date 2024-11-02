@@ -43,11 +43,8 @@ class MakeProperties(type):
                     attrs.append(key[4:])
                     delattr(cls, key)
         for attr in attrs:
-            setattr(
-                cls,
-                attr[1:],
-                property(_wrap_get(attr), _wrap_set(attrs, attr)),
-            )
+            setattr(cls, attr[1:],
+                    property(_wrap_get(attr), _wrap_set(attrs, attr)))
         cls._attrs = attrs
 
     def __call__(cls, *args, **kwds):
@@ -135,9 +132,8 @@ class Interval:
         if item in self.content:
             return True
         # If the interval contains intervals, we need to check them
-        return any(
-            item in node for node in self.content if isinstance(node, Interval)
-        )
+        return any(item in node for node in self.content
+                   if isinstance(node, Interval))
 
     def add_node(self, node):
         if node in self.content:

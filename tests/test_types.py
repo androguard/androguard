@@ -2,9 +2,10 @@
 
 import os
 import unittest
-from struct import calcsize, pack, unpack
+from struct import pack, unpack, calcsize
 
 from androguard.session import Session
+
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 TEST_CASE = os.path.join(test_dir, 'data/APK/classes.dex')
@@ -22,6 +23,7 @@ VALUES = {
         ('<d', 3),
         ('<d', 4),
         ('<d', 5),
+
         ('<l', -5),
         ('<l', -4),
         ('<l', -3),
@@ -33,6 +35,7 @@ VALUES = {
         ('<l', 3),
         ('<l', 4),
         ('<l', 5),
+
         ('<f', -5),
         ('<f', -4),
         ('<f', -3),
@@ -44,49 +47,61 @@ VALUES = {
         ('<f', 3),
         ('<f', 4),
         ('<f', 5),
+
         ('<d', 65534),
         ('<d', 65535),
         ('<d', 65536),
         ('<d', 65537),
+
         ('<d', 32769),
         ('<d', 32768),
         ('<d', 32767),
         ('<d', 32766),
+
         ('<l', 65534),
         ('<l', 65535),
         ('<l', 65536),
         ('<l', 65537),
+
         ('<l', 32769),
         ('<l', 32768),
         ('<l', 32767),
         ('<l', 32766),
+
         ('<f', 65534),
         ('<f', 65535),
         ('<f', 65536),
         ('<f', 65537),
+
         ('<f', 32769),
         ('<f', 32768),
         ('<f', 32767),
         ('<f', 32766),
+
         ('<d', 5346952),
         ('<l', 5346952),
         ('<f', 5346952),
+
         ('<d', 65534.50),
         ('<d', 65535.50),
         ('<d', 65536.50),
         ('<d', 65537.50),
+
         ('<d', 32769.50),
         ('<d', 32768.50),
         ('<d', 32767.50),
         ('<d', 32766.50),
+
         ('<f', 65534.50),
         ('<f', 65535.50),
         ('<f', 65536.50),
         ('<f', 65537.50),
+
         ('<f', 32769.50),
         ('<f', 32768.50),
         ('<f', 32767.50),
         ('<f', 32766.50),
+
         ('<f', -5),
         ('<f', -65535),
         ('<f', -65536),
@@ -125,7 +140,7 @@ def format_value(literal, ins, to):
     trailing = bytearray()
     if to == '<l' and packed[-1] & 0x80 == 0x80:
         # Sign extension
-        trailing = bytearray([0xFF] * (calcsize(to) - calcsize(formats[char])))
+        trailing = bytearray([0xff] * (calcsize(to) - calcsize(formats[char])))
     elif to == '<l' and packed[-1] & 0x80 == 0x00:
         # no sign extension, but requires zero trailing
         trailing = bytearray([0] * (calcsize(to) - calcsize(formats[char])))
@@ -143,14 +158,10 @@ class TypesTest(unittest.TestCase):
         with open(TEST_CASE, "rb") as fd:
             digest, d, dx = s.addDEX(TEST_CASE, fd.read())
 
-        for method in filter(
-            lambda x: x.full_name in VALUES, d.get_encoded_methods()
-        ):
+        for method in filter(lambda x: x.full_name in VALUES, d.get_encoded_methods()):
             # print("METHOD", method.full_name)
 
-            for i in filter(
-                lambda x: 'const' in x.get_name(), method.get_instructions()
-            ):
+            for i in filter(lambda x: 'const' in x.get_name(), method.get_instructions()):
                 i.show(0)
                 # ins should only have one literal
                 self.assertEqual(len(i.get_literals()), 1)

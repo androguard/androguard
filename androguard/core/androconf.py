@@ -3,20 +3,17 @@
 # see https://peps.python.org/pep-0563/
 from __future__ import annotations
 
+
 import os
 import sys
 import tempfile
 from typing import Union
 
 from androguard import __version__
-from androguard.core.api_specific_resources import (
-    load_permission_mappings,
-    load_permissions,
-)
-
+from androguard.core.api_specific_resources import load_permission_mappings, load_permissions
 ANDROGUARD_VERSION = __version__
 
-from colorama import Fore, init
+from colorama import init, Fore
 from loguru import logger
 
 # initialize colorama, only has an effect on windows
@@ -27,7 +24,6 @@ class InvalidResourceError(Exception):
     """
     Invalid Resource Erorr is thrown by load_api_specific_resource_module
     """
-
     pass
 
 
@@ -50,16 +46,21 @@ def is_ascii_problem(s: str) -> bool:
 default_conf = {
     ## Configuration for executables used by androguard
     # Assume the binary is in $PATH, otherwise give full path
+
     # Runtime variables
     #
     # A path to the temporary directory
     "TMP_DIRECTORY": tempfile.gettempdir(),
+
     # Function to print stuff
     "PRINT_FCT": sys.stdout.write,
+
     # Default API level, if requested API is not available
     "DEFAULT_API": 16,  # this is the minimal API version we have
+
     # Session, for persistence
     "SESSION": None,
+
     # Color output configuration
     "COLORS": {
         "OFFSET": Fore.YELLOW,
@@ -148,7 +149,7 @@ def is_android_raw(raw: bytes) -> str:
     # probably it would be better to rewrite this and add more sanity checks.
     if raw[0:2] == b"PK" and b'AndroidManifest.xml' in raw:
         val = "APK"
-        # check out
+        # check out 
     elif raw[0:3] == b"dex":
         val = "DEX"
     elif raw[0:3] == b"dey":
@@ -159,7 +160,6 @@ def is_android_raw(raw: bytes) -> str:
         val = "ARSC"
 
     return val
-
 
 def rrmdir(directory: str) -> None:
     """
@@ -175,7 +175,7 @@ def rrmdir(directory: str) -> None:
     os.rmdir(directory)
 
 
-def make_color_tuple(color: str) -> tuple[int, int, int]:
+def make_color_tuple(color: str) -> tuple[int,int,int]:
     """
     turn something like "#000000" into 0,0,0
     or "#FFFFFF into "255,255,255"
@@ -191,11 +191,7 @@ def make_color_tuple(color: str) -> tuple[int, int, int]:
     return R, G, B
 
 
-def interpolate_tuple(
-    startcolor: tuple[int, int, int],
-    goalcolor: tuple[int, int, int],
-    steps: int,
-) -> list[str]:
+def interpolate_tuple(startcolor: tuple[int,int,int], goalcolor: tuple[int,int,int], steps: int) -> list[str]:
     """
     Take two RGB color sets and mix them over a specified number of steps.  Return the list
     """
@@ -238,11 +234,7 @@ def interpolate_tuple(
     return buffer
 
 
-def color_range(
-    startcolor: tuple[int, int, int],
-    goalcolor: tuple[int, int, int],
-    steps: int,
-) -> list[str]:
+def color_range(startcolor: tuple[int,int,int], goalcolor: tuple[int,int,int], steps: int) -> list[str]:
     """
     wrapper for interpolate_tuple that accepts colors as html ("#CCCCC" and such)
     """
@@ -252,9 +244,7 @@ def color_range(
     return interpolate_tuple(start_tuple, goal_tuple, steps)
 
 
-def load_api_specific_resource_module(
-    resource_name: str, api: Union[str, int, None] = None
-) -> dict:
+def load_api_specific_resource_module(resource_name: str, api:Union[str,int,None]=None) -> dict:
     """
     Load the module from the JSON files and return a dict, which might be empty
     if the resource could not be loaded.
@@ -265,17 +255,11 @@ def load_api_specific_resource_module(
     :param api: API version
     :return: dict
     """
-    loader = dict(
-        aosp_permissions=load_permissions,
-        api_permission_mappings=load_permission_mappings,
-    )
+    loader = dict(aosp_permissions=load_permissions,
+                  api_permission_mappings=load_permission_mappings)
 
     if resource_name not in loader:
-        raise InvalidResourceError(
-            "Invalid Resource '{}', not in [{}]".format(
-                resource_name, ", ".join(loader.keys())
-            )
-        )
+        raise InvalidResourceError("Invalid Resource '{}', not in [{}]".format(resource_name, ", ".join(loader.keys())))
 
     if not api:
         api = CONF["DEFAULT_API"]
@@ -284,12 +268,9 @@ def load_api_specific_resource_module(
 
     if ret == {}:
         # No API mapping found, return default
-        logger.warning(
-            "API mapping for API level {} was not found! "
-            "Returning default, which is API level {}".format(
-                api, CONF['DEFAULT_API']
-            )
-        )
+        logger.warning("API mapping for API level {} was not found! "
+                       "Returning default, which is API level {}".format(api, CONF['DEFAULT_API']))
         ret = loader[resource_name](CONF['DEFAULT_API'])
 
     return ret
+

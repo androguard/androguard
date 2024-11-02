@@ -16,10 +16,10 @@
 """This file is a simplified version of writer.py that outputs an AST instead of source code."""
 import struct
 
-from loguru import logger
-
-from androguard.core.dex.dex_types import TYPE_DESCRIPTOR
 from androguard.decompiler import basic_blocks, instruction, opcode_ins
+from androguard.core.dex.dex_types import TYPE_DESCRIPTOR
+
+from loguru import logger
 
 
 class JSONWriter:
@@ -73,8 +73,8 @@ class JSONWriter:
 
         # DAD doesn't create any params for abstract methods
         if len(params) != len(m.params_type):
-            assert 'abstract' in flags or 'native' in flags
-            assert not params
+            assert ('abstract' in flags or 'native' in flags)
+            assert (not params)
             params = list(range(len(m.params_type)))
 
         paramdecls = []
@@ -113,18 +113,14 @@ class JSONWriter:
         elif isinstance(node, basic_blocks.LoopBlock):
             return self.get_cond(node.cond)
         else:
-            assert type(node) == basic_blocks.CondBlock
-            assert len(node.ins) == 1
+            assert (type(node) == basic_blocks.CondBlock)
+            assert (len(node.ins) == 1)
             return self.visit_expr(node.ins[-1])
 
     def visit_node(self, node):
-        if node in (
-            self.if_follow[-1],
-            self.switch_follow[-1],
-            self.loop_follow[-1],
-            self.latch_node[-1],
-            self.try_follow[-1],
-        ):
+        if node in (self.if_follow[-1], self.switch_follow[-1],
+                    self.loop_follow[-1], self.latch_node[-1],
+                    self.try_follow[-1]):
             return
         if not node.type.is_return and node in self.visited_nodes:
             return
@@ -170,7 +166,7 @@ class JSONWriter:
             else:
                 self.visit_node(loop.latch)
 
-        assert cond_expr is not None and isDo is not None
+        assert (cond_expr is not None and isDo is not None)
         self.add(self.loop_stmt(isDo, cond_expr, body))
         if follow is not None:
             self.visit_node(follow)
@@ -201,10 +197,8 @@ class JSONWriter:
 
             self.add(self.if_stmt(cond_expr, scopes))
         elif follow is not None:
-            if (
-                cond.true in (follow, self.next_case)
-                or cond.num > cond.true.num
-            ):
+            if cond.true in (follow, self.next_case) or \
+                            cond.num > cond.true.num:
                 # or cond.true.num > cond.false.num:
                 cond.neg()
                 cond.true, cond.false = cond.false, cond.true
@@ -300,7 +294,7 @@ class JSONWriter:
         for catch_node in try_node.catch:
             if catch_node.exception_ins:
                 ins = catch_node.exception_ins
-                assert isinstance(ins, instruction.MoveExceptionExpression)
+                assert (isinstance(ins, instruction.MoveExceptionExpression))
                 var = ins.var_map[ins.ref]
                 var.declared = True
 
@@ -309,9 +303,7 @@ class JSONWriter:
             else:
                 ctype = catch_node.catch_type
                 name = '_'
-            catch_decl = self.var_decl(
-                self.parse_descriptor(ctype), self.local(name)
-            )
+            catch_decl = self.var_decl(self.parse_descriptor(ctype), self.local(name))
 
             with self as body:
                 self.visit_node(catch_node.catch_start)
@@ -331,9 +323,7 @@ class JSONWriter:
 
     def _visit_ins(self, op, isCtor=False):
         if isinstance(op, instruction.ReturnInstruction):
-            expr = (
-                None if op.arg is None else self.visit_expr(op.var_map[op.arg])
-            )
+            expr = None if op.arg is None else self.visit_expr(op.var_map[op.arg])
             return self.return_stmt(expr)
         elif isinstance(op, instruction.ThrowExpression):
             return self.throw_stmt(self.visit_expr(op.var_map[op.ref]))
@@ -341,20 +331,11 @@ class JSONWriter:
             return None
 
         # Local var decl statements
-        if isinstance(
-            op,
-            (
-                instruction.AssignExpression,
-                instruction.MoveExpression,
-                instruction.MoveResultExpression,
-            ),
-        ):
+        if isinstance(op, (instruction.AssignExpression, instruction.MoveExpression,
+                           instruction.MoveResultExpression)):
             lhs = op.var_map.get(op.lhs)
-            rhs = (
-                op.rhs
-                if isinstance(op, instruction.AssignExpression)
-                else op.var_map.get(op.rhs)
-            )
+            rhs = op.rhs if isinstance(
+                op, instruction.AssignExpression) else op.var_map.get(op.rhs)
             if isinstance(lhs, instruction.Variable) and not lhs.declared:
                 lhs.declared = True
                 expr = self.visit_expr(rhs)
@@ -363,13 +344,9 @@ class JSONWriter:
         # skip this() at top of constructors
         if isCtor and isinstance(op, instruction.AssignExpression):
             op2 = op.rhs
-            if op.lhs is None and isinstance(
-                op2, instruction.InvokeInstruction
-            ):
+            if op.lhs is None and isinstance(op2, instruction.InvokeInstruction):
                 if op2.name == '<init>' and len(op2.args) == 0:
-                    if isinstance(
-                        op2.var_map[op2.base], instruction.ThisParam
-                    ):
+                    if isinstance(op2.var_map[op2.base], instruction.ThisParam):
                         return None
 
         # MoveExpression is skipped when lhs = rhs
@@ -380,22 +357,14 @@ class JSONWriter:
         return self.expression_stmt(self.visit_expr(op))
 
     def write_inplace_if_possible(self, lhs, rhs):
-        if (
-            isinstance(rhs, instruction.BinaryExpression)
-            and lhs == rhs.var_map[rhs.arg1]
-        ):
+        if isinstance(rhs, instruction.BinaryExpression) and lhs == rhs.var_map[rhs.arg1]:
             exp_rhs = rhs.var_map[rhs.arg2]
             # post increment/decrement
-            if (
-                rhs.op in '+-'
-                and isinstance(exp_rhs, instruction.Constant)
-                and exp_rhs.get_int_value() == 1
-            ):
+            if rhs.op in '+-' and isinstance(exp_rhs,
+                                             instruction.Constant) and exp_rhs.get_int_value() == 1:
                 return self.unary_postfix(self.visit_expr(lhs), rhs.op * 2)
             # compound assignment
-            return self.assignment(
-                self.visit_expr(lhs), self.visit_expr(exp_rhs), op=rhs.op
-            )
+            return self.assignment(self.visit_expr(lhs), self.visit_expr(exp_rhs), op=rhs.op)
         return self.assignment(self.visit_expr(lhs), self.visit_expr(rhs))
 
     def visit_expr(self, op):
@@ -410,9 +379,7 @@ class JSONWriter:
             array_expr = self.visit_expr(op.var_map[op.array])
             index_expr = self.visit_expr(op.var_map[op.index])
             rhs = self.visit_expr(op.var_map[op.rhs])
-            return self.assignment(
-                self.array_access(array_expr, index_expr), rhs
-            )
+            return self.assignment(self.array_access(array_expr, index_expr), rhs)
 
         if isinstance(op, instruction.AssignExpression):
             lhs = op.var_map.get(op.lhs)
@@ -423,32 +390,25 @@ class JSONWriter:
 
         if isinstance(op, instruction.BaseClass):
             if op.clsdesc is None:
-                assert op.cls == "super"
+                assert (op.cls == "super")
                 return self.local(op.cls)
             return self.parse_descriptor(op.clsdesc)
         if isinstance(op, instruction.BinaryExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
-            expr = self.binary_infix(
-                op.op, self.visit_expr(lhs), self.visit_expr(rhs)
-            )
+            expr = self.binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
             if not isinstance(op, instruction.BinaryCompExpression):
                 expr = self.parenthesis(expr)
             return expr
 
         if isinstance(op, instruction.CheckCastExpression):
             lhs = op.var_map.get(op.arg)
-            return self.parenthesis(
-                self.cast(
-                    self.parse_descriptor(op.clsdesc), self.visit_expr(lhs)
-                )
-            )
+            return self.parenthesis(self.cast(self.parse_descriptor(op.clsdesc),
+                                              self.visit_expr(lhs)))
         if isinstance(op, instruction.ConditionalExpression):
             lhs = op.var_map.get(op.arg1)
             rhs = op.var_map.get(op.arg2)
-            return self.binary_infix(
-                op.op, self.visit_expr(lhs), self.visit_expr(rhs)
-            )
+            return self.binary_infix(op.op, self.visit_expr(lhs), self.visit_expr(rhs))
         if isinstance(op, instruction.ConditionalZExpression):
             arg = op.var_map[op.arg]
             if isinstance(arg, instruction.BinaryCompExpression):
@@ -497,9 +457,7 @@ class JSONWriter:
             return self.field_access(triple, expr)
         if isinstance(op, instruction.InstanceInstruction):
             triple = op.clsdesc[1:-1], op.name, op.atype
-            lhs = self.field_access(
-                triple, self.visit_expr(op.var_map[op.lhs])
-            )
+            lhs = self.field_access(triple, self.visit_expr(op.var_map[op.lhs]))
             rhs = self.visit_expr(op.var_map[op.rhs])
             return self.assignment(lhs, rhs)
 
@@ -509,34 +467,20 @@ class JSONWriter:
             params = list(map(self.visit_expr, params))
             if op.name == '<init>':
                 if isinstance(base, instruction.ThisParam):
-                    keyword = (
-                        'this' if base.type[1:-1] == op.triple[0] else 'super'
-                    )
-                    return self.method_invocation(
-                        op.triple, keyword, None, params
-                    )
+                    keyword = 'this' if base.type[1:-1] == op.triple[0] else 'super'
+                    return self.method_invocation(op.triple, keyword, None, params)
                 elif isinstance(base, instruction.NewInstance):
-                    return [
-                        'ClassInstanceCreation',
-                        op.triple,
-                        params,
-                        self.parse_descriptor(base.type),
-                    ]
+                    return ['ClassInstanceCreation', op.triple, params,
+                            self.parse_descriptor(base.type)]
                 else:
-                    assert isinstance(base, instruction.Variable)
+                    assert (isinstance(base, instruction.Variable))
                     # fallthrough to create dummy <init> call
-            return self.method_invocation(
-                op.triple, op.name, self.visit_expr(base), params
-            )
+            return self.method_invocation(op.triple, op.name, self.visit_expr(base), params)
         # for unmatched monitor instructions, just create dummy expressions
         if isinstance(op, instruction.MonitorEnterExpression):
-            return self.dummy(
-                "monitor enter(", self.visit_expr(op.var_map[op.ref]), ")"
-            )
+            return self.dummy("monitor enter(", self.visit_expr(op.var_map[op.ref]), ")")
         if isinstance(op, instruction.MonitorExitExpression):
-            return self.dummy(
-                "monitor exit(", self.visit_expr(op.var_map[op.ref]), ")"
-            )
+            return self.dummy("monitor exit(", self.visit_expr(op.var_map[op.ref]), ")")
         if isinstance(op, instruction.MoveExpression):
             lhs = op.var_map.get(op.lhs)
             rhs = op.var_map.get(op.rhs)
@@ -569,9 +513,7 @@ class JSONWriter:
         if isinstance(op, instruction.UnaryExpression):
             lhs = op.var_map.get(op.arg)
             if isinstance(op, instruction.CastExpression):
-                expr = self.cast(
-                    self.parse_descriptor(op.clsdesc), self.visit_expr(lhs)
-                )
+                expr = self.cast(self.parse_descriptor(op.clsdesc), self.visit_expr(lhs))
             else:
                 expr = self.unary_prefix(op.op, self.visit_expr(lhs))
             return self.parenthesis(expr)
@@ -586,7 +528,7 @@ class JSONWriter:
         elem_size = value.element_width
         if elem_size == 4:
             for i in range(0, value.size * 4, 4):
-                tab.append(struct.unpack('<i', data[i : i + 4])[0])
+                tab.append(struct.unpack('<i', data[i:i + 4])[0])
         else:  # FIXME: other cases
             for i in range(value.size):
                 tab.append(data[i])
@@ -627,9 +569,7 @@ class JSONWriter:
 
     @staticmethod
     def literal_class(desc):
-        return JSONWriter.literal(
-            JSONWriter.parse_descriptor(desc), ('java/lang/Class', 0)
-        )
+        return JSONWriter.literal(JSONWriter.parse_descriptor(desc), ('java/lang/Class', 0))
 
     @staticmethod
     def literal_string(s):
@@ -652,7 +592,7 @@ class JSONWriter:
     @staticmethod
     def _append(sb, stmt):
         # Add a statement to the end of a statement block
-        assert sb[0] == 'BlockStatement'
+        assert (sb[0] == 'BlockStatement')
         if stmt is not None:
             sb[2].append(stmt)
 

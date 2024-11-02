@@ -340,9 +340,10 @@ class ArrayStoreInstruction(IRForm):
 
     def visit(self, visitor):
         v_m = self.var_map
-        return visitor.visit_astore(
-            v_m[self.array], v_m[self.index], v_m[self.rhs], data=self
-        )
+        return visitor.visit_astore(v_m[self.array],
+                                    v_m[self.index],
+                                    v_m[self.rhs],
+                                    data=self)
 
     def replace_var(self, old, new):
         if self.rhs == old:
@@ -378,9 +379,7 @@ class ArrayStoreInstruction(IRForm):
 
     def __str__(self):
         v_m = self.var_map
-        return '{}[{}] = {}'.format(
-            v_m[self.array], v_m[self.index], v_m[self.rhs]
-        )
+        return '{}[{}] = {}'.format(v_m[self.array], v_m[self.index], v_m[self.rhs])
 
 
 class StaticInstruction(IRForm):
@@ -405,8 +404,7 @@ class StaticInstruction(IRForm):
 
     def visit(self, visitor):
         return visitor.visit_put_static(
-            self.cls, self.name, self.var_map[self.rhs]
-        )
+            self.cls, self.name, self.var_map[self.rhs])
 
     def replace_var(self, old, new):
         self.rhs = new.v
@@ -456,8 +454,10 @@ class InstanceInstruction(IRForm):
     def visit(self, visitor):
         v_m = self.var_map
         return visitor.visit_put_instance(
-            v_m[self.lhs], self.name, v_m[self.rhs], data=self.atype
-        )
+            v_m[self.lhs],
+            self.name,
+            v_m[self.rhs],
+            data=self.atype)
 
     def replace_var(self, old, new):
         if self.lhs == old:
@@ -527,7 +527,7 @@ class InvokeInstruction(IRForm):
             self.var_map[arg.v] = arg
 
         self.triple = triple
-        assert triple[1] == name
+        assert (triple[1] == name)
 
     def get_type(self):
         if self.name == '<init>':
@@ -593,33 +593,32 @@ class InvokeInstruction(IRForm):
     def visit(self, visitor):
         v_m = self.var_map
         largs = [v_m[arg] for arg in self.args]
-        return visitor.visit_invoke(
-            self.name, v_m[self.base], self.ptype, self.rtype, largs, self
-        )
+        return visitor.visit_invoke(self.name, v_m[self.base], self.ptype,
+                                    self.rtype, largs, self)
 
     def __str__(self):
         v_m = self.var_map
-        return '{}.{}({})'.format(
-            v_m[self.base],
-            self.name,
-            ', '.join('%s' % v_m[i] for i in self.args),
-        )
+        return '{}.{}({})'.format(v_m[self.base], self.name,
+                              ', '.join('%s' % v_m[i] for i in self.args))
 
 
 class InvokeRangeInstruction(InvokeInstruction):
     def __init__(self, clsname, name, rtype, ptype, args, triple):
         base = args.pop(0)
-        super().__init__(clsname, name, base, rtype, ptype, args, triple)
+        super().__init__(clsname, name, base, rtype,
+                                                     ptype, args, triple)
 
 
 class InvokeDirectInstruction(InvokeInstruction):
     def __init__(self, clsname, name, base, rtype, ptype, args, triple):
-        super().__init__(clsname, name, base, rtype, ptype, args, triple)
+        super().__init__(
+            clsname, name, base, rtype, ptype, args, triple)
 
 
 class InvokeStaticInstruction(InvokeInstruction):
     def __init__(self, clsname, name, base, rtype, ptype, args, triple):
-        super().__init__(clsname, name, base, rtype, ptype, args, triple)
+        super().__init__(
+            clsname, name, base, rtype, ptype, args, triple)
 
     def get_used_vars(self):
         v_m = self.var_map
@@ -738,9 +737,8 @@ class CheckCastExpression(IRForm):
         return self.var_map[self.arg].get_used_vars()
 
     def visit(self, visitor):
-        return visitor.visit_check_cast(
-            self.var_map[self.arg], util.get_type(self.type)
-        )
+        return visitor.visit_check_cast(self.var_map[self.arg],
+                                        util.get_type(self.type))
 
     def replace_var(self, old, new):
         self.arg = new.v
@@ -1085,10 +1083,8 @@ class BinaryExpression(IRForm):
 
     def has_side_effect(self):
         v_m = self.var_map
-        return (
-            v_m[self.arg1].has_side_effect()
-            or v_m[self.arg2].has_side_effect()
-        )
+        return (v_m[self.arg1].has_side_effect() or
+                v_m[self.arg2].has_side_effect())
 
     def get_used_vars(self):
         v_m = self.var_map
@@ -1098,9 +1094,8 @@ class BinaryExpression(IRForm):
 
     def visit(self, visitor):
         v_m = self.var_map
-        return visitor.visit_binary_expression(
-            self.op, v_m[self.arg1], v_m[self.arg2]
-        )
+        return visitor.visit_binary_expression(self.op, v_m[self.arg1],
+                                               v_m[self.arg2])
 
     def replace_var(self, old, new):
         if self.arg1 == old:
@@ -1141,9 +1136,8 @@ class BinaryCompExpression(BinaryExpression):
 
     def visit(self, visitor):
         v_m = self.var_map
-        return visitor.visit_cond_expression(
-            self.op, v_m[self.arg1], v_m[self.arg2]
-        )
+        return visitor.visit_cond_expression(self.op, v_m[self.arg1],
+                                             v_m[self.arg2])
 
 
 class BinaryExpression2Addr(BinaryExpression):
@@ -1215,14 +1209,7 @@ class CastExpression(UnaryExpression):
         return 'CAST_{}({})'.format(self.op, self.var_map[self.arg])
 
 
-CONDS = {
-    '==': '!=',
-    '!=': '==',
-    '<': '>=',
-    '<=': '>',
-    '>=': '<',
-    '>': '<=',
-}
+CONDS = {'==': '!=', '!=': '==', '<': '>=', '<=': '>', '>=': '<', '>': '<=', }
 
 
 class ConditionalExpression(IRForm):
@@ -1250,9 +1237,8 @@ class ConditionalExpression(IRForm):
 
     def visit(self, visitor):
         v_m = self.var_map
-        return visitor.visit_cond_expression(
-            self.op, v_m[self.arg1], v_m[self.arg2]
-        )
+        return visitor.visit_cond_expression(self.op, v_m[self.arg1],
+                                             v_m[self.arg2])
 
     def replace_var(self, old, new):
         if self.arg1 == old:
@@ -1284,9 +1270,7 @@ class ConditionalExpression(IRForm):
 
     def __str__(self):
         v_m = self.var_map
-        return 'COND({}, {}, {})'.format(
-            self.op, v_m[self.arg1], v_m[self.arg2]
-        )
+        return 'COND({}, {}, {})'.format(self.op, v_m[self.arg1], v_m[self.arg2])
 
 
 class ConditionalZExpression(IRForm):
@@ -1351,8 +1335,9 @@ class InstanceExpression(IRForm):
 
     def visit(self, visitor):
         return visitor.visit_get_instance(
-            self.var_map[self.arg], self.name, data=self.ftype
-        )
+            self.var_map[self.arg],
+            self.name,
+            data=self.ftype)
 
     def replace_var(self, old, new):
         self.arg = new.v

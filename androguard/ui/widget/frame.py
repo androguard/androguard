@@ -1,3 +1,5 @@
+
+
 from functools import partial
 from typing import Optional
 
@@ -12,10 +14,9 @@ from prompt_toolkit.layout import (
     DynamicContainer,
     HSplit,
     VSplit,
-    Window,
+    Window
 )
 from prompt_toolkit.widgets.base import Border, Label
-
 
 class SelectableFrame:
     """
@@ -87,12 +88,8 @@ class SelectableFrame:
 
         self.container = HSplit(
             [
-                ConditionalContainer(
-                    content=top_row_with_title, filter=has_title
-                ),
-                ConditionalContainer(
-                    content=top_row_without_title, filter=~has_title
-                ),
+                ConditionalContainer(content=top_row_with_title, filter=has_title),
+                ConditionalContainer(content=top_row_without_title, filter=~has_title),
                 VSplit(
                     [
                         fill(width=1, char=Border.VERTICAL),

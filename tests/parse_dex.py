@@ -1,13 +1,14 @@
+from struct import pack, unpack
+from binascii import hexlify
+
 # This is a very simple DEX parser, to get the bytecodes for each method
 # Output format will be:
 # <class name> <method name> <bytecode as hex string>
 import sys
-from binascii import hexlify
-from struct import pack, unpack
 
 sys.path.append('.')
 
-from androguard.core.dex import DalvikPacker, readsleb128, readuleb128
+from androguard.core.dex import readuleb128, readsleb128, DalvikPacker
 
 
 def read_null_terminated(f):
@@ -20,7 +21,7 @@ def read_null_terminated(f):
             x.append(ord(z))
 
 
-class MockClassManager:
+class MockClassManager():
     @property
     def packer(self):
         return DalvikPacker(0x12345678)
@@ -35,46 +36,18 @@ class read_dex:
         methods = []  # Stores method_idx, code_off
 
         with open(fname, "rb") as f:
-            (
-                magic,
-                checksum,
-                signature,
-                file_size,
-                header_size,
-                endian_tag,
-                link_size,
-                link_off,
-                map_off,
-                self.string_ids_size,
-                string_ids_off,
-                type_ids_size,
-                type_ids_off,
-                proto_ids_size,
-                proto_ids_off,
-                field_ids_size,
-                field_ids_off,
-                method_ids_size,
-                method_ids_off,
-                class_defs_size,
-                class_defs_off,
-                data_size,
-                data_off,
-            ) = unpack("<8sI20s20I", f.read(112))
+            magic, checksum, signature, file_size, header_size, endian_tag, link_size, \
+                link_off, map_off, self.string_ids_size, string_ids_off, type_ids_size, \
+                type_ids_off, proto_ids_size, proto_ids_off, field_ids_size, field_ids_off, \
+                method_ids_size, method_ids_off, class_defs_size, class_defs_off, data_size, \
+                data_off = unpack("<8sI20s20I", f.read(112))
 
             # print("class_defs_size", class_defs_size, "class_defs_off", class_defs_off)
             for i in range(class_defs_size):
                 # class_def_item
                 f.seek(class_defs_off + i * 8 * 4)
-                (
-                    class_idx,
-                    access_flags,
-                    superclass_idx,
-                    interfaces_off,
-                    source_file_idx,
-                    annotations_off,
-                    class_data_off,
-                    static_values_off,
-                ) = unpack("<8I", f.read(8 * 4))
+                class_idx, access_flags, superclass_idx, interfaces_off, source_file_idx, \
+                    annotations_off, class_data_off, static_values_off = unpack("<8I", f.read(8 * 4))
 
                 # Now parse the class_data_item
                 if class_data_off == 0:
@@ -119,7 +92,7 @@ class read_dex:
             self.str_raw = dict()
             for i in range(self.string_ids_size):
                 f.seek(string_ids_off + i * 4)
-                (string_data_off,) = unpack("<I", f.read(4))
+                string_data_off, = unpack("<I", f.read(4))
 
                 f.seek(string_data_off)
                 utf16_size = readuleb128(cm, f)
@@ -132,7 +105,7 @@ class read_dex:
             self.types = dict()
             for i in range(type_ids_size):
                 f.seek(type_ids_off + i * 4)
-                (descriptor_idx,) = unpack("<I", f.read(4))
+                descriptor_idx, = unpack("<I", f.read(4))
                 self.types[i] = descriptor_idx
 
             method_ids = {}
@@ -140,10 +113,7 @@ class read_dex:
             for i in range(method_ids_size):
                 f.seek(method_ids_off + i * 8)
                 class_idx, proto_idx, name_idx = unpack("<HHI", f.read(8))
-                method_ids[i] = [
-                    strings[self.types[class_idx]],
-                    strings[name_idx],
-                ]
+                method_ids[i] = [strings[self.types[class_idx]], strings[name_idx]]
 
             # Now parse the found methods and print to stdout
             mres = dict()
@@ -153,18 +123,10 @@ class read_dex:
                 # We just parse everything manually to get the length, then we save the
                 # complete code block
                 f.seek(code_off)
-                (
-                    registers_size,
-                    ins_size,
-                    outs_size,
-                    tries_size,
-                    debug_info_off,
-                    insns_size,
-                ) = unpack("<4HII", f.read(4 * 2 + 2 * 4))
+                registers_size, ins_size, outs_size, tries_size, debug_info_off, insns_size \
+                    = unpack("<4HII", f.read(4 * 2 + 2 * 4))
 
-                insns = unpack(
-                    "<{}H".format(insns_size), f.read(2 * insns_size)
-                )
+                insns = unpack("<{}H".format(insns_size), f.read(2 * insns_size))
 
                 if tries_size > 0 and insns_size % 2 == 1:
                     padding = unpack("<H", f.read(2))
@@ -172,10 +134,7 @@ class read_dex:
                 if tries_size > 0:
 
                     # try_item[tries_size]
-                    tries = unpack(
-                        "<{}".format("".join(["IHH"] * tries_size)),
-                        f.read(8 * tries_size),
-                    )
+                    tries = unpack("<{}".format("".join(["IHH"] * tries_size)), f.read(8 * tries_size))
 
                     # encoded_catch_handler_list
                     size = readuleb128(cm, f)

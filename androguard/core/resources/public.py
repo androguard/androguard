@@ -18,25 +18,23 @@ if _public_res is None:
                     _public_res[_type] = {}
                 _public_res[_type][_name] = _id
     else:
-        raise Exception(
-            "need to copy the sdk/platforms/android-?/data/res/values/public.xml here"
-        )
+        raise Exception("need to copy the sdk/platforms/android-?/data/res/values/public.xml here")
 
 SYSTEM_RESOURCES = {
     "attributes": {
         "forward": {k: v for k, v in _public_res['attr'].items()},
-        "inverse": {v: k for k, v in _public_res['attr'].items()},
+        "inverse": {v: k for k, v in _public_res['attr'].items()}
     },
     "styles": {
         "forward": {k: v for k, v in _public_res['style'].items()},
-        "inverse": {v: k for k, v in _public_res['style'].items()},
-    },
+        "inverse": {v: k for k, v in _public_res['style'].items()}
+    }
 }
+
 
 
 if __name__ == '__main__':
     import json
-
     _resources = None
     if _resources is None:
         root = os.path.dirname(os.path.realpath(__file__))
@@ -49,15 +47,10 @@ if __name__ == '__main__':
             # TODO raise error instead?
             _resources = {}
     for _type in set([] + list(_public_res.keys()) + list(_resources.keys())):
-        for k in set(
-            []
-            + list(_public_res.get(_type, {}).keys())
-            + list(_resources.get(_type, {}).keys())
-        ):
-            a, b = (
-                _public_res.get(_type, {}).get(k),
-                _resources.get(_type, {}).get(k),
-            )
+        for k in set([] + list(_public_res.get(_type, {}).keys())
+                     + list(_resources.get(_type, {}).keys())):
+            a,b = _public_res.get(_type, {}).get(k), \
+                  _resources.get(_type, {}).get(k),
             if a != b:
-                print(k, a, b)
+                print(k, a,b)
     print(None)

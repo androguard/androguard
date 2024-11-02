@@ -1,7 +1,7 @@
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.key_binding.bindings.focus import focus_next, focus_previous
 from prompt_toolkit.layout import AnyContainer, HSplit, VerticalAlign, VSplit
-from prompt_toolkit.widgets import Box, CheckboxList, Frame, Label, TextArea
+from prompt_toolkit.key_binding.bindings.focus import focus_next, focus_previous
+from prompt_toolkit.widgets import Frame, CheckboxList, Box, TextArea, Label
 
 from androguard.ui.filter import Filter
 
@@ -9,28 +9,23 @@ from androguard.ui.filter import Filter
 class TypeCheckboxlist(CheckboxList):
 
     def __init__(self) -> None:
-        values = [
-            ("call", "call"),
-            ("return", "return"),
-            ("oneway", "oneway"),
-            ("error", "error"),
-            ("unknown", "unknown"),
+        values=[
+                ("call", "call"),
+                ("return", "return"),
+                ("oneway", "oneway"),
+                ("error", "error"),
+                ("unknown", "unknown"),
         ]
         super().__init__(values)
         self.show_scrollbar = False
-
 
 class FiltersPanel:
 
     def __init__(self) -> None:
         self.visible = False
 
-        self.interface_textarea = TextArea(
-            multiline=False, style="class:dialogger.textarea"
-        )
-        self.method_textarea = TextArea(
-            multiline=False, style="class:dialogger.textarea"
-        )
+        self.interface_textarea = TextArea(multiline=False, style="class:dialogger.textarea")
+        self.method_textarea = TextArea(multiline=False, style="class:dialogger.textarea")
 
         self.type_filter_checkboxes = TypeCheckboxlist()
 
@@ -43,26 +38,20 @@ class FiltersPanel:
                 width=50,
                 align=VerticalAlign.TOP,
                 children=[
-                    VSplit(
-                        children=[
-                            Label("Interface", width=10),
-                            self.interface_textarea,
-                        ]
-                    ),
-                    VSplit(
-                        children=[
-                            Label("Method", width=10),
-                            self.method_textarea,
-                        ]
-                    ),
-                    VSplit(
-                        children=[
-                            Label("Type", width=10, dont_extend_height=False),
-                            self.type_filter_checkboxes,
-                        ]
-                    ),
-                ],
-            ),
+                    VSplit(children=[
+                        Label("Interface", width=10),
+                        self.interface_textarea
+                    ]),
+                    VSplit(children=[
+                        Label("Method", width=10),
+                        self.method_textarea
+                    ]),
+                    VSplit(children=[
+                        Label("Type", width=10, dont_extend_height=False),
+                        self.type_filter_checkboxes,
+                    ]),
+                ]
+            )
         )
 
         kb = KeyBindings()
@@ -75,7 +64,7 @@ class FiltersPanel:
             body=float_frame,
             style="class:dialogger.background",
             modal=True,
-            key_bindings=kb,
+            key_bindings=kb
         )
 
     def filter(self) -> Filter:
@@ -83,8 +72,7 @@ class FiltersPanel:
         return Filter(
             self.interface_textarea.text,
             self.method_textarea.text,
-            self.type_filter_checkboxes.current_values,
-        )
+            self.type_filter_checkboxes.current_values)
 
     def __pt_container__(self) -> AnyContainer:
         return self.container

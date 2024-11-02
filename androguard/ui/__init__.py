@@ -1,35 +1,26 @@
 import os
 import queue
 
-from loguru import logger
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.formatted_text import StyleAndTextTuples
+from prompt_toolkit.layout import HSplit, Layout, VSplit, Window, FloatContainer, Float, ConditionalContainer, UIControl, UIContent
 from prompt_toolkit.key_binding import KeyBindings, merge_key_bindings
-from prompt_toolkit.layout import (
-    ConditionalContainer,
-    Float,
-    FloatContainer,
-    HSplit,
-    Layout,
-    UIContent,
-    UIControl,
-    VSplit,
-    Window,
-)
 from prompt_toolkit.styles import Style
 
-from androguard.pentest import Message
-from androguard.ui.data_types import DisplayTransaction
-from androguard.ui.filter import Filter
+from loguru import logger
+
 from androguard.ui.selection import SelectionViewList
-from androguard.ui.widget.details import DetailsFrame
+from androguard.ui.widget.transactions import TransactionFrame
+from androguard.ui.widget.toolbar import StatusToolbar
 from androguard.ui.widget.filters import FiltersPanel
 from androguard.ui.widget.help import HelpPanel
-from androguard.ui.widget.toolbar import StatusToolbar
-from androguard.ui.widget.transactions import TransactionFrame
+from androguard.ui.widget.details import DetailsFrame
+from androguard.ui.data_types import DisplayTransaction
+from androguard.ui.filter import Filter
 
+from androguard.pentest import Message
 
 class DummyControl(UIControl):
     """
@@ -53,7 +44,7 @@ class DummyControl(UIControl):
 
 
 class DynamicUI:
-    def __init__(self, input_queue):
+    def __init__(self, input_queue):  
         logger.info("Starting the Terminal UI")
         self.filter: Filter | None = None
 
@@ -70,6 +61,7 @@ class DynamicUI:
 
         self.resize_components(os.get_terminal_size())
 
+
     def run(self):
         self.focusable = [self.transaction_table, self.details_pane]
         self.focus_index = 0
@@ -85,11 +77,7 @@ class DynamicUI:
 
         @kb1.add('s-tab')
         def _(event):
-            self.focus_index = (
-                len(self.focusable) - 1
-                if self.focus_index == 0
-                else self.focus_index - 1
-            )
+            self.focus_index = len(self.focusable) - 1 if self.focus_index == 0 else self.focus_index -1
             for i, f in enumerate(self.focusable):
                 f.activated = i == self.focus_index
 
@@ -98,14 +86,12 @@ class DynamicUI:
             key_bindings=kb1,
             children=[
                 self.transaction_table,
-                VSplit(
-                    [
-                        self.details_pane,
-                        #    self.structure_pane,
-                    ]
-                ),
+                VSplit([
+                    self.details_pane,
+                #    self.structure_pane,
+                ]),
                 StatusToolbar(self.transactions, self.filter_panel),
-                Window(content=dummy_control),
+                Window(content=dummy_control)
             ],
         )
 
@@ -121,52 +107,41 @@ class DynamicUI:
         def show_help():
             return self.help_panel.visible
 
+
         layout = Layout(
             container=FloatContainer(
                 content=main_layout,
                 floats=[
-                    Float(
-                        top=10,
-                        content=ConditionalContainer(
-                            content=self.filter_panel, filter=show_filters
-                        ),
-                    ),
-                    Float(
-                        top=10,
-                        content=ConditionalContainer(
-                            content=self.help_panel, filter=show_help
-                        ),
-                    ),
-                ],
+                    Float(top=10, content=ConditionalContainer(content=self.filter_panel, filter=show_filters)),
+                    Float(top=10, content=ConditionalContainer(content=self.help_panel, filter=show_help)),
+                ]
             )
         )
 
-        style = Style(
-            [
-                ('field.selected', 'ansiblack bg:ansiwhite'),
-                ('field.default', 'fg:ansiwhite'),
-                ('frame.label', 'fg:ansiwhite'),
-                ('frame.border', 'fg:ansiwhite'),
-                ('frame.border.selected', 'fg:ansibrightgreen'),
-                ('transaction.heading', 'ansiblack bg:ansigray'),
-                ('transaction.selected', 'ansiblack bg:ansiwhite'),
-                ('transaction.default', 'fg:ansiwhite'),
-                ('transaction.unsupported', 'fg:ansibrightblack'),
-                ('transaction.error', 'fg:ansired'),
-                ('transaction.no_aidl', 'fg:ansiwhite'),
-                ('transaction.oneway', 'fg:ansimagenta'),
-                ('transaction.request', 'fg:ansicyan'),
-                ('transaction.response', 'fg:ansiyellow'),
-                ('hexdump.default', 'fg:ansiwhite'),
-                ('hexdump.selected', 'fg:ansiblack bg:ansiwhite'),
-                ('toolbar', 'bg:ansigreen'),
-                ('toolbar.text', 'fg:ansiblack'),
-                ('dialog', 'fg:ansiblack bg:ansiwhite'),
-                ('dialog frame.border', 'fg:ansiblack bg:ansiwhite'),
-                ('dialog frame.label', 'fg:ansiblack bg:ansiwhite'),
-                ('dialogger.textarea', 'fg:ansiwhite bg:ansiblack'),
-            ]
-        )
+        style = Style([
+            ('field.selected', 'ansiblack bg:ansiwhite'),
+            ('field.default', 'fg:ansiwhite'),
+            ('frame.label', 'fg:ansiwhite'),
+            ('frame.border', 'fg:ansiwhite'),
+            ('frame.border.selected', 'fg:ansibrightgreen'),
+            ('transaction.heading', 'ansiblack bg:ansigray'),
+            ('transaction.selected', 'ansiblack bg:ansiwhite'),
+            ('transaction.default', 'fg:ansiwhite'),
+            ('transaction.unsupported', 'fg:ansibrightblack'),
+            ('transaction.error', 'fg:ansired'),
+            ('transaction.no_aidl', 'fg:ansiwhite'),
+            ('transaction.oneway', 'fg:ansimagenta'),
+            ('transaction.request', 'fg:ansicyan'),
+            ('transaction.response', 'fg:ansiyellow'),
+            ('hexdump.default', 'fg:ansiwhite'),
+            ('hexdump.selected', 'fg:ansiblack bg:ansiwhite'),
+            ('toolbar', 'bg:ansigreen'),
+            ('toolbar.text', 'fg:ansiblack'),
+            ('dialog', 'fg:ansiblack bg:ansiwhite'),
+            ('dialog frame.border', 'fg:ansiblack bg:ansiwhite'),
+            ('dialog frame.label', 'fg:ansiblack bg:ansiwhite'),
+            ('dialogger.textarea', 'fg:ansiwhite bg:ansiblack'),
+        ])
 
         kb = KeyBindings()
 
@@ -175,10 +150,12 @@ class DynamicUI:
             logger.info("Q pressed. App exiting.")
             event.app.exit(exception=KeyboardInterrupt, style='class:aborting')
 
+
         @kb.add('h', filter=~modal_panel_visible | show_help)
         @kb.add("enter", filter=show_help)
         def _(event):
             self.help_panel.visible = not self.help_panel.visible
+
 
         @kb.add('f', filter=~modal_panel_visible)
         @kb.add("enter", filter=show_filters)
@@ -188,9 +165,7 @@ class DynamicUI:
                 get_app().layout.focus(self.filter_panel.interface_textarea)
             else:
                 self.filter = self.filter_panel.filter()
-                self.transactions.assign(
-                    [t for t in self.all_transactions if self.filter.passes(t)]
-                )
+                self.transactions.assign([t for t in self.all_transactions if self.filter.passes(t)])
                 get_app().layout.focus(dummy_control)
 
         @kb.add("c-c")
@@ -198,18 +173,17 @@ class DynamicUI:
             active_frame = self.focusable[self.focus_index]
             active_frame.copy_to_clipboard()
 
+
         app = Application(
             layout,
-            key_bindings=merge_key_bindings(
-                [
-                    kb,
-                    self.transaction_table.key_bindings(),
-                    # self.structure_pane.key_bindings(),
-                    # self.hexdump_pane.key_bindings()
-                ]
-            ),
+            key_bindings=merge_key_bindings([
+                kb,
+                self.transaction_table.key_bindings(),
+                #self.structure_pane.key_bindings(),
+                #self.hexdump_pane.key_bindings()
+            ]),
             full_screen=True,
-            style=style,
+            style=style
         )
         app.before_render += self.check_resize
 
@@ -236,13 +210,11 @@ class DynamicUI:
         lower_panels_height = available_height // 2
 
         logger.debug(f"New terminal dimension: {dimensions}")
-        logger.debug(
-            f"{border_allowance=}, {transactions_height=}, {lower_panels_height=}, total={border_allowance+transactions_height+lower_panels_height}"
-        )
+        logger.debug(f"{border_allowance=}, {transactions_height=}, {lower_panels_height=}, total={border_allowance+transactions_height+lower_panels_height}")
 
         self.transaction_table.resize(transactions_height)
-        # self.structure_pane.max_height = lower_panels_height
-        # self.hexdump_pane.max_lines = lower_panels_height
+        #self.structure_pane.max_height = lower_panels_height
+        #self.hexdump_pane.max_lines = lower_panels_height
 
     def get_available_blocks(self):
         blocks: list[Message] = []

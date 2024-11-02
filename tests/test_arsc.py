@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
 import os
 import unittest
-
 from lxml import etree
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 
-from operator import itemgetter
-
 from androguard.core import apk, axml
+from operator import itemgetter
 
 TEST_APP_NAME = "TestsAndroguardApplication"
 TEST_ICONS = {
     120: "res/drawable-ldpi/icon.png",
     160: "res/drawable-mdpi/icon.png",
     240: "res/drawable-hdpi/icon.png",
-    65536: "res/drawable-hdpi/icon.png",
+    65536: "res/drawable-hdpi/icon.png"
 }
 TEST_CONFIGS = {
     "layout": [axml.ARSCResTableConfig.default_config()],
@@ -23,17 +21,15 @@ TEST_CONFIGS = {
     "drawable": [
         axml.ARSCResTableConfig(sdkVersion=4, density=120),
         axml.ARSCResTableConfig(sdkVersion=4, density=160),
-        axml.ARSCResTableConfig(sdkVersion=4, density=240),
-    ],
+        axml.ARSCResTableConfig(sdkVersion=4, density=240)
+    ]
 }
 
 
 class ARSCTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open(
-            os.path.join(test_dir, 'data/APK/TestActivity.apk'), "rb"
-        ) as fd:
+        with open(os.path.join(test_dir, 'data/APK/TestActivity.apk'), "rb") as fd:
             cls.apk = apk.APK(fd.read(), True)
 
     def testARSC(self):
@@ -42,20 +38,13 @@ class ARSCTest(unittest.TestCase):
 
     def testAppName(self):
         app_name = self.apk.get_app_name()
-        self.assertEqual(
-            app_name,
-            TEST_APP_NAME,
-            "Couldn't deduce application/activity label",
-        )
+        self.assertEqual(app_name, TEST_APP_NAME, "Couldn't deduce application/activity label")
 
     def testAppIcon(self):
         for wanted_density, correct_path in TEST_ICONS.items():
             app_icon_path = self.apk.get_app_icon(wanted_density)
-            self.assertEqual(
-                app_icon_path,
-                correct_path,
-                "Incorrect icon path for requested density",
-            )
+            self.assertEqual(app_icon_path, correct_path,
+                             "Incorrect icon path for requested density")
 
     def testStrings(self):
         arsc = self.apk.get_android_resources()
@@ -65,14 +54,8 @@ class ARSCTest(unittest.TestCase):
 
         e = etree.fromstring(arsc.get_string_resources(p, l))
 
-        self.assertEqual(
-            e.find("string[@name='hello']").text,
-            'Hello World, TestActivity! kikoololmodif',
-        )
-        self.assertEqual(
-            e.find("string[@name='app_name']").text,
-            'TestsAndroguardApplication',
-        )
+        self.assertEqual(e.find("string[@name='hello']").text, 'Hello World, TestActivity! kikoololmodif')
+        self.assertEqual(e.find("string[@name='app_name']").text, 'TestsAndroguardApplication')
 
     def testResourceNames(self):
         """
@@ -80,30 +63,16 @@ class ARSCTest(unittest.TestCase):
         """
         arsc = self.apk.get_android_resources()
 
-        self.assertEqual(
-            arsc.get_resource_xml_name(0x7F040001),
-            "@tests.androguard:string/app_name",
-        )
-        self.assertEqual(
-            arsc.get_resource_xml_name(0x7F020000),
-            "@tests.androguard:drawable/icon",
-        )
+        self.assertEqual(arsc.get_resource_xml_name(0x7F040001), "@tests.androguard:string/app_name")
+        self.assertEqual(arsc.get_resource_xml_name(0x7F020000), "@tests.androguard:drawable/icon")
 
-        self.assertEqual(
-            arsc.get_resource_xml_name(0x7F040001, 'tests.androguard'),
-            "@string/app_name",
-        )
-        self.assertEqual(
-            arsc.get_resource_xml_name(0x7F020000, 'tests.androguard'),
-            "@drawable/icon",
-        )
+        self.assertEqual(arsc.get_resource_xml_name(0x7F040001, 'tests.androguard'), "@string/app_name")
+        self.assertEqual(arsc.get_resource_xml_name(0x7F020000, 'tests.androguard'), "@drawable/icon")
 
         # Also test non existing resources
         self.assertIsNone(arsc.get_resource_xml_name(0xFFFFFFFF))
         self.assertEqual(arsc.get_id('sdf', 0x7F040001), (None, None, None))
-        self.assertEqual(
-            arsc.get_id('tests.androguard', 0xFFFFFFFF), (None, None, None)
-        )
+        self.assertEqual(arsc.get_id('tests.androguard', 0xFFFFFFFF), (None, None, None))
 
     def testDifferentStringLocales(self):
         """
@@ -115,21 +84,18 @@ class ARSCTest(unittest.TestCase):
 
         p = arsc.get_packages_names()[0]
 
-        self.assertEqual(
-            sorted(["\x00\x00", "da", "de", "el", "fr", "ja", "ru"]),
-            sorted(arsc.get_locales(p)),
-        )
+        self.assertEqual(sorted(["\x00\x00", "da", "de", "el", "fr", "ja", "ru"]),
+                         sorted(arsc.get_locales(p)))
 
         item = "SMSDelayText"
-        strings = {
-            "\x00\x00": "Delay for reading text message",
-            "da": "Forsinkelse for læsning af tekst besked",
-            "de": "Verzögerung vor dem Lesen einer SMS",
-            "el": "Χρονοκαθυστέρηση ανάγνωσης μηνυμάτων SMS",
-            "fr": "Délai pour lire un SMS",
-            "ja": "テキストメッセージ読み上げの遅延",
-            "ru": "Задержка зачитывания SMS",
-        }
+        strings = {"\x00\x00": "Delay for reading text message",
+                   "da": "Forsinkelse for læsning af tekst besked",
+                   "de": "Verzögerung vor dem Lesen einer SMS",
+                   "el": "Χρονοκαθυστέρηση ανάγνωσης μηνυμάτων SMS",
+                   "fr": "Délai pour lire un SMS",
+                   "ja": "テキストメッセージ読み上げの遅延",
+                   "ru": "Задержка зачитывания SMS",
+                   }
         for k, v in strings.items():
             e = etree.fromstring(arsc.get_string_resources(p, k))
             self.assertEqual(e.find("string[@name='{}']".format(item)).text, v)
@@ -140,31 +106,23 @@ class ARSCTest(unittest.TestCase):
 
         for res_type, test_configs in list(TEST_CONFIGS.items()):
             config_set = set(test_configs)
-            self.assertIn(
-                res_type, configs, "resource type %s was not found" % res_type
-            )
+            self.assertIn(res_type, configs,
+                          "resource type %s was not found" % res_type)
             for config in configs[res_type]:
                 print(config.get_config_name_friendly())
-                self.assertIn(
-                    config, config_set, "config %r was not expected" % config
-                )
+                self.assertIn(config, config_set,
+                              "config %r was not expected" % config)
                 config_set.remove(config)
 
-            self.assertEqual(
-                len(config_set), 0, "configs were not found: %s" % config_set
-            )
+            self.assertEqual(len(config_set), 0,
+                             "configs were not found: %s" % config_set)
 
         unexpected_types = set(TEST_CONFIGS.keys()) - set(configs.keys())
-        self.assertEqual(
-            len(unexpected_types),
-            0,
-            "received unexpected resource types: %s" % unexpected_types,
-        )
+        self.assertEqual(len(unexpected_types), 0,
+                         "received unexpected resource types: %s" % unexpected_types)
 
     def testFallback(self):
-        a = apk.APK(
-            os.path.join(test_dir, 'data/APK/com.teleca.jamendo_35.apk')
-        )
+        a = apk.APK(os.path.join(test_dir, 'data/APK/com.teleca.jamendo_35.apk'))
 
         # Should use the fallback
         self.assertEqual(a.get_app_name(), "Jamendo")
@@ -175,44 +133,17 @@ class ARSCTest(unittest.TestCase):
         # Default Mode, no config
         self.assertEqual(len(res_parser.get_res_configs(res_id)), 2)
         # With default config, but fallback
-        self.assertEqual(
-            len(
-                res_parser.get_res_configs(
-                    res_id, axml.ARSCResTableConfig.default_config()
-                )
-            ),
-            1,
-        )
+        self.assertEqual(len(res_parser.get_res_configs(res_id, axml.ARSCResTableConfig.default_config())), 1)
         # With default config but no fallback
         self.assertEqual(
-            len(
-                res_parser.get_res_configs(
-                    res_id,
-                    axml.ARSCResTableConfig.default_config(),
-                    fallback=False,
-                )
-            ),
-            0,
-        )
+            len(res_parser.get_res_configs(res_id, axml.ARSCResTableConfig.default_config(), fallback=False)), 0)
 
         # Also test on resolver:
-        self.assertListEqual(
-            list(
-                map(itemgetter(1), res_parser.get_resolved_res_configs(res_id))
-            ),
-            ["Jamendo", "Jamendo"],
-        )
-        self.assertListEqual(
-            list(
-                map(
-                    itemgetter(1),
-                    res_parser.get_resolved_res_configs(
-                        res_id, axml.ARSCResTableConfig.default_config()
-                    ),
-                )
-            ),
-            ["Jamendo"],
-        )
+        self.assertListEqual(list(map(itemgetter(1), res_parser.get_resolved_res_configs(res_id))),
+                             ["Jamendo", "Jamendo"])
+        self.assertListEqual(list(
+            map(itemgetter(1), res_parser.get_resolved_res_configs(res_id, axml.ARSCResTableConfig.default_config()))),
+            ["Jamendo"])
 
     def testIDParsing(self):
         parser = axml.ARSCParser.parse_id

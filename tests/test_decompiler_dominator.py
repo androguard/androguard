@@ -1,7 +1,6 @@
 """Tests for graph."""
 
 import unittest
-
 from androguard.decompiler import graph
 
 
@@ -26,7 +25,7 @@ class DominatorTest(unittest.TestCase):
             'i': ['k'],
             'j': ['i'],
             'k': ['i', 'r'],
-            'l': ['h'],
+            'l': ['h']
         }
         expected_dominators = {
             'r': None,
@@ -41,14 +40,12 @@ class DominatorTest(unittest.TestCase):
             'i': 'r',
             'j': 'g',
             'k': 'r',
-            'l': 'd',
+            'l': 'd'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testFirstGraph(self):
         edges = {
@@ -71,7 +68,7 @@ class DominatorTest(unittest.TestCase):
             'z2': ['z1', 'z3'],
             'z3': ['z2', 'z4'],
             'z4': ['z3', 'z5'],
-            'z5': ['z4'],
+            'z5': ['z4']
         }
         expected_dominators = {
             'r': None,
@@ -94,14 +91,12 @@ class DominatorTest(unittest.TestCase):
             'z2': 'r',
             'z3': 'r',
             'z4': 'r',
-            'z5': 'r',
+            'z5': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testSecondGraph(self):
         edges = {
@@ -111,7 +106,7 @@ class DominatorTest(unittest.TestCase):
             'x11': ['x12', 'x22'],
             'x12': ['x11'],
             'x21': ['x22'],
-            'x22': ['x21'],
+            'x22': ['x21']
         }
         expected_dominators = {
             'r': None,
@@ -120,14 +115,12 @@ class DominatorTest(unittest.TestCase):
             'x11': 'r',
             'x12': 'r',
             'x21': 'r',
-            'x22': 'r',
+            'x22': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testThirdGraph(self):
         edges = {
@@ -135,7 +128,7 @@ class DominatorTest(unittest.TestCase):
             'w': ['x1', 'x2'],
             'y1': ['y2'],
             'y2': ['x2'],
-            'x2': ['x1'],
+            'x2': ['x1']
         }
         expected_dominators = {
             'r': None,
@@ -144,14 +137,12 @@ class DominatorTest(unittest.TestCase):
             'y1': 'r',
             'y2': 'y1',
             'x1': 'r',
-            'x2': 'r',
+            'x2': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testFourthGraph(self):
         edges = {'r': ['x1', 'y1', 'y2'], 'x1': ['x2'], 'x2': ['y1', 'y2']}
@@ -160,14 +151,12 @@ class DominatorTest(unittest.TestCase):
             'x1': 'r',
             'x2': 'x1',
             'y1': 'r',
-            'y2': 'r',
+            'y2': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testFifthGraph(self):
         edges = {
@@ -179,7 +168,7 @@ class DominatorTest(unittest.TestCase):
             'e': ['c', 'f'],
             'f': ['i'],
             'g': ['h'],
-            'h': ['d', 'f', 'i'],
+            'h': ['d', 'f', 'i']
         }
         expected_dominators = {
             'r': None,
@@ -191,14 +180,12 @@ class DominatorTest(unittest.TestCase):
             'f': 'b',
             'g': 'b',
             'h': 'g',
-            'i': 'r',
+            'i': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testLinearVitGraph(self):
         edges = {
@@ -211,7 +198,7 @@ class DominatorTest(unittest.TestCase):
             'x4': ['x3', 'x5'],
             'x5': ['x4', 'x6'],
             'x6': ['x5', 'x7'],
-            'x7': ['x6'],
+            'x7': ['x6']
         }
         expected_dominators = {
             'r': None,
@@ -223,14 +210,12 @@ class DominatorTest(unittest.TestCase):
             'x4': 'r',
             'x5': 'r',
             'x6': 'r',
-            'x7': 'r',
+            'x7': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testCrossGraph(self):
         edges = {
@@ -240,7 +225,7 @@ class DominatorTest(unittest.TestCase):
             'c': ['a', 'd', 'g'],
             'd': ['e'],
             'e': ['f'],
-            'f': ['a', 'd', 'g'],
+            'f': ['a', 'd', 'g']
         }
         expected_dominators = {
             'r': None,
@@ -250,14 +235,12 @@ class DominatorTest(unittest.TestCase):
             'd': 'r',
             'e': 'd',
             'f': 'e',
-            'g': 'r',
+            'g': 'r'
         }
         self.graph.entry = 'r'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
     def testTVerifyGraph(self):
         edges = {
@@ -272,7 +255,7 @@ class DominatorTest(unittest.TestCase):
             'n9': ['n10', 'n11', 'n12'],
             'n10': ['n11'],
             'n11': ['n7'],
-            'n12': ['n10'],
+            'n12': ['n10']
         }
         expected_dominators = {
             'n1': None,
@@ -286,14 +269,12 @@ class DominatorTest(unittest.TestCase):
             'n9': 'n1',
             'n10': 'n1',
             'n11': 'n1',
-            'n12': 'n1',
+            'n12': 'n1'
         }
         self.graph.entry = 'n1'
         self.graph.edges = edges
         self.graph.nodes = list(expected_dominators.keys())
-        self.assertEqual(
-            expected_dominators, self.graph.immediate_dominators()
-        )
+        self.assertEqual(expected_dominators, self.graph.immediate_dominators())
 
 
 if __name__ == '__main__':

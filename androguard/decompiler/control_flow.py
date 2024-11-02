@@ -16,19 +16,13 @@
 # limitations under the License.
 
 from collections import defaultdict
-
-from loguru import logger
-
 from androguard.decompiler.basic_blocks import (
-    CatchBlock,
-    Condition,
-    LoopBlock,
-    ShortCircuitBlock,
-    TryBlock,
-)
+    CatchBlock, Condition, LoopBlock, ShortCircuitBlock, TryBlock)
 from androguard.decompiler.graph import Graph
 from androguard.decompiler.node import Interval
 from androguard.decompiler.util import common_dom
+
+from loguru import logger
 
 
 def intervals(graph):
@@ -59,8 +53,7 @@ def intervals(graph):
                 change = False
                 for node in graph.rpo[1:]:
                     if all(
-                        p in interv_heads[head] for p in graph.all_preds(node)
-                    ):
+                                    p in interv_heads[head] for p in graph.all_preds(node)):
                         change |= interv_heads[head].add_node(node)
 
             # At this stage, a node which is not in the interval, but has one
@@ -69,10 +62,9 @@ def intervals(graph):
             for node in graph:
                 if node not in interv_heads[head] and node not in heads:
                     if any(
-                        p in interv_heads[head] for p in graph.all_preds(node)
-                    ):
+                                    p in interv_heads[head] for p in graph.all_preds(node)):
                         edges[interv_heads[head]].append(node)
-                        assert node not in heads
+                        assert (node not in heads)
                         heads.append(node)
 
             interval_graph.add_node(interv_heads[head])
@@ -171,13 +163,12 @@ def loop_follow(start, end, nodes_in_loop):
         num_next = float('inf')
         for node in nodes_in_loop:
             if node.type.is_cond:
-                if node.true.num < num_next and node.true not in nodes_in_loop:
+                if (node.true.num < num_next and
+                            node.true not in nodes_in_loop):
                     follow = node.true
                     num_next = follow.num
-                elif (
-                    node.false.num < num_next
-                    and node.false not in nodes_in_loop
-                ):
+                elif (node.false.num < num_next and
+                              node.false not in nodes_in_loop):
                     follow = node.false
                     num_next = follow.num
     start.follow['loop'] = follow
@@ -432,9 +423,7 @@ def identify_structures(graph, idoms):
         loop_follow(node, node.latch, node.loop_nodes)
 
     for node in if_unresolved:
-        follows = [
-            n for n in (node.follow['loop'], node.follow['switch']) if n
-        ]
+        follows = [n for n in (node.follow['loop'], node.follow['switch']) if n]
         if len(follows) >= 1:
             follow = min(follows, key=lambda x: x.num)
             node.follow['if'] = follow
