@@ -1734,41 +1734,71 @@ class APK:
             certificate = None
         return certificate
 
-    def canonical_name(self, name: Any) -> str:
+    def canonical_name(self, name: Any, android: bool = False) -> str:
         """
         /*
          * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
          * The original author has granted permission to use this code snippet under the
          * Apache License 2.0 for inclusion in this project.
-         * https://gist.github.com/obfusk/b337e4f641991cc88a24d3f9567db80f#file-canonical_name-py
+         * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
          */
-         Canonical representation of x509.Name as str."""
-        return ",".join("+".join(f"{t}:{v}" for _, t, v in avas) for avas in self.comparison_name(name))
+         Canonical representation of x509.Name as str (with raw control characters
+        in places those are not stripped by normalisation).
+         """
+        # return ",".join("+".join(f"{t}:{v}" for _, t, v in avas) for avas in self.comparison_name(name))
+        return ",".join("+".join(f"{t}={v}" for t, v in avas) for avas in self.comparison_name(name, android=android))
 
-    @staticmethod
-    def comparison_name(name: Any, android: bool = False) -> List[List[Tuple[int, str, str]]]:
+    def comparison_name(self, name: x509.Name, *, android: bool = False) -> List[List[Tuple[str, str]]]:
         """
         /*
          * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
          * The original author has granted permission to use this code snippet under the
          * Apache License 2.0 for inclusion in this project.
-         * https://gist.github.com/obfusk/b337e4f641991cc88a24d3f9567db80f#file-canonical_name-py
+         * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
          */
         Canonical representation of x509.Name as nested list.
-        Returns a list of RDNs which are a list of AVAs which are a (oid, type,
-        value) tuple, where oid is 0 for standard names and 1 for dotted OIDs, type
-        is the standard name or dotted OID, and value is the string representation
-        of the value.
-        https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)
-        https://android.googlesource.com/platform/libcore/+/refs/heads/android14-release/ojluni/src/main/java/sun/security/x509/RDN.java#481
-        https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/sun/security/x509/RDN.java#L456
+
+        Returns a list of RDNs which are a list of AVAs which are a (type, value)
+        tuple, where type is the standard name or dotted OID, and value is the
+        normalised string representation of the value.
         """
 
-        def key(pair: Tuple[int, str, str]) -> Tuple[int, Union[str, List[int]], str]:
-            o, t, v = pair
+        return [[(t, nv) for _, t, nv, _ in avas] for avas in self.x509_ordered_name(name, android=android)]
+
+
+    @staticmethod
+    def x509_ordered_name(name: x509.Name, *,  # type: ignore[no-any-unimported]
+                          android: bool = False) -> List[List[Tuple[int, str, str, str]]]:
+        """
+         /*
+         * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
+         * The original author has granted permission to use this code snippet under the
+         * Apache License 2.0 for inclusion in this project.
+         * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
+         */
+        Representation of x509.Name as nested list, in canonical ordering (but also
+        including non-canonical pre-normalised string values).
+
+        Returns a list of RDNs which are a list of AVAs which are a (oid, type,
+        normalised_value, esc_value) tuple, where oid is 0 for standard names and 1
+        for dotted OIDs, type is the standard name or dotted OID, normalised_value
+        is the normalised string representation of the value, and esc_value is the
+        string value before normalisation (but after escaping).
+
+        NB: control characters are not escaped, only characters in ",+<>;\"\\" and
+        "#" at the start (before "whitespace" trimming) are.
+
+        https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)
+        https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/AVA.java#L805
+        https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/RDN.java#L472
+        https://android.googlesource.com/platform/libcore/+/refs/heads/android14-release/ojluni/src/main/java/sun/security/x509/RDN.java#481
+        """
+
+        def key(ava: Tuple[int, str, str, str]) -> Tuple[int, Union[str, List[int]], str]:
+            o, t, nv, _ = ava
             if android and o:
-                return o, [int(x) for x in t.split(".")], v
-            return pair
+                return o, [int(x) for x in t.split(".")], nv
+            return o, t, nv
 
         DS, U8, PS = x509.DirectoryString, x509.UTF8String, x509.PrintableString
         oids = {
@@ -1783,23 +1813,24 @@ class APK:
             "0.9.2342.19200300.100.1.25": ("domain_component", "dc"),
         }
         esc = {ord(c): f"\\{c}" for c in ",+<>;\"\\"}
+        cws = "".join(chr(i) for i in range(32 + 1))  # control (but not esc) and whitespace
         data = []
         for rdn in reversed(name.chosen):
             avas = []
             for ava in rdn:
                 at, av = ava["type"], ava["value"]
                 if at.dotted in oids:
-                    o, t = 0, oids[at.dotted][0]  # order standard before OID
+                    o, t = 0, oids[at.dotted][1]  # order standard before OID
                 else:
                     o, t = 1, at.dotted
-                if not (isinstance(av, DS) and isinstance(av.chosen, (U8, PS))):
-                    v = "#" + binascii.hexlify(av.dump()).decode()
+                if o or not (isinstance(av, DS) and isinstance(av.chosen, (U8, PS))):
+                    ev = nv = "#" + binascii.hexlify(av.dump()).decode()
                 else:
-                    v = (av.native or "").translate(esc)
-                    if v.startswith("#"):
-                        v = "\\" + v
-                    v = unicodedata.normalize("NFKD", re.sub(r" +", " ", v).strip().upper().lower())
-                avas.append((o, t, v))
+                    ev = (av.native or "").translate(esc)
+                    if ev.startswith("#"):
+                        ev = "\\" + ev
+                    nv = unicodedata.normalize("NFKD", re.sub(r" +", " ", ev).strip(cws).upper().lower())
+                avas.append((o, t, nv, ev))
             data.append(sorted(avas, key=key))
         return data
 
