@@ -9,8 +9,9 @@ import hashlib
 import io
 import os
 import re
+import unicodedata
 from struct import unpack
-from typing import Iterator, Union
+from typing import Iterator, Union, Any, List, Tuple
 import zipfile
 from zlib import crc32
 
@@ -18,6 +19,7 @@ from zlib import crc32
 from androguard.core import androconf
 from androguard.util import get_certificate_name_string
 from apkInspector.headers import ZipEntry
+from hashlib import md5, sha1, sha256, sha224, sha384, sha512
 
 from androguard.core.axml import (ARSCParser,
     AXMLPrinter,
@@ -35,7 +37,13 @@ import lxml.sax
 from xml.dom.pulldom import SAX2DOM
 # Used for reading Certificates
 from asn1crypto import cms, x509, keys
-
+from asn1crypto.util import OrderedDict
+from cryptography.hazmat.primitives.asymmetric import rsa, dsa, ec
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from loguru import logger
 
 NS_ANDROID_URI = 'http://schemas.android.com/apk/res/android'
@@ -1501,24 +1509,218 @@ class APK:
         """
         return self.get_attribute_value('uses-feature', 'name', required="false", name="android.hardware.touchscreen") == "android.hardware.touchscreen"
 
-    def get_certificate_der(self, filename:str) -> bytes:
+    def get_certificate_der(self, filename: str, max_sdk_version: int = None) -> Union[bytes, None]:
         """
         Return the DER coded X.509 certificate from the signature file.
+        If minSdkVersion is prior to Android N only the first SignerInfo is used.
+        If signed attributes are present, they are taken into account
+        Note that unsupported critical extensions and key usage are not verified!
+        https://android.googlesource.com/platform/tools/apksig/+/refs/tags/platform-tools-34.0.5/src/main/java/com/android/apksig/internal/apk/v1/V1SchemeVerifier.java#668
 
         :param filename: Signature filename in APK
-        :returns: DER coded X.509 certificate as binary
+        :param max_sdk_version: An optional integer parameter for the max sdk version
+        :returns: DER coded X.509 certificate as binary or None
         """
+
+        # Get the signature
         pkcs7message = self.get_file(filename)
+        # Get the .SF
+        sf_filename = os.path.splitext(filename)[0] + '.SF'
+        sf_object = self.get_file(sf_filename)
+        # Load the signature
+        signed_data = cms.ContentInfo.load(pkcs7message)
+        # Locate the SignerInfo structure
+        signer_infos = signed_data['content']['signer_infos']
+        if not signer_infos:
+            logger.error('No signer information found in the PKCS7 object. The APK may not be properly signed.')
+            return None
 
-        pkcs7obj = cms.ContentInfo.load(pkcs7message)
-        # TODO: should be returning the matching cert here!
-        # https://github.com/androguard/androguard/pull/1038
-        if len(pkcs7obj['content']['certificates']) > 1:
-            logger.warning(f"Multiple certificates found. Returning the first one!")
-        cert = pkcs7obj['content']['certificates'][0].chosen.dump()
-        return cert
+        # Prior to Android N, Android attempts to verify only the first SignerInfo. From N onwards, Android attempts
+        # to verify all SignerInfos and then picks the first verified SignerInfo.
+        min_sdk_version = self.get_min_sdk_version()
+        if min_sdk_version is None or int(min_sdk_version) < 24:  # AndroidSdkVersion.N
+            logger.info(f"minSdkVersion: {min_sdk_version} is less than 24. Getting the first signerInfo only!")
+            unverified_signer_infos_to_try = [signer_infos[0]]
+        else:
+            unverified_signer_infos_to_try = signer_infos
 
-    def get_certificate(self, filename:str) -> x509.Certificate:
+        # Extract certificates from the PKCS7 object
+        certificates = signed_data['content']['certificates']
+        return_certificate = None
+        list_certificates_verified = []
+        for signer_info in unverified_signer_infos_to_try:
+            try:
+                matching_certificate_verified = self.verify_signer_info_against_sig_file(
+                    signed_data,
+                    certificates,
+                    signer_info,
+                    sf_object,
+                    max_sdk_version)
+            except (ValueError, TypeError, OSError, InvalidSignature) as e:
+                logger.error(f"The following exception was raised while verifying the certificate: {e}")
+                return None  # the validation stops due to the exception raised!
+            if matching_certificate_verified is not None:
+                list_certificates_verified.append(matching_certificate_verified)
+        if not list_certificates_verified:
+            logger.error(f"minSdkVersion: {min_sdk_version}, # of SignerInfos: {len(unverified_signer_infos_to_try)}. None Verified!")
+        else:
+            return_certificate = list_certificates_verified[0]
+        return return_certificate
+
+    def verify_signer_info_against_sig_file(self, signed_data, certificates, signer_info, sf_object, max_sdk_version):
+        matching_certificate = self.find_certificate(certificates, signer_info)
+        matching_certificate_verified = None
+        digest_algorithm, crypto_hash_algorithm = self.get_hash_algorithm(signer_info)
+        if matching_certificate is None:
+            raise ValueError("Signing certificate referenced in SignerInfo not found in SignedData")
+        else:
+            if signer_info['signed_attrs'].native:
+                logger.info("Signed Attributes detected!")
+                signed_attrs = signer_info['signed_attrs']
+                signed_attrs_dict = OrderedDict()
+                for attr in signed_attrs:
+                    if attr['type'].dotted in signed_attrs_dict:
+                        raise ValueError(f"Duplicate signed attribute: {attr['type'].dotted}")
+                    signed_attrs_dict[attr['type'].dotted] = attr['values']
+
+                # Check content type attribute (for Android N and newer)
+                if max_sdk_version is None or int(max_sdk_version) >= 24:
+                    content_type_oid = '1.2.840.113549.1.9.3'  # OID for contentType
+                    if content_type_oid not in signed_attrs_dict:
+                        raise ValueError("No Content Type in signed attributes")
+                    content_type = signed_attrs_dict[content_type_oid][0].native
+                    if content_type != signed_data['content']['encap_content_info']['content_type'].native:
+                        logger.error("Content Type mismatch. Continuing to next SignerInfo, if any.")
+                        return None
+
+                # Check message digest attribute
+                message_digest_oid = '1.2.840.113549.1.9.4'  # OID for messageDigest
+                if message_digest_oid not in signed_attrs_dict:
+                    raise ValueError("No content digest in signed attributes")
+                expected_signature_file_digest = signed_attrs_dict[message_digest_oid][0].native
+                hash_algo = digest_algorithm()
+                hash_algo.update(sf_object)
+                actual_digest = hash_algo.digest()
+
+                # Compare digests
+                if actual_digest != expected_signature_file_digest:
+                    logger.error("Digest mismatch. Continuing to next SignerInfo, if any.")
+                    return None
+
+                signed_attrs_dump = signed_attrs.dump()
+                # Modify the first byte to 0x31 for UNIVERSAL SET
+                signed_attrs_dump = b'\x31' + signed_attrs_dump[1:]
+                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate,
+                                                                      signed_attrs_dump, crypto_hash_algorithm)
+            else:
+                matching_certificate_verified = self.verify_signature(signer_info, matching_certificate, sf_object,
+                                                                      crypto_hash_algorithm)
+        return matching_certificate_verified
+
+
+    @staticmethod
+    def verify_signature(signer_info, matching_certificate, signed_data, crypto_hash_algorithm):
+        matching_certificate_verified = None
+        signature = signer_info['signature'].native
+
+        # Load the certificate using asn1crypto as it can handle more cases (v1-only-with-rsa-1024-cert-not-der.apk)
+        cert = x509.Certificate.load(matching_certificate.chosen.dump())
+        public_key_info = cert.public_key
+
+        # Convert the ASN.1 public key to a cryptography-compatible object
+        public_key_der = public_key_info.dump()
+        public_key = serialization.load_der_public_key(public_key_der, backend=default_backend())
+
+        try:
+            # RSA Key
+            if isinstance(public_key, rsa.RSAPublicKey):
+                public_key.verify(
+                    signature,
+                    signed_data,
+                    padding.PKCS1v15(),
+                    crypto_hash_algorithm()
+                )
+
+            # DSA Key
+            elif isinstance(public_key, dsa.DSAPublicKey):
+                public_key.verify(
+                    signature,
+                    signed_data,
+                    crypto_hash_algorithm()
+                )
+
+            # EC Key
+            elif isinstance(public_key, ec.EllipticCurvePublicKey):
+                public_key.verify(
+                    signature,
+                    signed_data,
+                    ec.ECDSA(crypto_hash_algorithm())
+                )
+
+            else:
+                raise ValueError(f"Unsupported key algorithm: {public_key.__class__.__name__.lower()}")
+
+            # If verification succeeds, return the certificate
+            matching_certificate_verified = matching_certificate.chosen.dump()
+
+        except InvalidSignature:
+            logger.info(
+                f"The public key of the certificate: {hashlib.sha256(matching_certificate.chosen.dump()).hexdigest()} "
+                f"is not associated with the signature!"
+            )
+
+        return matching_certificate_verified
+
+    @staticmethod
+    def get_hash_algorithm(signer_info):
+        # Determine the hash algorithm from the SignerInfo
+        digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
+        # Map the digest algorithm to a hash function
+        hash_algorithms = {
+            'md5': (md5, hashes.MD5),
+            'sha1': (sha1, hashes.SHA1),
+            'sha224': (sha224, hashes.SHA224),
+            'sha256': (sha256, hashes.SHA256),
+            'sha384': (sha384, hashes.SHA384),
+            'sha512': (sha512, hashes.SHA512)
+        }
+        if digest_algorithm not in hash_algorithms:
+            raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
+        return hash_algorithms[digest_algorithm]
+
+    def find_certificate(self, signed_data_certificates, signer_info):
+        """
+        From the bag of certs, obtain the certificate referenced by the SignerInfo.
+
+        Args:
+            signed_data_certificates: List of certificates in the SignedData.
+            signer_info: SignerInfo object containing the issuer and serial number reference.
+
+        Returns:
+            The matching certificate if found, otherwise None.
+        """
+        matching_certificate = None
+        issuer_and_serial_number = signer_info['sid']
+        issuer_str = self.canonical_name(issuer_and_serial_number.chosen['issuer'])
+        serial_number = issuer_and_serial_number.native['serial_number']
+
+        # # Create a x509.Name object for the issuer in the SignerInfo
+        # issuer_name = x509.Name.build(issuer)
+        # issuer_str = self.canonical_name(issuer_name)
+
+        for cert in signed_data_certificates:
+            if cert.name == 'certificate':
+                cert_issuer = self.canonical_name(cert.chosen['tbs_certificate']['issuer'])
+                cert_serial_number = cert.native['tbs_certificate']['serial_number']
+
+                # Compare the canonical string representations of the issuers and the serial numbers
+                if cert_issuer == issuer_str and cert_serial_number == serial_number:
+                    matching_certificate = cert
+                    break
+
+        return matching_certificate
+
+    def get_certificate(self, filename:str) -> Union[x509.Certificate, None]:
         """
         Return a X.509 certificate object by giving the name in the apk file
 
@@ -1526,9 +1728,111 @@ class APK:
         :returns: a :class:`Certificate` certificate
         """
         cert = self.get_certificate_der(filename)
-        certificate = x509.Certificate.load(cert)
-
+        if cert:
+            certificate = x509.Certificate.load(cert)
+        else:
+            certificate = None
         return certificate
+
+    def canonical_name(self, name: Any, android: bool = False) -> str:
+        """
+        /*
+         * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
+         * The original author has granted permission to use this code snippet under the
+         * Apache License 2.0 for inclusion in this project.
+         * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
+         */
+         Canonical representation of x509.Name as str (with raw control characters
+        in places those are not stripped by normalisation).
+         """
+        # return ",".join("+".join(f"{t}:{v}" for _, t, v in avas) for avas in self.comparison_name(name))
+        return ",".join("+".join(f"{t}={v}" for t, v in avas) for avas in self.comparison_name(name, android=android))
+
+    def comparison_name(self, name: x509.Name, *, android: bool = False) -> List[List[Tuple[str, str]]]:
+        """
+        /*
+         * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
+         * The original author has granted permission to use this code snippet under the
+         * Apache License 2.0 for inclusion in this project.
+         * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
+         */
+        Canonical representation of x509.Name as nested list.
+
+        Returns a list of RDNs which are a list of AVAs which are a (type, value)
+        tuple, where type is the standard name or dotted OID, and value is the
+        normalised string representation of the value.
+        """
+
+        return [[(t, nv) for _, t, nv, _ in avas] for avas in self.x509_ordered_name(name, android=android)]
+
+
+    @staticmethod
+    def x509_ordered_name(name: x509.Name, *,  # type: ignore[no-any-unimported]
+                          android: bool = False) -> List[List[Tuple[int, str, str, str]]]:
+        """
+         /*
+         * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
+         * The original author has granted permission to use this code snippet under the
+         * Apache License 2.0 for inclusion in this project.
+         * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
+         */
+        Representation of x509.Name as nested list, in canonical ordering (but also
+        including non-canonical pre-normalised string values).
+
+        Returns a list of RDNs which are a list of AVAs which are a (oid, type,
+        normalised_value, esc_value) tuple, where oid is 0 for standard names and 1
+        for dotted OIDs, type is the standard name or dotted OID, normalised_value
+        is the normalised string representation of the value, and esc_value is the
+        string value before normalisation (but after escaping).
+
+        NB: control characters are not escaped, only characters in ",+<>;\"\\" and
+        "#" at the start (before "whitespace" trimming) are.
+
+        https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)
+        https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/AVA.java#L805
+        https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/RDN.java#L472
+        https://android.googlesource.com/platform/libcore/+/refs/heads/android14-release/ojluni/src/main/java/sun/security/x509/RDN.java#481
+        """
+
+        def key(ava: Tuple[int, str, str, str]) -> Tuple[int, Union[str, List[int]], str]:
+            o, t, nv, _ = ava
+            if android and o:
+                return o, [int(x) for x in t.split(".")], nv
+            return o, t, nv
+
+        DS, U8, PS = x509.DirectoryString, x509.UTF8String, x509.PrintableString
+        oids = {
+            "2.5.4.3": ("common_name", "cn"),
+            "2.5.4.6": ("country_name", "c"),
+            "2.5.4.7": ("locality_name", "l"),
+            "2.5.4.8": ("state_or_province_name", "st"),
+            "2.5.4.9": ("street_address", "street"),
+            "2.5.4.10": ("organization_name", "o"),
+            "2.5.4.11": ("organizational_unit_name", "ou"),
+            "0.9.2342.19200300.100.1.1": ("user_id", "uid"),
+            "0.9.2342.19200300.100.1.25": ("domain_component", "dc"),
+        }
+        esc = {ord(c): f"\\{c}" for c in ",+<>;\"\\"}
+        cws = "".join(chr(i) for i in range(32 + 1))  # control (but not esc) and whitespace
+        data = []
+        for rdn in reversed(name.chosen):
+            avas = []
+            for ava in rdn:
+                at, av = ava["type"], ava["value"]
+                if at.dotted in oids:
+                    o, t = 0, oids[at.dotted][1]  # order standard before OID
+                else:
+                    o, t = 1, at.dotted
+                if o or not (isinstance(av, DS) and isinstance(av.chosen, (U8, PS))):
+                    ev = nv = "#" + binascii.hexlify(av.dump()).decode()
+                else:
+                    ev = (av.native or "").translate(esc)
+                    if ev.startswith("#"):
+                        ev = "\\" + ev
+                    nv = unicodedata.normalize("NFKD", re.sub(r" +", " ", ev).strip(cws).upper().lower())
+                avas.append((o, t, nv, ev))
+            data.append(sorted(avas, key=key))
+        return data
 
     def new_zip(self, filename:str, deleted_files:Union[str,None]=None, new_files:dict={}) -> None:
         """
@@ -2032,17 +2336,16 @@ class APK:
         """
         return [ x509.Certificate.load(cert) for cert in self.get_certificates_der_v2()]
 
-    def get_certificates_v1(self) -> list[x509.Certificate]:
+    def get_certificates_v1(self) -> list[Union[x509.Certificate, None]]:
         """
-        Return a list of :class:`asn1crypto.x509.Certificate` which are found
+        Return a list of verified :class:`asn1crypto.x509.Certificate` which are found
         in the META-INF folder (v1 signing).
-        Note that we simply extract all certificates regardless of the signer.
-        Therefore this is just a list of all certificates found in all signers.
         """
         certs = []
         for x in self.get_signature_names():
-            certs.append(x509.Certificate.load(self.get_certificate_der(x)))
-
+            cc = self.get_certificate_der(x)
+            if cc is not None:
+                certs.append(x509.Certificate.load(cc))
         return certs
 
     def get_certificates(self) -> list[x509.Certificate]:
@@ -2051,6 +2354,7 @@ class APK:
         in v1, v2 and v3 signing
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.
+        Exception is v1, for which the certificate returned is verified.
         """
         fps = []
         certs = []

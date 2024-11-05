@@ -405,5 +405,4 @@ class AXMLTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    set_log("ERROR")
     unittest.main()
