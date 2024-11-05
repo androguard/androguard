@@ -21,18 +21,18 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from androguard.core.analysis.analysis import Analysis, MethodAnalysis
     from androguard.core.dex import DEX, ClassDefItem
 
-from androguard.decompiler import decompile
-
+from loguru import logger
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name
 from pygments.formatters import TerminalFormatter
+from pygments.lexers import get_lexer_by_name
 from pygments.token import Token
 
-from loguru import logger
+from androguard.decompiler import decompile
 
 
 class DecompilerDAD:
@@ -81,7 +81,9 @@ class DecompilerDAD:
         c.process(doAST=True)
         return c.get_ast()
 
-    def get_source_class_ext(self, _class: ClassDefItem) -> list[tuple[str, list]]:
+    def get_source_class_ext(
+        self, _class: ClassDefItem
+    ) -> list[tuple[str, list]]:
         c = decompile.DvClass(_class, self.vmx)
         c.process()
 

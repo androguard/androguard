@@ -4,17 +4,20 @@
 from __future__ import annotations
 
 import collections
-from enum import IntEnum
-from operator import itemgetter
 import re
 import time
-from typing import Union, Iterator
+from enum import IntEnum
+from operator import itemgetter
+from typing import Iterator, Union
 
-from androguard.core.androconf import is_ascii_problem, load_api_specific_resource_module
-from androguard.core import bytecode, dex
-
-from loguru import logger
 import networkx as nx
+from loguru import logger
+
+from androguard.core import bytecode, dex
+from androguard.core.androconf import (
+    is_ascii_problem,
+    load_api_specific_resource_module,
+)
 
 BasicOPCODES = set()
 for i in dex.BRANCH_DEX_OPCODES:
@@ -23,16 +26,18 @@ for i in dex.BRANCH_DEX_OPCODES:
         if p.match(items[1][0]):
             BasicOPCODES.add(op)
 
+
 class REF_TYPE(IntEnum):
     """
     Stores the opcodes for the type of usage in an XREF.
 
     Used in :class:`ClassAnalysis` to store the type of reference to the class.
     """
+
     REF_NEW_INSTANCE = 0x22
-    REF_CLASS_USAGE = 0x1c
-    INVOKE_VIRTUAL = 0x6e
-    INVOKE_SUPER = 0x6f
+    REF_CLASS_USAGE = 0x1C
+    INVOKE_VIRTUAL = 0x6E
+    INVOKE_SUPER = 0x6F
     INVOKE_DIRECT = 0x70
     INVOKE_STATIC = 0x71
     INVOKE_INTERFACE = 0x72
@@ -42,11 +47,12 @@ class REF_TYPE(IntEnum):
     INVOKE_STATIC_RANGE = 0x77
     INVOKE_INTERFACE_RANGE = 0x78
 
+
 class ExceptionAnalysis:
     def __init__(self, exception: list, basic_blocks: BasicBlocks):
         self.start = exception[0]
         self.end = exception[1]
-        
+
         self.exceptions = exception[2:]
 
         for i in self.exceptions:
@@ -59,7 +65,9 @@ class ExceptionAnalysis:
             if i[2] is None:
                 buff += "\t({} -> {:x} {})\n".format(i[0], i[1], i[2])
             else:
-                buff += "\t({} -> {:x} {})\n".format(i[0], i[1], i[2].get_name())
+                buff += "\t({} -> {:x} {})\n".format(
+                    i[0], i[1], i[2].get_name()
+                )
 
         return buff[:-1]
 
@@ -67,7 +75,9 @@ class ExceptionAnalysis:
         d = {"start": self.start, "end": self.end, "list": []}
 
         for i in self.exceptions:
-            d["list"].append({"name": i[0], "idx": i[1], "basic_block": i[2].get_name()})
+            d["list"].append(
+                {"name": i[0], "idx": i[1], "basic_block": i[2].get_name()}
+            )
 
         return d
 
@@ -80,7 +90,9 @@ class Exceptions:
         for i in exceptions:
             self.exceptions.append(ExceptionAnalysis(i, basic_blocks))
 
-    def get_exception(self, addr_start: int, addr_end: int) -> Union[ExceptionAnalysis,None]:
+    def get_exception(
+        self, addr_start: int, addr_end: int
+    ) -> Union[ExceptionAnalysis, None]:
         for i in self.exceptions:
             if i.start >= addr_start and i.end <= addr_end:
                 return i
@@ -97,12 +109,14 @@ class Exceptions:
         for i in self.exceptions:
             yield i
 
+
 class BasicBlocks:
     """
     This class represents all basic blocks of a method.
 
     It is a collection of many :class:`DEXBasicBlock`.
     """
+
     def __init__(self) -> None:
         self.bb = []
 
@@ -117,7 +131,7 @@ class BasicBlocks:
     def pop(self, idx: int) -> DEXBasicBlock:
         return self.bb.pop(idx)
 
-    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock,None]:
+    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock, None]:
         for i in self.bb:
             if i.get_start() <= idx < i.get_end():
                 return i
@@ -153,6 +167,7 @@ class BasicBlocks:
     get = __iter__
     get_basic_block_pos = __getitem__
 
+
 class DEXBasicBlock:
     """
     A simple basic block of a DEX method.
@@ -160,7 +175,14 @@ class DEXBasicBlock:
     A basic block consists of a series of :class:`~androguard.core.dex.Instruction`
     which are not interrupted by branch or jump instructions such as `goto`, `if`, `throw`, `return`, `switch` etc.
     """
-    def __init__(self, start: int, vm: dex.DEX, method: dex.EncodedMethod, context: BasicBlocks):
+
+    def __init__(
+        self,
+        start: int,
+        vm: dex.DEX,
+        method: dex.EncodedMethod,
+        context: BasicBlocks,
+    ):
         """_summary_
 
         :param start: _description_
@@ -187,11 +209,7 @@ class DEXBasicBlock:
 
         self.special_ins = {}
 
-        self.name = ''.join([
-            self.method.get_name(),
-            '-BB@',
-            hex(self.start)
-        ])
+        self.name = ''.join([self.method.get_name(), '-BB@', hex(self.start)])
         self.exception_analysis = None
 
         self.notes = []
@@ -262,7 +280,7 @@ class DEXBasicBlock:
         :return: androguard.core.dex.Instruction
         """
         return list(self.get_instructions())[-1]
-    
+
     def get_next(self) -> DEXBasicBlock:
         """
         Get next basic blocks
@@ -280,7 +298,7 @@ class DEXBasicBlock:
         :rtype: DEXBasicBlock
         """
         return self.fathers
-    
+
     def set_fathers(self, f: DEXBasicBlock) -> None:
         self.fathers.append(f)
 
@@ -292,15 +310,17 @@ class DEXBasicBlock:
         if not values:
             next_block = self.context.get_basic_block(self.end + 1)
             if next_block is not None:
-                self.childs.append((self.end - self.get_last_length(), self.end,
-                                    next_block))
+                self.childs.append(
+                    (self.end - self.get_last_length(), self.end, next_block)
+                )
         else:
             for i in values:
                 if i != -1:
                     next_block = self.context.get_basic_block(i)
                     if next_block is not None:
-                        self.childs.append((self.end - self.get_last_length(),
-                                            i, next_block))
+                        self.childs.append(
+                            (self.end - self.get_last_length(), i, next_block)
+                        )
 
         for c in self.childs:
             if c[2] is not None:
@@ -314,11 +334,11 @@ class DEXBasicBlock:
 
         op_value = i.get_op_value()
 
-        if op_value == 0x26 or (0x2b <= op_value <= 0x2c):
+        if op_value == 0x26 or (0x2B <= op_value <= 0x2C):
             code = self.method.get_code().get_bc()
             self.special_ins[idx] = code.get_ins_off(idx + i.get_ref_off() * 2)
-    
-    def get_special_ins(self, idx: int) -> Union[dex.Instruction,None]:
+
+    def get_special_ins(self, idx: int) -> Union[dex.Instruction, None]:
         """
         Return the associated instruction to a specific instruction (for example a packed/sparse switch)
 
@@ -338,7 +358,11 @@ class DEXBasicBlock:
         self.exception_analysis = exception_analysis
 
     def show(self) -> None:
-        print("{}: {:04x} - {:04x}".format(self.get_name(), self.get_start(), self.get_end()))
+        print(
+            "{}: {:04x} - {:04x}".format(
+                self.get_name(), self.get_start(), self.get_end()
+            )
+        )
         for note in self.get_notes():
             print(note)
         print('=' * 20)
@@ -353,8 +377,13 @@ class MethodAnalysis:
     :type vm: a :class:`DEX` object
     :type method: a :class:`EncodedMethod` object
     """
+
     def __init__(self, vm: dex.DEX, method: dex.EncodedMethod):
-        logger.debug("Adding new method {} {}".format(method.get_class_name(), method.get_name()))
+        logger.debug(
+            "Adding new method {} {}".format(
+                method.get_class_name(), method.get_name()
+            )
+        )
 
         self.__vm = vm
         self.method = method
@@ -429,13 +458,19 @@ class MethodAnalysis:
         Internal Method to create the basic block structure
         Parses all instructions and exceptions.
         """
-        current_basic = DEXBasicBlock(0, self.__vm, self.method, self.basic_blocks)
+        current_basic = DEXBasicBlock(
+            0, self.__vm, self.method, self.basic_blocks
+        )
         self.basic_blocks.push(current_basic)
 
         l = []
         h = dict()
 
-        logger.debug("Parsing instructions for method at @0x{:08x}".format(self.method.get_code_off()))
+        logger.debug(
+            "Parsing instructions for method at @0x{:08x}".format(
+                self.method.get_code_off()
+            )
+        )
         for idx, ins in self.method.get_instructions_idx():
             if ins.get_op_value() in BasicOPCODES:
                 v = dex.determineNext(ins, idx, self.method)
@@ -454,14 +489,24 @@ class MethodAnalysis:
             # index is a destination
             if idx in l:
                 if current_basic.get_nb_instructions() != 0:
-                    current_basic = DEXBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
+                    current_basic = DEXBasicBlock(
+                        current_basic.get_end(),
+                        self.__vm,
+                        self.method,
+                        self.basic_blocks,
+                    )
                     self.basic_blocks.push(current_basic)
 
             current_basic.push(ins)
 
             # index is a branch instruction
             if idx in h:
-                current_basic = DEXBasicBlock(current_basic.get_end(), self.__vm, self.method, self.basic_blocks)
+                current_basic = DEXBasicBlock(
+                    current_basic.get_end(),
+                    self.__vm,
+                    self.method,
+                    self.basic_blocks,
+                )
                 self.basic_blocks.push(current_basic)
 
         if current_basic.get_nb_instructions() == 0:
@@ -479,9 +524,13 @@ class MethodAnalysis:
 
         for i in self.basic_blocks.get():
             # setup exception by basic block
-            i.set_exception_analysis(self.exceptions.get_exception(i.start, i.end - 1))
+            i.set_exception_analysis(
+                self.exceptions.get_exception(i.start, i.end - 1)
+            )
 
-    def add_xref_read(self, classobj:ClassAnalysis, fieldobj: FieldAnalysis, offset: int) -> None:
+    def add_xref_read(
+        self, classobj: ClassAnalysis, fieldobj: FieldAnalysis, offset: int
+    ) -> None:
         """
         :param ClassAnalysis classobj:
         :param FieldAnalysis fieldobj:
@@ -489,7 +538,9 @@ class MethodAnalysis:
         """
         self.xrefread.add((classobj, fieldobj, offset))
 
-    def add_xref_write(self, classobj: ClassAnalysis, fieldobj: FieldAnalysis, offset: int) -> None:
+    def add_xref_write(
+        self, classobj: ClassAnalysis, fieldobj: FieldAnalysis, offset: int
+    ) -> None:
         """
         :param ClassAnalysis classobj:
         :param FieldAnalysis fieldobj:
@@ -517,7 +568,9 @@ class MethodAnalysis:
         """
         return self.xrefwrite
 
-    def add_xref_to(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_to(
+        self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int
+    ) -> None:
         """
         Add a crossreference to another method
         (this method calls another method)
@@ -528,7 +581,9 @@ class MethodAnalysis:
         """
         self.xrefto.add((classobj, methodobj, offset))
 
-    def add_xref_from(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_from(
+        self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int
+    ) -> None:
         """
         Add a crossrefernece from another method
         (this method is called by another method)
@@ -563,7 +618,9 @@ class MethodAnalysis:
         """
         return self.xrefto
 
-    def add_xref_new_instance(self, classobj: ClassAnalysis, offset: int) -> None:
+    def add_xref_new_instance(
+        self, classobj: ClassAnalysis, offset: int
+    ) -> None:
         """
         Add a crossreference to another class that is
         instanced within this method.
@@ -584,7 +641,9 @@ class MethodAnalysis:
         """
         return self.xrefnewinstance
 
-    def add_xref_const_class(self, classobj: ClassAnalysis, offset: int) -> None:
+    def add_xref_const_class(
+        self, classobj: ClassAnalysis, offset: int
+    ) -> None:
         """
         Add a crossreference to another classtype.
 
@@ -626,8 +685,19 @@ class MethodAnalysis:
             return False
 
         # Packages found at https://developer.android.com/reference/packages.html
-        api_candidates = ["Landroid/", "Lcom/android/internal/util", "Ldalvik/", "Ljava/", "Ljavax/", "Lorg/apache/",
-                          "Lorg/json/", "Lorg/w3c/dom/", "Lorg/xml/sax", "Lorg/xmlpull/v1/", "Ljunit/"]
+        api_candidates = [
+            "Landroid/",
+            "Lcom/android/internal/util",
+            "Ldalvik/",
+            "Ljava/",
+            "Ljavax/",
+            "Lorg/apache/",
+            "Lorg/json/",
+            "Lorg/w3c/dom/",
+            "Lorg/xml/sax",
+            "Lorg/xmlpull/v1/",
+            "Ljunit/",
+        ]
 
         if self.apilist:
             # FIXME: This will not work... need to introduce a name for lookup (like EncodedMethod.__str__ but without
@@ -686,14 +756,20 @@ class MethodAnalysis:
             nb_args = len(args)
 
             start_reg = reg_len - nb_args
-            args = ["{} v{}".format(a, start_reg + i) for i, a in enumerate(args)]
+            args = [
+                "{} v{}".format(a, start_reg + i) for i, a in enumerate(args)
+            ]
 
-        print("METHOD {} {} {} ({}){}".format(
-              self.method.get_class_name(),
-              self.method.get_access_flags_string(),
-              self.method.get_name(),
-              ", ".join(args), ret))
-        
+        print(
+            "METHOD {} {} {} ({}){}".format(
+                self.method.get_class_name(),
+                self.method.get_access_flags_string(),
+                self.method.get_name(),
+                ", ".join(args),
+                ret,
+            )
+        )
+
         if not self.is_external():
             bytecode.PrettyShow(self.basic_blocks.gets(), self.method.notes)
 
@@ -701,12 +777,16 @@ class MethodAnalysis:
         data = "XREFto for %s\n" % self.method
         for ref_class, ref_method, offset in self.xrefto:
             data += "in\n"
-            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
+            data += "{}:{} @0x{:x}\n".format(
+                ref_class.get_vm_class().get_name(), ref_method, offset
+            )
 
         data += "XREFFrom for %s\n" % self.method
         for ref_class, ref_method, offset in self.xreffrom:
             data += "in\n"
-            data += "{}:{} @0x{:x}\n".format(ref_class.get_vm_class().get_name(), ref_method, offset)
+            data += "{}:{} @0x{:x}\n".format(
+                ref_class.get_vm_class().get_name(), ref_method, offset
+            )
 
         return data
 
@@ -723,6 +803,7 @@ class StringAnalysis:
 
     This Array stores the information in which method the String is used.
     """
+
     def __init__(self, value: str) -> None:
         """
 
@@ -732,7 +813,9 @@ class StringAnalysis:
         self.orig_value = value
         self.xreffrom = set()
 
-    def add_xref_from(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, off: int) -> None:
+    def add_xref_from(
+        self, classobj: ClassAnalysis, methodobj: MethodAnalysis, off: int
+    ) -> None:
         """
         Adds a xref from the given method to this string
 
@@ -742,7 +825,9 @@ class StringAnalysis:
         """
         self.xreffrom.add((classobj, methodobj, off))
 
-    def get_xref_from(self, with_offset:bool = False) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
+    def get_xref_from(
+        self, with_offset: bool = False
+    ) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
         """
         Returns a list of xrefs accessing the String.
 
@@ -789,7 +874,9 @@ class StringAnalysis:
     def __str__(self):
         data = "XREFto for string %s in\n" % repr(self.get_value())
         for ref_class, ref_method, _ in self.xreffrom:
-            data += "{}:{}\n".format(ref_class.get_vm_class().get_name(), ref_method)
+            data += "{}:{}\n".format(
+                ref_class.get_vm_class().get_name(), ref_method
+            )
         return data
 
     def __repr__(self):
@@ -812,6 +899,7 @@ class FieldAnalysis:
 
     :param androguard.core.dex.EncodedField field: `dvm.EncodedField`
     """
+
     def __init__(self, field: dex.EncodedField) -> None:
         self.field = field
         self.xrefread = set()
@@ -821,7 +909,9 @@ class FieldAnalysis:
     def name(self) -> str:
         return self.field.get_name()
 
-    def add_xref_read(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_read(
+        self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int
+    ) -> None:
         """
         :param ClassAnalysis classobj:
         :param MethodAnalysis methodobj:
@@ -829,7 +919,9 @@ class FieldAnalysis:
         """
         self.xrefread.add((classobj, methodobj, offset))
 
-    def add_xref_write(self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_write(
+        self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int
+    ) -> None:
         """
         :param ClassAnalysis classobj:
         :param MethodAnalysis methodobj:
@@ -837,7 +929,9 @@ class FieldAnalysis:
         """
         self.xrefwrite.add((classobj, methodobj, offset))
 
-    def get_xref_read(self, with_offset:bool = False) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
+    def get_xref_read(
+        self, with_offset: bool = False
+    ) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
         """
         Returns a list of xrefs where the field is read.
 
@@ -852,7 +946,9 @@ class FieldAnalysis:
         # Legacy option, might be removed in the future
         return set(map(itemgetter(slice(0, 2)), self.xrefread))
 
-    def get_xref_write(self, with_offset:bool = False) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
+    def get_xref_write(
+        self, with_offset: bool = False
+    ) -> list[tuple[ClassAnalysis, MethodAnalysis]]:
         """
         Returns a list of xrefs where the field is written to.
 
@@ -879,17 +975,23 @@ class FieldAnalysis:
         data = "XREFRead for %s\n" % self.field
         for ref_class, ref_method, off in self.xrefread:
             data += "in\n"
-            data += "{}:{} @{}\n".format(ref_class.get_vm_class().get_name(), ref_method, off)
+            data += "{}:{} @{}\n".format(
+                ref_class.get_vm_class().get_name(), ref_method, off
+            )
 
         data += "XREFWrite for %s\n" % self.field
         for ref_class, ref_method, off in self.xrefwrite:
             data += "in\n"
-            data += "{}:{} @{}\n".format(ref_class.get_vm_class().get_name(), ref_method, off)
+            data += "{}:{} @{}\n".format(
+                ref_class.get_vm_class().get_name(), ref_method, off
+            )
 
         return data
 
     def __repr__(self):
-        return "<analysis.FieldAnalysis {}->{}>".format(self.field.class_name, self.field.name)
+        return "<analysis.FieldAnalysis {}->{}>".format(
+            self.field.class_name, self.field.name
+        )
 
 
 class ExternalClass:
@@ -899,6 +1001,7 @@ class ExternalClass:
 
     :param name: Name of the external class
     """
+
     def __init__(self, name: str) -> None:
         self.name = name
         self.methods = []
@@ -939,6 +1042,7 @@ class ExternalMethod:
     :param str name: name of the method
     :param str descriptor: descriptor string
     """
+
     def __init__(self, class_name: str, name: str, descriptor: str) -> None:
         self.class_name = class_name
         self.name = name
@@ -956,12 +1060,24 @@ class ExternalMethod:
     @property
     def full_name(self) -> str:
         """Returns classname + name + descriptor, separated by spaces (no access flags)"""
-        return self.class_name + " " + self.name + " " + str(self.get_descriptor())
+        return (
+            self.class_name
+            + " "
+            + self.name
+            + " "
+            + str(self.get_descriptor())
+        )
 
     @property
     def permission_api_name(self) -> str:
         """Returns a name which can be used to look up in the permission maps"""
-        return self.class_name + "-" + self.name + "-" + str(self.get_descriptor())
+        return (
+            self.class_name
+            + "-"
+            + self.name
+            + "-"
+            + str(self.get_descriptor())
+        )
 
     def get_access_flags_string(self) -> str:
         """
@@ -977,7 +1093,11 @@ class ExternalMethod:
         return ""
 
     def __str__(self):
-        return "{}->{}{}".format(self.class_name.__str__(), self.name.__str__(), str(self.get_descriptor()))
+        return "{}->{}{}".format(
+            self.class_name.__str__(),
+            self.name.__str__(),
+            str(self.get_descriptor()),
+        )
 
     def __repr__(self):
         return "<analysis.ExternalMethod {}>".format(self.__str__())
@@ -995,7 +1115,9 @@ class ClassAnalysis:
     :param classobj: class:`~androguard.core.dex.ClassDefItem` or :class:`ExternalClass`
     """
 
-    def __init__(self, classobj: Union[dex.ClassDefItem,ExternalClass]) -> None:
+    def __init__(
+        self, classobj: Union[dex.ClassDefItem, ExternalClass]
+    ) -> None:
         logger.info(f"Adding new ClassAnalysis: {classobj}")
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
@@ -1084,8 +1206,19 @@ class ClassAnalysis:
         """
 
         # Packages found at https://developer.android.com/reference/packages.html
-        api_candidates = ["Landroid/", "Lcom/android/internal/util", "Ldalvik/", "Ljava/", "Ljavax/", "Lorg/apache/",
-                          "Lorg/json/", "Lorg/w3c/dom/", "Lorg/xml/sax", "Lorg/xmlpull/v1/", "Ljunit/"]
+        api_candidates = [
+            "Landroid/",
+            "Lcom/android/internal/util",
+            "Ldalvik/",
+            "Ljava/",
+            "Ljavax/",
+            "Lorg/apache/",
+            "Lorg/json/",
+            "Lorg/w3c/dom/",
+            "Lorg/xml/sax",
+            "Lorg/xmlpull/v1/",
+            "Ljunit/",
+        ]
 
         if not self.is_external():
             # API must be external
@@ -1153,7 +1286,13 @@ class ClassAnalysis:
         #     # Propagate ExternalField to ExternalClass
         #     self.orig_class.add_method(field_analysis.get_field())
 
-    def add_field_xref_read(self, method: MethodAnalysis, classobj: ClassAnalysis, field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_read(
+        self,
+        method: MethodAnalysis,
+        classobj: ClassAnalysis,
+        field: dex.EncodedField,
+        off: int,
+    ) -> None:
         """
         Add a Field Read to this class
 
@@ -1167,7 +1306,13 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_read(classobj, method, off)
 
-    def add_field_xref_write(self, method: MethodAnalysis, classobj: ClassAnalysis, field: dex.EncodedField, off: int) -> None:
+    def add_field_xref_write(
+        self,
+        method: MethodAnalysis,
+        classobj: ClassAnalysis,
+        field: dex.EncodedField,
+        off: int,
+    ) -> None:
         """
         Add a Field Write to this class in a given method
 
@@ -1181,7 +1326,13 @@ class ClassAnalysis:
             self._fields[field] = FieldAnalysis(field)
         self._fields[field].add_xref_write(classobj, method, off)
 
-    def add_method_xref_to(self, method1: MethodAnalysis, classobj: ClassAnalysis, method2: MethodAnalysis, offset: int) -> None:
+    def add_method_xref_to(
+        self,
+        method1: MethodAnalysis,
+        classobj: ClassAnalysis,
+        method2: MethodAnalysis,
+        offset: int,
+    ) -> None:
         """
 
         :param MethodAnalysis method1: the calling method
@@ -1195,9 +1346,17 @@ class ClassAnalysis:
         if method1.get_method() not in self._methods:
             self.add_method(method1)
 
-        self._methods[method1.get_method()].add_xref_to(classobj, method2, offset)
+        self._methods[method1.get_method()].add_xref_to(
+            classobj, method2, offset
+        )
 
-    def add_method_xref_from(self, method1: MethodAnalysis, classobj: ClassAnalysis, method2: MethodAnalysis, offset: int) -> None:
+    def add_method_xref_from(
+        self,
+        method1: MethodAnalysis,
+        classobj: ClassAnalysis,
+        method2: MethodAnalysis,
+        offset: int,
+    ) -> None:
         """
 
         :param MethodAnalysis method1:
@@ -1210,9 +1369,17 @@ class ClassAnalysis:
         if method1.get_method() not in self._methods:
             self.add_method(method1)
 
-        self._methods[method1.get_method()].add_xref_from(classobj, method2, offset)
+        self._methods[method1.get_method()].add_xref_from(
+            classobj, method2, offset
+        )
 
-    def add_xref_to(self, ref_kind: REF_TYPE, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_to(
+        self,
+        ref_kind: REF_TYPE,
+        classobj: ClassAnalysis,
+        methodobj: MethodAnalysis,
+        offset: int,
+    ) -> None:
         """
         Creates a crossreference to another class.
         XrefTo means, that the current class calls another class.
@@ -1231,7 +1398,13 @@ class ClassAnalysis:
         """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
-    def add_xref_from(self, ref_kind: REF_TYPE, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_from(
+        self,
+        ref_kind: REF_TYPE,
+        classobj: ClassAnalysis,
+        methodobj: MethodAnalysis,
+        offset: int,
+    ) -> None:
         """
         Creates a crossreference from this class.
         XrefFrom means, that the current class is called by another class.
@@ -1244,7 +1417,9 @@ class ClassAnalysis:
         """
         self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
-    def get_xref_from(self) -> dict[ClassAnalysis, tuple[REF_TYPE, MethodAnalysis, int]]:
+    def get_xref_from(
+        self,
+    ) -> dict[ClassAnalysis, tuple[REF_TYPE, MethodAnalysis, int]]:
         """
         Returns a dictionary of all classes calling the current class.
         This dictionary contains also information from which method the class is accessed.
@@ -1270,7 +1445,9 @@ class ClassAnalysis:
         """
         return self.xreffrom
 
-    def get_xref_to(self) -> dict[ClassAnalysis, tuple[REF_TYPE, MethodAnalysis, int]]:
+    def get_xref_to(
+        self,
+    ) -> dict[ClassAnalysis, tuple[REF_TYPE, MethodAnalysis, int]]:
         """
         Returns a dictionary of all classes which are called by the current class.
         This dictionary contains also information about the method which is called.
@@ -1295,7 +1472,9 @@ class ClassAnalysis:
         """
         return self.xrefto
 
-    def add_xref_new_instance(self, methobj:  MethodAnalysis, offset: int) -> None:
+    def add_xref_new_instance(
+        self, methobj: MethodAnalysis, offset: int
+    ) -> None:
         """
         Add a crossreference to another method that is
         instancing this class.
@@ -1317,7 +1496,9 @@ class ClassAnalysis:
         """
         return self.xrefnewinstance
 
-    def add_xref_const_class(self, methobj: MethodAnalysis, offset: int) -> None:
+    def add_xref_const_class(
+        self, methobj: MethodAnalysis, offset: int
+    ) -> None:
         """
         Add a crossreference to a method referencing this classtype.
 
@@ -1337,7 +1518,7 @@ class ClassAnalysis:
         """
         return self.xrefconstclass
 
-    def get_vm_class(self) -> Union[dex.ClassDefItem,ExternalClass]:
+    def get_vm_class(self) -> Union[dex.ClassDefItem, ExternalClass]:
         """
         Returns the original Dalvik VM class or the external class object.
 
@@ -1346,7 +1527,9 @@ class ClassAnalysis:
         """
         return self.orig_class
 
-    def set_restriction_flag(self, flag: dex.HiddenApiClassDataItem.RestrictionApiFlag) -> None:
+    def set_restriction_flag(
+        self, flag: dex.HiddenApiClassDataItem.RestrictionApiFlag
+    ) -> None:
         """
         Set the level of restriction for this class (hidden level, from Android 10)
         (only applicable to internal classes)
@@ -1357,10 +1540,13 @@ class ClassAnalysis:
         if self.is_external():
             raise RuntimeError(
                 "Can\'t set restriction flag for external class: %s"
-                % (self.orig_class.name,))
+                % (self.orig_class.name,)
+            )
         self.restriction_flag = flag
 
-    def set_domain_flag(self, flag: dex.HiddenApiClassDataItem.DomapiApiFlag) -> None:
+    def set_domain_flag(
+        self, flag: dex.HiddenApiClassDataItem.DomapiApiFlag
+    ) -> None:
         """
         Set the api domain for this class (hidden level, from Android 10)
         (only applicable to internal classes)
@@ -1371,15 +1557,18 @@ class ClassAnalysis:
         if self.is_external():
             raise RuntimeError(
                 "Can\'t set domain flag for external class: %s"
-                % (self.orig_class.name,))
+                % (self.orig_class.name,)
+            )
         self.domain_flag = flag
 
     # Alias
     get_class = get_vm_class
 
     def __repr__(self):
-        return "<analysis.ClassAnalysis {}{}>".format(self.orig_class.get_name(),
-                " EXTERNAL" if isinstance(self.orig_class, ExternalClass) else "")
+        return "<analysis.ClassAnalysis {}{}>".format(
+            self.orig_class.get_name(),
+            " EXTERNAL" if isinstance(self.orig_class, ExternalClass) else "",
+        )
 
     def __str__(self):
         # Print only instantiation from other classes here
@@ -1428,7 +1617,8 @@ class Analysis:
 
     :param Union[androguard.core.dex.DEX, None] vm: inital DEX object (default None)
     """
-    def __init__(self, vm: Union[dex.DEX, None]=None) -> None:
+
+    def __init__(self, vm: Union[dex.DEX, None] = None) -> None:
         # Contains DEX objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
@@ -1457,7 +1647,7 @@ class Analysis:
 
         :param androguard.core.dex.DEX vm: :class:`androguard.core.dex.DEX` to add to this Analysis
         """
-        
+
         self.vms.append(vm)
 
         logger.info("Adding DEX file version {}".format(vm.version))
@@ -1466,7 +1656,9 @@ class Analysis:
         tic = time.time()
         for i, current_class in enumerate(vm.get_classes()):
             # seed ClassAnalysis objects into classes attribute and add as new class
-            self.classes[current_class.get_name()] = ClassAnalysis(current_class)
+            self.classes[current_class.get_name()] = ClassAnalysis(
+                current_class
+            )
             new_class = self.classes[current_class.get_name()]
 
             # Fix up the hidden api annotations (Android 10)
@@ -1482,7 +1674,11 @@ class Analysis:
                 new_class.add_method(self.methods[method])
 
                 # Store for faster lookup during create_xrefs
-                m_hash = (current_class.get_name(), method.get_name(), str(method.get_descriptor()))
+                m_hash = (
+                    current_class.get_name(),
+                    method.get_name(),
+                    str(method.get_descriptor()),
+                )
                 self.__method_hashes[m_hash] = self.methods[method]
 
             # seed FieldAnalysis objects into to new class analysis
@@ -1496,7 +1692,11 @@ class Analysis:
         for string_value in vm.get_strings():
             self.strings[string_value] = StringAnalysis(string_value)
 
-        logger.info("Added DEX in the analysis took : {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
+        logger.info(
+            "Added DEX in the analysis took : {:0d}min {:02d}s".format(
+                *divmod(int(time.time() - tic), 60)
+            )
+        )
 
     def create_xref(self) -> None:
         """
@@ -1511,9 +1711,11 @@ class Analysis:
         if self.__created_xrefs:
             # TODO on concurrent runs, we probably need to clean up first,
             # or check that we do not write garbage.
-            logger.error("You have requested to run create_xref() twice! "
-                      "This will not work and cause problems! This function will exit right now. "
-                      "If you want to add multiple DEX files, use add() several times and then run create_xref() once.")
+            logger.error(
+                "You have requested to run create_xref() twice! "
+                "This will not work and cause problems! This function will exit right now. "
+                "If you want to add multiple DEX files, use add() several times and then run create_xref() once."
+            )
             return
 
         self.__created_xrefs = True
@@ -1530,8 +1732,12 @@ class Analysis:
         # TODO: After we collected all the information, we should add field and
         # string xrefs to each MethodAnalysis
 
-        logger.info("End of creating cross references (XREF) "
-                 "run time: {:0d}min {:02d}s".format(*divmod(int(time.time() - tic), 60)))
+        logger.info(
+            "End of creating cross references (XREF) "
+            "run time: {:0d}min {:02d}s".format(
+                *divmod(int(time.time() - tic), 60)
+            )
+        )
 
     def _create_xref(self, current_class: dex.ClassDefItem) -> None:
         """
@@ -1551,9 +1757,17 @@ class Analysis:
         """
         cur_cls_name = current_class.get_name()
 
-        logger.debug("Creating XREF/DREF for class at @0x{:08x}".format(current_class.get_class_data_off()))
+        logger.debug(
+            "Creating XREF/DREF for class at @0x{:08x}".format(
+                current_class.get_class_data_off()
+            )
+        )
         for current_method in current_class.get_methods():
-            logger.debug("Creating XREF for method at @0x{:08x}".format(current_method.get_code_off()))
+            logger.debug(
+                "Creating XREF for method at @0x{:08x}".format(
+                    current_method.get_code_off()
+                )
+            )
 
             cur_meth = self.get_method(current_method)
             cur_cls = self.classes[cur_cls_name]
@@ -1562,10 +1776,12 @@ class Analysis:
                 op_value = instruction.get_op_value()
 
                 # 1) check for class calls: const-class (0x1c), new-instance (0x22)
-                if op_value in [0x1c, 0x22]:
+                if op_value in [0x1C, 0x22]:
                     idx_type = instruction.get_ref_kind()
                     # type_info is the string like 'Ljava/lang/Object;'
-                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip('[')
+                    type_info = instruction.cm.vm.get_cm_type(idx_type).lstrip(
+                        '['
+                    )
                     if type_info[0] != 'L':
                         # Need to make sure, that we get class types and not other types
                         continue
@@ -1576,7 +1792,9 @@ class Analysis:
 
                     if type_info not in self.classes:
                         # Create new external class
-                        self.classes[type_info] = ClassAnalysis(ExternalClass(type_info))
+                        self.classes[type_info] = ClassAnalysis(
+                            ExternalClass(type_info)
+                        )
 
                     oth_cls = self.classes[type_info]
 
@@ -1586,10 +1804,14 @@ class Analysis:
                     # as there is no called method!
                     # With the _new_instance and _const_class can this be deprecated?
                     # Removing these does not impact tests
-                    cur_cls.add_xref_to(REF_TYPE(op_value), oth_cls, cur_meth, off)
-                    oth_cls.add_xref_from(REF_TYPE(op_value), cur_cls, cur_meth, off)
+                    cur_cls.add_xref_to(
+                        REF_TYPE(op_value), oth_cls, cur_meth, off
+                    )
+                    oth_cls.add_xref_from(
+                        REF_TYPE(op_value), cur_cls, cur_meth, off
+                    )
 
-                    if op_value == 0x1c:
+                    if op_value == 0x1C:
                         cur_meth.add_xref_const_class(oth_cls, off)
                         oth_cls.add_xref_const_class(cur_meth, off)
                     if op_value == 0x22:
@@ -1597,13 +1819,17 @@ class Analysis:
                         oth_cls.add_xref_new_instance(cur_meth, off)
 
                 # 2) check for method calls: invoke-* (0x6e ... 0x72), invoke-xxx/range (0x74 ... 0x78)
-                elif (0x6e <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
+                elif (0x6E <= op_value <= 0x72) or (0x74 <= op_value <= 0x78):
                     idx_meth = instruction.get_ref_kind()
                     method_info = instruction.cm.vm.get_cm_method(idx_meth)
                     if not method_info:
-                        logger.warning("Could not get method_info "
-                                    "for instruction at {} in method at @{}. "
-                                    "Requested IDX {}".format(off, current_method.get_code_off(), idx_meth))
+                        logger.warning(
+                            "Could not get method_info "
+                            "for instruction at {} in method at @{}. "
+                            "Requested IDX {}".format(
+                                off, current_method.get_code_off(), idx_meth
+                            )
+                        )
                         continue
 
                     class_info = method_info[0].lstrip('[')
@@ -1613,46 +1839,74 @@ class Analysis:
                         continue
 
                     # Resolve the second MethodAnalysis
-                    oth_meth = self._resolve_method(class_info, method_info[1], method_info[2])
+                    oth_meth = self._resolve_method(
+                        class_info, method_info[1], method_info[2]
+                    )
 
                     oth_cls = self.classes[class_info]
 
                     # FIXME: we could merge add_method_xref_* and add_xref_*
-                    cur_cls.add_method_xref_to(cur_meth, oth_cls, oth_meth, off)
-                    oth_cls.add_method_xref_from(oth_meth, cur_cls, cur_meth, off)
+                    cur_cls.add_method_xref_to(
+                        cur_meth, oth_cls, oth_meth, off
+                    )
+                    oth_cls.add_method_xref_from(
+                        oth_meth, cur_cls, cur_meth, off
+                    )
                     # Internal xref related to class manipulation
-                    cur_cls.add_xref_to(REF_TYPE(op_value), oth_cls, oth_meth, off)
-                    oth_cls.add_xref_from(REF_TYPE(op_value), cur_cls, cur_meth, off)
+                    cur_cls.add_xref_to(
+                        REF_TYPE(op_value), oth_cls, oth_meth, off
+                    )
+                    oth_cls.add_xref_from(
+                        REF_TYPE(op_value), cur_cls, cur_meth, off
+                    )
 
                 # 3) check for string usage: const-string (0x1a), const-string/jumbo (0x1b)
-                elif 0x1a <= op_value <= 0x1b:
-                    string_value = instruction.cm.vm.get_cm_string(instruction.get_ref_kind())
+                elif 0x1A <= op_value <= 0x1B:
+                    string_value = instruction.cm.vm.get_cm_string(
+                        instruction.get_ref_kind()
+                    )
                     if string_value not in self.strings:
-                        self.strings[string_value] = StringAnalysis(string_value)
+                        self.strings[string_value] = StringAnalysis(
+                            string_value
+                        )
 
-                    self.strings[string_value].add_xref_from(cur_cls, cur_meth, off)
+                    self.strings[string_value].add_xref_from(
+                        cur_cls, cur_meth, off
+                    )
 
                 # TODO maybe we should add a step 3a) here and check for all const fields. You can then xref for integers etc!
                 # But: This does not work, as const fields are usually optimized internally to const calls...
 
                 # 4) check for field usage: i*op (0x52 ... 0x5f), s*op (0x60 ... 0x6d)
-                elif 0x52 <= op_value <= 0x6d:
+                elif 0x52 <= op_value <= 0x6D:
                     idx_field = instruction.get_ref_kind()
                     field_info = instruction.cm.vm.get_cm_field(idx_field)
-                    field_item = instruction.cm.vm.get_encoded_field_descriptor(field_info[0], field_info[2], field_info[1])
+                    field_item = (
+                        instruction.cm.vm.get_encoded_field_descriptor(
+                            field_info[0], field_info[2], field_info[1]
+                        )
+                    )
                     if not field_item:
                         continue
 
-                    if (0x52 <= op_value <= 0x58) or (0x60 <= op_value <= 0x66):
+                    if (0x52 <= op_value <= 0x58) or (
+                        0x60 <= op_value <= 0x66
+                    ):
                         # read access to a field
-                        self.classes[cur_cls_name].add_field_xref_read(cur_meth, cur_cls, field_item, off)
+                        self.classes[cur_cls_name].add_field_xref_read(
+                            cur_meth, cur_cls, field_item, off
+                        )
                         cur_meth.add_xref_read(cur_cls, field_item, off)
                     else:
                         # write access to a field
-                        self.classes[cur_cls_name].add_field_xref_write(cur_meth, cur_cls, field_item, off)
+                        self.classes[cur_cls_name].add_field_xref_write(
+                            cur_meth, cur_cls, field_item, off
+                        )
                         cur_meth.add_xref_write(cur_cls, field_item, off)
 
-    def get_method(self, method: dex.EncodedMethod) -> Union[MethodAnalysis,None]:
+    def get_method(
+        self, method: dex.EncodedMethod
+    ) -> Union[MethodAnalysis, None]:
         """
         Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
         This Analysis object is used to enhance EncodedMethods.
@@ -1668,7 +1922,9 @@ class Analysis:
     # Alias
     get_method_analysis = get_method
 
-    def _resolve_method(self, class_name: str, method_name: str, method_descriptor: list[str]) -> MethodAnalysis:
+    def _resolve_method(
+        self, class_name: str, method_name: str, method_descriptor: list[str]
+    ) -> MethodAnalysis:
         """
         Resolves the Method and returns MethodAnalysis.
         Will automatically create ExternalMethods if can not resolve and add to the ClassAnalysis etc
@@ -1684,10 +1940,14 @@ class Analysis:
             # Need to create a new method
             if class_name not in self.classes:
                 # External class? no problem!
-                self.classes[class_name] = ClassAnalysis(ExternalClass(class_name))
+                self.classes[class_name] = ClassAnalysis(
+                    ExternalClass(class_name)
+                )
 
             # Create external method
-            meth = ExternalMethod(class_name, method_name, ''.join(method_descriptor))
+            meth = ExternalMethod(
+                class_name, method_name, ''.join(method_descriptor)
+            )
             meth_analysis = MethodAnalysis(None, meth)
 
             # add to all the collections we have
@@ -1697,7 +1957,9 @@ class Analysis:
 
         return self.__method_hashes[m_hash]
 
-    def get_method_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> Union[dex.EncodedMethod,None]:
+    def get_method_by_name(
+        self, class_name: str, method_name: str, method_descriptor: str
+    ) -> Union[dex.EncodedMethod, None]:
         """
         Search for a :class:`EncodedMethod` in all classes in this analysis
 
@@ -1707,12 +1969,16 @@ class Analysis:
         :return: :class:`EncodedMethod` or None if method was not found
         :rtype: androguard.core.dex.EncodedMethod
         """
-        m_a = self.get_method_analysis_by_name(class_name, method_name, method_descriptor)
+        m_a = self.get_method_analysis_by_name(
+            class_name, method_name, method_descriptor
+        )
         if m_a and not m_a.is_external():
             return m_a.get_method()
         return None
 
-    def get_method_analysis_by_name(self, class_name: str, method_name: str, method_descriptor: str) -> Union[MethodAnalysis,None]:
+    def get_method_analysis_by_name(
+        self, class_name: str, method_name: str, method_descriptor: str
+    ) -> Union[MethodAnalysis, None]:
         """
         Returns the crossreferencing object for a given method.
 
@@ -1730,7 +1996,9 @@ class Analysis:
             return None
         return self.__method_hashes[m_hash]
 
-    def get_field_analysis(self, field: dex.EncodedField) -> Union[FieldAnalysis,None]:
+    def get_field_analysis(
+        self, field: dex.EncodedField
+    ) -> Union[FieldAnalysis, None]:
         """
         Get the FieldAnalysis for a given fieldname
 
@@ -1807,7 +2075,7 @@ class Analysis:
             if m.is_external():
                 yield m
 
-    def get_strings_analysis(self) -> dict[str,StringAnalysis]:
+    def get_strings_analysis(self) -> dict[str, StringAnalysis]:
         """
         Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
 
@@ -1852,7 +2120,9 @@ class Analysis:
             for f in c.get_fields():
                 yield f
 
-    def find_classes(self, name:str = ".*", no_external:bool = False) -> Iterator[ClassAnalysis]:
+    def find_classes(
+        self, name: str = ".*", no_external: bool = False
+    ) -> Iterator[ClassAnalysis]:
         """
         Find classes by name, using regular expression
         This method will return all ClassAnalysis Object that match the name of
@@ -1870,11 +2140,12 @@ class Analysis:
 
     def find_methods(
         self,
-        classname:str=".*", 
-        methodname:str=".*", 
-        descriptor:str=".*",
-        accessflags:str=".*", 
-        no_external:bool=False) -> Iterator[MethodAnalysis]:
+        classname: str = ".*",
+        methodname: str = ".*",
+        descriptor: str = ".*",
+        accessflags: str = ".*",
+        no_external: bool = False,
+    ) -> Iterator[MethodAnalysis]:
         """
         Find a method by name using regular expression.
         This method will return all MethodAnalysis objects, which match the
@@ -1900,12 +2171,14 @@ class Analysis:
                     # external calls
                     if no_external and isinstance(z, ExternalMethod):
                         continue
-                    if re.match(methodname, z.get_name()) and \
-                       re.match(descriptor, z.get_descriptor()) and \
-                       re.match(accessflags, z.get_access_flags_string()):
+                    if (
+                        re.match(methodname, z.get_name())
+                        and re.match(descriptor, z.get_descriptor())
+                        and re.match(accessflags, z.get_access_flags_string())
+                    ):
                         yield m
 
-    def find_strings(self, string:str=".*") -> Iterator[StringAnalysis]:
+    def find_strings(self, string: str = ".*") -> Iterator[StringAnalysis]:
         """
         Find strings by regex
 
@@ -1918,10 +2191,11 @@ class Analysis:
 
     def find_fields(
         self,
-        classname:str=".*",
-        fieldname:str=".*",
-        fieldtype:str=".*",
-        accessflags:str=".*") -> Iterator[FieldAnalysis]:
+        classname: str = ".*",
+        fieldname: str = ".*",
+        fieldtype: str = ".*",
+        accessflags: str = ".*",
+    ) -> Iterator[FieldAnalysis]:
         """
         find fields by regex
 
@@ -1935,22 +2209,30 @@ class Analysis:
             if re.match(classname, cname):
                 for f in c.get_fields():
                     z = f.get_field()
-                    if re.match(fieldname, z.get_name()) and \
-                       re.match(fieldtype, z.get_descriptor()) and \
-                       re.match(accessflags, z.get_access_flags_string()):
+                    if (
+                        re.match(fieldname, z.get_name())
+                        and re.match(fieldtype, z.get_descriptor())
+                        and re.match(accessflags, z.get_access_flags_string())
+                    ):
                         yield f
 
     def __repr__(self):
-        return "<analysis.Analysis VMs: {}, Classes: {}, Methods: {}, Strings: {}>".format(len(self.vms), len(self.classes), len(self.methods), len(self.strings))
+        return "<analysis.Analysis VMs: {}, Classes: {}, Methods: {}, Strings: {}>".format(
+            len(self.vms),
+            len(self.classes),
+            len(self.methods),
+            len(self.strings),
+        )
 
     def get_call_graph(
         self,
-        classname:str=".*",
-        methodname:str=".*",
-        descriptor:str=".*",
-        accessflags:str=".*",
-        no_isolated:bool=False,
-        entry_points:list=[]) -> nx.DiGraph:
+        classname: str = ".*",
+        methodname: str = ".*",
+        descriptor: str = ".*",
+        accessflags: str = ".*",
+        no_isolated: bool = False,
+        entry_points: list = [],
+    ) -> nx.DiGraph:
         """
         Generate a directed graph based on the methods found by the filters applied.
         The filters are the same as in
@@ -1992,8 +2274,8 @@ class Analysis:
                     methodname=method.get_name(),
                     descriptor=method.get_descriptor(),
                     accessflags=method.get_access_flags_string(),
-                    classname=method.get_class_name()
-                    )
+                    classname=method.get_class_name(),
+                )
 
         CG = nx.DiGraph()
 
@@ -2003,13 +2285,16 @@ class Analysis:
             classname=classname,
             methodname=methodname,
             descriptor=descriptor,
-            accessflags=accessflags):
-            
+            accessflags=accessflags,
+        ):
+
             orig_method = m.get_method()
             logger.info("Found Method --> {}".format(orig_method))
 
             if no_isolated and len(m.get_xref_to()) == 0:
-                logger.info("Skipped {}, because if has no xrefs".format(orig_method))
+                logger.info(
+                    "Skipped {}, because if has no xrefs".format(orig_method)
+                )
                 continue
 
             _add_node(CG, orig_method, entry_points)
@@ -2055,9 +2340,20 @@ class Analysis:
                     _, method_name = bytecode.get_package_class_name(cls.name)
 
                 # FIXME this naming schema is not very good... but to describe a method uniquely, we need all of it
-                mname = "METH_" + method_name + "_" + bytecode.FormatDescriptorToPython(meth.access) + "_" + bytecode.FormatDescriptorToPython(meth.descriptor)
+                mname = (
+                    "METH_"
+                    + method_name
+                    + "_"
+                    + bytecode.FormatDescriptorToPython(meth.access)
+                    + "_"
+                    + bytecode.FormatDescriptorToPython(meth.descriptor)
+                )
                 if hasattr(cls, mname):
-                    logger.warning("already existing method: {} at class {}".format(mname, name))
+                    logger.warning(
+                        "already existing method: {} at class {}".format(
+                            mname, name
+                        )
+                    )
                 setattr(cls, mname, meth)
 
             # FIXME: syntetic classes produce problems here.
@@ -2065,10 +2361,16 @@ class Analysis:
             for field in cls.get_fields():
                 mname = "FIELD_" + bytecode.FormatNameToPython(field.name)
                 if hasattr(cls, mname):
-                    logger.warning("already existing field: {} at class {}".format(mname, name))
+                    logger.warning(
+                        "already existing field: {} at class {}".format(
+                            mname, name
+                        )
+                    )
                 setattr(cls, mname, field)
 
-    def get_permissions(self, apilevel:Union[str,int,None]=None) -> Iterator[MethodAnalysis, list[str]]:
+    def get_permissions(
+        self, apilevel: Union[str, int, None] = None
+    ) -> Iterator[MethodAnalysis, list[str]]:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
@@ -2102,10 +2404,14 @@ class Analysis:
         """
 
         # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
-        permmap = load_api_specific_resource_module('api_permission_mappings', apilevel)
+        permmap = load_api_specific_resource_module(
+            'api_permission_mappings', apilevel
+        )
         if not permmap:
-            raise ValueError("No permission mapping found! Is one available? "
-                             "The requested API level was '{}'".format(apilevel))
+            raise ValueError(
+                "No permission mapping found! Is one available? "
+                "The requested API level was '{}'".format(apilevel)
+            )
 
         for cls in self.get_external_classes():
             for meth_analysis in cls.get_methods():
@@ -2113,7 +2419,9 @@ class Analysis:
                 if meth.permission_api_name in permmap:
                     yield meth_analysis, permmap[meth.permission_api_name]
 
-    def get_permission_usage(self, permission:str, apilevel:Union[str,int,None]=None) -> Iterator[MethodAnalysis]:
+    def get_permission_usage(
+        self, permission: str, apilevel: Union[str, int, None] = None
+    ) -> Iterator[MethodAnalysis]:
         """
         Find the usage of a permission inside the Analysis.
 
@@ -2136,15 +2444,23 @@ class Analysis:
         """
 
         # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
-        permmap = load_api_specific_resource_module('api_permission_mappings', apilevel)
+        permmap = load_api_specific_resource_module(
+            'api_permission_mappings', apilevel
+        )
         if not permmap:
-            raise ValueError("No permission mapping found! Is one available? "
-                             "The requested API level was '{}'".format(apilevel))
+            raise ValueError(
+                "No permission mapping found! Is one available? "
+                "The requested API level was '{}'".format(apilevel)
+            )
 
         apis = {k for k, v in permmap.items() if permission in v}
         if not apis:
-            raise ValueError("No API methods could be found which use the permission. "
-                             "Does the permission exists? You requested: '{}'".format(permission))
+            raise ValueError(
+                "No API methods could be found which use the permission. "
+                "Does the permission exists? You requested: '{}'".format(
+                    permission
+                )
+            )
 
         for cls in self.get_external_classes():
             for meth_analysis in cls.get_methods():

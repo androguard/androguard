@@ -1,7 +1,8 @@
-from enum import IntEnum
 from collections import OrderedDict
+from enum import IntEnum
 
 # This file contains dictionaries used in the Dalvik Format.
+
 
 # Used to identify different types of operands
 class Kind(IntEnum):
@@ -12,6 +13,7 @@ class Kind(IntEnum):
     It is used to reference the actual item instead of the refernece index
     from the :class:`ClassManager` when disassembling the bytecode.
     """
+
     # Indicates a method reference
     METH = 0
     # Indicates that opcode argument is a string index
@@ -41,6 +43,7 @@ class Operand(IntEnum):
     """
     Enumeration used for the operand type of opcodes
     """
+
     REGISTER = 0
     LITERAL = 1
     RAW = 2
@@ -72,44 +75,115 @@ class TypeMapItem(IntEnum):
     ANNOTATION_ITEM = 0x2004
     ENCODED_ARRAY_ITEM = 0x2005
     ANNOTATIONS_DIRECTORY_ITEM = 0x2006
-    HIDDENAPI_CLASS_DATA_ITEM = 0xf000
+    HIDDENAPI_CLASS_DATA_ITEM = 0xF000
 
     @staticmethod
     def _get_dependencies():
-        return OrderedDict([
-            (TypeMapItem.HEADER_ITEM, set()),
-            (TypeMapItem.STRING_ID_ITEM, {TypeMapItem.STRING_DATA_ITEM}),
-            (TypeMapItem.TYPE_ID_ITEM, {TypeMapItem.STRING_ID_ITEM}),
-            (TypeMapItem.PROTO_ID_ITEM, {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST}),
-            (TypeMapItem.FIELD_ID_ITEM, {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM}),
-            (TypeMapItem.METHOD_ID_ITEM,
-             {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM, TypeMapItem.PROTO_ID_ITEM}),
-            (TypeMapItem.CLASS_DEF_ITEM,
-             {TypeMapItem.TYPE_ID_ITEM, TypeMapItem.TYPE_LIST, TypeMapItem.STRING_ID_ITEM, TypeMapItem.DEBUG_INFO_ITEM,
-              TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM, TypeMapItem.CLASS_DATA_ITEM, TypeMapItem.ENCODED_ARRAY_ITEM}),
-            (TypeMapItem.CALL_SITE_ITEM,
-             {TypeMapItem.METHOD_HANDLE_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
-            # TODO: check if this is correct
-            (TypeMapItem.METHOD_HANDLE_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
-            # TODO: check if this is correct
-            (TypeMapItem.MAP_LIST, set()),
-            (TypeMapItem.TYPE_LIST, {TypeMapItem.TYPE_ID_ITEM}),
-            (TypeMapItem.ANNOTATION_SET_REF_LIST, {TypeMapItem.ANNOTATION_SET_ITEM}),
-            (TypeMapItem.ANNOTATION_SET_ITEM, {TypeMapItem.ANNOTATION_ITEM}),
-            (TypeMapItem.CLASS_DATA_ITEM, {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
-            (TypeMapItem.CODE_ITEM, {TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.TYPE_ID_ITEM}),
-            (TypeMapItem.STRING_DATA_ITEM, set()),
-            (TypeMapItem.DEBUG_INFO_ITEM, {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM}),
-            (TypeMapItem.ANNOTATION_ITEM,
-             {TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM,
-              TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
-            (TypeMapItem.ENCODED_ARRAY_ITEM,
-             {TypeMapItem.PROTO_ID_ITEM, TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM,
-              TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM}),
-            (TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM,
-             {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM, TypeMapItem.ANNOTATION_SET_ITEM}),
-            (TypeMapItem.HIDDENAPI_CLASS_DATA_ITEM, set()),
-        ])
+        return OrderedDict(
+            [
+                (TypeMapItem.HEADER_ITEM, set()),
+                (TypeMapItem.STRING_ID_ITEM, {TypeMapItem.STRING_DATA_ITEM}),
+                (TypeMapItem.TYPE_ID_ITEM, {TypeMapItem.STRING_ID_ITEM}),
+                (
+                    TypeMapItem.PROTO_ID_ITEM,
+                    {
+                        TypeMapItem.STRING_ID_ITEM,
+                        TypeMapItem.TYPE_ID_ITEM,
+                        TypeMapItem.TYPE_LIST,
+                    },
+                ),
+                (
+                    TypeMapItem.FIELD_ID_ITEM,
+                    {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM},
+                ),
+                (
+                    TypeMapItem.METHOD_ID_ITEM,
+                    {
+                        TypeMapItem.STRING_ID_ITEM,
+                        TypeMapItem.TYPE_ID_ITEM,
+                        TypeMapItem.PROTO_ID_ITEM,
+                    },
+                ),
+                (
+                    TypeMapItem.CLASS_DEF_ITEM,
+                    {
+                        TypeMapItem.TYPE_ID_ITEM,
+                        TypeMapItem.TYPE_LIST,
+                        TypeMapItem.STRING_ID_ITEM,
+                        TypeMapItem.DEBUG_INFO_ITEM,
+                        TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM,
+                        TypeMapItem.CLASS_DATA_ITEM,
+                        TypeMapItem.ENCODED_ARRAY_ITEM,
+                    },
+                ),
+                (
+                    TypeMapItem.CALL_SITE_ITEM,
+                    {
+                        TypeMapItem.METHOD_HANDLE_ITEM,
+                        TypeMapItem.STRING_ID_ITEM,
+                        TypeMapItem.METHOD_ID_ITEM,
+                    },
+                ),
+                # TODO: check if this is correct
+                (
+                    TypeMapItem.METHOD_HANDLE_ITEM,
+                    {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM},
+                ),
+                # TODO: check if this is correct
+                (TypeMapItem.MAP_LIST, set()),
+                (TypeMapItem.TYPE_LIST, {TypeMapItem.TYPE_ID_ITEM}),
+                (
+                    TypeMapItem.ANNOTATION_SET_REF_LIST,
+                    {TypeMapItem.ANNOTATION_SET_ITEM},
+                ),
+                (
+                    TypeMapItem.ANNOTATION_SET_ITEM,
+                    {TypeMapItem.ANNOTATION_ITEM},
+                ),
+                (
+                    TypeMapItem.CLASS_DATA_ITEM,
+                    {TypeMapItem.FIELD_ID_ITEM, TypeMapItem.METHOD_ID_ITEM},
+                ),
+                (
+                    TypeMapItem.CODE_ITEM,
+                    {TypeMapItem.DEBUG_INFO_ITEM, TypeMapItem.TYPE_ID_ITEM},
+                ),
+                (TypeMapItem.STRING_DATA_ITEM, set()),
+                (
+                    TypeMapItem.DEBUG_INFO_ITEM,
+                    {TypeMapItem.STRING_ID_ITEM, TypeMapItem.TYPE_ID_ITEM},
+                ),
+                (
+                    TypeMapItem.ANNOTATION_ITEM,
+                    {
+                        TypeMapItem.PROTO_ID_ITEM,
+                        TypeMapItem.STRING_ID_ITEM,
+                        TypeMapItem.TYPE_ID_ITEM,
+                        TypeMapItem.FIELD_ID_ITEM,
+                        TypeMapItem.METHOD_ID_ITEM,
+                    },
+                ),
+                (
+                    TypeMapItem.ENCODED_ARRAY_ITEM,
+                    {
+                        TypeMapItem.PROTO_ID_ITEM,
+                        TypeMapItem.STRING_ID_ITEM,
+                        TypeMapItem.TYPE_ID_ITEM,
+                        TypeMapItem.FIELD_ID_ITEM,
+                        TypeMapItem.METHOD_ID_ITEM,
+                    },
+                ),
+                (
+                    TypeMapItem.ANNOTATIONS_DIRECTORY_ITEM,
+                    {
+                        TypeMapItem.FIELD_ID_ITEM,
+                        TypeMapItem.METHOD_ID_ITEM,
+                        TypeMapItem.ANNOTATION_SET_ITEM,
+                    },
+                ),
+                (TypeMapItem.HIDDENAPI_CLASS_DATA_ITEM, set()),
+            ]
+        )
 
     @staticmethod
     def determine_load_order():
@@ -128,6 +202,7 @@ class TypeMapItem(IntEnum):
             for unloaded in dependencies.values():
                 unloaded.discard(type_name)
         return ordered
+
 
 # https://source.android.com/devices/tech/dalvik/dex-format#access-flags
 ACCESS_FLAGS = {
@@ -162,4 +237,3 @@ TYPE_DESCRIPTOR = {
     'F': 'float',
     'D': 'double',
 }
-

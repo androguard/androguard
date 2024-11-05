@@ -7,9 +7,7 @@ license = "Apache Licence, Version 2.0"
 readme = "README.md"
 homepage = "https://github.com/androguard/androguard"
 
-packages = [
-    { include = "androguard" },
-]
+packages = [{ include = "androguard" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -28,9 +26,13 @@ apkInspector = ">=1.1.7"
 matplotlib = "*"
 networkx = "*"
 pyyaml = "*"
+cryptography = "*"
 
 [tool.setuptools.package_data]
-"androguard.core.api_specific_resources" = ["aosp_permissions/*.json", "api_permission_mappings/*.json"]
+"androguard.core.api_specific_resources" = [
+    "aosp_permissions/*.json",
+    "api_permission_mappings/*.json",
+]
 "androguard.core.resources" = ["public.xml"]
 
 [tool.poetry.scripts]
@@ -39,3 +41,11 @@ androguard = "androguard.cli.cli:entry_point"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79
+skip-string-normalization = true
+
+[tool.isort]
+profile = "black"
+line_length = 79
