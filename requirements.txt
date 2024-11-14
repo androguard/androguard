@@ -10,7 +10,7 @@ dataset
 frida
 loguru
 apkInspector>=1.2.1
-matplotlib
+# matplotlib  # matplotlib is used only in a single CLI invocation with local import. 
 networkx
 pyyaml
 cryptography
