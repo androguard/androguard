@@ -1838,7 +1838,7 @@ class ARSCParser:
                         self.packages[package_name].append(entries)
 
                         base_offset = self.buff.tell()
-                        if base_offset != expected_entries_start:
+                        if base_offset + ((4 - (base_offset % 4)) % 4) != expected_entries_start:
                             # FIXME: seems like I am missing 2 bytes here in some cases, though it does not affect the result
                             logger.warning(
                                 "Something is off here! We are not where the entries should start."
