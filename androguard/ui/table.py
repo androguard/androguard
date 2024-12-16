@@ -1,17 +1,31 @@
 #!/usr/bin/env python3
 
 from typing import Type, Union
+
 from prompt_toolkit import Application
-from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.layout.dimension import Dimension as D, sum_layout_dimensions, max_layout_dimensions, to_dimension
-from prompt_toolkit.widgets import Box, TextArea, Label, Button
 from prompt_toolkit.cache import SimpleCache
-# from prompt_toolkit.widgets.base import Border
-from prompt_toolkit.layout.containers import Window, VSplit, HSplit, HorizontalAlign, VerticalAlign
 from prompt_toolkit.key_binding.key_bindings import KeyBindings
+
+# from prompt_toolkit.widgets.base import Border
+from prompt_toolkit.layout.containers import (
+    HorizontalAlign,
+    HSplit,
+    VerticalAlign,
+    VSplit,
+    Window,
+)
+from prompt_toolkit.layout.dimension import Dimension as D
+from prompt_toolkit.layout.dimension import (
+    max_layout_dimensions,
+    sum_layout_dimensions,
+    to_dimension,
+)
+from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.utils import take_using_weights
+from prompt_toolkit.widgets import Box, Button, Label, TextArea
 
 from androguard.ui.selection import SelectionViewList
+
 
 class EmptyBorder:
     HORIZONTAL = ''
@@ -31,7 +45,7 @@ class EmptyBorder:
 
 
 class SpaceBorder:
-    " Box drawing characters. (Spaces) "
+    "Box drawing characters. (Spaces)"
     HORIZONTAL = ' '
     VERTICAL = ' '
 
@@ -49,7 +63,7 @@ class SpaceBorder:
 
 
 class AsciiBorder:
-    " Box drawing characters. (ASCII) "
+    "Box drawing characters. (ASCII)"
     HORIZONTAL = '-'
     VERTICAL = '|'
 
@@ -67,7 +81,7 @@ class AsciiBorder:
 
 
 class ThinBorder:
-    " Box drawing characters. (Thin) "
+    "Box drawing characters. (Thin)"
     HORIZONTAL = '\u2500'
     VERTICAL = '\u2502'
 
@@ -85,7 +99,7 @@ class ThinBorder:
 
 
 class RoundedBorder(ThinBorder):
-    " Box drawing characters. (Rounded) "
+    "Box drawing characters. (Rounded)"
     TOP_LEFT = '\u256d'
     TOP_RIGHT = '\u256e'
     BOTTOM_LEFT = '\u2570'
@@ -93,7 +107,7 @@ class RoundedBorder(ThinBorder):
 
 
 class ThickBorder:
-    " Box drawing characters. (Thick) "
+    "Box drawing characters. (Thick)"
     HORIZONTAL = '\u2501'
     VERTICAL = '\u2503'
 
@@ -111,7 +125,7 @@ class ThickBorder:
 
 
 class DoubleBorder:
-    " Box drawing characters. (Thin) "
+    "Box drawing characters. (Thin)"
     HORIZONTAL = '\u2550'
     VERTICAL = '\u2551'
 
@@ -126,6 +140,7 @@ class DoubleBorder:
     BOTTOM_T = '\u2569'
 
     INTERSECT = '\u256c'
+
 
 AnyBorderStyle = Union[
     Type[EmptyBorder],
@@ -150,12 +165,25 @@ class Merge:
 
 class Table(HSplit):
 
-    def __init__(self, table,
-                 borders: AnyBorderStyle=ThinBorder, column_width=None, column_widths=[],
-                 window_too_small=None, align=VerticalAlign.JUSTIFY,
-                 padding=0, padding_char=None, padding_style='',
-                 width=None, height=None, z_index=None,
-                 modal=False, key_bindings=None, style='', selected_style=''):
+    def __init__(
+        self,
+        table,
+        borders: AnyBorderStyle = ThinBorder,
+        column_width=None,
+        column_widths=[],
+        window_too_small=None,
+        align=VerticalAlign.JUSTIFY,
+        padding=0,
+        padding_char=None,
+        padding_style='',
+        width=None,
+        height=None,
+        z_index=None,
+        modal=False,
+        key_bindings=None,
+        style='',
+        selected_style='',
+    ):
         self.borders = borders
         self.column_width = column_width
         self.column_widths = column_widths
@@ -165,7 +193,10 @@ class Table(HSplit):
         if not isinstance(table, list):
             table = [table]
 
-        children = [_Row(row=row, table=self, borders=borders, height=1) for row in table]
+        children = [
+            _Row(row=row, table=self, borders=borders, height=1)
+            for row in table
+        ]
 
         super().__init__(
             children=children,
@@ -179,7 +210,7 @@ class Table(HSplit):
             z_index=z_index,
             modal=modal,
             key_bindings=key_bindings,
-            style=style
+            style=style,
         )
         self.row_cache = SimpleCache(maxsize=30)
 
@@ -188,7 +219,16 @@ class Table(HSplit):
     #     self.children.extend(_Row(row=row, table=self, borders=self.borders, height=1, style="#000000 bg:#ffffff") for row in rows)
 
     def add_row(self, row, style, cache_id):
-        r = self.row_cache.get(cache_id, lambda: _Row(row=row, table=self, borders=self.borders, height=1, style=style))
+        r = self.row_cache.get(
+            cache_id,
+            lambda: _Row(
+                row=row,
+                table=self,
+                borders=self.borders,
+                height=1,
+                style=style,
+            ),
+        )
         self.children.append(r)
 
     @property
@@ -200,6 +240,7 @@ class Table(HSplit):
         """
         List of child objects, including padding & borders.
         """
+
         def get():
             result = []
 
@@ -306,7 +347,8 @@ class _BaseRow(VSplit):
 
         child_generator = take_using_weights(
             items=list(range(len(dimensions))),
-            weights=[d.weight for d in dimensions])
+            weights=[d.weight for d in dimensions],
+        )
 
         i = next(child_generator)
 
@@ -334,7 +376,7 @@ class _BaseRow(VSplit):
             for c in children:
                 if isinstance(c, _Cell):
                     inc = (c.merge * 2) - 1
-                    tmp.append(sum(sizes[i:i + inc]))
+                    tmp.append(sum(sizes[i : i + inc]))
                 else:
                     inc = 1
                     tmp.append(sizes[i])
@@ -345,11 +387,23 @@ class _BaseRow(VSplit):
 
 
 class _Row(_BaseRow):
-    def __init__(self, row, table, borders,
-                 window_too_small=None, align=HorizontalAlign.JUSTIFY,
-                 padding=D.exact(0), padding_char=None, padding_style='',
-                 width=None, height=None, z_index=None,
-                 modal=False, key_bindings=None, style=''):
+    def __init__(
+        self,
+        row,
+        table,
+        borders,
+        window_too_small=None,
+        align=HorizontalAlign.JUSTIFY,
+        padding=D.exact(0),
+        padding_char=None,
+        padding_style='',
+        width=None,
+        height=None,
+        z_index=None,
+        modal=False,
+        key_bindings=None,
+        style='',
+    ):
         self.table = table
         self.borders = borders
 
@@ -377,7 +431,8 @@ class _Row(_BaseRow):
             z_index=z_index,
             modal=modal,
             key_bindings=key_bindings,
-            style=style)
+            style=style,
+        )
 
     @property
     def raw_columns(self):
@@ -388,6 +443,7 @@ class _Row(_BaseRow):
         """
         List of child objects, including padding & borders.
         """
+
         def get():
             result = []
 
@@ -421,11 +477,24 @@ class _Row(_BaseRow):
 
 
 class _Border(_BaseRow):
-    def __init__(self, prev, next, table, borders,
-                 window_too_small=None, align=HorizontalAlign.JUSTIFY,
-                 padding=D.exact(0), padding_char=None, padding_style='',
-                 width=None, height=None, z_index=None,
-                 modal=False, key_bindings=None, style=''):
+    def __init__(
+        self,
+        prev,
+        next,
+        table,
+        borders,
+        window_too_small=None,
+        align=HorizontalAlign.JUSTIFY,
+        padding=D.exact(0),
+        padding_char=None,
+        padding_style='',
+        width=None,
+        height=None,
+        z_index=None,
+        modal=False,
+        key_bindings=None,
+        style='',
+    ):
         assert prev or next
         self.prev = prev
         self.next = next
@@ -446,7 +515,8 @@ class _Border(_BaseRow):
             z_index=z_index,
             modal=modal,
             key_bindings=key_bindings,
-            style=style)
+            style=style,
+        )
 
     def has_borders(self, row):
         yield None  # first (outer) border
@@ -470,6 +540,7 @@ class _Border(_BaseRow):
         """
         List of child objects, including padding & borders.
         """
+
         def get():
             result = []
 
@@ -525,13 +596,26 @@ class _Border(_BaseRow):
 
 
 class _Cell(HSplit):
-    def __init__(self, cell, table, row, merge=1,
-                 padding=0, char=None,
-                 padding_left=None, padding_right=None,
-                 padding_top=None, padding_bottom=None,
-                 window_too_small=None,
-                 width=None, height=None, z_index=None,
-                 modal=False, key_bindings=None, style=''):
+    def __init__(
+        self,
+        cell,
+        table,
+        row,
+        merge=1,
+        padding=0,
+        char=None,
+        padding_left=None,
+        padding_right=None,
+        padding_top=None,
+        padding_bottom=None,
+        window_too_small=None,
+        width=None,
+        height=None,
+        z_index=None,
+        modal=False,
+        key_bindings=None,
+        style='',
+    ):
         self.table = table
         self.row = row
         self.merge = merge
@@ -569,7 +653,8 @@ class _Cell(HSplit):
             z_index=z_index,
             modal=modal,
             key_bindings=key_bindings,
-            style=style)
+            style=style,
+        )
 
 
 def demo():
@@ -589,9 +674,10 @@ def demo():
     sht3 = "The quick brown fox jumps over the lazy dog."
 
     kb = KeyBindings()
+
     @kb.add('c-c')
     def _(event):
-        " Abort when Control-C has been pressed. "
+        "Abort when Control-C has been pressed."
         event.app.exit(exception=KeyboardInterrupt, style='class:aborting')
 
     table = [
@@ -610,7 +696,8 @@ def demo():
                 table=table,
                 column_width=D.exact(15),
                 column_widths=[None],
-                borders=DoubleBorder),
+                borders=DoubleBorder,
+            ),
             padding=1,
         ),
     )

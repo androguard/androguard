@@ -16,21 +16,50 @@
 # limitations under the License.
 
 from struct import pack, unpack
-import androguard.decompiler.util as util
-from androguard.decompiler.instruction import (
-    ArrayLengthExpression, ArrayLoadExpression, ArrayStoreInstruction,
-    AssignExpression, BaseClass, BinaryCompExpression, BinaryExpression,
-    BinaryExpression2Addr, BinaryExpressionLit, CastExpression,
-    CheckCastExpression, ConditionalExpression, ConditionalZExpression,
-    Constant, FillArrayExpression, FilledArrayExpression, InstanceExpression,
-    InstanceInstruction, InvokeInstruction, InvokeDirectInstruction,
-    InvokeRangeInstruction, InvokeStaticInstruction, MonitorEnterExpression,
-    MonitorExitExpression, MoveExceptionExpression, MoveExpression,
-    MoveResultExpression, NewArrayExpression, NewInstance, NopExpression,
-    ThrowExpression, Variable, ReturnInstruction, StaticExpression,
-    StaticInstruction, SwitchExpression, ThisParam, UnaryExpression)
 
 from loguru import logger
+
+import androguard.decompiler.util as util
+from androguard.decompiler.instruction import (
+    ArrayLengthExpression,
+    ArrayLoadExpression,
+    ArrayStoreInstruction,
+    AssignExpression,
+    BaseClass,
+    BinaryCompExpression,
+    BinaryExpression,
+    BinaryExpression2Addr,
+    BinaryExpressionLit,
+    CastExpression,
+    CheckCastExpression,
+    ConditionalExpression,
+    ConditionalZExpression,
+    Constant,
+    FillArrayExpression,
+    FilledArrayExpression,
+    InstanceExpression,
+    InstanceInstruction,
+    InvokeDirectInstruction,
+    InvokeInstruction,
+    InvokeRangeInstruction,
+    InvokeStaticInstruction,
+    MonitorEnterExpression,
+    MonitorExitExpression,
+    MoveExceptionExpression,
+    MoveExpression,
+    MoveResultExpression,
+    NewArrayExpression,
+    NewInstance,
+    NopExpression,
+    ReturnInstruction,
+    StaticExpression,
+    StaticInstruction,
+    SwitchExpression,
+    ThisParam,
+    ThrowExpression,
+    UnaryExpression,
+    Variable,
+)
 
 
 class Op:
@@ -93,14 +122,16 @@ def assign_cast_exp(val_a, val_b, val_op, op_type, vmap):
 
 def assign_binary_exp(ins, val_op, op_type, vmap):
     reg_a, reg_b, reg_c = get_variables(vmap, ins.AA, ins.BB, ins.CC)
-    return AssignExpression(reg_a, BinaryExpression(val_op, reg_b, reg_c,
-                                                    op_type))
+    return AssignExpression(
+        reg_a, BinaryExpression(val_op, reg_b, reg_c, op_type)
+    )
 
 
 def assign_binary_2addr_exp(ins, val_op, op_type, vmap):
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
-    return AssignExpression(reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b,
-                                                         op_type))
+    return AssignExpression(
+        reg_a, BinaryExpression2Addr(val_op, reg_a, reg_b, op_type)
+    )
 
 
 def assign_lit(op_type, val_cst, val_a, val_b, vmap):
@@ -110,6 +141,7 @@ def assign_lit(op_type, val_cst, val_a, val_b, vmap):
 
 
 ## From here on, there are all defined instructions
+
 
 # nop
 def nop(ins, vmap):
@@ -300,9 +332,11 @@ def conststringjumbo(ins, vmap):
 # const-class vAA, type@BBBB ( 8b )
 def constclass(ins, vmap):
     logger.debug('ConstClass : %s', ins.get_output())
-    cst = Constant(util.get_type(ins.get_string()),
-                   'Ljava/lang/Class;',
-                   descriptor=ins.get_string())
+    cst = Constant(
+        util.get_type(ins.get_string()),
+        'Ljava/lang/Class;',
+        descriptor=ins.get_string(),
+    )
     return assign_const(ins.AA, cst, vmap)
 
 
@@ -324,9 +358,9 @@ def checkcast(ins, vmap):
     logger.debug('CheckCast: %s', ins.get_output())
     cast_type = util.get_type(ins.get_translated_kind())
     cast_var = get_variables(vmap, ins.AA)
-    cast_expr = CheckCastExpression(cast_var,
-                                    cast_type,
-                                    descriptor=ins.get_translated_kind())
+    cast_expr = CheckCastExpression(
+        cast_var, cast_type, descriptor=ins.get_translated_kind()
+    )
     return AssignExpression(cast_var, cast_expr)
 
 
@@ -334,8 +368,10 @@ def checkcast(ins, vmap):
 def instanceof(ins, vmap):
     logger.debug('InstanceOf : %s', ins.get_output())
     reg_a, reg_b = get_variables(vmap, ins.A, ins.B)
-    reg_c = BaseClass(util.get_type(ins.get_translated_kind()),
-                      descriptor=ins.get_translated_kind())
+    reg_c = BaseClass(
+        util.get_type(ins.get_translated_kind()),
+        descriptor=ins.get_translated_kind(),
+    )
     exp = BinaryExpression('instanceof', reg_b, reg_c, 'Z')
     return AssignExpression(reg_a, exp)
 
@@ -368,7 +404,7 @@ def fillednewarray(ins, vmap, ret):
     logger.debug('FilledNewArray : %s', ins.get_output())
     c, d, e, f, g = get_variables(vmap, ins.C, ins.D, ins.E, ins.F, ins.G)
     array_type = ins.cm.get_type(ins.BBBB)
-    exp = FilledArrayExpression(ins.A, array_type, [c, d, e, f, g][:ins.A])
+    exp = FilledArrayExpression(ins.A, array_type, [c, d, e, f, g][: ins.A])
     return AssignExpression(ret, exp)
 
 
@@ -887,8 +923,9 @@ def invokevirtual(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeInstruction(cls_name, name, c, ret_type, param_type, args,
-                            method.get_triple())
+    exp = InvokeInstruction(
+        cls_name, name, c, ret_type, param_type, args, method.get_triple()
+    )
     return AssignExpression(returned, exp)
 
 
@@ -904,8 +941,15 @@ def invokesuper(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     superclass = BaseClass('super')
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeInstruction(cls_name, name, superclass, ret_type, param_type,
-                            args, method.get_triple())
+    exp = InvokeInstruction(
+        cls_name,
+        name,
+        superclass,
+        ret_type,
+        param_type,
+        args,
+        method.get_triple(),
+    )
     return AssignExpression(returned, exp)
 
 
@@ -928,8 +972,9 @@ def invokedirect(ins, vmap, ret):
             ret.set_to(base)
     else:
         returned = ret.new()
-    exp = InvokeDirectInstruction(cls_name, name, base, ret_type, param_type,
-                                  args, method.get_triple())
+    exp = InvokeDirectInstruction(
+        cls_name, name, base, ret_type, param_type, args, method.get_triple()
+    )
     return AssignExpression(returned, exp)
 
 
@@ -945,8 +990,9 @@ def invokestatic(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeStaticInstruction(cls_name, name, base, ret_type, param_type,
-                                  args, method.get_triple())
+    exp = InvokeStaticInstruction(
+        cls_name, name, base, ret_type, param_type, args, method.get_triple()
+    )
     return AssignExpression(returned, exp)
 
 
@@ -962,8 +1008,9 @@ def invokeinterface(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     c = get_variables(vmap, ins.C)
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeInstruction(cls_name, name, c, ret_type, param_type, args,
-                            method.get_triple())
+    exp = InvokeInstruction(
+        cls_name, name, c, ret_type, param_type, args, method.get_triple()
+    )
     return AssignExpression(returned, exp)
 
 
@@ -979,8 +1026,14 @@ def invokevirtualrange(ins, vmap, ret):
     this_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
-                                 [this_arg] + args, method.get_triple())
+    exp = InvokeRangeInstruction(
+        cls_name,
+        name,
+        ret_type,
+        param_type,
+        [this_arg] + args,
+        method.get_triple(),
+    )
     return AssignExpression(returned, exp)
 
 
@@ -1001,8 +1054,14 @@ def invokesuperrange(ins, vmap, ret):
         returned = base
         ret.set_to(base)
     superclass = BaseClass('super')
-    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
-                                 [superclass] + args, method.get_triple())
+    exp = InvokeRangeInstruction(
+        cls_name,
+        name,
+        ret_type,
+        param_type,
+        [superclass] + args,
+        method.get_triple(),
+    )
     return AssignExpression(returned, exp)
 
 
@@ -1023,8 +1082,14 @@ def invokedirectrange(ins, vmap, ret):
     else:
         returned = base
         ret.set_to(base)
-    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
-                                 [this_arg] + args, method.get_triple())
+    exp = InvokeRangeInstruction(
+        cls_name,
+        name,
+        ret_type,
+        param_type,
+        [this_arg] + args,
+        method.get_triple(),
+    )
     return AssignExpression(returned, exp)
 
 
@@ -1040,8 +1105,9 @@ def invokestaticrange(ins, vmap, ret):
     args = get_args(vmap, param_type, largs)
     base = BaseClass(cls_name, descriptor=method.get_class_name())
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeStaticInstruction(cls_name, name, base, ret_type, param_type,
-                                  args, method.get_triple())
+    exp = InvokeStaticInstruction(
+        cls_name, name, base, ret_type, param_type, args, method.get_triple()
+    )
     return AssignExpression(returned, exp)
 
 
@@ -1057,8 +1123,14 @@ def invokeinterfacerange(ins, vmap, ret):
     base_arg = get_variables(vmap, largs[0])
     args = get_args(vmap, param_type, largs[1:])
     returned = None if ret_type == 'V' else ret.new()
-    exp = InvokeRangeInstruction(cls_name, name, ret_type, param_type,
-                                 [base_arg] + args, method.get_triple())
+    exp = InvokeRangeInstruction(
+        cls_name,
+        name,
+        ret_type,
+        param_type,
+        [base_arg] + args,
+        method.get_triple(),
+    )
     return AssignExpression(returned, exp)
 
 

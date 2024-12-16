@@ -13,4 +13,4 @@ apkInspector>=1.2.1
 matplotlib
 networkx
 pyyaml
-oscrypto>=1.3.0
+cryptography

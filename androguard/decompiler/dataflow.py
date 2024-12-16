@@ -16,11 +16,12 @@
 # limitations under the License.
 
 from collections import defaultdict
-from androguard.decompiler.instruction import (Variable, ThisParam, Param)
-from androguard.decompiler.util import build_path, common_dom
-from androguard.decompiler.node import Node
 
 from loguru import logger
+
+from androguard.decompiler.instruction import Param, ThisParam, Variable
+from androguard.decompiler.node import Node
+from androguard.decompiler.util import build_path, common_dom
 
 
 class BasicReachDef:
@@ -150,8 +151,9 @@ def clear_path_node(graph, reg, loc1, loc2):
         logger.debug('  treat loc: %d, ins: %s', loc, ins)
         if ins is None:
             continue
-        logger.debug('  LHS: %s, side_effect: %s', ins.get_lhs(),
-                     ins.has_side_effect())
+        logger.debug(
+            '  LHS: %s, side_effect: %s', ins.get_lhs(), ins.has_side_effect()
+        )
         if ins.get_lhs() == reg or ins.has_side_effect():
             return False
     return True
@@ -218,8 +220,9 @@ def register_propagation(graph, du, ud):
                         continue
                     orig_ins = graph.get_ins_from_loc(loc)
                     logger.debug('     -> %s', orig_ins)
-                    logger.debug('     -> DU(%s, %s) = %s', var, loc,
-                                 du[var, loc])
+                    logger.debug(
+                        '     -> DU(%s, %s) = %s', var, loc, du[var, loc]
+                    )
 
                     # We defined some instructions as not propagable.
                     # Actually this is the case only for array creation
@@ -232,8 +235,10 @@ def register_propagation(graph, du, ud):
                         # We only try to propagate constants and definition
                         # points which are used at only one location.
                         if len(du[var, loc]) > 1:
-                            logger.debug('       => variable has multiple uses'
-                                         ' and is not const => skip')
+                            logger.debug(
+                                '       => variable has multiple uses'
+                                ' and is not const => skip'
+                            )
                             continue
 
                         # We check that the propagation is safe for all the
@@ -244,8 +249,11 @@ def register_propagation(graph, du, ud):
                         # be redifined along this path.
                         safe = True
                         orig_ins_used_vars = orig_ins.get_used_vars()
-                        logger.debug('    variables used by the original '
-                                     'instruction: %s', orig_ins_used_vars)
+                        logger.debug(
+                            '    variables used by the original '
+                            'instruction: %s',
+                            orig_ins_used_vars,
+                        )
                         for var2 in orig_ins_used_vars:
                             # loc is the location of the defined variable
                             # i is the location of the current instruction
@@ -262,8 +270,11 @@ def register_propagation(graph, du, ud):
                     # along the path
                     if orig_ins.has_side_effect():
                         if not clear_path(graph, None, loc, i):
-                            logger.debug('        %s has side effect and the '
-                                         'path is not clear !', orig_ins)
+                            logger.debug(
+                                '        %s has side effect and the '
+                                'path is not clear !',
+                                orig_ins,
+                            )
                             continue
 
                     logger.debug('     => Modification of the instruction!')
@@ -289,8 +300,9 @@ def register_propagation(graph, du, ud):
                         if old_ud is None:
                             continue
                         ud[var2, i].extend(old_ud)
-                        logger.debug('\t  - ud(%s, %s) = %s', var2, i,
-                                     ud[var2, i])
+                        logger.debug(
+                            '\t  - ud(%s, %s) = %s', var2, i, ud[var2, i]
+                        )
                         ud.pop((var2, loc))
 
                         for def_loc in old_ud:
@@ -444,7 +456,8 @@ def build_def_use(graph, lparams):
                     UD[var, i].append(prior_def)
                 else:
                     intersect = analysis.def_to_loc[var].intersection(
-                        analysis.R[node])
+                        analysis.R[node]
+                    )
                     UD[var, i].extend(intersect)
     DU = defaultdict(list)
     for var_loc, defs_loc in UD.items():
@@ -460,8 +473,9 @@ def place_declarations(graph, dvars, du, ud):
     for node in graph.post_order():
         for loc, ins in node.get_loc_with_ins():
             for var in ins.get_used_vars():
-                if (not isinstance(dvars[var], Variable) or
-                        isinstance(dvars[var], Param)):
+                if not isinstance(dvars[var], Variable) or isinstance(
+                    dvars[var], Param
+                ):
                     continue
                 var_defs_locs = ud[var, loc]
                 def_nodes = set()
@@ -476,8 +490,11 @@ def place_declarations(graph, dvars, du, ud):
                 common_dominator = def_nodes.pop()
                 for def_node in def_nodes:
                     common_dominator = common_dom(
-                        idom, common_dominator, def_node)
-                if any(var in range(*common_dominator.ins_range)
-                       for var in ud[var, loc]):
+                        idom, common_dominator, def_node
+                    )
+                if any(
+                    var in range(*common_dominator.ins_range)
+                    for var in ud[var, loc]
+                ):
                     continue
                 common_dominator.add_variable_declaration(dvars[var])

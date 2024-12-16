@@ -16,11 +16,14 @@
 # limitations under the License.
 from collections import defaultdict
 
-from androguard.decompiler.basic_blocks import (build_node_from_block,
-                                                    StatementBlock, CondBlock)
-from androguard.decompiler.instruction import Variable
-
 from loguru import logger
+
+from androguard.decompiler.basic_blocks import (
+    CondBlock,
+    StatementBlock,
+    build_node_from_block,
+)
+from androguard.decompiler.instruction import Variable
 
 
 # TODO Could use networkx here, as it has plenty of tools already, no need to reengineer the wheel
@@ -31,6 +34,7 @@ class Graph:
     The CFG defines an entry node :py:attr:`entry`, a single exit node :py:attr:`exit`, a list of nodes
     :py:attr:`nodes` and a list of edges :py:attr:`edges`.
     """
+
     def __init__(self):
         self.entry = None
         self.exit = None
@@ -54,8 +58,9 @@ class Graph:
         return [n for n in self.reverse_edges.get(node, []) if not n.in_catch]
 
     def all_preds(self, node):
-        return (self.reverse_edges.get(node, []) + self.reverse_catch_edges.get(
-            node, []))
+        return self.reverse_edges.get(node, []) + self.reverse_catch_edges.get(
+            node, []
+        )
 
     def add_node(self, node):
         """
@@ -74,6 +79,10 @@ class Graph:
             lpreds.append(e1)
 
     def add_catch_edge(self, e1, e2):
+        # Ensure nodes always inherit non-empty catch types from each other.
+        active_type = e1.catch_type or e2.catch_type
+        e1.set_catch_type(active_type)
+        e2.set_catch_type(active_type)
         lsucs = self.catch_edges[e1]
         if e2 not in lsucs:
             lsucs.append(e2)
@@ -148,6 +157,7 @@ class Graph:
         Yields the :class`~androguard.decompiler.node.Node`s of the graph in post-order i.e we visit all the
         children of a node before visiting the node itself.
         """
+
         def _visit(n, cnt):
             visited.add(n)
             for suc in self.all_sucs(n):
@@ -170,15 +180,18 @@ class Graph:
         :param draw_branches:
         :return:
         """
-        from pydot import Dot, Edge
         import os
 
+        from pydot import Dot, Edge
+
         g = Dot()
-        g.set_node_defaults(color='lightgray',
-                            style='filled',
-                            shape='box',
-                            fontname='Courier',
-                            fontsize='10')
+        g.set_node_defaults(
+            color='lightgray',
+            style='filled',
+            shape='box',
+            fontname='Courier',
+            fontsize='10',
+        )
         for node in sorted(self.nodes, key=lambda x: x.num):
             if draw_branches and node.type.is_cond:
                 g.add_edge(Edge(str(node), str(node.true), color='green'))
@@ -187,10 +200,14 @@ class Graph:
                 for suc in self.sucs(node):
                     g.add_edge(Edge(str(node), str(suc), color='blue'))
             for except_node in self.catch_edges.get(node, []):
-                g.add_edge(Edge(str(node),
-                                str(except_node),
-                                color='black',
-                                style='dashed'))
+                g.add_edge(
+                    Edge(
+                        str(node),
+                        str(except_node),
+                        color='black',
+                        style='dashed',
+                    )
+                )
 
         g.write(os.path.join(dname, '%s.png' % name), format='png')
 
@@ -291,8 +308,9 @@ def simplify(graph):
                     continue
                 suc = sucs[0]
                 if len(node.get_ins()) == 0:
-                    if any(pred.type.is_switch
-                           for pred in graph.all_preds(node)):
+                    if any(
+                        pred.type.is_switch for pred in graph.all_preds(node)
+                    ):
                         continue
                     if node is suc:
                         continue
@@ -308,9 +326,12 @@ def simplify(graph):
                     if node is graph.entry:
                         graph.entry = suc
                     graph.remove_node(node)
-                elif (suc.type.is_stmt and len(graph.all_preds(suc)) == 1 and
-                          not (suc in graph.catch_edges) and not (
-                            (node is suc) or (suc is graph.entry))):
+                elif (
+                    suc.type.is_stmt
+                    and len(graph.all_preds(suc)) == 1
+                    and not (suc in graph.catch_edges)
+                    and not ((node is suc) or (suc is graph.entry))
+                ):
                     ins_to_merge = suc.get_ins()
                     node.add_ins(ins_to_merge)
                     for var in suc.var_to_declare:
@@ -441,11 +462,13 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
         for _type, _, exception_target in block.exception_analysis.exceptions:
             exception_node = block_to_node.get(exception_target)
             if exception_node is None:
-                exception_node = build_node_from_block(exception_target, vmap,
-                                                       gen_ret, _type)
-                exception_node.set_catch_type(_type)
+                exception_node = build_node_from_block(
+                    exception_target, vmap, gen_ret, _type
+                )
                 exception_node.in_catch = True
                 block_to_node[exception_target] = exception_node
+            node.set_catch_type(_type)
+            exception_node.set_catch_type(_type)
             graph.add_catch_edge(node, exception_node)
     for _, _, child_block in block.childs:
         child_node = block_to_node.get(child_block)
@@ -456,8 +479,9 @@ def make_node(graph, block, block_to_node, vmap, gen_ret):
         if node.type.is_switch:
             node.add_case(child_node)
         if node.type.is_cond:
-            if_target = ((block.end // 2) -
-                         (block.last_length // 2) + node.off_last_ins)
+            if_target = (
+                (block.end // 2) - (block.last_length // 2) + node.off_last_ins
+            )
             child_addr = child_block.start // 2
             if if_target == child_addr:
                 node.true = child_node

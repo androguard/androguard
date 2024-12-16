@@ -1,14 +1,13 @@
 import collections
 import hashlib
-from typing import Union, Iterator
-
-from androguard.core.analysis.analysis import Analysis, StringAnalysis
-from androguard.core import dex, apk
-from androguard.decompiler.decompiler import DecompilerDAD
-from androguard.core import androconf
+from typing import Iterator, Union
 
 import dataset
 from loguru import logger
+
+from androguard.core import androconf, apk, dex
+from androguard.core.analysis.analysis import Analysis, StringAnalysis
+from androguard.decompiler.decompiler import DecompilerDAD
 
 
 class Session:
@@ -23,7 +22,11 @@ class Session:
     > Should we go back to pickling or proceed further with the dataset ?
     """
 
-    def __init__(self, export_ipython:bool=False, db_url:str='sqlite:///androguard.db') -> None:
+    def __init__(
+        self,
+        export_ipython: bool = False,
+        db_url: str = 'sqlite:///androguard.db',
+    ) -> None:
         """
         Create a new Session object
 
@@ -45,7 +48,7 @@ class Session:
         self.table_session.insert(dict(id=self.session_id))
         logger.info("Creating new session [{}]".format(self.session_id))
 
-    def save(self, filename:Union[str,None]=None) -> None:
+    def save(self, filename: Union[str, None] = None) -> None:
         """
         Save the current session
         """
@@ -101,13 +104,27 @@ class Session:
 
     def insert_event(self, call, callee, params, ret):
         self.table_pentest.insert(
-            dict(session_id=str(self.session_id), call=call, callee=callee, params=params, ret=ret))
+            dict(
+                session_id=str(self.session_id),
+                call=call,
+                callee=callee,
+                params=params,
+                ret=ret,
+            )
+        )
 
     def insert_system_event(self, call, callee, information, params):
         self.table_system.insert(
-            dict(session_id=str(self.session_id), call=call, callee=callee, information=information, params=params))
+            dict(
+                session_id=str(self.session_id),
+                call=call,
+                callee=callee,
+                information=information,
+                params=params,
+            )
+        )
 
-    def addAPK(self, filename: str, data:bytes) -> tuple[str, apk.APK]:
+    def addAPK(self, filename: str, data: bytes) -> tuple[str, apk.APK]:
         """
         Add an APK file to the Session and run analysis on it.
 
@@ -119,7 +136,13 @@ class Session:
 
         logger.info("add APK {}:{}".format(filename, digest))
         self.table_information.insert(
-            dict(session_id=str(self.session_id), filename=filename, digest=digest, type="APK"))
+            dict(
+                session_id=str(self.session_id),
+                filename=filename,
+                digest=digest,
+                type="APK",
+            )
+        )
 
         newapk = apk.APK(data, True)
         self.analyzed_apk[digest] = [newapk]
@@ -140,7 +163,13 @@ class Session:
         logger.info("added APK {}:{}".format(filename, digest))
         return digest, newapk
 
-    def addDEX(self, filename: str, data: bytes, dx:Union[Analysis,None]=None, postpone_xref:bool=False) -> tuple[str, dex.DEX, Analysis]:
+    def addDEX(
+        self,
+        filename: str,
+        data: bytes,
+        dx: Union[Analysis, None] = None,
+        postpone_xref: bool = False,
+    ) -> tuple[str, dex.DEX, Analysis]:
         """
         Add a DEX file to the Session and run analysis.
 
@@ -154,7 +183,13 @@ class Session:
         logger.info("add DEX:{}".format(digest))
 
         self.table_information.insert(
-            dict(session_id=str(self.session_id), filename=filename, digest=digest, type="DEX"))
+            dict(
+                session_id=str(self.session_id),
+                filename=filename,
+                digest=digest,
+                type="DEX",
+            )
+        )
 
         logger.debug("Parsing format ...")
         d = dex.DEX(data)
@@ -185,7 +220,9 @@ class Session:
 
         return digest, d, dx
 
-    def addODEX(self, filename:str, data:bytes, dx:Union[Analysis,None]=None) -> tuple[str, dex.ODEX, Analysis]:
+    def addODEX(
+        self, filename: str, data: bytes, dx: Union[Analysis, None] = None
+    ) -> tuple[str, dex.ODEX, Analysis]:
         """
         Add an ODEX file to the session and run the analysis
 
@@ -198,7 +235,13 @@ class Session:
         logger.info("add ODEX:%s" % digest)
 
         self.table_information.insert(
-            dict(session_id=str(self.session_id), filename=filename, digest=digest, type="ODEX"))
+            dict(
+                session_id=str(self.session_id),
+                filename=filename,
+                digest=digest,
+                type="ODEX",
+            )
+        )
 
         d = dex.ODEX(data)
         logger.debug("added ODEX:%s" % digest)
@@ -226,7 +269,12 @@ class Session:
 
         return digest, d, dx
 
-    def add(self, filename: str, raw_data:Union[bytes,None]=None, dx:Union[Analysis,None]=None) -> Union[str,None]:
+    def add(
+        self,
+        filename: str,
+        raw_data: Union[bytes, None] = None,
+        dx: Union[Analysis, None] = None,
+    ) -> Union[str, None]:
         """
         Generic method to add a file to the session.
 
@@ -264,7 +312,9 @@ class Session:
 
         return digest
 
-    def get_classes(self) -> Iterator[tuple[int, str, str, list[dex.ClassDefItem]]]:
+    def get_classes(
+        self,
+    ) -> Iterator[tuple[int, str, str, list[dex.ClassDefItem]]]:
         """
         Returns all Java Classes from the DEX objects as an array of DEX files.
 
@@ -299,7 +349,9 @@ class Session:
         """
         return current_class.CM.vm
 
-    def get_filename_by_class(self, current_class: dex.ClassDefItem) -> Union[str,None]:
+    def get_filename_by_class(
+        self, current_class: dex.ClassDefItem
+    ) -> Union[str, None]:
         """
         Returns the filename of the DEX file where the class is in.
 
@@ -315,7 +367,9 @@ class Session:
                 return self.analyzed_digest[digest]
         return None
 
-    def get_digest_by_class(self, current_class: dex.ClassDefItem) -> Union[str,None]:
+    def get_digest_by_class(
+        self, current_class: dex.ClassDefItem
+    ) -> Union[str, None]:
         """
         Return the SHA256 hash of the object containing the [ClassDefItem][androguard.core.dex.ClassDefItem]
 
@@ -328,7 +382,9 @@ class Session:
                 return digest
         return None
 
-    def get_strings(self) -> Iterator[tuple[str, str, dict[str,StringAnalysis]]]:
+    def get_strings(
+        self,
+    ) -> Iterator[tuple[str, str, dict[str, StringAnalysis]]]:
         """
         Yields all [StringAnalysis][androguard.core.analysis.analysis.StringAnalysis] for all unique [Analysis][androguard.core.analysis.analysis.Analysis] objects
 
@@ -339,7 +395,9 @@ class Session:
             if dx in seen:
                 continue
             seen.append(dx)
-            yield digest, self.analyzed_digest[digest], dx.get_strings_analysis()
+            yield digest, self.analyzed_digest[
+                digest
+            ], dx.get_strings_analysis()
 
     def get_nb_strings(self) -> int:
         """
@@ -366,7 +424,11 @@ class Session:
         for digest, a in self.analyzed_apk.items():
             yield digest, a
 
-    def get_objects_apk(self, filename:Union[str,None]=None, digest:Union[str,None]=None) -> Iterator[tuple[apk.APK, list[dex.DEX], Analysis]]:
+    def get_objects_apk(
+        self,
+        filename: Union[str, None] = None,
+        digest: Union[str, None] = None,
+    ) -> Iterator[tuple[apk.APK, list[dex.DEX], Analysis]]:
         """
         Returns [APK][androguard.core.apk.APK], list of [DEX][androguard.core.dex.DEX], and [Analysis][androguard.core.analysis.analysis.Analysis] of a specified APK.
 

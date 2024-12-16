@@ -6,26 +6,33 @@ import json
 import sys
 
 import click
+import networkx as nx
 from loguru import logger
 
 from androguard.session import Session
 import androguard.core.apk
 from androguard import util
-from androguard.cli.main import (androarsc_main,
-                                 androaxml_main,
-                                 export_apps_to_format,
-                                 androsign_main,
-                                 androlyze_main,
-                                 androdis_main,
-                                 androtrace_main,
-                                 androdump_main,
-                                 )
+from androguard.cli.main import (
+    androarsc_main,
+    androaxml_main,
+    androdis_main,
+    androdump_main,
+    androlyze_main,
+    androsign_main,
+    androtrace_main,
+    export_apps_to_format,
+)
 
-import networkx as nx
 
 @click.group(help=__doc__)
 @click.version_option(version=androguard.__version__)
-@click.option("--verbose", "--debug", 'verbosity', flag_value='verbose', help="Print more")
+@click.option(
+    "--verbose",
+    "--debug",
+    'verbosity',
+    flag_value='verbose',
+    help="Print more",
+)
 def entry_point(verbosity):
     if verbosity is None:
         util.set_log("ERROR")
@@ -36,17 +43,22 @@ def entry_point(verbosity):
 
 @entry_point.command()
 @click.option(
-    '--input', '-i', 'input_',
+    '--input',
+    '-i',
+    'input_',
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
     help='AndroidManifest.xml or APK to parse (legacy option)',
 )
 @click.option(
-    '--output', '-o',
+    '--output',
+    '-o',
     help='filename to save the decoded AndroidManifest.xml to, default stdout',
 )
-@click.option("--resource", "-r",
-              help="Resource (any binary XML file) inside the APK to parse instead of AndroidManifest.xml"
-              )
+@click.option(
+    "--resource",
+    "-r",
+    help="Resource (any binary XML file) inside the APK to parse instead of AndroidManifest.xml",
+)
 @click.argument(
     'file_',
     required=False,
@@ -67,8 +79,10 @@ def axml(input_, output, file_, resource):
         >>> androguard axml AndroidManifest.xml
     """
     if file_ is not None and input_ is not None:
-        print("Can not give --input and positional argument! "
-              "Please use only one of them!")
+        print(
+            "Can not give --input and positional argument! "
+            "Please use only one of them!"
+        )
         sys.exit(1)
 
     if file_ is None and input_ is None:
@@ -83,7 +97,9 @@ def axml(input_, output, file_, resource):
 
 @entry_point.command()
 @click.option(
-    '--input', '-i', 'input_',
+    '--input',
+    '-i',
+    'input_',
     type=click.Path(exists=True),
     help='resources.arsc or APK to parse (legacy option)',
 )
@@ -92,52 +108,63 @@ def axml(input_, output, file_, resource):
     required=False,
 )
 @click.option(
-    '--output', '-o',
+    '--output',
+    '-o',
     # required=True,  #  not required due to --list-types
     help='filename to save the decoded resources to',
 )
 @click.option(
-    '--package', '-p',
+    '--package',
+    '-p',
     help='Show only resources for the given package name '
-         '(default: the first package name found)',
+    '(default: the first package name found)',
 )
 @click.option(
-    '--locale', '-l',
+    '--locale',
+    '-l',
     help='Show only resources for the given locale (default: \'\\x00\\x00\')',
 )
 @click.option(
-    '--type', '-t', 'type_',
+    '--type',
+    '-t',
+    'type_',
     help='Show only resources of the given type (default: public)',
 )
 @click.option(
-    '--id', 'id_',
-    help="Resolve the given ID for the given locale and package. Provide the hex ID!"
+    '--id',
+    'id_',
+    help="Resolve the given ID for the given locale and package. Provide the hex ID!",
 )
 @click.option(
-    '--list-packages', is_flag=True,
+    '--list-packages',
+    is_flag=True,
     default=False,
     help='List all package names and exit',
 )
 @click.option(
-    '--list-locales', is_flag=True,
+    '--list-locales',
+    is_flag=True,
     default=False,
     help='List all package names and exit',
 )
 @click.option(
-    '--list-types', is_flag=True,
+    '--list-types',
+    is_flag=True,
     default=False,
     help='List all types and exit',
 )
-def arsc(input_,
-         file_,
-         output,
-         package,
-         locale,
-         type_,
-         id_,
-         list_packages,
-         list_locales,
-         list_types):
+def arsc(
+    input_,
+    file_,
+    output,
+    package,
+    locale,
+    type_,
+    id_,
+    list_packages,
+    list_locales,
+    list_types,
+):
     """
     Decode resources.arsc either directly from a given file or from an APK.
 
@@ -146,11 +173,12 @@ def arsc(input_,
         >>> androguard arsc app.apk
     """
 
-    from androguard.core import androconf
-    from androguard.core import axml, apk
+    from androguard.core import androconf, apk, axml
 
     if file_ and input_:
-        logger.info("Can not give --input and positional argument! Please use only one of them!")
+        logger.info(
+            "Can not give --input and positional argument! Please use only one of them!"
+        )
         sys.exit(1)
 
     if not input_ and not file_:
@@ -186,7 +214,11 @@ def arsc(input_,
         try:
             i_id = int(id_, 16)
         except ValueError:
-            print("ID '{}' could not be parsed! have you supplied the correct hex ID?".format(id_))
+            print(
+                "ID '{}' could not be parsed! have you supplied the correct hex ID?".format(
+                    id_
+                )
+            )
             sys.exit(1)
 
         name = arscobj.get_resource_xml_name(i_id)
@@ -200,7 +232,16 @@ def arsc(input_,
         # All the information is in the config.
         # we simply need to get the actual value of the entry
         for config, entry in arscobj.get_resolved_res_configs(i_id):
-            print("{} = '{}'".format(config.get_qualifier() if not config.is_default() else "<default>", entry))
+            print(
+                "{} = '{}'".format(
+                    (
+                        config.get_qualifier()
+                        if not config.is_default()
+                        else "<default>"
+                    ),
+                    entry,
+                )
+            )
 
         sys.exit(0)
 
@@ -211,32 +252,49 @@ def arsc(input_,
     if list_locales:
         for p in arscobj.get_packages_names():
             print("In Package:", p)
-            print("\n".join(map(lambda x: "  \\x00\\x00"
-            if x == "\x00\x00"
-            else "  {}".format(x),
-                                sorted(arscobj.get_locales(p)))))
+            print(
+                "\n".join(
+                    map(
+                        lambda x: (
+                            "  \\x00\\x00"
+                            if x == "\x00\x00"
+                            else "  {}".format(x)
+                        ),
+                        sorted(arscobj.get_locales(p)),
+                    )
+                )
+            )
         sys.exit(0)
 
     if list_types:
         for p in arscobj.get_packages_names():
             print("In Package:", p)
             for locale in sorted(arscobj.get_locales(p)):
-                print("  In Locale: {}".format("\\x00\\x00"
-                                               if locale == "\x00\x00" else locale))
-                print("\n".join(map("    {}".format,
-                                    sorted(arscobj.get_types(p, locale)))))
+                print(
+                    "  In Locale: {}".format(
+                        "\\x00\\x00" if locale == "\x00\x00" else locale
+                    )
+                )
+                print(
+                    "\n".join(
+                        map(
+                            "    {}".format,
+                            sorted(arscobj.get_types(p, locale)),
+                        )
+                    )
+                )
         sys.exit(0)
 
-    androarsc_main(arscobj,
-                   outp=output,
-                   package=package,
-                   typ=type_,
-                   locale=locale)
+    androarsc_main(
+        arscobj, outp=output, package=package, typ=type_, locale=locale
+    )
 
 
 @entry_point.command()
 @click.option(
-    '--input', '-i', 'input_',
+    '--input',
+    '-i',
+    'input_',
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     help='APK to parse (legacy option)',
 )
@@ -246,29 +304,35 @@ def arsc(input_,
     required=False,
 )
 @click.option(
-    '--output', '-o',
+    '--output',
+    '-o',
     required=True,
     help='output directory. If the output folder already exsist, '
-         'it will be overwritten!',
+    'it will be overwritten!',
 )
 @click.option(
-    '--format', '-f', 'format_',
+    '--format',
+    '-f',
+    'format_',
     help='Additionally write control flow graphs for each method, specify '
-         'the format for example png, jpg, raw (write dot file), ...',
-    type=click.Choice(['png', 'jpg', 'raw'])
+    'the format for example png, jpg, raw (write dot file), ...',
+    type=click.Choice(['png', 'jpg', 'raw']),
 )
 @click.option(
-    '--jar', '-j',
+    '--jar',
+    '-j',
     is_flag=True,
     default=False,
     help='Use DEX2JAR to create a JAR file',
 )
 @click.option(
-    '--limit', '-l',
+    '--limit',
+    '-l',
     help='Limit to certain methods only by regex (default: \'.*\')',
 )
 @click.option(
-    '--decompiler', '-d',
+    '--decompiler',
+    '-d',
     help='Use a different decompiler (default: DAD)',
 )
 def decompile(input_, file_, output, format_, jar, limit, decompiler):
@@ -280,9 +344,13 @@ def decompile(input_, file_, output, format_, jar, limit, decompiler):
         >>> androguard resources.arsc
     """
     from androguard import session
+
     if file_ and input_:
-        print("Can not give --input and positional argument! "
-              "Please use only one of them!", file=sys.stderr)
+        print(
+            "Can not give --input and positional argument! "
+            "Please use only one of them!",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if not input_ and not file_:
@@ -297,29 +365,35 @@ def decompile(input_, file_, output, format_, jar, limit, decompiler):
     s = session.Session()
     with open(fname, "rb") as fd:
         s.add(fname, fd.read())
-    export_apps_to_format(fname, s, output, limit,
-                          jar, decompiler, format_)
+    export_apps_to_format(fname, s, output, limit, jar, decompiler, format_)
 
 
 @entry_point.command()
 @click.option(
-    '--hash', 'hash_',
+    '--hash',
+    'hash_',
     type=click.Choice(['md5', 'sha1', 'sha256', 'sha512']),
-    default='sha1', show_default=True,
+    default='sha1',
+    show_default=True,
     help='Fingerprint Hash algorithm',
 )
 @click.option(
-    '--all', '-a', 'print_all_hashes',
+    '--all',
+    '-a',
+    'print_all_hashes',
     is_flag=True,
-    default=False, show_default=True,
+    default=False,
+    show_default=True,
     help='Print all supported hashes',
 )
 @click.option(
-    '--show', '-s',
+    '--show',
+    '-s',
     is_flag=True,
-    default=False, show_default=True,
+    default=False,
+    show_default=True,
     help='Additionally of printing the fingerprints, show more '
-         'certificate information',
+    'certificate information',
 )
 @click.argument(
     'apk',
@@ -374,14 +448,20 @@ def analyze(session: str, apk: str):
 
 
 @entry_point.command()
-@click.option("-o", "--offset",
-              default=0,
-              type=int,
-              help="Offset to start dissassembly inside the file")
-@click.option("-s", "--size",
-              default=0,
-              type=int,
-              help="Number of bytes from offset to disassemble, 0 for whole file")
+@click.option(
+    "-o",
+    "--offset",
+    default=0,
+    type=int,
+    help="Offset to start dissassembly inside the file",
+)
+@click.option(
+    "-s",
+    "--size",
+    default=0,
+    type=int,
+    help="Number of bytes from offset to disassemble, 0 for whole file",
+)
 @click.argument(
     "DEX",
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
@@ -400,11 +480,16 @@ def disassemble(offset, size, dex):
     required=False,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
-@click.option("-m", "--modules",
-              multiple=True, default=[],
-              help="A list of modules to load in frida")
 @click.option(
-    '--enable-ui', is_flag=True,
+    "-m",
+    "--modules",
+    multiple=True,
+    default=[],
+    help="A list of modules to load in frida",
+)
+@click.option(
+    '--enable-ui',
+    is_flag=True,
     default=False,
     help='Enable UI',
 )
@@ -426,9 +511,13 @@ def trace(apk, modules, enable_ui):
     default=None,
     required=False,
 )
-@click.option("-m", "--modules",
-              multiple=True, default=[],
-              help="A list of modules to load in frida")
+@click.option(
+    "-m",
+    "--modules",
+    multiple=True,
+    default=[],
+    help="A list of modules to load in frida",
+)
 def dtrace(package_name, modules):
     """
     Start dynamically an installed APK on the phone and start to trace all interesting methods from the modules list
@@ -446,9 +535,13 @@ def dtrace(package_name, modules):
     default=None,
     required=False,
 )
-@click.option("-m", "--modules",
-              multiple=True, default=["androguard/pentest/modules/helpers/dump/dexdump.js"],
-              help="A list of modules to load in frida")
+@click.option(
+    "-m",
+    "--modules",
+    multiple=True,
+    default=["androguard/pentest/modules/helpers/dump/dexdump.js"],
+    help="A list of modules to load in frida",
+)
 def dump(package_name, modules):
     """
     Start and dump dynamically an installed APK on the phone
@@ -459,22 +552,28 @@ def dump(package_name, modules):
     """
     androdump_main(package_name, modules)
 
+
 # callgraph exporting utility functions
 def _write_gml(G, path):
     """Wrapper around nx.write_gml"""
     return nx.write_gml(G, path, stringizer=str)
 
+
 def _write_gpickle(G, path):
     """Wrapper around pickle dump"""
     import pickle
+
     with open(path, 'wb') as f:
         pickle.dump(G, f, pickle.HIGHEST_PROTOCOL)
+
 
 def _write_yaml(G, path):
     """Wrapper around yaml dump"""
     import yaml
+
     with open(path, 'w') as f:
         yaml.dump(G, f)
+
 
 # mapping of types to their respective exporting functions
 write_methods = dict(
@@ -483,7 +582,9 @@ write_methods = dict(
     # gpickle=_write_gpickle,   # Pickling can't be done due to BufferedReader attributes (e.g. EncodedMethod.buff) not being serializable
     graphml=nx.write_graphml,
     # yaml=_write_yaml,         # Same limitation as gpickle
-    net=nx.write_pajek)
+    net=nx.write_pajek,
+)
+
 
 @entry_point.command()
 @click.argument(
@@ -492,20 +593,20 @@ write_methods = dict(
     required=True,
 )
 @click.option(
-    '--output', '-o',
+    '--output',
+    '-o',
     default='callgraph.gml',
     help='Filename of the output graph file',
 )
 @click.option(
     '--output-type',
-    type=click.Choice(
-        list(write_methods.keys()),
-        case_sensitive=False),
+    type=click.Choice(list(write_methods.keys()), case_sensitive=False),
     default='gml',
-    help='Type of the graph to output '
+    help='Type of the graph to output ',
 )
 @click.option(
-    '--show', '-s',
+    '--show',
+    '-s',
     default=False,
     is_flag=True,
     help='instead of saving the graph file, render it with matplotlib',
@@ -545,21 +646,26 @@ def cg(
     methodname,
     descriptor,
     accessflag,
-    no_isolated):
+    no_isolated,
+):
     """
     Create a call graph based on the data of Analysis and export it into a graph format.
     """
+    import matplotlib.pyplot as plt
+
+    from androguard.core.analysis.analysis import ExternalMethod
     from androguard.core.bytecode import FormatClassToJava
     from androguard.misc import AnalyzeAPK
-    from androguard.core.analysis.analysis import ExternalMethod
-
-    import matplotlib.pyplot as plt
 
     a, d, dx = AnalyzeAPK(file_)
 
-    entry_points = map(FormatClassToJava,
-                       a.get_activities() + a.get_providers() +
-                       a.get_services() + a.get_receivers())
+    entry_points = map(
+        FormatClassToJava,
+        a.get_activities()
+        + a.get_providers()
+        + a.get_services()
+        + a.get_receivers(),
+    )
     entry_points = list(entry_points)
 
     callgraph = dx.get_call_graph(
@@ -568,14 +674,16 @@ def cg(
         descriptor,
         accessflag,
         no_isolated,
-        entry_points
+        entry_points,
     )
 
     if show:
         try:
             import PyQt5
         except ImportError:
-            print("PyQt5 is not installed. In most OS you can install it by running 'pip install PyQt5'.\n")
+            print(
+                "PyQt5 is not installed. In most OS you can install it by running 'pip install PyQt5'.\n"
+            )
             exit()
         pos = nx.spring_layout(callgraph)
         internal = []
@@ -588,27 +696,24 @@ def cg(
                 internal.append(n)
 
         nx.draw_networkx_nodes(
-            callgraph,
-            pos=pos, node_color='r',
-            nodelist=internal)
+            callgraph, pos=pos, node_color='r', nodelist=internal
+        )
 
         nx.draw_networkx_nodes(
+            callgraph, pos=pos, node_color='b', nodelist=external
+        )
+
+        nx.draw_networkx_edges(callgraph, pos, width=0.5, arrows=True)
+
+        nx.draw_networkx_labels(
             callgraph,
             pos=pos,
-            node_color='b',
-            nodelist=external)
-
-        nx.draw_networkx_edges(
-            callgraph,
-            pos,
-            width=0.5,
-            arrows=True)
-
-        nx.draw_networkx_labels(callgraph,
-                                pos=pos,
-                                font_size=6,
-                                labels={n: f"{n.get_class_name()} {n.name} {n.descriptor}"
-                                        for n in callgraph.nodes})
+            font_size=6,
+            labels={
+                n: f"{n.get_class_name()} {n.name} {n.descriptor}"
+                for n in callgraph.nodes
+            },
+        )
 
         plt.draw()
         plt.show()
@@ -616,7 +721,9 @@ def cg(
     else:
         output_type_lower = output_type.lower()
         if output_type_lower not in write_methods:
-            print(f"Could not find a method to export files to {output_type_lower}!")
+            print(
+                f"Could not find a method to export files to {output_type_lower}!"
+            )
             sys.exit(1)
 
         write_methods[output_type_lower](callgraph, output)
