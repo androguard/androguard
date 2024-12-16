@@ -1,0 +1,64 @@
+site_name: androguard
+site_author: androguard
+site_description: androguard Documentation
+copyright: Copyright © 2024 androguard
+site_url: https://github.com/androguard/androguard
+repo_url: https://github.com/androguard/androguard
+
+theme:
+  logo: assets/androguard.png
+  name: material
+  features:
+    - navigation.tracking
+    - content.code.copy
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+plugins:
+  - autorefs
+  - offline
+  - search
+  - gen-files:
+      scripts:
+      - scripts/gen_ref_pages.py  # https://github.com/oprypin/mkdocs-gen-files, this gathers all modules and generates md files are build time containing docstring docs
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          load_external_modules: true
+          options:
+            docstring_style: sphinx
+            show_bases: true
+            # show_inheritance_diagram: true        # requires sponsor
+  - glightbox
+  - table-reader
+  # - with-pdf:   # takes a very long time
+  #     output_path: ./androguard-docs.pdf
+  #     cover_logo: assets/androguardwithname.jpg
+  #     cover_title: Androguard
+
+markdown_extensions:
+  - toc:
+      permalink: "#"
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+nav:
+  - Home: index.md
+  - Contributing: contributing.md
+  - Development:
+    - API Reference: reference/

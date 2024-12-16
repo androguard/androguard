@@ -111,7 +111,7 @@ class StringBlock:
     def __init__(self, buff: BinaryIO, header: ARSCHeader) -> None:
         """
         :param buff: buffer which holds the string block
-        :param header: a instance of :class:`~ARSCHeader`
+        :param header: a instance of [ARSCHeader][androguard.core.axml.ARSCHeader]
         """
         self._cache = {}
         self.header = header
@@ -192,18 +192,24 @@ class StringBlock:
     def __getitem__(self, idx):
         """
         Returns the string at the index in the string table
+
+        :returns: the string
         """
         return self.getString(idx)
 
     def __len__(self):
         """
         Get the number of strings stored in this table
+
+        :return: the number of strings
         """
         return self.stringCount
 
     def __iter__(self):
         """
         Iterable over all strings
+
+        :returns: a generator over all strings
         """
         for i in range(self.stringCount):
             yield self.getString(i)
@@ -213,7 +219,7 @@ class StringBlock:
         Return the string at the index in the string table
 
         :param idx: index in the string table
-        :return: str
+        :return: the string
         """
         if idx in self._cache:
             return self._cache[idx]
@@ -235,7 +241,7 @@ class StringBlock:
         Return the style associated with the index
 
         :param idx: index of the style
-        :return:
+        :return: the style integer
         """
         return self.m_styles[idx]
 
@@ -244,7 +250,8 @@ class StringBlock:
         Decode an UTF-8 String at the given offset
 
         :param offset: offset of the string inside the data
-        :return: str
+        :raises ResParserError: if string is not null terminated
+        :return: the decoded string
         """
         # UTF-8 Strings contain two lengths, as they might differ:
         # 1) the UTF-16 length
@@ -280,7 +287,9 @@ class StringBlock:
         Decode an UTF-16 String at the given offset
 
         :param offset: offset of the string inside the data
-        :return: str
+        :raises ResParserError: if string is not null terminated
+
+        :return: the decoded string
         """
         str_len, skip = self._decode_length(offset, 2)
         offset += skip
@@ -325,7 +334,7 @@ class StringBlock:
         :param data: bytes
         :param encoding: encoding name ("utf-8" or "utf-16")
         :param str_len: length of the decoded string
-        :return: str
+        :return: the decoded bytes
         """
         string = data.decode(encoding, 'replace')
         if len(string) != str_len:
@@ -414,9 +423,9 @@ class StringBlock:
 
 class AXMLParser:
     """
-    AXMLParser reads through all chunks in the AXML file
+    `AXMLParser` reads through all chunks in the AXML file
     and implements a state machine to return information about
-    the current chunk, which can then be read by :class:`~AXMLPrinter`.
+    the current chunk, which can then be read by [AXMLPrinter][androguard.core.axml.AXMLPrinter].
 
     An AXML file is a file which contains multiple chunks of data, defined
     by the `ResChunk_header`.
@@ -426,11 +435,11 @@ class AXMLParser:
     But there are several examples where the `type` is set to something
     else, probably in order to fool parsers.
 
-    Typically the AXMLParser is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
+    Typically the `AXMLParser` is used in a loop which terminates if `m_event` is set to `END_DOCUMENT`.
     You can use the `next()` function to get the next chunk.
     Note that not all chunk types are yielded from the iterator! Some chunks are processed in
-    the AXMLParser only.
-    The parser will set `is_valid()` to False if it parses something not valid.
+    the `AXMLParser` only.
+    The parser will set [is_valid][androguard.core.axml.AXMLParser.is_valid] to `False` if it parses something not valid.
     Messages what is wrong are logged.
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#563
@@ -557,9 +566,11 @@ class AXMLParser:
 
     def is_valid(self) -> bool:
         """
-        Get the state of the AXMLPrinter.
+        Get the state of the [AXMLPrinter][androguard.core.axml.AXMLPrinter].
         if an error happend somewhere in the process of parsing the file,
-        this flag is set to False.
+        this flag is set to `False`.
+
+        :returns: `True` if the `AXMLPrinter` finished parsing, or `False` if an error occurred
         """
         logger.debug(self._valid)
         return self._valid
@@ -815,6 +826,8 @@ class AXMLParser:
     def name(self) -> str:
         """
         Return the String associated with the tag name
+
+        :returns: the string
         """
         if self.m_name == -1 or (
             self.m_event != START_TAG and self.m_event != END_TAG
@@ -830,6 +843,8 @@ class AXMLParser:
 
         This works only for Tags, as the comments of Namespaces are silently dropped.
         Currently, there is no way of retrieving comments of namespaces.
+
+        :returns: the comment string, or None if no comment exists
         """
         if self.m_comment_index == 0xFFFFFFFF:
             return None
@@ -840,6 +855,8 @@ class AXMLParser:
     def namespace(self) -> str:
         """
         Return the Namespace URI (if any) as a String for the current tag
+
+        :returns: the namespace uri, or empty if namespace does not exist
         """
         if self.m_name == -1 or (
             self.m_event != START_TAG and self.m_event != END_TAG
@@ -864,6 +881,8 @@ class AXMLParser:
         2) a prefix might map to an empty string (some packers)
         3) uri+prefix mappings might be included several times
         4) prefix might be empty
+
+        :returns: the namespace mapping dictionary
         """
 
         NSMAP = dict()
@@ -882,6 +901,8 @@ class AXMLParser:
     def text(self) -> str:
         """
         Return the String assosicated with the current text
+
+        :returns: the string associated with the current text
         """
         if self.m_name == -1 or self.m_event != TEXT:
             return ''
@@ -891,25 +912,25 @@ class AXMLParser:
     def getName(self) -> str:
         """
         Legacy only!
-        use :py:attr:`~androguard.core.bytecodes.AXMLParser.name` instead
+        use `name` attribute instead
         """
         return self.name
 
     def getText(self) -> str:
         """
         Legacy only!
-        use :py:attr:`~androguard.core.bytecodes.AXMLParser.text` instead
+        use `text` attribute instead
         """
         return self.text
 
     def getPrefix(self) -> str:
         """
         Legacy only!
-        use :py:attr:`~androguard.core.bytecodes.AXMLParser.namespace` instead
+        use `namespace` attribute instead
         """
         return self.namespace
 
-    def _get_attribute_offset(self, index):
+    def _get_attribute_offset(self, index: int):
         """
         Return the start inside the m_attributes array for a given attribute
         """
@@ -926,15 +947,19 @@ class AXMLParser:
         """
         Return the number of Attributes for a Tag
         or -1 if not in a tag
+
+        :returns: the number of attributes
         """
         if self.m_event != START_TAG:
             return -1
 
         return self.m_attribute_count
 
-    def getAttributeUri(self, index: int):
+    def getAttributeUri(self, index:int) -> int:
         """
         Returns the numeric ID for the namespace URI of an attribute
+
+        :returns: the namespace URI numeric id
         """
         logger.debug(index)
 
@@ -943,9 +968,11 @@ class AXMLParser:
 
         return uri
 
-    def getAttributeNamespace(self, index: int):
+    def getAttributeNamespace(self, index:int) -> str:
         """
         Return the Namespace URI (if any) for the attribute
+
+        :returns: the attribute uri, or empty string if no namespace
         """
         logger.debug(index)
 
@@ -957,9 +984,11 @@ class AXMLParser:
 
         return self.sb[uri]
 
-    def getAttributeName(self, index: int):
+    def getAttributeName(self, index:int) -> str:
         """
         Returns the String which represents the attribute name
+
+        :returns: the attribute name
         """
         logger.debug(index)
         offset = self._get_attribute_offset(index)
@@ -1004,14 +1033,14 @@ class AXMLParser:
         offset = self._get_attribute_offset(index)
         return self.m_attributes[offset + ATTRIBUTE_IX_VALUE_DATA]
 
-    def getAttributeValue(self, index):
+    def getAttributeValue(self, index: int) -> str:
         """
         This function is only used to look up strings
         All other work is done by
-        :func:`~androguard.core.bytecodes.axml.format_value`
+        [format_value][androguard.core.axml.format_value]
         # FIXME should unite those functions
         :param index: index of the attribute
-        :return:
+        :returns: the string
         """
         logger.debug(index)
 
@@ -1028,13 +1057,14 @@ def format_value(
 ) -> str:
     """
     Format a value based on type and data.
-    By default, no strings are looked up and "<string>" is returned.
+    By default, no strings are looked up and `"<string>"` is returned.
     You need to define `lookup_string` in order to actually lookup strings from
     the string table.
 
     :param _type: The numeric type of the value
     :param _data: The numeric data of the value
     :param lookup_string: A function how to resolve strings from integer IDs
+    :returns: the formatted string
     """
 
     # Function to prepend android prefix for attributes/references from the
@@ -1243,15 +1273,17 @@ class AXMLPrinter:
         """
         Get the XML as an ElementTree object
 
-        :returns: :class:`lxml.etree.Element`
+        :returns: `lxml.etree.Element` object
         """
         return self.root
 
     def is_valid(self) -> bool:
         """
-        Return the state of the AXMLParser.
-        If this flag is set to False, the parsing has failed, thus
+        Return the state of the [AXMLParser][androguard.core.axml.AXMLParser].
+        If this flag is set to `False`, the parsing has failed, thus
         the resulting XML will not work or will even be empty.
+
+        :returns: `True` if the `AXMLParser` finished parsing, or `False` if an error occurred
         """
         return self.axml.is_valid()
 
@@ -1281,7 +1313,7 @@ class AXMLPrinter:
             _type, _data, lambda _: self.axml.getAttributeValue(index)
         )
 
-    def _fix_name(self, prefix, name):
+    def _fix_name(self, prefix, name) -> tuple[str, str]:
         """
         Apply some fixes to element named and attribute names.
         Try to get conform to:
@@ -1302,7 +1334,6 @@ class AXMLPrinter:
         :param name: Name of the attribute or tag
         :param prefix: The existing prefix uri as found in the AXML chunk
         :return: a fixed version of prefix and name
-        :rtype: tuple
         """
         if not name[0].isalpha() and name[0] != "_":
             logger.warning(
@@ -1597,10 +1628,10 @@ class ARSCParser:
     The ARSC File is, like the binary XML format, a chunk based format.
     Both formats are actually identical but use different chunks in order to store the data.
 
-    The most outer chunk in the ARSC file is a chunk of type RES_TABLE_TYPE.
+    The most outer chunk in the ARSC file is a chunk of type `RES_TABLE_TYPE`.
     Inside this chunk is a StringPool and at least one package.
 
-    Each package is a chunk of type RES_TABLE_PACKAGE_TYPE.
+    Each package is a chunk of type `RES_TABLE_PACKAGE_TYPE`.
     It contains again many more chunks.
     """
 
@@ -2051,6 +2082,7 @@ class ARSCParser:
         Retrieve a list of all available locales in a given packagename.
 
         :param package_name: the package name to get locales of
+        :returns: a list of locale strings
         """
         self._analyse()
         return list(self.values[package_name].keys())
@@ -2064,6 +2096,7 @@ class ARSCParser:
 
         :param package_name: the package name to get types of
         :param locale: the locale to get types of (default: '\x00\x00')
+        :returns: a list of type strings
         """
         self._analyse()
         return list(self.values[package_name][locale].keys())
@@ -2078,6 +2111,7 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+        :returns: the public xml bytes
         """
 
         self._analyse()
@@ -2110,6 +2144,7 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+        :returns: the string xml bytes
         """
         self._analyse()
 
@@ -2135,6 +2170,8 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'string'.
         This is a combined variant, which has all locales and all package names
         stored.
+
+        :returns: the string, locales, and package name xml bytes
         """
         self._analyse()
 
@@ -2176,6 +2213,8 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+
+        :returns: the id resources xml bytes
         """
         self._analyse()
 
@@ -2208,6 +2247,8 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+
+        :returns: the bool resources xml bytes
         """
         self._analyse()
 
@@ -2235,6 +2276,8 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+
+        :returns: the integer resources xml bytes
         """
         self._analyse()
 
@@ -2262,6 +2305,8 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+
+        :returns: the color resources xml bytes
         """
         self._analyse()
 
@@ -2289,6 +2334,8 @@ class ARSCParser:
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
+
+        :returns: the dimen resource xml bytes
         """
         self._analyse()
 
@@ -2309,13 +2356,13 @@ class ARSCParser:
         self, package_name: str, rid: int, locale: str = '\x00\x00'
     ) -> tuple:
         """
-        Returns the tuple (resource_type, resource_name, resource_id)
+        Returns the tuple `(resource_type, resource_name, resource_id)`
         for the given resource_id.
 
         :param package_name: package name to query
         :param rid: the resource_id
         :param locale: specific locale
-        :return: tuple of (resource_type, resource_name, resource_id)
+        :returns: tuple of (resource_type, resource_name, resource_id)
         """
         self._analyse()
 
@@ -2350,7 +2397,7 @@ class ARSCParser:
             the given ID into the Resource and returns a list of matching resources.
 
             :param int res_id: numerical ID of the resource
-            :return: a list of tuples of (ARSCResTableConfig, str)
+            :returns: a list of tuples of (ARSCResTableConfig, str)
             """
             result = []
             self._resolve_into_result(result, res_id, self.wanted_config)
@@ -2371,11 +2418,10 @@ class ARSCParser:
             config: ARSCResTableConfig,
         ) -> None:
             """
-            Put a ResTableEntry into the list of results
-            :param list result: results array
-            :param ARSCResTableEntry ate:
-            :param ARSCResTableConfig config:
-            :return:
+            Put a [ARSCResTableEntry][androguard.core.axml.ARSCResTableEntry] into the list of results
+            :param result: results array
+            :param ate:
+            :param config:
             """
             if ate.is_complex():
                 complex_array = []
@@ -2408,15 +2454,14 @@ class ARSCParser:
             compact_: bool = False,
         ) -> None:
             """
-            Put the tuple (ARSCResTableConfig, resolved string) into the result set
+            Put the tuple ([ARSCResTableConfig][androguard.core.axml.ARSCResTableConfig], resolved string) into the result set
 
-            :param list result: the result set
-            :param ARSCResStringPoolRef | int item:
-            :param ARSCResTableConfig config:
-            :param ARSCResTableEntry parent: the originating entry
-            :param bool complex_: True if the originating :class:`ARSCResTableEntry` was complex
-            :param bool compact_: True if the originating :class:`ARSCResTableEntry` was compact
-            :return:
+            :param result: the result set
+            :param item:
+            :param config:
+            :param parent: the originating entry
+            :param complex_: True if the originating `ARSCResTableEntry` was complex
+            :param bool compact_: True if the originating `ARSCResTableEntry` was compact
             """
             if isinstance(item, ARSCResStringPoolRef):
                 if item.is_reference():
@@ -2451,15 +2496,15 @@ class ARSCParser:
     ) -> list[tuple[ARSCResTableConfig, str]]:
         """
         Return a list of resolved resource IDs with their corresponding configuration.
-        It has a similar return type as :meth:`get_res_configs` but also handles complex entries
+        It has a similar return type as [get_res_configs][androguard.core.axml.ARSCParser.get_res_configs] but also handles complex entries
         and references.
-        Also instead of returning :class:`ARSCResTableEntry` in the tuple, the actual values are resolved.
+        Also instead of returning [ARSCResTableConfig][androguard.core.axml.ARSCResTableConfig] in the tuple, the actual values are resolved.
 
         This is the preferred way of resolving resource IDs to their resources.
 
-        :param int rid: the numerical ID of the resource
-        :param ARSCTableResConfig config: the desired configuration or None to retrieve all
-        :return: A list of tuples of (ARSCResTableConfig, str)
+        :param rid: the numerical ID of the resource
+        :param config: the desired configuration or None to retrieve all
+        :return: A list of tuples of (`ARSCResTableConfig`, str)
         """
         resolver = ARSCParser.ResourceResolver(self, config)
         return resolver.resolve(rid)
@@ -2522,7 +2567,7 @@ class ARSCParser:
         :param rid: resource id as int
         :param config: a config to resolve from, or None to get all results
         :param fallback: Enable the fallback for resolving default configuration (default: True)
-        :return: a list of ARSCResTableConfig:
+        :return: a list of `ARSCResTableConfig`
         """
         self._analyse()
 
@@ -2595,12 +2640,12 @@ class ARSCParser:
     @staticmethod
     def parse_id(name: str) -> tuple[str, str]:
         """
-        Resolves an id from a binary XML file in the form "@[package:]DEADBEEF"
+        Resolves an id from a binary XML file in the form `@[package:]DEADBEEF`
         and returns a tuple of package name and resource id.
-        If no package name was given, i.e. the ID has the form "@DEADBEEF",
+        If no package name was given, i.e. the ID has the form `@DEADBEEF`,
         the package name is set to None.
 
-        Raises a ValueError if the id is malformed.
+        :raises ValueError: if the id is malformed.
 
         :param name: the string of the resource, as in the binary XML file
         :return: a tuple of (resource_id, package_name).
@@ -2634,7 +2679,7 @@ class ARSCParser:
         self, r_id: int, package: Union[str, None] = None
     ) -> str:
         """
-        Returns the XML name for a resource, including the package name if package is None.
+        Returns the XML name for a resource, including the package name if package is `None`.
         A full name might look like `@com.example:string/foobar`
         Otherwise the name is only looked up in the specified package and is returned without
         the package name.
@@ -2678,10 +2723,10 @@ class PackageContext:
         mKeyStrings: StringBlock,
     ) -> None:
         """
-        :param ARSCResTablePackage current_package:
-        :param StringBlock stringpool_main:
-        :param StringBlock mTableStrings:
-        :param StringBlock mKeyStrings:
+        :param current_package:
+        :param stringpool_main:
+        :param mTableStrings:
+        :param mKeyStrings:
         """
         self.stringpool_main = stringpool_main
         self.mTableStrings = mTableStrings
@@ -2711,16 +2756,15 @@ class ARSCHeader:
     Object which contains a Resource Chunk.
     This is an implementation of the `ResChunk_header`.
 
-    It will throw an :class:`ResParserError` if the header could not be read successfully.
+    It will throw an [ResParserError][androguard.core.axml.ResParserError] if the header could not be read successfully.
 
     It is not checked if the data is outside the buffer size nor if the current
     chunk fits into the parent chunk (if any)!
 
-    The parameter `expected_type` can be used to immediately check the header for the type or raise a :class:`ResParserError`.
+    The parameter `expected_type` can be used to immediately check the header for the type or raise a [ResParserError][androguard.core.axml.ResParserError].
     This is useful if you know what type of chunk must follow.
 
     See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#196
-    :raises: ResParserError
     """
 
     # This is the minimal size such a header must have. There might be other header data too!
@@ -2733,6 +2777,7 @@ class ARSCHeader:
         possible_types: Union[set[int], None] = None,
     ) -> None:
         """
+        :raises ResParserError: if header malformed
         :param buff: the buffer set to the position where the header starts.
         :param int expected_type: the type of the header which is expected.
         """
@@ -3176,7 +3221,7 @@ class ARSCResTableConfig:
     def get_language_and_region(self) -> str:
         """
         Returns the combined language+region string or \x00\x00 for the default locale
-        :return:
+        :returns: the combined language and region string
         """
         if self.locale != 0:
             _language = self._unpack_language_or_region(
@@ -3200,7 +3245,8 @@ class ARSCResTableConfig:
         """
         Here for legacy reasons.
 
-        use :meth:`~get_qualifier` instead.
+        use [get_qualifier][androguard.core.axml.ARSCResTableConfig.get_qualifier] instead.
+        :returns: the qualifier string
         """
         return self.get_qualifier()
 
@@ -3208,6 +3254,7 @@ class ARSCResTableConfig:
         """
         Return resource name qualifier for the current configuration.
         for example
+
         * `ldpi-v4`
         * `hdpi-v4`
 
@@ -3215,7 +3262,7 @@ class ARSCResTableConfig:
 
         You can find how android process this at http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#3243
 
-        :return: str
+        :return: the resource name qualifer string
         """
         res = []
 
@@ -3450,7 +3497,7 @@ class ARSCResTableConfig:
         Test if this is a default resource, which matches all
 
         This is indicated that all fields are zero.
-        :return: True if default, False otherwise
+        :returns: True if default, False otherwise
         """
         return all(map(lambda x: x == 0, self._get_tuple()))
 
@@ -3676,7 +3723,7 @@ def get_arsc_info(arscobj: ARSCParser) -> str:
     """
     Return a string containing all resources packages ordered by packagename, locale and type.
 
-    :param arscobj: :class:`~ARSCParser`
+    :param arscobj: [ARSCParser][androguard.core.axml.ARSCParser]
     :return: a string
     """
     buff = ""
