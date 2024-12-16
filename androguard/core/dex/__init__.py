@@ -4218,7 +4218,7 @@ class ClassHDefItem:
     def get_method(
         self, name_class: str, name_method: str
     ) -> list[EncodedMethod]:
-      """return a list of of `EncodedMethod` objects given a class name and method name
+        """return a list of of `EncodedMethod` objects given a class name and method name
 
         :param name_class: the name of the class
         :param name_method: the name of the method
@@ -6982,7 +6982,7 @@ def get_instruction(
 def get_optimized_instruction(
     cm: ClassManager, op_value: int, buff: bytearray
 ) -> Instruction:
-  """Return the [Instruction][androguard.core.dex.Instruction] for the given optimized opcode
+    """Return the [Instruction][androguard.core.dex.Instruction] for the given optimized opcode
 
     :param cm: `ClassManager` to propagate to `Instruction`
     :param op_value: integer value of the instruction

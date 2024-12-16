@@ -1164,7 +1164,7 @@ class ClassAnalysis:
         :param classobj: the original class
         """
 
-      logger.info(f"Adding new ClassAnalysis: {classobj}")
+        logger.info(f"Adding new ClassAnalysis: {classobj}")
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
 

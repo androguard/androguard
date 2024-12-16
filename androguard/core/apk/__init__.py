@@ -11,7 +11,7 @@ import io
 import os
 import re
 import unicodedata
-import zipfil
+import zipfile
 from hashlib import md5, sha1, sha224, sha256, sha384, sha512
 from struct import unpack
 from typing import Any, Iterator, List, Tuple, Union
@@ -22,6 +22,10 @@ import lxml.sax
 from apkInspector.headers import ZipEntry
 
 # Used for reading Certificates
+
+# included to resolve full module path for docs
+import asn1crypto
+
 from asn1crypto import cms, keys, x509
 from asn1crypto.util import OrderedDict
 from cryptography.exceptions import InvalidSignature
@@ -2697,7 +2701,7 @@ class APK:
             for cert in self.get_certificates_der_v2()
         ]
 
-     def get_certificates_v1(self) -> list[Union[x509.Certificate, None]]:
+    def get_certificates_v1(self) -> list[Union[x509.Certificate, None]]:
         """
         Return a list of verified :class:`asn1crypto.x509.Certificate` which are found
         in the META-INF folder (v1 signing).
