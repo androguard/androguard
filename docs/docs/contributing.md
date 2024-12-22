@@ -19,7 +19,7 @@ pip3 install poetry
 poetry install
 ```
 
-4.  Verify succesful installation by running the unit tests.  From the Androguard root directory:
+4.  Verify successful installation by running the unit tests.  From the Androguard root directory:
 ```bash
 poetry run python -m unittest discover -s tests -p 'test_*.py'
 ```
