@@ -1796,7 +1796,7 @@ class APK:
         signer_info: asn1crypto.cms.SignerInfo,
         sf_object: str,
         max_sdk_version: Union[int, None],
-    ):
+    ) -> Union[bytes, None]:
         matching_certificate = self.find_certificate(certificates, signer_info)
         matching_certificate_verified = None
         digest_algorithm, crypto_hash_algorithm = self.get_hash_algorithm(
