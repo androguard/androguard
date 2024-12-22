@@ -150,7 +150,7 @@ def _dump_digests_or_signatures(digests_or_sigs):
 class APKV2SignedData:
     """
     This class holds all data associated with an APK V3 SigningBlock signed data.
-    source : https://source.android.com/security/apksigning/v2.html
+    source : [apksigning v2](https://source.android.com/security/apksigning/v2.html)
     """
 
     def __init__(self) -> None:
@@ -206,7 +206,7 @@ class APKV2SignedData:
 class APKV3SignedData(APKV2SignedData):
     """
     This class holds all data associated with an APK V3 SigningBlock signed data.
-    source : https://source.android.com/security/apksigning/v3.html
+    source : [apksigning v3](https://source.android.com/security/apksigning/v3.html)
     """
 
     def __init__(self) -> None:
@@ -235,7 +235,7 @@ class APKV3SignedData(APKV2SignedData):
 class APKV2Signer:
     """
     This class holds all data associated with an APK V2 SigningBlock signer.
-    source : https://source.android.com/security/apksigning/v2.html
+    source : [apksigning v2](https://source.android.com/security/apksigning/v2.html)
     """
 
     def __init__(self) -> None:
@@ -259,7 +259,7 @@ class APKV2Signer:
 class APKV3Signer(APKV2Signer):
     """
     This class holds all data associated with an APK V3 SigningBlock signer.
-    source : https://source.android.com/security/apksigning/v3.html
+    source : [apksigning v3](https://source.android.com/security/apksigning/v3.html)
     """
 
     def __init__(self) -> None:
@@ -663,8 +663,8 @@ class APK:
 
         This information is read from the `AndroidManifest.xml`
 
-        From https://developer.android.com/guide/practices/screens_support.html
-        and https://developer.android.com/ndk/reference/group___configuration.html
+        From <https://developer.android.com/guide/practices/screens_support.html>
+        and <https://developer.android.com/ndk/reference/group___configuration.html>
 
         * DEFAULT                             0dpi
         * ldpi (low)                        120dpi
@@ -692,7 +692,7 @@ class APK:
         3. is there a nodpi icon?
         4. (only on very old devices) is there a icon with dpi 0 (the default)
 
-        For more information read here: https://stackoverflow.com/a/34370735/446140
+        For more information read here: <https://stackoverflow.com/a/34370735/446140>
 
         :returns: the first icon file name, or None if no resources or app icon exists.
         """
@@ -857,7 +857,7 @@ class APK:
 
     def get_files_types(self) -> dict[str, str]:
         """
-        Return the files inside the APK with their associated types (by using python-magic)
+        Return the files inside the APK with their associated types (by using [python-magic](https://pypi.org/project/python-magic/))
 
         At the same time, the CRC32 are calculated for the files.
 
@@ -1094,7 +1094,7 @@ class APK:
         """
         Return the value of the android prefixed attribute in a specific tag.
 
-        This function will always try to get the attribute with a android: prefix first,
+        This function will always try to get the attribute with a `android:` prefix first,
         and will try to return the attribute without the prefix, if the attribute could not be found.
         This is useful for some broken `AndroidManifest.xml`, where no android namespace is set,
         but could also indicate malicious activity (i.e. wrongly repackaged files).
@@ -1281,17 +1281,17 @@ class APK:
 
     def get_activities(self) -> list[str]:
         """
-        Return the android:name attribute of all activities
+        Return the `android:name` attribute of all activities
 
-        :returns: the list of android:name attribute of all activities
+        :returns: the list of `android:name` attribute of all activities
         """
         return list(self.get_all_attribute_value("activity", "name"))
 
     def get_activity_aliases(self) -> list[dict[str, str]]:
         """
-        Return the android:name and android:targetActivity attribute of all activity aliases.
+        Return the `android:name` and `android:targetActivity` attribute of all activity aliases.
 
-        :returns: the list of android:name and android:targetActivity attribute of all activitiy aliases
+        :returns: the list of `android:name` and `android:targetActivity` attribute of all activitiy aliases
         """
         ali = []
         for alias in self.find_tags('activity-alias'):
@@ -1307,25 +1307,25 @@ class APK:
 
     def get_services(self) -> list[str]:
         """
-        Return the android:name attribute of all services
+        Return the `android:name` attribute of all services
 
-        :returns: the list of the android:name attribute of all services
+        :returns: the list of the `android:name` attribute of all services
         """
         return list(self.get_all_attribute_value("service", "name"))
 
     def get_receivers(self) -> list[str]:
         """
-        Return the android:name attribute of all receivers
+        Return the `android:name` attribute of all receivers
 
-        :returns: the list of the android:name attribute of all receivers
+        :returns: the list of the `android:name` attribute of all receivers
         """
         return list(self.get_all_attribute_value("receiver", "name"))
 
     def get_providers(self) -> list[str]:
         """
-        Return the android:name attribute of all providers
+        Return the `android:name` attribute of all providers
 
-        :returns: the list of the android:name attribute of all providers
+        :returns: the list of the `android:name` attribute of all providers
         """
         return list(self.get_all_attribute_value("provider", "name"))
 
@@ -1529,7 +1529,7 @@ class APK:
         This can only return details about the permission, if the permission is
         defined in the AOSP.
 
-        :returns: permissions with details: dict of {permission: [protectionLevel, label, description]}
+        :returns: permissions with details: dict of `{permission: [protectionLevel, label, description]}`
         """
         l = {}
 
@@ -1643,7 +1643,7 @@ class APK:
 
         If the `targetSdkVersion` is not set, it defaults to 1.  This is
         set based on defaults as defined in:
-        https://developer.android.com/guide/topics/manifest/uses-sdk-element.html
+        <https://developer.android.com/guide/topics/manifest/uses-sdk-element.html>
 
         :returns: the effective `targetSdkVersion`
         """
@@ -1665,7 +1665,7 @@ class APK:
 
     def get_features(self) -> list[str]:
         """
-        Return a list of all android:names found for the tag uses-feature
+        Return a list of all `android:names` found for the tag `uses-feature`
         in the `AndroidManifest.xml`
 
         :returns: the `android:names` found
@@ -1720,7 +1720,7 @@ class APK:
         If minSdkVersion is prior to Android N only the first SignerInfo is used.
         If signed attributes are present, they are taken into account
         Note that unsupported critical extensions and key usage are not verified!
-        https://android.googlesource.com/platform/tools/apksig/+/refs/tags/platform-tools-34.0.5/src/main/java/com/android/apksig/internal/apk/v1/V1SchemeVerifier.java#668
+        [V1SchemeVerifier.java](https://android.googlesource.com/platform/tools/apksig/+/refs/tags/platform-tools-34.0.5/src/main/java/com/android/apksig/internal/apk/v1/V1SchemeVerifier.java#668)
 
         :param filename: Signature filename in APK
         :param max_sdk_version: An optional integer parameter for the max sdk version
@@ -1791,11 +1791,11 @@ class APK:
 
     def verify_signer_info_against_sig_file(
         self,
-        signed_data,
-        certificates,
-        signer_info,
-        sf_object,
-        max_sdk_version,
+        signed_data: asn1crypto.cms.ContentInfo,
+        certificates: asn1crypto.cms.CertificateSet,
+        signer_info: asn1crypto.cms.SignerInfo,
+        sf_object: str,
+        max_sdk_version: Union[int, None],
     ):
         matching_certificate = self.find_certificate(certificates, signer_info)
         matching_certificate_verified = None
@@ -1881,8 +1881,11 @@ class APK:
 
     @staticmethod
     def verify_signature(
-        signer_info, matching_certificate, signed_data, crypto_hash_algorithm
-    ):
+        signer_info: asn1crypto.cms.SignerInfo,
+        matching_certificate,
+        signed_data,
+        crypto_hash_algorithm
+    ) -> bytes:
         matching_certificate_verified = None
         signature = signer_info['signature'].native
 
@@ -1951,16 +1954,17 @@ class APK:
             raise ValueError(f"Unsupported hash algorithm: {digest_algorithm}")
         return hash_algorithms[digest_algorithm]
 
-    def find_certificate(self, signed_data_certificates, signer_info):
+    def find_certificate(
+        self,
+        signed_data_certificates: asn1crypto.cms.CertificateSet,
+        signer_info: asn1crypto.cms.SignerInfo) -> Union[asn1crypto.x509.Certificate, None]:
         """
-        From the bag of certs, obtain the certificate referenced by the SignerInfo.
+        From the bag of certs, obtain the certificate referenced by the `asn1crypto.cms.SignerInfo`.
 
-        Args:
-            signed_data_certificates: List of certificates in the SignedData.
-            signer_info: SignerInfo object containing the issuer and serial number reference.
+        :param signed_data_certificates: List of certificates in the SignedData.
+        :param signer_info: `SignerInfo` object containing the issuer and serial number reference.
 
-        Returns:
-            The matching certificate if found, otherwise None.
+        :returns: The matching certificate if found, otherwise None.
         """
         matching_certificate = None
         issuer_and_serial_number = signer_info['sid']
@@ -2006,15 +2010,16 @@ class APK:
             certificate = None
         return certificate
 
-    def canonical_name(self, name: Any, android: bool = False) -> str:
+    def canonical_name(self, name: asn1crypto.x509.Name, android: bool = False) -> str:
         """
-        /*
+        ```
          * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
          * The original author has granted permission to use this code snippet under the
          * Apache License 2.0 for inclusion in this project.
          * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
-         */
-         Canonical representation of x509.Name as str (with raw control characters
+        ```
+
+        Returns canonical representation of `asn1crypto.x509.Name` as str (with raw control characters
         in places those are not stripped by normalisation).
         """
         # return ",".join("+".join(f"{t}:{v}" for _, t, v in avas) for avas in self.comparison_name(name))
@@ -2027,12 +2032,13 @@ class APK:
         self, name: x509.Name, *, android: bool = False
     ) -> List[List[Tuple[str, str]]]:
         """
-        /*
+        ```
          * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
          * The original author has granted permission to use this code snippet under the
          * Apache License 2.0 for inclusion in this project.
          * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
-         */
+        ```
+
         Canonical representation of x509.Name as nested list.
 
         Returns a list of RDNs which are a list of AVAs which are a (type, value)
@@ -2052,13 +2058,14 @@ class APK:
         android: bool = False,
     ) -> List[List[Tuple[int, str, str, str]]]:
         """
-         /*
+        ```
          * Method is dual-licensed under the Apache License 2.0 and GPLv3+.
          * The original author has granted permission to use this code snippet under the
          * Apache License 2.0 for inclusion in this project.
          * https://github.com/obfusk/x509_canonical_name.py/blob/master/x509_canonical_name.py
-         */
-        Representation of x509.Name as nested list, in canonical ordering (but also
+        ```
+
+        Representation of `x509.Name` as nested list, in canonical ordering (but also
         including non-canonical pre-normalised string values).
 
         Returns a list of RDNs which are a list of AVAs which are a (oid, type,
@@ -2070,10 +2077,10 @@ class APK:
         NB: control characters are not escaped, only characters in ",+<>;\"\\" and
         "#" at the start (before "whitespace" trimming) are.
 
-        https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)
-        https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/AVA.java#L805
-        https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/RDN.java#L472
-        https://android.googlesource.com/platform/libcore/+/refs/heads/android14-release/ojluni/src/main/java/sun/security/x509/RDN.java#481
+        [X500Principal.getName](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String))
+        [AVA.java](https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/AVA.java#L805)
+        [RDN.java (472)](https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/java.base/share/classes/sun/security/x509/RDN.java#L472)
+        [RDN.java (481)](https://android.googlesource.com/platform/libcore/+/refs/heads/android14-release/ojluni/src/main/java/sun/security/x509/RDN.java#481)
         """
 
         def key(
@@ -2703,7 +2710,7 @@ class APK:
 
     def get_certificates_v1(self) -> list[Union[x509.Certificate, None]]:
         """
-        Return a list of verified :class:`asn1crypto.x509.Certificate` which are found
+        Return a list of verified `asn1crypto.x509.Certificate` which are found
         in the META-INF folder (v1 signing).
         """
         certs = []
@@ -2715,7 +2722,7 @@ class APK:
 
     def get_certificates(self) -> list[asn1crypto.x509.Certificate]:
         """
-        Return a list of unique :class:`asn1crypto.x509.Certificate` which are found
+        Return a list of unique `asn1crypto.x509.Certificate` which are found
         in v1, v2 and v3 signing
         Note that we simply extract all certificates regardless of the signer.
         Therefore this is just a list of all certificates found in all signers.

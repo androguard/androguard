@@ -1319,7 +1319,7 @@ class AXMLPrinter:
         Try to get conform to:
         > Like element names, attribute names are case-sensitive and must start with a letter or underscore.
         > The rest of the name can contain letters, digits, hyphens, underscores, and periods.
-        See: https://msdn.microsoft.com/en-us/library/ms256152(v=vs.110).aspx
+        See: <https://msdn.microsoft.com/en-us/library/ms256152(v=vs.110).aspx>
 
         This function tries to fix some broken namespace mappings.
         In some cases, the namespace prefix is inside the name and not in the prefix field.
@@ -1391,7 +1391,7 @@ class AXMLPrinter:
         according to the specification:
         > Char	   ::=   	#x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 
-        See https://www.w3.org/TR/xml/#charsets
+        See <https://www.w3.org/TR/xml/#charsets>
 
         :param value: a value to clean
         :return: the cleaned value
@@ -2140,7 +2140,7 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'string'.
 
         Read more about string resources:
-        https://developer.android.com/guide/topics/resources/string-resource.html
+        <https://developer.android.com/guide/topics/resources/string-resource.html>
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
@@ -2209,7 +2209,7 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'id'.
 
         Read more about ID resources:
-        https://developer.android.com/guide/topics/resources/more-resources.html#Id
+        <https://developer.android.com/guide/topics/resources/more-resources.html#Id>
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
@@ -2243,7 +2243,7 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'bool'.
 
         Read more about bool resources:
-        https://developer.android.com/guide/topics/resources/more-resources.html#Bool
+        <https://developer.android.com/guide/topics/resources/more-resources.html#Bool>
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
@@ -2272,7 +2272,7 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'integer'.
 
         Read more about integer resources:
-        https://developer.android.com/guide/topics/resources/more-resources.html#Integer
+        <https://developer.android.com/guide/topics/resources/more-resources.html#Integer>
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
@@ -2301,7 +2301,7 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'color'.
 
         Read more about color resources:
-        https://developer.android.com/guide/topics/resources/more-resources.html#Color
+        <https://developer.android.com/guide/topics/resources/more-resources.html#Color>
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
@@ -2330,7 +2330,7 @@ class ARSCParser:
         Get the XML (as string) of all resources of type 'dimen'.
 
         Read more about Dimension resources:
-        https://developer.android.com/guide/topics/resources/more-resources.html#Dimension
+        <https://developer.android.com/guide/topics/resources/more-resources.html#Dimension>
 
         :param package_name: the package name to get the resources for
         :param locale: the locale to get the resources for (default: '\x00\x00')
@@ -2559,7 +2559,7 @@ class ARSCParser:
         if more than one items are found and the default config is used and no default entry could be found.
 
         This is usually a bad sign (i.e. the developer did not follow the android documentation:
-        https://developer.android.com/guide/topics/resources/localization.html#failing2)
+        <https://developer.android.com/guide/topics/resources/localization.html#failing2)>
         In practise an app might just be designed to run on a single locale and thus only has those locales set.
 
         You can disable this fallback behaviour, to just return exactly the given result.
@@ -2688,7 +2688,7 @@ class ARSCParser:
         If the ID could not be found, `None` is returned.
 
         A description of the XML name can be found here:
-        https://developer.android.com/guide/topics/resources/providing-resources#ResourcesFromXml
+        <https://developer.android.com/guide/topics/resources/providing-resources#ResourcesFromXml>
 
         :param r_id: numerical ID if the resource
         :param package: package name
@@ -3258,9 +3258,9 @@ class ARSCResTableConfig:
         * `ldpi-v4`
         * `hdpi-v4`
 
-        All possible qualifiers are listed in table 2 of https://developer.android.com/guide/topics/resources/providing-resources
+        All possible qualifiers are listed in table 2 of <https://developer.android.com/guide/topics/resources/providing-resources>
 
-        You can find how android process this at http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#3243
+        You can find how android process this at [ResourceTypes 3243](http://aospxref.com/android-13.0.0_r3/xref/frameworks/base/libs/androidfw/ResourceTypes.cpp#3243)
 
         :return: the resource name qualifer string
         """
@@ -3530,7 +3530,7 @@ class ARSCResTableEntry:
     """
     A `ResTable_entry`.
 
-    See https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1522;drc=442fcb158a5b2e23340b74ce2e29e5e1f5bf9d66;bpv=0;bpt=0
+    See <https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h;l=1522;drc=442fcb158a5b2e23340b74ce2e29e5e1f5bf9d66;bpv=0;bpt=0>
     """
 
     # If set, this is a complex entry, holding a set of name/value
@@ -3620,8 +3620,8 @@ class ARSCComplex:
     It contains a set of {name: value} mappings, which are of type `ResTable_map`.
     A `ResTable_map` contains two items: `ResTable_ref` and `Res_value`.
 
-    See http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1485 for `ResTable_map_entry`
-    and http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1498 for `ResTable_map`
+    See [ResourceTypes.h 1485](http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1485) for `ResTable_map_entry`
+    and [ResourceTypes.h 1498](http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#1498) for `ResTable_map`
     """
 
     def __init__(
@@ -3664,7 +3664,7 @@ class ARSCResStringPoolRef:
     This is actually a `Res_value`
     It holds information about the stored resource value
 
-    See: http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#262
+    See: [ResourceTypes.h 262](http://androidxref.com/9.0.0_r3/xref/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h#262)
     """
 
     def __init__(
