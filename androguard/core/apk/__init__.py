@@ -1938,7 +1938,7 @@ class APK:
         return matching_certificate_verified
 
     @staticmethod
-    def get_hash_algorithm(signer_info):
+    def get_hash_algorithm(signer_info: asn1crypto.cms.SignerInfo) -> dict[str, hashes.HashAlgorithm]:
         # Determine the hash algorithm from the SignerInfo
         digest_algorithm = signer_info['digest_algorithm']['algorithm'].native
         # Map the digest algorithm to a hash function
