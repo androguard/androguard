@@ -16,7 +16,7 @@ class Session:
     Additionally, it offers the possibility to store actions done when using the 'pentest' module.
 
     NOTE: an attempt to move from pickling to dataset was started here:
-    https://github.com/androguard/androguard/commit/4dd0dc8c4b55605af863925faf16e8eb35f13e45
+    <https://github.com/androguard/androguard/commit/4dd0dc8c4b55605af863925faf16e8eb35f13e45>
     but is NOT finished!
 
     > Should we go back to pickling or proceed further with the dataset ?
