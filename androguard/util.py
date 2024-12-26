@@ -12,7 +12,7 @@ from loguru import logger
 
 
 class MyFilter:
-    def __init__(self, level: int) -> None:
+    def __init__(self, level: str) -> None:
         self.level = level
 
     def __call__(self, record):
