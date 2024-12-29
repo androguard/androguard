@@ -20,7 +20,7 @@ pip install androguard
 ## Documentation
 **Documentation contains outdated information - In progress of updating**
 
-The [wiki](https://github.com/androguard/androguard/wiki) page is the most recently updated source.
+The [Github Pages Documentation](http://androguard.github.io/androguard/) is the most up to date source.
 
 Additional documentation that contains outdated information is available at [ReadTheDocs](http://androguard.readthedocs.io/en/latest/).
 
