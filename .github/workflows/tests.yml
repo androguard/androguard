@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Tests and Build Docs
 
 on:
   pull_request:
@@ -6,7 +6,8 @@ on:
       - master
 
 jobs:
-  build:
+  tests:
+    name: Run Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -32,3 +33,26 @@ jobs:
     - name: Build with Poetry
       run: |
         poetry build
+
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: Install Documentation Dependencies
+      run: |
+        pip install -r requirements.docs.txt
+
+    - name: Build Documentation
+      run: |
+        cd docs
+        mkdocs build
