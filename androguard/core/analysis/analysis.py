@@ -31,7 +31,7 @@ class REF_TYPE(IntEnum):
     """
     Stores the opcodes for the type of usage in an XREF.
 
-    Used in :class:`ClassAnalysis` to store the type of reference to the class.
+    Used in [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis] to store the type of reference to the class.
     """
 
     REF_NEW_INSTANCE = 0x22
@@ -114,7 +114,7 @@ class BasicBlocks:
     """
     This class represents all basic blocks of a method.
 
-    It is a collection of many :class:`DEXBasicBlock`.
+    It is a collection of many [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock].
     """
 
     def __init__(self) -> None:
@@ -124,42 +124,50 @@ class BasicBlocks:
         """
         Adds another basic block to the collection
 
-        :param :class:`DEXBasicBlock` bb: the DEXBasicBlock to add
+        :param bb: the `DEXBasicBlock` to add
         """
         self.bb.append(bb)
 
     def pop(self, idx: int) -> DEXBasicBlock:
+        """remove and return [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] at `idx`
+
+        :param idx: the index of the `DEXBasicBlock` to pop and return
+        :return: the popped `DEXBasicBlock`
+        """
         return self.bb.pop(idx)
 
-    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock, None]:
+    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock,None]:
+        """return the [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] at `idx` 
+
+        :param idx: the index of the `DEXBasicBlock` to return
+        :return: the `DEXBasicBlock` or `None` if not found
+        """
         for i in self.bb:
             if i.get_start() <= idx < i.get_end():
                 return i
         return None
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.bb)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[DEXBasicBlock]:
         """
-        :returns: yields each basic block (:class:`DEXBasicBlock` object)
-        :rtype: Iterator[DEXBasicBlock]
+        :returns: yields each basic block (`DEXBasicBlock` object)
         """
         yield from self.bb
 
-    def __getitem__(self, item: int):
+    def __getitem__(self, item: int) -> DEXBasicBlock:
         """
         Get the basic block at the index
 
         :param item: index
-        :return: The basic block
-        :rtype: DEXBasicBlock
+        :returns: The basic block
         """
         return self.bb[item]
 
     def gets(self) -> list[DEXBasicBlock]:
         """
-        :returns: a list of basic blocks (:class:`DEXBasicBlock` objects)
+        :returns: a list of [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock]
         """
         return self.bb
 
@@ -172,7 +180,7 @@ class DEXBasicBlock:
     """
     A simple basic block of a DEX method.
 
-    A basic block consists of a series of :class:`~androguard.core.dex.Instruction`
+    A basic block consists of a series of [Instruction][androguard.core.dex.Instruction]
     which are not interrupted by branch or jump instructions such as `goto`, `if`, `throw`, `return`, `switch` etc.
     """
 
@@ -182,17 +190,13 @@ class DEXBasicBlock:
         vm: dex.DEX,
         method: dex.EncodedMethod,
         context: BasicBlocks,
-    ):
-        """_summary_
+    ) -> None:
+        """Initialize a new [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock]
 
-        :param start: _description_
-        :type start: int
-        :param vm: _description_
-        :type vm: dex.DEX
-        :param method: _description_
-        :type method: dex.EncodedMethod
-        :param context: _description_
-        :type context: BasicBlocks
+        :param start: start address of the basic block
+        :param vm: `DEX` containing the basic block
+        :param method: `EncodedMethod` containing the basic block
+        :param context: `BasicBlocks` containing this basic block
         """
         self.__vm = vm
         self.method = method
@@ -247,8 +251,7 @@ class DEXBasicBlock:
         """
         Returns the originating method
 
-        :return: the method
-        :rtype: androguard.core.dex.EncodedMethod
+        :returns: the originating `dex.EncodedMethod` object
         """
         return self.method
 
@@ -259,8 +262,7 @@ class DEXBasicBlock:
         """
         Get the starting offset of this basic block
 
-        :return: starting offset
-        :rtype: int
+        :returns: starting offset
         """
         return self.start
 
@@ -268,8 +270,7 @@ class DEXBasicBlock:
         """
         Get the end offset of this basic block
 
-        :return: end offset
-        :rtype: int
+        :returns: end offset
         """
         return self.end
 
@@ -277,7 +278,7 @@ class DEXBasicBlock:
         """
         Get the last instruction in the basic block
 
-        :return: androguard.core.dex.Instruction
+        :returns: the last `androguard.core.dex.Instruction` in the basic block
         """
         return list(self.get_instructions())[-1]
 
@@ -285,8 +286,7 @@ class DEXBasicBlock:
         """
         Get next basic blocks
 
-        :returns: a list of the next basic blocks
-        :rtype: DEXBasicBlock
+        :returns: a list of the next `DEXBasicBlock` objects
         """
         return self.childs
 
@@ -294,8 +294,7 @@ class DEXBasicBlock:
         """
         Get previous basic blocks
 
-        :returns: a list of the previous basic blocks
-        :rtype: DEXBasicBlock
+        :returns: a list of the previous `DEXBasicBlock` objects
         """
         return self.fathers
 
@@ -344,7 +343,7 @@ class DEXBasicBlock:
 
         :param idx: the index of the instruction
 
-        :rtype: None or an Instruction
+        :returns: the associated `dex.Instruction`
         """
         if idx in self.special_ins:
             return self.special_ins[idx]
@@ -370,15 +369,16 @@ class DEXBasicBlock:
 
 class MethodAnalysis:
     """
-    This class analyses in details a method of a class/dex file
-    It is a wrapper around a :class:`EncodedMethod` and enhances it
-    by using multiple :class:`DEXBasicBlock` encapsulated in a :class:`BasicBlocks` object.
-
-    :type vm: a :class:`DEX` object
-    :type method: a :class:`EncodedMethod` object
+    This class analyzes in details a method of a class/dex file
+    It is a wrapper around a [androguard.core.dex.EncodedMethod][] and enhances it
+    by using multiple [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] encapsulated in a [BasicBlocks][androguard.core.analysis.analysis.BasicBlocks] object.
     """
+    def __init__(self, vm: dex.DEX, method: dex.EncodedMethod) -> None:
+        """Initialize new [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis]
 
-    def __init__(self, vm: dex.DEX, method: dex.EncodedMethod):
+        :param vm: the `dex.DEX` containing the method
+        :param method: the `dex.EncodedMethod` to wrap
+        """
         logger.debug(
             "Adding new method {} {}".format(
                 method.get_class_name(), method.get_name()
@@ -419,35 +419,56 @@ class MethodAnalysis:
 
     @property
     def name(self) -> str:
-        """Returns the name of this method"""
+        """Returns the name of this method
+        
+        :returns: the name
+        """
         return self.method.get_name()
 
     @property
     def descriptor(self) -> str:
-        """Returns the type descriptor for this method"""
+        """Returns the type descriptor for this method
+        
+        :returns: the type descriptor
+        """
         return self.method.get_descriptor()
 
     @property
     def access(self) -> str:
-        """Returns the access flags to the method as a string"""
+        """Returns the access flags to the method as a string
+        
+        :returns: the access flags
+        """
         return self.method.get_access_flags_string()
 
     @property
     def class_name(self) -> str:
-        """Returns the name of the class of this method"""
+        """Returns the name of the class of this method
+        
+        :returns: the name of the class
+        """
         return self.method.class_name
 
     @property
     def full_name(self) -> str:
-        """Returns classname + name + descriptor, separated by spaces (no access flags)"""
+        """Returns classname + name + descriptor, separated by spaces (no access flags)
+        
+        :returns: the method full name
+        """
         return self.method.full_name
 
     def get_class_name(self) -> str:
-        """Return the class name of the method"""
+        """Return the class name of the method
+        
+        :returns: the name of the class
+        """
         return self.class_name
 
     def get_access_flags_string(self) -> str:
-        """Returns the concatenated access flags string"""
+        """Returns the concatenated access flags string
+        
+        :returns: the access flags
+        """
         return self.access
 
     def get_descriptor(self) -> str:
@@ -553,8 +574,10 @@ class MethodAnalysis:
         Returns a list of xrefs where a field is read by this method.
 
         The list contains tuples of the originating class and methods,
-        where the class is represented as a :class:`ClassAnalysis`,
-        while the Field is a :class:`FieldAnalysis`.
+        where the class is represented as a [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        while the Field is a [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis].
+
+        :returns: the `xrefread` list
         """
         return self.xrefread
 
@@ -563,8 +586,10 @@ class MethodAnalysis:
         Returns a list of xrefs where a field is written to by this method.
 
         The list contains tuples of the originating class and methods,
-        where the class is represented as a :class:`ClassAnalysis`,
-        while the Field is a :class:`FieldAnalysis`.
+        where the class is represented as a [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        while the Field is a [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis].
+
+        :returns: the `xrefwrite` list
         """
         return self.xrefwrite
 
@@ -574,10 +599,6 @@ class MethodAnalysis:
         """
         Add a crossreference to another method
         (this method calls another method)
-
-        :param classobj: :class:`~ClassAnalysis`
-        :param methodobj:  :class:`~MethodAnalysis`
-        :param offset: integer where in the method the call happens
         """
         self.xrefto.add((classobj, methodobj, offset))
 
@@ -587,10 +608,6 @@ class MethodAnalysis:
         """
         Add a crossrefernece from another method
         (this method is called by another method)
-
-        :param classobj: :class:`~ClassAnalysis`
-        :param methodobj: :class:`~MethodAnalysis`
-        :param offset: integer where in the method the call happens
         """
         self.xreffrom.add((classobj, methodobj, offset))
 
@@ -600,9 +617,11 @@ class MethodAnalysis:
         the call, from where this object was called.
 
         The list of tuples has the form:
-        (:class:`~ClassAnalysis`,
-        :class:`~MethodAnalysis`,
-        :class:`int`)
+        ([ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis],
+        `int`)
+
+        :returns: the `xreffrom` list
         """
         return self.xreffrom
 
@@ -612,9 +631,11 @@ class MethodAnalysis:
         the call, which are called by this method.
 
         The list of tuples has the form:
-        (:class:`~ClassAnalysis`,
-        :class:`~MethodAnalysis`,
-        :class:`int`)
+        ([ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis],
+        `int`)
+
+        :returns: the `xrefto` list
         """
         return self.xrefto
 
@@ -624,9 +645,6 @@ class MethodAnalysis:
         """
         Add a crossreference to another class that is
         instanced within this method.
-
-        :param classobj: :class:`~ClassAnalysis`
-        :param offset: integer where in the method the instantiation happens
         """
         self.xrefnewinstance.add((classobj, offset))
 
@@ -636,8 +654,10 @@ class MethodAnalysis:
         the creation of a new instance of a class by this method.
 
         The list of tuples has the form:
-        (:class:`~ClassAnalysis`,
-        :class:`int`)
+        ([ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        `int`)
+
+        :returns: the `xrefnewinstance` list
         """
         return self.xrefnewinstance
 
@@ -646,9 +666,6 @@ class MethodAnalysis:
     ) -> None:
         """
         Add a crossreference to another classtype.
-
-        :param classobj: :class:`~ClassAnalysis`
-        :param offset: integer where in the method the classtype is referenced
         """
         self.xrefconstclass.add((classobj, offset))
 
@@ -658,27 +675,29 @@ class MethodAnalysis:
         the references to another classtype by this method.
 
         The list of tuples has the form:
-        (:class:`~ClassAnalysis`,
-        :class:`int`)
+        ([ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        `int`)
+
+        :returns: the `xrefconstclass` list
         """
         return self.xrefconstclass
 
     def is_external(self) -> bool:
         """
-        Returns True if the underlying method is external
+        Returns `True` if the underlying method is external
 
-        :rtype: boolean
+        :returns: `True` if the underlying method is external, else `False`
         """
         return isinstance(self.method, ExternalMethod)
 
     def is_android_api(self) -> bool:
         """
-        Returns True if the method seems to be an Android API method.
+        Returns `True` if the method seems to be an Android API method.
 
         This method might be not very precise unless an list of known API methods
         is given.
 
-        :return: boolean
+        :returns: `True` if the method seems to be an Android API method, else `False`
         """
         if not self.is_external():
             # Method must be external to be an API
@@ -712,32 +731,28 @@ class MethodAnalysis:
 
     def get_basic_blocks(self) -> BasicBlocks:
         """
-        Returns the :class:`BasicBlocks` generated for this method.
-        The :class:`BasicBlocks` can be used to get a control flow graph (CFG) of the method.
+        Returns the [BasicBlocks][androguard.core.analysis.analysis.BasicBlocks] generated for this method.
+        The [BasicBlocks][androguard.core.analysis.analysis.BasicBlocks] can be used to get a control flow graph (CFG) of the method.
 
-        :rtype: a :class:`BasicBlocks` object
+        :returns: a `BasicBlocks` object
         """
         return self.basic_blocks
 
     def get_length(self) -> int:
         """
         :returns: an integer which is the length of the code
-        :rtype: int
         """
         return self.code.get_length() if self.code else 0
 
     def get_vm(self) -> dex.DEX:
         """
-        :rtype: androguard.core.dex.DEX
-        :return:
+        :returns: the `dex.DEX` object
         """
         return self.__vm
 
     def get_method(self) -> dex.EncodedMethod:
         """
-
-        :rtype: androguard.core.dex.EncodedMethod
-        :return:
+        :returns: the `dex.EncodedMethod` object
         """
         return self.method
 
@@ -805,9 +820,9 @@ class StringAnalysis:
     """
 
     def __init__(self, value: str) -> None:
-        """
+        """Instantiate a new [StringAnalysis][androguard.core.analysis.analysis.StringAnalysis]
 
-        :param str value: the original string value
+        :param value: the original string value
         """
         self.value = value
         self.orig_value = value
@@ -819,9 +834,9 @@ class StringAnalysis:
         """
         Adds a xref from the given method to this string
 
-        :param ClassAnalysis classobj:
-        :param MethodAnalysis methodobj:
-        :param int off: offset in the bytecode of the call
+        :param classobj:
+        :param methodobj:
+        :param off: offset in the bytecode of the call
         """
         self.xreffrom.add((classobj, methodobj, off))
 
@@ -832,8 +847,8 @@ class StringAnalysis:
         Returns a list of xrefs accessing the String.
 
         The list contains tuples of the originating class and methods,
-        where the class is represented as a :class:`ClassAnalysis`,
-        while the method is a :class:`MethodAnalysis`.
+        where the class is represented as a [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        while the method is a [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis].
         """
         if with_offset:
             return self.xreffrom
@@ -842,32 +857,32 @@ class StringAnalysis:
     def set_value(self, value: str) -> None:
         """
         Overwrite the current value of the String with a new value.
-        The original value is not lost and can still be retrieved using :meth:`get_orig_value`.
+        The original value is not lost and can still be retrieved using [get_orig_value][androguard.core.analysis.analysis.StringAnalysis.get_orig_value].
 
-        :param str value: new string value
+        :param value: new string value
         """
         self.value = value
 
     def get_value(self) -> str:
         """
-        Return the (possible overwritten) value of the String
+        Return the (possible overwritten) value of the string
 
-        :return: the value of the string
+        :returns: the value of the string
         """
         return self.value
 
     def get_orig_value(self) -> str:
         """
-        Return the original, read only, value of the String
+        Return the original, read only, value of the string
 
-        :return: the original value
+        :returns: the original value
         """
         return self.orig_value
 
     def is_overwritten(self) -> bool:
         """
-        Returns True if the string was overwritten
-        :return:
+        Returns `True` if the string was overwritten
+        :returns: `True` if the string was overwritten, else `False`
         """
         return self.orig_value != self.value
 
@@ -896,11 +911,12 @@ class FieldAnalysis:
     WRITE access to the field.
 
     That means, that it will show you, where the field is read or written.
-
-    :param androguard.core.dex.EncodedField field: `dvm.EncodedField`
     """
 
     def __init__(self, field: dex.EncodedField) -> None:
+        """Initialize a new [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis] object
+        :param field:
+        """
         self.field = field
         self.xrefread = set()
         self.xrefwrite = set()
@@ -913,9 +929,9 @@ class FieldAnalysis:
         self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int
     ) -> None:
         """
-        :param ClassAnalysis classobj:
-        :param MethodAnalysis methodobj:
-        :param int offset: offset in the bytecode
+        :param classobj:
+        :param methodobj:
+        :param offset: offset in the bytecode
         """
         self.xrefread.add((classobj, methodobj, offset))
 
@@ -923,9 +939,9 @@ class FieldAnalysis:
         self, classobj: ClassAnalysis, methodobj: MethodAnalysis, offset: int
     ) -> None:
         """
-        :param ClassAnalysis classobj:
-        :param MethodAnalysis methodobj:
-        :param int offset: offset in the bytecode
+        :param classobj:
+        :param methodobj:
+        :param offset: offset in the bytecode
         """
         self.xrefwrite.add((classobj, methodobj, offset))
 
@@ -936,10 +952,12 @@ class FieldAnalysis:
         Returns a list of xrefs where the field is read.
 
         The list contains tuples of the originating class and methods,
-        where the class is represented as a :class:`ClassAnalysis`,
-        while the method is a :class:`MethodAnalysis`.
+        where the class is represented as a [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        while the method is a [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis].
 
-        :param bool with_offset: return the xrefs including the offset
+        :param with_offset: return the xrefs including the offset
+
+        :returns: the `xrefread` list
         """
         if with_offset:
             return self.xrefread
@@ -953,10 +971,12 @@ class FieldAnalysis:
         Returns a list of xrefs where the field is written to.
 
         The list contains tuples of the originating class and methods,
-        where the class is represented as a :class:`ClassAnalysis`,
-        while the method is a :class:`MethodAnalysis`.
+        where the class is represented as a [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis],
+        while the method is a [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis]`.
 
-        :param bool with_offset: return the xrefs including the offset
+        :param with_offset: return the xrefs including the offset
+
+        :returns: the `xrefwrite` list
         """
         if with_offset:
             return self.xrefwrite
@@ -965,9 +985,9 @@ class FieldAnalysis:
 
     def get_field(self) -> dex.EncodedField:
         """
-        Returns the actual field object
+        Returns the actual [EncodedField][androguard.core.dex.EncodedField] object
 
-        :rtype: androguard.core.dex.EncodedField
+        :returns: the `dex.EncodedField` object
         """
         return self.field
 
@@ -999,17 +1019,19 @@ class ExternalClass:
     The ExternalClass is used for all classes that are not defined in the
     DEX file, thus are external classes.
 
-    :param name: Name of the external class
     """
 
     def __init__(self, name: str) -> None:
+        """Instantiate a new [ExternalClass][androguard.core.analysis.analysis.ExternalClass] object
+        :param name: Name of the external class
+        """
         self.name = name
         self.methods = []
 
     def get_methods(self) -> list[MethodAnalysis]:
         """
-        Return the stored methods for this external class
-        :return:
+        Return the list of stored [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis] for this external class
+        :returns: the list of `MethodAnalysis` objects
         """
         return self.methods
 
@@ -1018,7 +1040,9 @@ class ExternalClass:
 
     def get_name(self) -> str:
         """
-        Returns the name of the ExternalClass object
+        Returns the name of the [ExternalClass][androguard.core.analysis.analysis.ExternalClass] object
+
+        :returns: the name of the external class
         """
         return self.name
 
@@ -1034,32 +1058,48 @@ class ExternalMethod:
     1) The method is defined inside another DEX file which was not loaded into the Analysis
     2) The method is an API method, hence it is defined in the Android system
 
-    External methods should have a similar API to :class:`~androguard.core.dex.EncodedMethod`
+    External methods should have a similar API to [EncodedMethod][androguard.core.dex.EncodedMethod]
     but obviously they have no code attached.
     The only known information about such methods are the class name, the method name and its descriptor.
-
-    :param str class_name: name of the class
-    :param str name: name of the method
-    :param str descriptor: descriptor string
     """
 
     def __init__(self, class_name: str, name: str, descriptor: str) -> None:
+        """Initialize a new [ExternalMethod][androguard.core.analysis.analysis.ExternalMethod] object
+
+        :param class_name: name of the class
+        :param name: name of the method
+        :param descriptor: descriptor string
+        """
         self.class_name = class_name
         self.name = name
         self.descriptor = descriptor
 
     def get_name(self) -> str:
+        """return the name of the external method
+
+        :return: the name of the external method
+        """
         return self.name
 
     def get_class_name(self) -> str:
+        """return the name of the class of this external method
+
+        :return: the name of the class
+        """
         return self.class_name
 
     def get_descriptor(self) -> str:
+        """return the descriptor of this external method
+        :return: the descriptor of the external method
+        """
         return self.descriptor
 
     @property
     def full_name(self) -> str:
-        """Returns classname + name + descriptor, separated by spaces (no access flags)"""
+        """Returns classname + name + descriptor, separated by spaces (no access flags)'
+        
+        :returns: the formatted name
+        """
         return (
             self.class_name
             + " "
@@ -1070,7 +1110,10 @@ class ExternalMethod:
 
     @property
     def permission_api_name(self) -> str:
-        """Returns a name which can be used to look up in the permission maps"""
+        """Returns a name which can be used to look up in the permission maps
+        
+        :returns: the formatted name
+        """
         return (
             self.class_name
             + "-"
@@ -1106,18 +1149,21 @@ class ExternalMethod:
 class ClassAnalysis:
     """
     ClassAnalysis contains the XREFs from a given Class.
-    It is also used to wrap :class:`~androguard.core.dex.ClassDefItem`, which
+    It is also used to wrap [ClassDefItem[androguard.core.dex.ClassDefItem], which
     contain the actual class content like bytecode.
 
     Also external classes will generate xrefs, obviously only XREF_FROM are
     shown for external classes.
-
-    :param classobj: class:`~androguard.core.dex.ClassDefItem` or :class:`ExternalClass`
     """
 
     def __init__(
         self, classobj: Union[dex.ClassDefItem, ExternalClass]
     ) -> None:
+        """Initialize a new [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis] object
+
+        :param classobj: the original class
+        """
+
         logger.info(f"Adding new ClassAnalysis: {classobj}")
         # Automatically decide if the class is external or not
         self.external = isinstance(classobj, ExternalClass)
@@ -1142,9 +1188,9 @@ class ClassAnalysis:
     def add_method(self, method_analysis: MethodAnalysis) -> None:
         """
         Add the given method to this analyis.
-        usually only called during Analysis.add and Analysis._resolve_method
+        usually only called during [Analysis.add][androguard.core.analysis.analysis.Analysis.add] and `Analysis._resolve_method`
 
-        :param MethodAnalysis method_analysis:
+        :param method_analysis: the method to add
         """
         self._methods[method_analysis.get_method()] = method_analysis
         if self.external:
@@ -1156,7 +1202,7 @@ class ClassAnalysis:
         """
         Get a list of interfaces which are implemented by this class
 
-        :return: a list of Interface names
+        :returns: a list of Interface names
         """
         if self.is_external():
             return []
@@ -1170,7 +1216,7 @@ class ClassAnalysis:
 
         For external classes, this is not sure, thus we return always Object (which is the parent of all classes)
 
-        :return: a string of the parent class name
+        :returns: a string of the parent class name
         """
         if self.is_external():
             return "Ljava/lang/Object;"
@@ -1182,7 +1228,7 @@ class ClassAnalysis:
         """
         Return the class name
 
-        :return:
+        :returns:
         """
         return self.orig_class.get_name()
 
@@ -1190,7 +1236,7 @@ class ClassAnalysis:
         """
         Tests if this class is an external class
 
-        :return: True if the Class is external, False otherwise
+        :returns: True if the Class is external, False otherwise
         """
         return self.external
 
@@ -1202,7 +1248,7 @@ class ClassAnalysis:
         are in fact known APIs.
         Such a list might be generated by using the android.jar files.
 
-        :return: boolean
+        :returns: True if the class is an Andorid API class, else False.
         """
 
         # Packages found at https://developer.android.com/reference/packages.html
@@ -1235,51 +1281,52 @@ class ClassAnalysis:
 
     def get_methods(self) -> list[MethodAnalysis]:
         """
-        Return all :class:`MethodAnalysis` objects of this class
+        Return all [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis] objects of this class
 
-        :rtype: Iterator[MethodAnalysis]
+        :returns: the `MethodAnalysis` objects in this class
         """
         return self._methods.values()
         # return list(self._methods.values())
 
     def get_fields(self) -> list[FieldAnalysis]:
         """
-        Return all `FieldAnalysis` objects of this class
+        Return all [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis] objects of this class
+
+        :returns: the `FieldAnalysis` objects in this class
         """
         return self._fields.values()
 
     def get_nb_methods(self) -> int:
         """
         Get the number of methods in this class
+
+        :returns: the number of methods
         """
         return len(self._methods)
 
     def get_method_analysis(self, method: dex.EncodedMethod) -> MethodAnalysis:
         """
-        Return the MethodAnalysis object for a given EncodedMethod
+        Return the [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis] object for a given [EncodedMethod][androguard.core.dex.EncodedMethod]
 
-        :param method: :class:`EncodedMethod`
-        :return: :class:`MethodAnalysis`
-        :rtype: MethodAnalysis
+        :param method: the method to get a `MethodAnalysis` for
+        :returns: the related `MethodAnalysis`
         """
         return self._methods.get(method)
 
     def get_field_analysis(self, field: dex.EncodedMethod) -> FieldAnalysis:
-        """_summary_
+        """Return the [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis] object for a given [EncodedMethod][androguard.core.dex.EncodedMethod]
 
-        :param field: _description_
-        :type field: dex.EncodedMethod
-        :return: _description_
-        :rtype: FieldAnalysis
+        :param field: the method to get a `FieldAnalysis` for
+        :returns: the related `FieldAnalysis`
         """
         return self._fields.get(field)
 
     def add_field(self, field_analysis: FieldAnalysis) -> None:
         """
         Add the given field to this analyis.
-        usually only called during Analysis.add
+        usually only called during [Analysis.add][androguard.core.analysis.analysis.Analysis.add]
 
-        :param FieldAnalysis field_analysis:
+        :param field_analysis: the `FieldAnalysis` to add
         """
         self._fields[field_analysis.get_field()] = field_analysis
         # if self.external:
@@ -1296,11 +1343,10 @@ class ClassAnalysis:
         """
         Add a Field Read to this class
 
-        :param MethodAnalysis method:
-        :param ClassAnalysis classobj:
-        :param androguard.code.dex.EncodedField field:
+        :param method:
+        :param classobj:
+        :param field:
         :param int off:
-        :return:
         """
         if field not in self._fields:
             self._fields[field] = FieldAnalysis(field)
@@ -1316,11 +1362,10 @@ class ClassAnalysis:
         """
         Add a Field Write to this class in a given method
 
-        :param MethodAnalysis method:
-        :param ClassAnalysis classobj:
-        :param androguard.core.dex.EncodedField field:
+        :param method:
+        :param classobj:
+        :param field:
         :param int off:
-        :return:
         """
         if field not in self._fields:
             self._fields[field] = FieldAnalysis(field)
@@ -1335,9 +1380,9 @@ class ClassAnalysis:
     ) -> None:
         """
 
-        :param MethodAnalysis method1: the calling method
-        :param ClassAnalysis classobj: the calling class
-        :param MethodAnalysis method2: the called method
+        :param method1: the calling method
+        :param classobj: the calling class
+        :param method2: the called method
         :param int offset: offset in the bytecode of calling method
         """
 
@@ -1358,10 +1403,9 @@ class ClassAnalysis:
         offset: int,
     ) -> None:
         """
-
-        :param MethodAnalysis method1:
-        :param ClassAnalysis classobj:
-        :param MethodAnalysis method2:
+        :param method1:
+        :param classobj:
+        :param method2:
         :param int offset:
         """
         # FIXME: Not entirely sure why this can happen but usually a multidex issue:
@@ -1385,16 +1429,12 @@ class ClassAnalysis:
         XrefTo means, that the current class calls another class.
         The current class should also be contained in the another class' XrefFrom list.
 
-        .. warning::
-            The implementation of this specific method might not be what you expect!
-            the parameter :code:`methodobj` is the source method and not the destination
-            in the case that :code:`ref_kind` is const-class or new-instance!
+        WARNING: The implementation of this specific method might not be what you expect! the parameter `methodobj` is the source method and not the destination in the case that `ref_kind` is const-class or new-instance!
 
-        :param REF_TYPE ref_kind: type of call
-        :param ClassAnalysis classobj: :class:`ClassAnalysis` object to link
-        :param MethodAnalysis methodobj:
-        :param int offset: Offset in the Methods Bytecode, where the call happens
-        :return:
+        :param ref_kind: type of call
+        :param classobj: `ClassAnalysis` object to link
+        :param methodobj:
+        :param offset: Offset in the Methods Bytecode, where the call happens
         """
         self.xrefto[classobj].add((ref_kind, methodobj, offset))
 
@@ -1409,11 +1449,10 @@ class ClassAnalysis:
         Creates a crossreference from this class.
         XrefFrom means, that the current class is called by another class.
 
-        :param REF_TYPE ref_kind: type of call
-        :param ClassAnalysis classobj: :class:`ClassAnalysis` object to link
-        :param MethodAnalysis methodobj:
-        :param int offset: Offset in the methods bytecode, where the call happens
-        :return:
+        :param ref_kind: type of call
+        :param classobj: `ClassAnalysis` object to link
+        :param methodobj:
+        :param offset: Offset in the methods bytecode, where the call happens
         """
         self.xreffrom[classobj].add((ref_kind, methodobj, offset))
 
@@ -1424,24 +1463,24 @@ class ClassAnalysis:
         Returns a dictionary of all classes calling the current class.
         This dictionary contains also information from which method the class is accessed.
 
-        .. note:: this method might contains wrong information about class usage!
+        Note: this method might contains wrong information about class usage!
 
-        The dictionary contains the classes as keys (stored as :class:`ClassAnalysis`)
-        and has a tuple as values, where the first item is the ref_kind (which is an Enum of type :class:`REF_TYPE`),
-        the second one is the method in which the class is called (:class:`MethodAnalysis`)
+        The dictionary contains the classes as keys (stored as [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis])
+        and has a tuple as values, where the first item is the `ref_kind` (which is an Enum of type [REF_TYPE][androguard.core.analysis.analysis.REF_TYPE]),
+        the second one is the method in which the class is called ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis])
         and the third the offset in the method where the call is originating.
 
-        example::
-            # dx is an Analysis object
+        Examples: 
+
+            >>> # dx is an Analysis object
             for cls in dx.find_classes('.*some/name.*'):
-                print("Found class {} in Analysis".format(cls.name)
-                for caller, refs in cls.get_xref_from().items():
-                    print("  called from {}".format(caller.name))
-                    for ref_kind, ref_method, ref_offset in refs:
-                        print("    in method {} {}".format(ref_kind, ref_method))
+            >>>     print("Found class {} in Analysis".format(cls.name)
+            >>>     for caller, refs in cls.get_xref_from().items():
+            >>>         print("  called from {}".format(caller.name))
+            >>>         for ref_kind, ref_method, ref_offset in refs:
+            >>>             print("    in method {} {}".format(ref_kind, ref_method))
 
-
-        :rtype: Iterator[Tuple[REF_TYPE, MethodAnalysis, int]]
+        :returns: `xreffrom`, a dictionary of all classes calling the current class
         """
         return self.xreffrom
 
@@ -1452,23 +1491,24 @@ class ClassAnalysis:
         Returns a dictionary of all classes which are called by the current class.
         This dictionary contains also information about the method which is called.
 
-        .. note:: this method might contains wrong information about class usage!
+        Note: this method might contains wrong information about class usage!
 
-        The dictionary contains the classes as keys (stored as :class:`ClassAnalysis`)
-        and has a tuple as values, where the first item is the ref_kind (which is an Enum of type :class:`REF_TYPE`),
-        the second one is the method called (:class:`MethodAnalysis`)
+        The dictionary contains the classes as keys (stored as [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis])
+        and has a tuple as values, where the first item is the `ref_kind` (which is an Enum of type [REF_TYPE][androguard.core.analysis.analysis.REF_TYPE]),
+        the second one is the method called ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis])
         and the third the offset in the method where the call is originating.
 
-        example::
-            # dx is an Analysis object
-            for cls in dx.find_classes('.*some/name.*'):
-                print("Found class {} in Analysis".format(cls.name)
-                for calling, refs in cls.get_xref_from().items():
-                    print("  calling class {}".format(calling.name))
-                    for ref_kind, ref_method, ref_offset in refs:
-                        print("    calling method {} {}".format(ref_kind, ref_method))
+        Examples:
 
-        :rtype: Iterator[Tuple[REF_TYPE, MethodAnalysis, int]]
+            >>> # dx is an Analysis object
+            >>> for cls in dx.find_classes('.*some/name.*'):
+            >>>     print("Found class {} in Analysis".format(cls.name)
+            >>>     for calling, refs in cls.get_xref_from().items():
+            >>>         print("  calling class {}".format(calling.name))
+            >>>         for ref_kind, ref_method, ref_offset in refs:
+            >>>             print("    calling method {} {}".format(ref_kind, ref_method))
+
+        :returns: `xrefto`, a dictionary of all classes which are called by the current class
         """
         return self.xrefto
 
@@ -1479,7 +1519,7 @@ class ClassAnalysis:
         Add a crossreference to another method that is
         instancing this class.
 
-        :param classobj: :class:`~MethodAnalysis`
+        :param methobj: The `MethodAnalysis` that this class calls
         :param offset: integer where in the method the instantiation happens
         """
         self.xrefnewinstance.add((methobj, offset))
@@ -1491,8 +1531,10 @@ class ClassAnalysis:
 
 
         The list of tuples has the form:
-        (:class:`~MethodAnalysis`,
-        :class:`int`)
+        ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis],
+        `int`)
+
+        :returns: the list of tuples
         """
         return self.xrefnewinstance
 
@@ -1502,7 +1544,7 @@ class ClassAnalysis:
         """
         Add a crossreference to a method referencing this classtype.
 
-        :param classobj: :class:`~MethodAnalysis`
+        :param methobj: The `MethodAnalysis` that this class calls
         :param offset: integer where in the method the classtype is referenced
         """
         self.xrefconstclass.add((methobj, offset))
@@ -1513,8 +1555,10 @@ class ClassAnalysis:
         referencing this classtype.
 
         The list of tuples has the form:
-        (:class:`~MethodAnalysis`,
-        :class:`int`)
+        ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis],
+        `int`)
+
+        :returns: the list of tuples
         """
         return self.xrefconstclass
 
@@ -1522,8 +1566,7 @@ class ClassAnalysis:
         """
         Returns the original Dalvik VM class or the external class object.
 
-        :return:
-        :rtype: Union[androguard.core.dex.ClassDefItem, ExternalClass]
+        :returns: the `dex.ClassDefItem` or `ExternalClass`
         """
         return self.orig_class
 
@@ -1535,7 +1578,6 @@ class ClassAnalysis:
         (only applicable to internal classes)
 
         :param flag: The flag to set to
-        :type flag: androguard.core.dex.HiddenApiClassDataItem.RestrictionApiFlag
         """
         if self.is_external():
             raise RuntimeError(
@@ -1552,7 +1594,6 @@ class ClassAnalysis:
         (only applicable to internal classes)
 
         :param flag: The flag to set to
-        :type flag: androguard.core.dex.HiddenApiClassDataItem.DomainApiFlag
         """
         if self.is_external():
             raise RuntimeError(
@@ -1603,22 +1644,29 @@ class Analysis:
     Yet another part is the creation of BasicBlocks, which is important in the usage of
     the Androguard Decompiler.
 
-    Multiple DEX Objects can be added using the function :meth:`add`.
+    Multiple DEX Objects can be added using the function [add][androguard.core.analysis.analysis.Analysis.add].
 
     XREFs are created for:
-    * classes (`ClassAnalysis`)
-    * methods (`MethodAnalysis`)
-    * strings (`StringAnalyis`)
-    * fields (`FieldAnalysis`)
 
-    The Analysis should be the only object you are using next to the :class:`~androguard.core.apk.APK`.
+    * classes ([ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis])
+    
+    * methods ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis])
+    
+    * strings ([StringAnalysis][androguard.core.analysis.analysis.StringAnalysis])
+    
+    * fields ([FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis])
+
+    The Analysis should be the only object you are using next to the [APK][androguard.core.apk.APK].
     It encapsulates all the Dalvik related functions into a single place, while you have still the ability to use
-    the functions from :class:`~androguard.core.dex.DEX` and the related classes.
+    the functions from [DEX][androguard.core.dex.DEX] and the related classes.
 
-    :param Union[androguard.core.dex.DEX, None] vm: inital DEX object (default None)
     """
 
     def __init__(self, vm: Union[dex.DEX, None] = None) -> None:
+        """Initialize a new [Analysis][androguard.core.analysis.analysis.Analysis] object
+        
+        :param vm: inital DEX object (default None)
+        """
         # Contains DEX objects
         self.vms = []
         # A dict of {classname: ClassAnalysis}, populated on add(vm)
@@ -1638,14 +1686,17 @@ class Analysis:
 
     @property
     def fields(self) -> Iterator[FieldAnalysis]:
-        """Returns FieldAnalysis generator"""
+        """Returns [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis] generator of this `Analysis`
+        
+        :returns: iterator of `FieldAnalysis` objects
+        """
         return self.get_fields()
 
     def add(self, vm: dex.DEX) -> None:
         """
         Add a DEX to this Analysis.
 
-        :param androguard.core.dex.DEX vm: :class:`androguard.core.dex.DEX` to add to this Analysis
+        :param vm: `dex.DEX` to add to this Analysis
         """
 
         self.vms.append(vm)
@@ -1753,7 +1804,7 @@ class Analysis:
 
         Note that this might be quite slow, as all instructions are parsed.
 
-        :param androguard.core.dex.ClassDefItem current_class: The class to create xrefs for
+        :param current_class: The class to create xrefs for
         """
         cur_cls_name = current_class.get_name()
 
@@ -1908,12 +1959,11 @@ class Analysis:
         self, method: dex.EncodedMethod
     ) -> Union[MethodAnalysis, None]:
         """
-        Get the :class:`MethodAnalysis` object for a given :class:`EncodedMethod`.
-        This Analysis object is used to enhance EncodedMethods.
+        Get the [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis] object for a given [EncodedMethod][androguard.core.dex.EncodedMethod].
+        This Analysis object is used to enhance `EncodedMethods`.
 
-        :param method: :class:`EncodedMethod` to search for
-        :return: :class:`MethodAnalysis` object for the given method, or None if method was not found
-        :rtype: MethodAnalysis
+        :param method: `EncodedMethod` to search for
+        :returns: `MethodAnalysis` object for the given method, or None if method was not found
         """
         if method in self.methods:
             return self.methods[method]
@@ -1926,14 +1976,13 @@ class Analysis:
         self, class_name: str, method_name: str, method_descriptor: list[str]
     ) -> MethodAnalysis:
         """
-        Resolves the Method and returns MethodAnalysis.
-        Will automatically create ExternalMethods if can not resolve and add to the ClassAnalysis etc
+        Resolves the Method and returns [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis].
+        Will automatically create [ExternalMethods][androguard.core.analysis.analysis.ExternalMethod] if can not resolve and add to the ClassAnalysis etc
 
-        :param str class_name:
-        :param str method_name:
-        :param List[str] method_descriptor: Tuple which has parameters and return type, i.e. ['(I Z)', 'V']
-        :return:
-        :rtype: MethodAnalysis
+        :param class_name:
+        :param method_name:
+        :param method_descriptor: Tuple which has parameters and return type, i.e. `['(I Z)', 'V']`
+        :returns: the `MethodAnalysis`
         """
         m_hash = (class_name, method_name, ''.join(method_descriptor))
         if m_hash not in self.__method_hashes:
@@ -1961,13 +2010,12 @@ class Analysis:
         self, class_name: str, method_name: str, method_descriptor: str
     ) -> Union[dex.EncodedMethod, None]:
         """
-        Search for a :class:`EncodedMethod` in all classes in this analysis
+        Search for a [EncodedMethod][androguard.core.dex.EncodedMethod] in all classes in this analysis
 
-        :param class_name: name of the class, for example 'Ljava/lang/Object;'
-        :param method_name: name of the method, for example 'onCreate'
-        :param method_descriptor: descriptor, for example '(I I Ljava/lang/String)V
-        :return: :class:`EncodedMethod` or None if method was not found
-        :rtype: androguard.core.dex.EncodedMethod
+        :param class_name: name of the class, for example `'Ljava/lang/Object;'`
+        :param method_name: name of the method, for example `'onCreate'`
+        :param method_descriptor: descriptor, for example `'(I I Ljava/lang/String)V'`
+        :returns: `EncodedMethod` or None if method was not found
         """
         m_a = self.get_method_analysis_by_name(
             class_name, method_name, method_descriptor
@@ -1982,14 +2030,13 @@ class Analysis:
         """
         Returns the crossreferencing object for a given method.
 
-        This function is similar to :meth:`~get_method_analysis`, with the difference
+        This function is similar to [get_method_analysis][androguard.core.analysis.analysis.ClassAnalysis.get_method_analysis], with the difference
         that you can look up the Method by name
 
         :param class_name: name of the class, for example `'Ljava/lang/Object;'`
         :param method_name: name of the method, for example `'onCreate'`
         :param method_descriptor: method descriptor, for example `'(I I)V'`
-        :return: :class:`MethodAnalysis`
-        :rtype: MethodAnalysis
+        :returns: `MethodAnalysis`
         """
         m_hash = (class_name, method_name, method_descriptor)
         if m_hash not in self.__method_hashes:
@@ -2000,11 +2047,10 @@ class Analysis:
         self, field: dex.EncodedField
     ) -> Union[FieldAnalysis, None]:
         """
-        Get the FieldAnalysis for a given fieldname
+        Get the [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis] for a given [EncodedField][androguard.core.dex.EncodedField]
 
-        :param androguard.core.dex.EncodedField field: the field
-        :return: :class:`FieldAnalysis`
-        :rtype: FieldAnalysis
+        :param field: the `EncodedField`
+        :returns: the `FieldAnalysis`
         """
         class_analysis = self.get_class_analysis(field.get_class_name())
         if class_analysis:
@@ -2016,27 +2062,25 @@ class Analysis:
         Checks if a given class name is part of this Analysis.
 
         :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
-        :return: True if class was found, False otherwise
-        :rtype: bool
+        :returns: True if class was found, False otherwise
         """
         return class_name in self.classes
 
     def get_class_analysis(self, class_name: str) -> ClassAnalysis:
         """
-        Returns the :class:`ClassAnalysis` object for a given classname.
+        Returns the [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis] object for a given classname.
 
-        :param class_name: classname like 'Ljava/lang/Object;' (including L and ;)
-        :return: :class:`ClassAnalysis`
-        :rtype: ClassAnalysis
+        :param class_name: classname like `'Ljava/lang/Object;'` (including L and ;)
+        :returns: `ClassAnalysis`
         """
         return self.classes.get(class_name)
 
     def get_external_classes(self) -> Iterator[ClassAnalysis]:
         """
         Returns all external classes, that means all classes that are not
-        defined in the given set of `DalvikVMObjects`.
+        defined in the given set of [DEX][androguard.core.dex.DEX].
 
-        :rtype: Iterator[ClassAnalysis]
+        :returns: the external classes
         """
         for cls in self.classes.values():
             if cls.is_external():
@@ -2044,10 +2088,10 @@ class Analysis:
 
     def get_internal_classes(self) -> Iterator[ClassAnalysis]:
         """
-        Returns all external classes, that means all classes that are
-        defined in the given set of :class:`~DEX`.
+        Returns all internal classes, that means all classes that are
+        defined in the given set of [DEX][androguard.core.dex.DEX].
 
-        :rtype: Iterator[ClassAnalysis]
+        :returns: the internal classes
         """
         for cls in self.classes.values():
             if not cls.is_external():
@@ -2056,9 +2100,9 @@ class Analysis:
     def get_internal_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns all internal methods, that means all methods that are
-        defined in the given set of :class:`~DEX`.
+        defined in the given set of [DEX][androguard.core.dex.DEX].
 
-        :rtype: Iterator[MethodAnalysis]
+        :returns: the internal methods
         """
         for m in self.methods.values():
             if not m.is_external():
@@ -2067,9 +2111,9 @@ class Analysis:
     def get_external_methods(self) -> Iterator[MethodAnalysis]:
         """
         Returns all external methods, that means all methods that are not
-        defined in the given set of :class:`~DEX`.
+        defined in the given set of [DEX][androguard.core.dex.DEX].
 
-        :rtype: Iterator[MethodAnalysis]
+        :returns: the external methods
         """
         for m in self.methods.values():
             if m.is_external():
@@ -2077,44 +2121,44 @@ class Analysis:
 
     def get_strings_analysis(self) -> dict[str, StringAnalysis]:
         """
-        Returns a dictionary of strings and their corresponding :class:`StringAnalysis`
+        Returns a dictionary of strings and their corresponding [StringAnalysis][androguard.core.analysis.analysis.StringAnalysis]
 
-        :rtype: Dict[str, StringAnalysis]
+        :returns: the dictionary of strings
         """
         return self.strings
 
     def get_strings(self) -> list[StringAnalysis]:
         """
-        Returns a list of :class:`StringAnalysis` objects
+        Returns a list of [StringAnalysis][androguard.core.analysis.analysis.StringAnalysis] objects
 
-        :rtype: Iterator[StringAnalysis]
+        :returns: list of `StringAnalysis objects
         """
         return self.strings.values()
 
     def get_classes(self) -> list[ClassAnalysis]:
         """
-        Returns a list of :class:`ClassAnalysis` objects
+        Returns a list of [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis] objects
 
         Returns both internal and external classes (if any)
 
-        :rtype: Iterator[ClassAnalysis]
+        :returns: list of `ClassAnalysis` objects
         """
         return self.classes.values()
 
     def get_methods(self) -> Iterator[MethodAnalysis]:
         """
-        Returns a generator of `MethodAnalysis` objects
+        Returns a generator of [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis] objects
 
-        :rtype: Iterator[MethodAnalysis]
+        :returns: generator of `MethodAnalysis` objects
 
         """
         yield from self.methods.values()
 
     def get_fields(self) -> Iterator[FieldAnalysis]:
         """
-        Returns a generator of `FieldAnalysis` objects
+        Returns a generator of [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis]  objects
 
-        :rtype: Iterator[FieldAnalysis]
+        :returns: generator of `FieldAnalysis` objects
         """
         for c in self.classes.values():
             for f in c.get_fields():
@@ -2125,12 +2169,12 @@ class Analysis:
     ) -> Iterator[ClassAnalysis]:
         """
         Find classes by name, using regular expression
-        This method will return all ClassAnalysis Object that match the name of
+        This method will return all [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis] Object that match the name of
         the class.
 
         :param name: regular expression for class name (default ".*")
         :param no_external: Remove external classes from the output (default False)
-        :rtype: Iterator[ClassAnalysis]
+        :returns: generator of `ClassAnalysis` objects
         """
         for cname, c in self.classes.items():
             if no_external and isinstance(c.get_vm_class(), ExternalClass):
@@ -2148,7 +2192,7 @@ class Analysis:
     ) -> Iterator[MethodAnalysis]:
         """
         Find a method by name using regular expression.
-        This method will return all MethodAnalysis objects, which match the
+        This method will return all [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis] objects, which match the
         classname, methodname, descriptor and accessflags of the method.
 
         :param classname: regular expression for the classname
@@ -2156,7 +2200,7 @@ class Analysis:
         :param descriptor: regular expression for the descriptor
         :param accessflags: regular expression for the accessflags
         :param no_external: Remove external method from the output (default False)
-        :rtype: Iterator[MethodAnalysis]
+        :returns: generator of `MethodAnalysis` objects
         """
         for cname, c in self.classes.items():
             if re.match(classname, cname):
@@ -2183,7 +2227,7 @@ class Analysis:
         Find strings by regex
 
         :param string: regular expression for the string to search for
-        :rtype: Iterator[StringAnalysis]
+        :returns: generator of `StringAnalysis` objects
         """
         for s, sa in self.strings.items():
             if re.match(string, s):
@@ -2203,7 +2247,7 @@ class Analysis:
         :param fieldname: regular expression of the fieldname
         :param fieldtype: regular expression of the fieldtype
         :param accessflags: regular expression of the access flags
-        :rtype: Iterator[FieldAnalysis]
+        :returns: generator of `FieldAnalysis`
         """
         for cname, c in self.classes.items():
             if re.match(classname, cname):
@@ -2235,21 +2279,20 @@ class Analysis:
     ) -> nx.DiGraph:
         """
         Generate a directed graph based on the methods found by the filters applied.
-        The filters are the same as in
-        :meth:`~androguard.core.analysis.analysis.Analysis.find_methods`
+        The filters are the same as in [find_methods][androguard.core.analysis.analysis.Analysis.find_methods]
 
-        A networkx.DiGraph is returned, containing all edges only once!
+        A `networkx.DiGraph` is returned, containing all edges only once!
         that means, if a method calls some method twice or more often, there will
         only be a single connection.
 
         :param classname: regular expression of the classname (default: ".*")
-        :param fieldname: regular expression of the fieldname (default: ".*")
-        :param fieldtype: regular expression of the fieldtype (default: ".*")
+        :param methodname: regular expression of the methodname (default: ".*")
+        :param descriptor: regular expression of the descriptor (default: ".*")
         :param accessflags: regular expression of the access flags (default: ".*")
-        :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: False)
+        :param no_isolated: remove isolated nodes from the graph, e.g. methods which do not call anything (default: `False`)
         :param entry_points: A list of classes that are marked as entry point
 
-        :rtype: DiGraph
+        :returns: the `DiGraph` object
         """
 
         def _add_node(G, method, _entry_points):
@@ -2312,20 +2355,20 @@ class Analysis:
 
     def create_ipython_exports(self) -> None:
         """
-        .. warning:: this feature is experimental and is currently not enabled by default! Use with caution!
+        WARNING: this feature is experimental and is currently not enabled by default! Use with caution!
 
-        Creates attributes for all classes, methods and fields on the Analysis object itself.
-        This makes it easier to work with Analysis module in an iPython shell.
+        Creates attributes for all classes, methods and fields on the `Analysis` object itself.
+        This makes it easier to work with `Analysis` module in an iPython shell.
 
-        Classes can be search by typing :code:`dx.CLASS_<tab>`, as each class is added via this attribute name.
-        Each class will have all methods attached to it via :code:`dx.CLASS_Foobar.METHOD_<tab>`.
-        Fields have a similar syntax: :code:`dx.CLASS_Foobar.FIELD_<tab>`.
+        Classes can be search by typing `dx.CLASS_<tab>`, as each class is added via this attribute name.
+        Each class will have all methods attached to it via `dx.CLASS_Foobar.METHOD_<tab>`.
+        Fields have a similar syntax: `dx.CLASS_Foobar.FIELD_<tab>`.
 
-        As Strings can contain nearly anything, use :meth:`find_strings` instead.
+        As Strings can contain nearly anything, use [find_strings][androguard.core.analysis.analysis.Analysis.find_strings] instead.
 
-        * Each `CLASS_` item will return a :class:`~ClassAnalysis`
-        * Each `METHOD_` item will return a :class:`~MethodAnalysis`
-        * Each `FIELD_` item will return a :class:`~FieldAnalysis`
+        * Each `CLASS_` item will return a [ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis]
+        * Each `METHOD_` item will return a [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis]
+        * Each `FIELD_` item will return a [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis]
         """
         # TODO: it would be fun to have the classes organized like the packages. I.e. you could do dx.CLASS_xx.yyy.zzz
         for cls in self.get_classes():
@@ -2374,23 +2417,24 @@ class Analysis:
         """
         Returns the permissions and the API method based on the API level specified.
         This can be used to find usage of API methods which require a permission.
-        Should be used in combination with an :class:`~androguard.core.apk.APK`.
+        Should be used in combination with an [APK][androguard.core.apk.APK]
 
         The returned permissions are a list, as some API methods require multiple permissions at once.
 
         The following example shows the usage and how to get the calling methods using XREF:
 
-        example::
-            from androguard.misc import AnalyzeAPK
-            a, d, dx = AnalyzeAPK("somefile.apk")
+        Examples: 
 
-            for meth, perm in dx.get_permissions(a.get_effective_target_sdk_version()):
-                print("Using API method {} for permission {}".format(meth, perm))
-                print("used in:")
-                for _, m, _ in meth.get_xref_from():
-                    print(m.full_name)
+            >>> from androguard.misc import AnalyzeAPK
+            >>> a, d, dx = AnalyzeAPK("somefile.apk")
 
-        ..note::
+            >>> for meth, perm in dx.get_permissions(a.get_effective_target_sdk_version()):
+            >>>     print("Using API method {} for permission {}".format(meth, perm))
+            >>>     print("used in:")
+            >>>     for _, m, _ in meth.get_xref_from():
+            >>>         print(m.full_name)
+
+        .Note:
             This method might be unreliable and might not extract all used permissions.
             The permission mapping is based on [Axplorer](https://github.com/reddr/axplorer)
             and might be incomplete due to the nature of the extraction process.
@@ -2400,7 +2444,7 @@ class Analysis:
             If the wrong API level is used, the results might be wrong.
 
         :param apilevel: API level to load, or None for default
-        :return: yields tuples of :class:`MethodAnalysis` (of the API method) and list of permission string
+        :returns: yields tuples of `MethodAnalysis` (of the API method) and list of permission string
         """
 
         # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
@@ -2425,22 +2469,22 @@ class Analysis:
         """
         Find the usage of a permission inside the Analysis.
 
-        example::
-            from androguard.misc import AnalyzeAPK
-            a, d, dx = AnalyzeAPK("somefile.apk")
+        Examples:
 
-            for meth in dx.get_permission_usage('android.permission.SEND_SMS', a.get_effective_target_sdk_version()):
-                print("Using API method {}".format(meth))
-                print("used in:")
-                for _, m, _ in meth.get_xref_from():
-                    print(m.full_name)
+            >>> from androguard.misc import AnalyzeAPK
+            >>> a, d, dx = AnalyzeAPK("somefile.apk")
 
-        .. note::
-            The permission mappings might be incomplete! See also :meth:`get_permissions`.
+            >>> for meth in dx.get_permission_usage('android.permission.SEND_SMS', a.get_effective_target_sdk_version()):
+            >>>     print("Using API method {}".format(meth))
+            >>>     print("used in:")
+            >>>     for _, m, _ in meth.get_xref_from():
+            >>>         print(m.full_name)
+
+        The permission mappings might be incomplete! See also  [get_permissions][androguard.core.analysis.analysis.Analysis.get_permissions].
 
         :param permission: the name of the android permission (usually 'android.permission.XXX')
         :param apilevel: the requested API level or None for default
-        :return: yields :class:`MethodAnalysis` objects for all using API methods
+        :returns: yields `MethodAnalysis` objects for all using API methods
         """
 
         # TODO maybe have the API level loading in the __init__ method and pass the APK as well?
@@ -2470,9 +2514,9 @@ class Analysis:
 
     def get_android_api_usage(self) -> Iterator[MethodAnalysis]:
         """
-        Get all usage of the Android APIs inside the Analysis.
+        Get all usage of the Android APIs inside the `Analysis`.
 
-        :return: yields :class:`MethodAnalysis` objects for all Android APIs methods
+        :returns: yields `MethodAnalysis` objects for all Android APIs methods
         """
 
         for cls in self.get_external_classes():
@@ -2483,12 +2527,11 @@ class Analysis:
 
 def is_ascii_obfuscation(vm: dex.DEX) -> bool:
     """
-    Tests if any class inside a DalvikVMObject
+    Tests if any class inside a [DEX][androguard.core.dex.DEX]
     uses ASCII Obfuscation (e.g. UTF-8 Chars in Classnames)
 
-    :param androguard.core.dex.DEX vm: `DalvikVMObject`
-    :return: True if ascii obfuscation otherwise False
-    :rtype: bool
+    :param vm: `DEX`
+    :returns: `True` if ascii obfuscation otherwise `False`
     """
     for classe in vm.get_classes():
         if is_ascii_problem(classe.get_name()):

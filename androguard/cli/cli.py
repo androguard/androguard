@@ -9,6 +9,7 @@ import click
 import networkx as nx
 from loguru import logger
 
+from androguard.session import Session
 import androguard.core.apk
 from androguard import util
 from androguard.cli.main import (
@@ -75,8 +76,7 @@ def axml(input_, output, file_, resource):
 
     Example:
 
-    \b
-        $ androguard axml AndroidManifest.xml
+        >>> androguard axml AndroidManifest.xml
     """
     if file_ is not None and input_ is not None:
         print(
@@ -170,8 +170,7 @@ def arsc(
 
     Example:
 
-    \b
-        $ androguard arsc app.apk
+        >>> androguard arsc app.apk
     """
 
     from androguard.core import androconf, apk, axml
@@ -342,8 +341,7 @@ def decompile(input_, file_, output, format_, jar, limit, decompiler):
 
     Example:
 
-    \b
-        $ androguard resources.arsc
+        >>> androguard resources.arsc
     """
     from androguard import session
 
@@ -413,8 +411,11 @@ def sign(hash_, print_all_hashes, show, apk):
     nargs=-1,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-def apkid(apks):
-    """Return the packageName/versionCode/versionName per APK as JSON."""
+def apkid(apks: list[str]):
+    """Prints the packageName/versionCode/versionName per APK as JSON.
+    
+    :param apks: list of apk filepaths
+    """
     from androguard.core.apk import get_apkid
 
     logger.debug("APKID")
@@ -437,8 +438,12 @@ def apkid(apks):
     required=False,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
-def analyze(session, apk):
-    """Open a IPython Shell and start reverse engineering."""
+def analyze(session: str, apk: str):
+    """Open a IPython Shell and start reverse engineering.
+    
+    :param session: session file to restore
+    :param apk: apk filename to analyze, if session not set
+    """
     androlyze_main(session, apk)
 
 
@@ -494,9 +499,8 @@ def trace(apk, modules, enable_ui):
 
     Example:
 
-    \b
-        $ androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**"
-        $ androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**" --enable-ui
+        >>> androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**"
+        >>> androguard trace test.APK -m "ipc/*"  -m "webviews/*" -m "modules/**" --enable-ui
     """
     androtrace_main(apk, modules, False, enable_ui)
 
@@ -520,8 +524,7 @@ def dtrace(package_name, modules):
 
     Example:
 
-    \b
-        $ androguard dtrace package_name -m "ipc/*"  -m "webviews/*" -m "modules/**"
+        >>> androguard dtrace package_name -m "ipc/*"  -m "webviews/*" -m "modules/**"
     """
     androtrace_main(package_name, modules, True)
 
@@ -545,8 +548,7 @@ def dump(package_name, modules):
 
     Example:
 
-    \b
-        $ androguard dump package_name
+        >>> androguard dump package_name
     """
     androdump_main(package_name, modules)
 

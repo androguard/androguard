@@ -110,7 +110,8 @@ def read_null_terminated_string(f: IO) -> bytearray:
     """
     Read a null terminated string from a file-like object.
     :param f: file-like object
-    :rtype: bytearray
+
+    :returns: the bytes of the string read
     """
     x = []
     while True:
@@ -131,9 +132,8 @@ def get_access_flags_string(value: int) -> str:
     Transform an access flag field to the corresponding string
 
     :param value: the value of the access flags
-    :type value: int
 
-    :rtype: string
+    :returns: the transformed string
     """
     flags = []
     for k, v in ACCESS_FLAGS.items():
@@ -146,6 +146,7 @@ def get_access_flags_string(value: int) -> str:
 def get_type(atype: str, size: Union[int, None] = None) -> str:
     """
     Retrieve the type of a descriptor (e.g : I)
+    :returns: the descriptor string
     """
     if atype.startswith('java.lang'):
         atype = atype.replace('java.lang.', '')
@@ -233,7 +234,7 @@ def readuleb128(cm: ClassManager, buff: BinaryIO) -> int:
     Read an unsigned LEB128 at the current position of the buffer
 
     :param buff: a file like object
-    :return: decoded unsigned LEB128
+    :returns: decoded unsigned LEB128
     """
     result = get_byte(cm, buff)
     if result > 0x7F:
@@ -297,8 +298,9 @@ def writeuleb128(cm: ClassManager, value: int) -> bytearray:
 
     Raises a value error, if the given value is negative.
 
+    :raises ValueError: if given value is negative
     :param value: non-negative integer
-    :return: bytes
+    :returns: bytes
     """
     if value < 0:
         raise ValueError("value must be non-negative!")
@@ -347,7 +349,7 @@ def writesleb128(cm: ClassManager, value: int) -> bytearray:
 
 def determineNext(i: Instruction, cur_idx: int, m: EncodedMethod) -> list:
     """
-    Determine the next offsets inside the bytecode of an :class:`EncodedMethod`.
+    Determine the next offsets inside the bytecode of an [EncodedMethod][androguard.core.dex.EncodedMethod].
     The offsets are calculated in number of bytes from the start of the method.
     Note, that offsets inside the bytecode are denoted in 16bit units but this method returns actual bytes!
 
@@ -361,11 +363,10 @@ def determineNext(i: Instruction, cur_idx: int, m: EncodedMethod) -> list:
 
     If the entered opcode is not branching or jumping, an empty list is returned.
 
-    :param Instruction i: the current Instruction
-    :param int cur_idx: Index of the instruction
-    :param EncodedMethod m: the current method
+    :param i: the current Instruction
+    :param cur_idx: Index of the instruction
+    :param m: the current method
     :return:
-    :rtype: list
     """
     op_value = i.get_op_value()
 
@@ -425,9 +426,9 @@ def determineException(vm: DEX, m: EncodedMethod) -> list[list]:
     """
     Returns try-catch handler inside the method.
 
-    :param vm: a :class:`~DEX`
-    :param m: a :class:`~EncodedMethod`
-    :return:
+    :param vm: a `DEX` object
+    :param m: `EncodedMethod` object
+    :return: a list
     """
     # no exceptions !
     if m.get_code().get_tries_size() <= 0:
@@ -496,14 +497,14 @@ def determineException(vm: DEX, m: EncodedMethod) -> list[list]:
 
 class HeaderItem:
     """
-    This class can parse an header_item of a dex file.
-    Several checks are performed to detect if this is not an header_item.
+    This class can parse an `header_item` of a dex file.
+    Several checks are performed to detect if this is not an `header_item`.
     Also the Adler32 checksum of the file is calculated in order to detect file
     corruption.
-    :param buff: a string which represents a Buff object of the header_item
-    :type io.BufferedReader buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+
+    :raises ValueError: if DEX file header is incorrect
+    :param buff: a string which represents a Buff object of the `header_item`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, size, buff: BinaryIO, cm: ClassManager) -> None:
@@ -798,12 +799,10 @@ class HeaderItem:
 
 class AnnotationOffItem:
     """
-    This class can parse an annotation_off_item of a dex file
+    This class can parse an `annotation_off_item` of a dex file
 
-    :param buff: a string which represents a Buff object of the annotation_off_item
-    :type buff: BinaryIO bytes object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the `annotation_off_item`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -831,18 +830,16 @@ class AnnotationOffItem:
     def get_length(self) -> int:
         return len(self.get_obj())
 
-    def get_annotation_item(self) -> list[AnnotationItem]:
+    def get_annotation_item(self) -> AnnotationItem:
         return self.CM.get_annotation_item(self.get_annotation_off())
 
 
 class AnnotationSetItem:
     """
-    This class can parse an annotation_set_item of a dex file
+    This class can parse an `annotation_set_item` of a dex file
 
-    :param buff: a string which represents a Buff object of the annotation_set_item
-    :type io.BufferedReader buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a buff object of the `annotation_set_item`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -858,7 +855,7 @@ class AnnotationSetItem:
         """
         Return the offset from the start of the file to an annotation
 
-        :rtype: a list of :class:`AnnotationOffItem`
+        :returns: a list of `AnnotationOffItem`
         """
         return self.annotation_off_item
 
@@ -892,15 +889,14 @@ class AnnotationSetItem:
 
 class AnnotationSetRefItem:
     """
-    This class can parse an annotation_set_ref_item of a dex file
-
-    :param buff: a string which represents a Buff object of the annotation_set_ref_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `annotation_set_ref_item` of a dex file
     """
-
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `annotation_set_ref_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         (self.annotations_off,) = cm.packer["I"].unpack(buff.read(4))
 
@@ -909,7 +905,7 @@ class AnnotationSetRefItem:
         Return the offset from the start of the file to the referenced annotation set or
         0 if there are no annotations for this element.
 
-        :rtype: int
+        :returns: the offset
         """
         return self.annotations_off
 
@@ -931,15 +927,14 @@ class AnnotationSetRefItem:
 
 class AnnotationSetRefList:
     """
-    This class can parse an annotation_set_ref_list_item of a dex file
-
-    :param buff: a string which represents a Buff object of the annotation_set_ref_list_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `annotation_set_ref_list_item` of a dex file
     """
-
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `annotation_set_ref_list_item`
+        :param cm: a ClassManager object
+        """
         self.offset = buff.tell()
 
         self.CM = cm
@@ -949,9 +944,9 @@ class AnnotationSetRefList:
 
     def get_list(self) -> list[AnnotationSetRefItem]:
         """
-        Return list of AnnotationSetRefItem
+        Return list of [AnnotationSetRefItem][androguard.core.dex.AnnotationSetRefItem]
 
-        :rtype: list
+        :returns: list of `AnnotationSetRefItem`
         """
         return self.list
 
@@ -980,12 +975,10 @@ class AnnotationSetRefList:
 
 class FieldAnnotation:
     """
-    This class can parse a field_annotation of a dex file
+    This class can parse a `field_annotation` of a dex file
 
-    :param buff: a string which represents a Buff object of the field_annotation
-    :type buff: Buff object
+    :param buff: a string which represents a buff object of the `field_annotation`
     :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -998,9 +991,9 @@ class FieldAnnotation:
 
     def get_field_idx(self) -> int:
         """
-        Return the index into the field_ids list for the identity of the field being annotated
+        Return the index into the `field_ids` list for the identity of the field being annotated
 
-        :rtype: int
+        :returns: the index
         """
         return self.field_idx
 
@@ -1008,7 +1001,7 @@ class FieldAnnotation:
         """
         Return the offset from the start of the file to the list of annotations for the field
 
-        :rtype: int
+        :returns: the offset
         """
         return self.annotations_off
 
@@ -1042,12 +1035,10 @@ class FieldAnnotation:
 
 class MethodAnnotation:
     """
-    This class can parse a method_annotation of a dex file
+    This class can parse a `method_annotation` of a dex file
 
-    :param buff: a string which represents a Buff object of the method_annotation
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a buff object of the `method_annotation`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -1062,7 +1053,7 @@ class MethodAnnotation:
         """
         Return the index into the method_ids list for the identity of the method being annotated
 
-        :rtype: int
+        :returns: the index
         """
         return self.method_idx
 
@@ -1070,7 +1061,7 @@ class MethodAnnotation:
         """
         Return the offset from the start of the file to the list of annotations for the method
 
-        :rtype: int
+        :returns: the offset
         """
         return self.annotations_off
 
@@ -1104,12 +1095,10 @@ class MethodAnnotation:
 
 class ParameterAnnotation:
     """
-    This class can parse a parameter_annotation of a dex file
+    This class can parse a `parameter_annotation` of a dex file
 
-    :param buff: a string which represents a Buff object of the parameter_annotation
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a buff object of the `parameter_annotation`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -1122,9 +1111,9 @@ class ParameterAnnotation:
 
     def get_method_idx(self) -> int:
         """
-        Return the index into the method_ids list for the identity of the method whose parameters are being annotated
+        Return the index into the `method_ids` list for the identity of the method whose parameters are being annotated
 
-        :rtype: int
+        :returns: the index
         """
         return self.method_idx
 
@@ -1132,7 +1121,7 @@ class ParameterAnnotation:
         """
         Return the offset from the start of the file to the list of annotations for the method parameters
 
-        :rtype: int
+        :returns: the offset
         """
         return self.annotations_off
 
@@ -1166,15 +1155,14 @@ class ParameterAnnotation:
 
 class AnnotationsDirectoryItem:
     """
-    This class can parse an annotations_directory_item of a dex file
-
-    :param buff: a string which represents a Buff object of the annotations_directory_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `annotations_directory_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `annotations_directory_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -1206,7 +1194,7 @@ class AnnotationsDirectoryItem:
         Return the offset from the start of the file to the annotations made directly on the class,
         or 0 if the class has no direct annotations
 
-        :rtype: int
+        :returns: the offset
         """
         return self.class_annotations_off
 
@@ -1217,7 +1205,7 @@ class AnnotationsDirectoryItem:
         """
         Return the count of fields annotated by this item
 
-        :rtype: int
+        :returns: the offset
         """
         return self.annotated_fields_size
 
@@ -1225,7 +1213,7 @@ class AnnotationsDirectoryItem:
         """
         Return the count of methods annotated by this item
 
-        :rtype: int
+        :returns: the count of methods
         """
         return self.annotated_methods_size
 
@@ -1233,31 +1221,31 @@ class AnnotationsDirectoryItem:
         """
         Return the count of method parameter lists annotated by this item
 
-        :rtype: int
+        :returns: the count of method parameter lists
         """
         return self.annotated_parameters_size
 
     def get_field_annotations(self) -> list[FieldAnnotation]:
         """
-        Return the list of associated field annotations
+        Return the list of associated [FieldAnnotation][androguard.core.dex.FieldAnnotation]
 
-        :rtype: a list of :class:`FieldAnnotation`
+        :returns: a list of `FieldAnnotation`
         """
         return self.field_annotations
 
     def get_method_annotations(self) -> list[MethodAnnotation]:
         """
-        Return the list of associated method annotations
+        Return the list of associated [MethodAnnotation][androguard.core.dex.MethodAnnotation]
 
-        :rtype: a list of :class:`MethodAnnotation`
+        :returns: a list of `MethodAnnotation`
         """
         return self.method_annotations
 
     def get_parameter_annotations(self) -> list[ParameterAnnotation]:
         """
-        Return the list of associated method parameter annotations
+        Return the list of associated method [ParameterAnnotation][androguard.core.dex.ParameterAnnotation]
 
-        :rtype: a list of :class:`ParameterAnnotation`
+        :returns: a list of `ParameterAnnotation`
         """
         return self.parameter_annotations
 
@@ -1325,12 +1313,10 @@ class AnnotationsDirectoryItem:
 
 class HiddenApiClassDataItem:
     """
-    This class can parse an hiddenapi_class_data_item of a dex file (from Android 10 dex version 039)
+    This class can parse an `hiddenapi_class_data_item` of a dex file (from Android 10 dex version 039)
 
-    :param buff: a string which represents a Buff object of the hiddenapi_class_data_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the `hiddenapi_class_data_item`
+    :param cm: a `ClassManager` object
     """
 
     class RestrictionApiFlag(IntEnum):
@@ -1379,18 +1365,17 @@ class HiddenApiClassDataItem:
         """
         Return the total size of this section
 
-        :rtype: int
+        :returns: the total size
         """
         return self.section_size
 
-    def get_flags(self, idx):
+    def get_flags(self, idx) -> tuple[RestrictionApiFlag, DomapiApiFlag]:
         """
         Return a tuple of the flags per class
 
         :param idx: The index to return the flags of (index of the class)
-        :type idx: int
 
-        :rtype: Tuple[RestrictionApiFlag, DomainApiFlag]
+        :returns: tuple of `RestrictionApiFlag`, `DomapiApiFlag`
         """
         return self.flags[idx]
 
@@ -1430,12 +1415,10 @@ class HiddenApiClassDataItem:
 
 class TypeItem:
     """
-    This class can parse a type_item of a dex file
+    This class can parse a `type_item` of a dex file
 
-    :param buff: a string which represents a Buff object of the type_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a buff object of the `type_item`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -1444,9 +1427,9 @@ class TypeItem:
 
     def get_type_idx(self):
         """
-        Return the index into the type_ids list
+        Return the index into the `type_ids` list
 
-        :rtype: int
+        :returns: the index
         """
         return self.type_idx
 
@@ -1454,7 +1437,7 @@ class TypeItem:
         """
         Return the type string
 
-        :rtype: string
+        :returns: the type string
         """
         return self.CM.get_type(self.type_idx)
 
@@ -1474,12 +1457,10 @@ class TypeItem:
 
 class TypeList:
     """
-    This class can parse a type_list of a dex file
+    This class can parse a `type_list` of a dex file
 
-    :param buff: a string which represents a Buff object of the type_list
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the `type_list`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -1499,7 +1480,7 @@ class TypeList:
         """
         Return the alignment string
 
-        :rtype: string
+        :returns: the alignment string
         """
         return self.pad
 
@@ -1507,7 +1488,7 @@ class TypeList:
         """
         Return the offset of the item
 
-        :rtype: int
+        :returns: the offset
         """
         return self.offset
 
@@ -1515,7 +1496,7 @@ class TypeList:
         """
         Return the concatenation of all strings
 
-        :rtype: string
+        :returns: concatenated strings
         """
         return ' '.join(i.get_string() for i in self.list)
 
@@ -1523,15 +1504,15 @@ class TypeList:
         """
         Return the size of the list, in entries
 
-        :rtype: int
+        :returns: the size of the list
         """
         return self.size
 
     def get_list(self):
         """
-        Return the list of TypeItem
+        Return the list of [TypeItem][androguard.core.dex.TypeItem]
 
-        :rtype: a list of :class:`TypeItem` objects
+        :returns: a list of `TypeItem` objects
         """
         return self.list
 
@@ -1744,15 +1725,14 @@ class DebugInfoItemEmpty:
 
 class EncodedArray:
     """
-    This class can parse an encoded_array of a dex file
-
-    :param buff: a string which represents a Buff object of the encoded_array
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `encoded_array` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a buff object of the `encoded_array`
+        :param cm: a ClassManager object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -1764,16 +1744,16 @@ class EncodedArray:
         """
         Return the number of elements in the array
 
-        :rtype: int
+        :returns: int
         """
         return self.size
 
-    def get_values(self):
+    def get_values(self) -> list[EncodedValue]:
         """
-        Return a series of size encoded_value byte sequences in the format specified by this section,
+        Return a series of size `encoded_value` byte sequences in the format specified by this section,
         concatenated sequentially
 
-        :rtype: a list of :class:`EncodedValue` objects
+        :returns: a list of `EncodedValue` objects
         """
         return self.values
 
@@ -1800,15 +1780,13 @@ class EncodedArray:
 
 class EncodedValue:
     """
-    This class can parse an encoded_value of a dex file
-
-    :param buff: a string which represents a Buff object of the encoded_value
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `encoded_value` of a dex file
     """
-
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `encoded_value`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.val = get_byte(cm, buff)
@@ -1866,10 +1844,10 @@ class EncodedValue:
 
     def get_value(self):
         """
-        Return the bytes representing the value, variable in length and interpreted differently for different value_type bytes,
+        Return the bytes representing the value, variable in length and interpreted differently for different `value_type` bytes,
         though always little-endian
 
-        :rtype: an object representing the value
+        :returns: an object representing the value
         """
         return self.value
 
@@ -1916,12 +1894,10 @@ class EncodedValue:
 
 class AnnotationElement:
     """
-    This class can parse an annotation_element of a dex file
+    This class can parse an `annotation_element` of a dex file
 
-    :param buff: a string which represents a Buff object of the annotation_element
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a buff object of the `annotation_element`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -1931,19 +1907,19 @@ class AnnotationElement:
         self.name_idx = readuleb128(cm, buff)
         self.value = EncodedValue(buff, cm)
 
-    def get_name_idx(self):
+    def get_name_idx(self) -> int:
         """
-        Return the element name, represented as an index into the string_ids section
+        Return the index to the element name, represented as an index into the `string_ids` section
 
-        :rtype: int
+        :returns: the index to the name
         """
         return self.name_idx
 
-    def get_value(self):
+    def get_value(self) -> EncodedValue:
         """
-        Return the element value (EncodedValue)
+        Return the element value ([EncodedValue][androguard.core.dex.EncodedValue])
 
-        :rtype: a :class:`EncodedValue` object
+        :returns: a :`EncodedValue` object
         """
         return self.value
 
@@ -1964,15 +1940,14 @@ class AnnotationElement:
 
 class EncodedAnnotation:
     """
-    This class can parse an encoded_annotation of a dex file
-
-    :param buff: a string which represents a Buff object of the encoded_annotation
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `encoded_annotation` of a dex file
     """
-
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `encoded_annotation`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -1985,7 +1960,7 @@ class EncodedAnnotation:
         """
         Return the type of the annotation. This must be a class (not array or primitive) type
 
-        :rtype: int
+        :returns: the type of the annotation
         """
         return self.type_idx
 
@@ -1993,7 +1968,7 @@ class EncodedAnnotation:
         """
         Return the number of name-value mappings in this annotation
 
-        :rtype:int
+        :returns: the number of mappings
         """
         return self.size
 
@@ -2001,7 +1976,7 @@ class EncodedAnnotation:
         """
         Return the elements of the annotation, represented directly in-line (not as offsets)
 
-        :rtype: a list of :class:`AnnotationElement` objects
+        :returns: a list of `AnnotationElement` objects
         """
         return self.elements
 
@@ -2038,15 +2013,14 @@ class EncodedAnnotation:
 
 class AnnotationItem:
     """
-    This class can parse an annotation_item of a dex file
-
-    :param buff: a string which represents a Buff object of the annotation_item
-    :type buff: BinaryIO bytes object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `annotation_item` of a dex file
     """
-
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `annotation_item`
+        :param cm: a `ClassManager` object 
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2058,7 +2032,7 @@ class AnnotationItem:
         """
         Return the intended visibility of this annotation
 
-        :rtype: int
+        :returns: the visibility of the annotation
         """
         return self.visibility
 
@@ -2066,7 +2040,7 @@ class AnnotationItem:
         """
         Return the encoded annotation contents
 
-        :rtype: a :class:`EncodedAnnotation` object
+        :returns: a `EncodedAnnotation` object
         """
         return self.annotation
 
@@ -2096,15 +2070,14 @@ class AnnotationItem:
 
 class EncodedArrayItem:
     """
-    This class can parse an encoded_array_item of a dex file
-
-    :param buff: a string which represents a Buff object of the encoded_array_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `encoded_array_item` of a dex file
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `encoded_array_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2114,7 +2087,7 @@ class EncodedArrayItem:
         """
         Return the bytes representing the encoded array value
 
-        :rtype: a :class:`EncodedArray` object
+        :returns: a `EncodedArray` object
         """
         return self.value
 
@@ -2140,7 +2113,7 @@ class EncodedArrayItem:
 
 class StringDataItem:
     """
-    This class can parse a string_data_item of a dex file
+    This class can parse a `string_data_item` of a dex file
 
     Strings in Dalvik files might not be representable in python!
     This is due to the fact, that you can store any UTF-16 character inside
@@ -2153,20 +2126,17 @@ class StringDataItem:
     Dalvik uses MUTF-8 as encoding for the strings. This encoding has the
     advantage to allow for null terminated strings in UTF-8 encoding, as the
     null character maps to something else.
-    Therefore you can use :meth:`get_data` to retrieve the actual data of the
+    Therefore you can use [get_data][androguard.core.dex.StringDataItem.get_data] to retrieve the actual data of the
     string and can handle encoding yourself.
-    Or you use :meth:`get_unicode` to return a decoded UTF-16 string, which
-    might cause problems during printing or saving.
     If you want a representation of the string, which should be printable in
-    python you ca use :meth:`get` which escapes invalid characters.
-
-    :param buff: a string which represents a Buff object of the string_data_item
-    :type buff: BinaryIO.io.BufferedReader
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    python you ca use [get][androguard.core.dex.StringDataItem.get] which escapes invalid characters.
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `string_data_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2179,7 +2149,7 @@ class StringDataItem:
         """
         Return the size of this string, in UTF-16 code units
 
-        :rtype:int
+        :returns: the size of the string
         """
         return self.utf16_size
 
@@ -2187,7 +2157,7 @@ class StringDataItem:
         """
         Return a series of MUTF-8 code units (a.k.a. octets, a.k.a. bytes) followed by a byte of value 0
 
-        :rtype: string
+        :returns: string
         """
         return self.data + b"\x00"
 
@@ -2200,6 +2170,8 @@ class StringDataItem:
     def get(self) -> str:
         """
         Returns a str object
+
+        :returns: string
         """
         try:
             return mutf8.decode(self.data)
@@ -2221,7 +2193,7 @@ class StringDataItem:
         Returns the raw string including the ULEB128 coded length
         and null byte string terminator
 
-        :return: bytes
+        :returns: bytes
         """
         return writeuleb128(self.CM, self.utf16_size) + self.data + b"\x00"
 
@@ -2237,15 +2209,14 @@ class StringDataItem:
 
 class StringIdItem:
     """
-    This class can parse a string_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the string_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `string_id_item` of a dex file
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager):
+        """
+        :param buff: a string which represents a Buff object of the str`ing_id_item
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2255,7 +2226,7 @@ class StringIdItem:
         """
         Return the offset from the start of the file to the string data for this item
 
-        :rtype: int
+        :returns: the offset
         """
         return self.string_data_off
 
@@ -2286,15 +2257,14 @@ class StringIdItem:
 
 class TypeIdItem:
     """
-    This class can parse a type_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the type_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `type_id_item` of a dex file
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager):
+        """
+        :param buff: a string which represents a Buff object of the `type_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2305,7 +2275,7 @@ class TypeIdItem:
         """
         Return the index into the string_ids list for the descriptor string of this type
 
-        :rtype: int
+        :returns: int
         """
         return self.descriptor_idx
 
@@ -2313,7 +2283,7 @@ class TypeIdItem:
         """
         Return the string associated to the descriptor
 
-        :rtype: string
+        :returns: string
         """
         return self.descriptor_idx_value
 
@@ -2336,15 +2306,14 @@ class TypeIdItem:
 
 class TypeHIdItem:
     """
-    This class can parse a list of type_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the list of type_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a list of `type_id_item` of a dex file
     """
 
     def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the list of `type_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2353,9 +2322,9 @@ class TypeHIdItem:
 
     def get_type(self) -> list[TypeIdItem]:
         """
-        Return the list of type_id_item
+        Return the list of `type_id_item`
 
-        :rtype: a list of :class:`TypeIdItem` objects
+        :returns: a list of `TypeIdItem` objects
         """
         return self.type
 
@@ -2391,15 +2360,14 @@ class TypeHIdItem:
 
 class ProtoIdItem:
     """
-    This class can parse a proto_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the proto_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `proto_id_item` of a dex file
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager):
+        """
+        :param buff: a string which represents a Buff object of the `proto_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2413,17 +2381,17 @@ class ProtoIdItem:
 
     def get_shorty_idx(self) -> int:
         """
-        Return the index into the string_ids list for the short-form descriptor string of this prototype
+        Return the index into the `string_ids` list for the short-form descriptor string of this prototype
 
-        :rtype: int
+        :returns: the index
         """
         return self.shorty_idx
 
     def get_return_type_idx(self) -> int:
         """
-        Return the index into the type_ids list for the return type of this prototype
+        Return the index into the `type_ids` list for the return type of this prototype
 
-        :rtype: int
+        :returns: the index
         """
         return self.return_type_idx
 
@@ -2431,15 +2399,15 @@ class ProtoIdItem:
         """
         Return the offset from the start of the file to the list of parameter types for this prototype, or 0 if this prototype has no parameters
 
-        :rtype: int
+        :returns: the offset
         """
         return self.parameters_off
 
     def get_shorty_idx_value(self) -> str:
         """
-        Return the string associated to the shorty_idx
+        Return the string associated to the `shorty_idx`
 
-        :rtype: string
+        :returns: string
         """
         if self.shorty_idx_value is None:
             self.shorty_idx_value = self.CM.get_string(self.shorty_idx)
@@ -2447,9 +2415,9 @@ class ProtoIdItem:
 
     def get_return_type_idx_value(self) -> str:
         """
-        Return the string associated to the return_type_idx
+        Return the string associated to the `return_type_idx`
 
-        :rtype: string
+        :returns: string
         """
         if self.return_type_idx_value is None:
             self.return_type_idx_value = self.CM.get_type(self.return_type_idx)
@@ -2457,9 +2425,9 @@ class ProtoIdItem:
 
     def get_parameters_off_value(self) -> str:
         """
-        Return the string associated to the parameters_off
+        Return the string associated to the `parameters_off`
 
-        :rtype: str
+        :returns: string
         """
         if self.parameters_off_value is None:
             params = self.CM.get_type_list(self.parameters_off)
@@ -2500,15 +2468,14 @@ class ProtoIdItem:
 
 class ProtoHIdItem:
     """
-    This class can parse a list of proto_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the list of proto_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a list of `proto_id_item` of a dex file
     """
 
-    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the list of `proto_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2547,15 +2514,14 @@ class ProtoHIdItem:
 
 class FieldIdItem:
     """
-    This class can parse a field_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the field_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `field_id_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager):
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+        """"
+        :param buff: a string which represents a Buff object of the `field_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2572,25 +2538,25 @@ class FieldIdItem:
 
     def get_class_idx(self) -> int:
         """
-        Return the index into the type_ids list for the definer of this field
+        Return the index into the `type_ids` list for the definer of this field
 
-        :rtype: int
+        :returns: the index
         """
         return self.class_idx
 
     def get_type_idx(self) -> int:
         """
-        Return the index into the type_ids list for the type of this field
+        Return the index into the `type_ids` list for the type of this field
 
-        :rtype: int
+        :returns: the index
         """
         return self.type_idx
 
     def get_name_idx(self) -> int:
         """
-        Return the index into the string_ids list for the name of this field
+        Return the index into the `string_ids` list for the name of this field
 
-        :rtype: int
+        :returns: the index
         """
         return self.name_idx
 
@@ -2598,7 +2564,7 @@ class FieldIdItem:
         """
         Return the class name of the field
 
-        :rtype: string
+        :returns: the class name
         """
         if self.class_idx_value is None:
             self.class_idx_value = self.CM.get_type(self.class_idx)
@@ -2608,7 +2574,7 @@ class FieldIdItem:
         """
         Return the type of the field
 
-        :rtype: string
+        :returns: the type
         """
         if self.type_idx_value is None:
             self.type_idx_value = self.CM.get_type(self.type_idx)
@@ -2618,7 +2584,7 @@ class FieldIdItem:
         """
         Return the descriptor of the field
 
-        :rtype: string
+        :returns: the desciptor
         """
         if self.type_idx_value is None:
             self.type_idx_value = self.CM.get_type(self.type_idx)
@@ -2628,7 +2594,7 @@ class FieldIdItem:
         """
         Return the name of the field
 
-        :rtype: string
+        :returns: the name
         """
         if self.name_idx_value is None:
             self.name_idx_value = self.CM.get_string(self.name_idx)
@@ -2662,15 +2628,14 @@ class FieldIdItem:
 
 class FieldHIdItem:
     """
-    This class can parse a list of field_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the list of field_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a list of `field_id_item` of a dex file
     """
 
-    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a buff object of the list of `field_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.offset = buff.tell()
 
         self.field_id_items = [FieldIdItem(buff, cm) for i in range(0, size)]
@@ -2712,15 +2677,14 @@ class FieldHIdItem:
 
 class MethodIdItem:
     """
-    This class can parse a method_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the method_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `method_id_item` of a dex file
     """
-
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `method_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -2739,23 +2703,23 @@ class MethodIdItem:
         """
         Return the index into the type_ids list for the definer of this method
 
-        :rtype: int
+        :returns: the index
         """
         return self.class_idx
 
     def get_proto_idx(self) -> int:
         """
-        Return the index into the proto_ids list for the prototype of this method
+        Return the index into the `proto_ids` list for the prototype of this method
 
-        :rtype: int
+        :returns: the index
         """
         return self.proto_idx
 
     def get_name_idx(self) -> int:
         """
-        Return the index into the string_ids list for the name of this method
+        Return the index into the `string_ids` list for the name of this method
 
-        :rtype: int
+        :returns: the index
         """
         return self.name_idx
 
@@ -2763,7 +2727,7 @@ class MethodIdItem:
         """
         Return the class name of the method
 
-        :rtype: string
+        :returns: the class name
         """
         if self.class_idx_value is None:
             self.class_idx_value = self.CM.get_type(self.class_idx)
@@ -2774,7 +2738,7 @@ class MethodIdItem:
         """
         Return the prototype of the method
 
-        :rtype: string
+        :returns: the prototype
         """
         if self.proto_idx_value is None:
             self.proto_idx_value = self.CM.get_proto(self.proto_idx)
@@ -2785,7 +2749,7 @@ class MethodIdItem:
         """
         Return the descriptor
 
-        :rtype: string
+        :returns: the descriptor
         """
         proto = self.get_proto()
         return proto[0] + proto[1]
@@ -2794,7 +2758,7 @@ class MethodIdItem:
         """
         Return the real descriptor (i.e. without extra spaces)
 
-        :rtype: string
+        :returns: the real descriptor, without extra spaces
         """
         proto = self.get_proto()
         return proto[0].replace(' ', '') + proto[1]
@@ -2803,7 +2767,7 @@ class MethodIdItem:
         """
         Return the name of the method
 
-        :rtype: string
+        :returns: the name of the of method
         """
         if self.name_idx_value is None:
             self.name_idx_value = self.CM.get_string(self.name_idx)
@@ -2844,15 +2808,15 @@ class MethodIdItem:
 
 class MethodHIdItem:
     """
-    This class can parse a list of method_id_item of a dex file
-
-    :param buff: a string which represents a Buff object of the list of method_id_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a list of `method_id_item` of a dex file
     """
 
-    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
+
+    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the list of `method_id_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -2960,15 +2924,14 @@ class MethodIdItemInvalid:
 
 class EncodedField:
     """
-    This class can parse an encoded_field of a dex file
-
-    :param buff: a string which represents a Buff object of the encoded field
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `encoded_field` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a buff object of the `encoded_field`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -3002,7 +2965,6 @@ class EncodedField:
         Setup the init value object of the field
 
         :param value: the init value
-        :type value: :class:`EncodedValue`
         """
         self.init_value = value
 
@@ -3010,7 +2972,7 @@ class EncodedField:
         """
         Return the init value object of the field
 
-        :rtype: :class:`EncodedValue`
+        :returns: an `EncodedValue` object
         """
         return self.init_value
 
@@ -3022,7 +2984,7 @@ class EncodedField:
         Return the index into the field_ids list for the identity of this field (includes the name and descriptor),
         represented as a difference from the index of previous element in the list
 
-        :rtype: int
+        :returns: the index
         """
         return self.field_idx_diff
 
@@ -3030,7 +2992,7 @@ class EncodedField:
         """
         Return the real index of the method
 
-        :rtype: int
+        :returns: the real index
         """
         return self.field_idx
 
@@ -3038,7 +3000,7 @@ class EncodedField:
         """
         Return the access flags of the field
 
-        :rtype: int
+        :returns: the access flags
         """
         return self.access_flags
 
@@ -3046,7 +3008,7 @@ class EncodedField:
         """
         Return the class name of the field
 
-        :rtype: string
+        :returns: the class name
         """
         if not self.loaded:
             self.load()
@@ -3058,7 +3020,7 @@ class EncodedField:
 
         The descriptor of a field is the type of the field.
 
-        :rtype: string
+        :returns: the descriptor
         """
         if not self.loaded:
             self.load()
@@ -3068,7 +3030,7 @@ class EncodedField:
         """
         Return the name of the field
 
-        :rtype: string
+        :returns: the name
         """
         if not self.loaded:
             self.load()
@@ -3078,7 +3040,7 @@ class EncodedField:
         """
         Return the access flags string of the field
 
-        :rtype: string
+        :returns: the access flags
         """
         if self.access_flags_string is None:
             if self.get_access_flags() == 0:
@@ -3144,15 +3106,14 @@ class EncodedField:
 
 class EncodedMethod:
     """
-    This class can parse an encoded_method of a dex file
-
-    :param buff: a string which represents a Buff object of the encoded_method
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse an `encoded_method` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a buff object of the `encoded_method`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -3184,16 +3145,16 @@ class EncodedMethod:
         """
         Return the real index of the method
 
-        :rtype: int
+        :returns: the real index
         """
         return self.method_idx
 
     def get_method_idx_diff(self) -> int:
         """
-        Return index into the method_ids list for the identity of this method (includes the name and descriptor),
+        Return index into the `method_ids` list for the identity of this method (includes the name and descriptor),
         represented as a difference from the index of previous element in the lis
 
-        :rtype: int
+        :returns: the index
         """
         return self.method_idx_diff
 
@@ -3201,7 +3162,7 @@ class EncodedMethod:
         """
         Return the access flags of the method
 
-        :rtype: int
+        :returns: the access flags
         """
         return self.access_flags
 
@@ -3210,7 +3171,7 @@ class EncodedMethod:
         Return the offset from the start of the file to the code structure for this method,
         or 0 if this method is either abstract or native
 
-        :rtype: int
+        :returns: the offset
         """
         return self.code_off
 
@@ -3219,7 +3180,7 @@ class EncodedMethod:
         Return the offset from the start of the file to the code structure for this method,
         or 0 if this method is either abstract or native
 
-        :rtype: int
+        :returns: the offset
         """
         return self.code_off + 0x10
 
@@ -3230,7 +3191,7 @@ class EncodedMethod:
         A description of all access flags can be found here:
         https://source.android.com/devices/tech/dalvik/dex-format#access-flags
 
-        :rtype: string
+        :returns: the access flags
         """
         if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
@@ -3274,8 +3235,7 @@ class EncodedMethod:
 
         This number is equal to the number of registers minus the number of parameters minus 1.
 
-        :return: number of local registers
-        :rtype: int
+        :returns: number of local registers
         """
         ret = self.proto.split(')')
         params = ret[0][1:].split()
@@ -3289,13 +3249,11 @@ class EncodedMethod:
 
         The resulting dictionary has the form:
 
-        .. code-block:: none
-
-            {
-                registers: (start, end),
-                params: [(reg_1, type_1), (reg_2, type_2), ..., (reg_n, type_n)],
-                return: type
-            )
+            >>> {
+            >>>    registers: (start, end),
+            >>>    params: [(reg_1, type_1), (reg_2, type_2), ..., (reg_n, type_n)],
+            >>>    return: type
+            >>> }
 
         The end register is not the last register used, but the last register
         used not for parameters. Hence, they represent the local registers.
@@ -3303,8 +3261,7 @@ class EncodedMethod:
         The register numbers for the parameters can be found in the tuples
         for each parameter.
 
-        :return: a dictionary with the basic information about the method
-        :rtype: dict
+        :returns: a dictionary with the basic information about the method
         """
         info = dict()
         if self.code:
@@ -3375,7 +3332,7 @@ class EncodedMethod:
 
     @property
     def full_name(self) -> str:
-        """Return class_name + name + descriptor, separated by spaces (no access flags"""
+        """Return class_name + name + descriptor, separated by spaces (no access flags)"""
         return ' '.join([self.class_name, self.name, self.get_descriptor()])
 
     @property
@@ -3395,7 +3352,7 @@ class EncodedMethod:
 
         This name might not be unique!
 
-        :return: str
+        :returns: str
         """
 
         def _fmt_classname(cls) -> str:
@@ -3466,7 +3423,7 @@ class EncodedMethod:
         """
         Return the source code of this method
 
-        :rtype: string
+        :returns: the source code
         """
         self.CM.decompiler_ob.display_source(self)
 
@@ -3477,7 +3434,7 @@ class EncodedMethod:
         """
         Return the length of the associated code of the method
 
-        :rtype: int
+        :returns: the length of the source code
         """
         if self.code is not None:
             return self.code.get_length()
@@ -3488,7 +3445,7 @@ class EncodedMethod:
         Return the code object associated to the method
 
 
-        :rtype: :class:`DalvikCode` object or None if no Code
+        :returns: the `DalvikCode` object or None if no Code
         """
         if not self.loaded:
             self.load()
@@ -3504,7 +3461,7 @@ class EncodedMethod:
         """
         Get the instructions
 
-        :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
+        :returns: a generator of each `Instruction` (or a cached list of instructions if you have setup instructions)
         """
         if self.get_code() is None:
             return []
@@ -3513,11 +3470,10 @@ class EncodedMethod:
     def get_instructions_idx(self) -> Iterator[tuple[int, Instruction]]:
         """
         Iterate over all instructions of the method, but also return the current index.
-        This is the same as using :meth:`get_instructions` and adding the instruction length
+        This is the same as using [get_instructions][androguard.core.dex.EncodedMethod.get_instructions] and adding the instruction length
         to a variable each time.
 
-        :return:
-        :rtype: Iterator[(int, Instruction)]
+        :returns: iterator over index and instructions
         """
         if self.get_code() is None:
             return []
@@ -3530,8 +3486,7 @@ class EncodedMethod:
         """
         Set the instructions
 
-        :param instructions: the list of instructions
-        :type instructions: a list of :class:`Instruction`
+        :param instructions: the list of `Instructions`
         """
         if self.code is None:
             return []
@@ -3544,11 +3499,9 @@ class EncodedMethod:
         Get a particular instruction by using (default) the index of the address if specified
 
         :param idx: index of the instruction (the position in the list of the instruction)
-        :type idx: int
         :param off: address of the instruction
-        :type off: int
 
-        :rtype: an :class:`Instruction` object
+        :returns: a generator of `Instructions`
         """
         if self.get_code() is not None:
             return self.get_code().get_bc().get_instruction(idx, off)
@@ -3558,7 +3511,7 @@ class EncodedMethod:
         """
         Return the debug object associated to this method
 
-        :rtype: :class:`DebugInfoItem`
+        :returns: `DebugInfoItem` object
         """
         if self.get_code() is None:
             return None
@@ -3567,10 +3520,10 @@ class EncodedMethod:
     def get_descriptor(self) -> str:
         """
         Return the descriptor of the method
-        A method descriptor will have the form (A A A ...)R
+        A method descriptor will have the form `(A A A ...)R`
         Where A are the arguments to the method and R is the return type.
         Basic types will have the short form, i.e. I for integer, V for void
-        and class types will be named like a classname, e.g. Ljava/lang/String;.
+        and class types will be named like a classname, e.g. `Ljava/lang/String;`.
 
         Typical descriptors will look like this:
         ```
@@ -3584,7 +3537,7 @@ class EncodedMethod:
         More information about type descriptors are found here:
         https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 
-        :rtype: string
+        :returns: the descriptor
         """
         if not self.loaded:
             self.load()
@@ -3594,7 +3547,7 @@ class EncodedMethod:
         """
         Return the class name of the method
 
-        :rtype: string
+        :returns: the class name
         """
         if not self.loaded:
             self.load()
@@ -3604,7 +3557,7 @@ class EncodedMethod:
         """
         Return the name of the method
 
-        :rtype: string
+        :returns: the name
         """
         if not self.loaded:
             self.load()
@@ -3620,11 +3573,8 @@ class EncodedMethod:
         Add a message to a specific instruction by using (default) the index of the address if specified
 
         :param msg: the message
-        :type msg: string
         :param idx: index of the instruction (the position in the list of the instruction)
-        :type idx: int
         :param off: address of the instruction
-        :type off: int
         """
         if self.code is not None:
             self.code.add_inote(msg, idx, off)
@@ -3634,16 +3584,14 @@ class EncodedMethod:
         Add a message to this method
 
         :param msg: the message
-        :type msg: string
         """
         self.notes.append(msg)
 
-    def set_code_idx(self, idx):
+    def set_code_idx(self, idx: int) -> None:
         """
         Set the start address of the buffer to disassemble
 
         :param idx: the index
-        :type idx: int
         """
         if self.code is not None:
             self.code.seek(idx)
@@ -3668,15 +3616,14 @@ class EncodedMethod:
 
 class ClassDataItem:
     """
-    This class can parse a class_data_item of a dex file
-
-    :param buff: a string which represents a Buff object of the class_data_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `class_data_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `class_data_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
 
         self.offset = buff.tell()
@@ -3716,87 +3663,87 @@ class ClassDataItem:
             cm,
         )
 
-    def get_static_fields_size(self):
+    def get_static_fields_size(self) -> int:
         """
         Return the number of static fields defined in this item
 
-        :rtype: int
+        :returns: number of static fields
         """
         return self.static_fields_size
 
-    def get_instance_fields_size(self):
+    def get_instance_fields_size(self) -> int:
         """
         Return the number of instance fields defined in this item
 
-        :rtype: int
+        :returns: number of instance fields
         """
         return self.instance_fields_size
 
-    def get_direct_methods_size(self):
+    def get_direct_methods_size(self) -> int:
         """
         Return the number of direct methods defined in this item
 
-        :rtype: int
+        :returns: number of direct methods
         """
         return self.direct_methods_size
 
-    def get_virtual_methods_size(self):
+    def get_virtual_methods_size(self) -> int:
         """
         Return the number of virtual methods defined in this item
 
-        :rtype: int
+        :returns: number of virtual methods
         """
         return self.virtual_methods_size
 
-    def get_static_fields(self):
+    def get_static_fields(self) -> list[EncodedField]:
         """
         Return the defined static fields, represented as a sequence of encoded elements
 
-        :rtype: a list of :class:`EncodedField` objects
+        :returns: a list of `EncodedField` objects
         """
         return self.static_fields
 
-    def get_instance_fields(self):
+    def get_instance_fields(self) -> list[EncodedField]:
         """
         Return the defined instance fields, represented as a sequence of encoded elements
 
-        :rtype: a list of :class:`EncodedField` objects
+        :returns: list of `EncodedField` objects
         """
         return self.instance_fields
 
-    def get_direct_methods(self):
+    def get_direct_methods(self) -> list[EncodedMethod]:
         """
         Return the defined direct (any of static, private, or constructor) methods, represented as a sequence of encoded elements
 
-        :rtype: a list of :class:`EncodedMethod` objects
+        :returns: a list of `EncodedMethod` objects
         """
         return self.direct_methods
 
-    def get_virtual_methods(self):
+    def get_virtual_methods(self) -> list[EncodedMethod]:
         """
         Return the defined virtual (none of static, private, or constructor) methods, represented as a sequence of encoded elements
 
-        :rtype: a list of :class:`EncodedMethod` objects
+        :returns: a list `EncodedMethod` objects
 
         """
 
         return self.virtual_methods
 
-    def get_methods(self):
+    def get_methods(self) -> list[EncodedMethod]:
         """
         Return direct and virtual methods
 
-        :rtype: a list of :class:`EncodedMethod` objects
+        :returns: a list of `EncodedMethod` objects
         """
         return [x for x in self.direct_methods] + [
             x for x in self.virtual_methods
         ]
 
-    def get_fields(self):
+    def get_fields(self) -> list[EncodedField]:
         """
         Return static and instance fields
 
-        :rtype: a list of :class:`EncodedField` objects
+        :returns: a list of `EncodedField` objects
         """
         return [x for x in self.static_fields] + [
             x for x in self.instance_fields
@@ -3903,15 +3850,14 @@ class ClassDataItem:
 
 class ClassDefItem:
     """
-    This class can parse a class_def_item of a dex file
-
-    :param buff: a string which represents a Buff object of the class_def_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    This class can parse a `class_def_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+        """
+        :param buff: a string which represents a Buff object of the `class_def_item`
+        :param cm: a `ClassManager` object
+        """
         self.CM = cm
         self.offset = buff.tell()
 
@@ -3970,9 +3916,9 @@ class ClassDefItem:
 
     def get_methods(self) -> list[EncodedMethod]:
         """
-        Return all EncodedMethods of this class
+        Return all [EncodedMethods][androguard.core.dex.EncodedMethod] of this class
 
-        :rtype: a list of :class:`EncodedMethod` objects
+        :returns: a list of `EncodedMethod` objects
         """
         if self.class_data_item is not None:
             return self.class_data_item.get_methods()
@@ -3980,9 +3926,9 @@ class ClassDefItem:
 
     def get_fields(self) -> list[EncodedField]:
         """
-        Return all EncodedFields of this class
+        Return all [EncodedFields][androguard.core.dex.EncodedField] of this class
 
-        :rtype: a list of :class:`EncodedField` objects
+        :returns: a list of `EncodedField` objects
         """
         if self.class_data_item is not None:
             return self.class_data_item.get_fields()
@@ -3990,9 +3936,9 @@ class ClassDefItem:
 
     def _get_annotation_type_ids(self) -> list[EncodedAnnotation]:
         """
-        Get the EncodedAnnotations from this class
+        Get the [EncodedAnnotation][androguard.core.dex.EncodedAnnotation] from this class
 
-        :rtype: list[EncodedAnnotation]
+        :returns: list of `EncodedAnnotation` objects
         """
         if self.annotations_directory_item is None:
             return []
@@ -4016,10 +3962,10 @@ class ClassDefItem:
         """
         Returns the class names of the annotations of this class.
 
-        For example, if the class is marked as :code:`@Deprecated`, this will return
-        :code:`['Ljava/lang/Deprecated;']`.
+        For example, if the class is marked as `@Deprecated`, this will return
+        `['Ljava/lang/Deprecated;']`.
 
-        :rtype: list[str]
+        :returns: list of class names
         """
         return [
             self.CM.get_type(x.get_type_idx())
@@ -4028,25 +3974,25 @@ class ClassDefItem:
 
     def get_class_idx(self) -> int:
         """
-        Return the index into the type_ids list for this class
+        Return the index into the `type_ids` list for this class
 
-        :rtype: int
+        :returns: the index
         """
         return self.class_idx
 
     def get_access_flags(self) -> int:
         """
-        Return the access flags for the class (public, final, etc.)
+        Return the access flags for the class (`public`, `final`, etc.)
 
-        :rtype: int
+        :returns: the access flags
         """
         return self.access_flags
 
     def get_superclass_idx(self) -> int:
         """
-        Return the index into the type_ids list for the superclass
+        Return the index into the `type_ids` list for the superclass
 
-        :rtype: int
+        :returns: the index
         """
         return self.superclass_idx
 
@@ -4054,16 +4000,16 @@ class ClassDefItem:
         """
         Return the offset from the start of the file to the list of interfaces, or 0 if there are none
 
-        :rtype: int
+        :returns: the offset
         """
         return self.interfaces_off
 
     def get_source_file_idx(self) -> int:
         """
-        Return the index into the string_ids list for the name of the file containing the original
-        source for (at least most of) this class, or the special value NO_INDEX to represent a lack of this information
+        Return the index into the `string_ids` list for the name of the file containing the original
+        source for (at least most of) this class, or the special value `NO_INDEX` to represent a lack of this information
 
-        :rtype: int
+        :returns: the index
         """
         return self.source_file_idx
 
@@ -4072,7 +4018,7 @@ class ClassDefItem:
         Return the offset from the start of the file to the annotations structure for this class,
         or 0 if there are no annotations on this class.
 
-        :rtype: int
+        :returns: the offset
         """
         return self.annotations_off
 
@@ -4081,7 +4027,7 @@ class ClassDefItem:
         Return the offset from the start of the file to the associated class data for this item,
         or 0 if there is no class data for this class
 
-        :rtype: int
+        :returns: the offset
         """
         return self.class_data_off
 
@@ -4090,7 +4036,7 @@ class ClassDefItem:
         Return the offset from the start of the file to the list of initial values for static fields,
         or 0 if there are none (and all static fields are to be initialized with 0 or null)
 
-        :rtype: int
+        :returns: the offset
         """
         return self.static_values_off
 
@@ -4098,7 +4044,7 @@ class ClassDefItem:
         """
         Return the associated class_data_item
 
-        :rtype: a :class:`ClassDataItem` object
+        :returns: the associated `ClassDataItem`
         """
         return self.class_data_item
 
@@ -4106,7 +4052,7 @@ class ClassDefItem:
         """
         Return the name of this class
 
-        :rtype: str
+        :returns: the string name
         """
         return self.name
 
@@ -4114,7 +4060,7 @@ class ClassDefItem:
         """
         Return the name of the super class
 
-        :rtype: str
+        :returns: the string name
         """
         return self.sname
 
@@ -4122,7 +4068,7 @@ class ClassDefItem:
         """
         Return the names of the interfaces
 
-        :rtype: List[str]
+        :returns: a list of string names
         """
         return self.interfaces
 
@@ -4130,7 +4076,7 @@ class ClassDefItem:
         """
         Return the access flags string of the class
 
-        :rtype: str
+        :returns: the access flag string
         """
         if self.access_flags_string is None:
             self.access_flags_string = get_access_flags_string(
@@ -4171,12 +4117,14 @@ class ClassDefItem:
     def source(self) -> None:
         """
         Print the source code of the entire class
-
-        :rtype: string
         """
         self.CM.decompiler_ob.display_all(self)
 
     def get_source(self) -> str:
+        """return the source code of this class
+
+        :returns: the source code string
+        """
         return self.CM.decompiler_ob.get_source_class(self)
 
     def get_source_ext(self) -> list[tuple[str, list]]:
@@ -4229,12 +4177,10 @@ class ClassDefItem:
 
 class ClassHDefItem:
     """
-    This class can parse a list of class_def_item of a dex file
+    This class can parse a list of `class_def_item` of a dex file
 
-    :param buff: a string which represents a Buff object of the list of class_def_item
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the list of `class_def_item`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
@@ -4259,6 +4205,11 @@ class ClassHDefItem:
         return self.offset
 
     def get_class_idx(self, idx: int) -> ClassDefItem:
+        """return the associated `ClassDefItem` from the `class_def` list given an index
+
+        :param idx: the index
+        :return: the `ClassDefItem` object , or `None` if not found
+        """
         for i in self.class_def:
             if i.get_class_idx() == idx:
                 return i
@@ -4267,6 +4218,12 @@ class ClassHDefItem:
     def get_method(
         self, name_class: str, name_method: str
     ) -> list[EncodedMethod]:
+        """return a list of of `EncodedMethod` objects given a class name and method name
+
+        :param name_class: the name of the class
+        :param name_method: the name of the method
+        :return: a list of `EncodedMethod` objects
+        """
         l = []
 
         for i in self.class_def:
@@ -4277,6 +4234,10 @@ class ClassHDefItem:
         return l
 
     def get_names(self) -> list[str]:
+        """return a list of class names found in `class_def`
+
+        :return: a list of class names
+        """
         return [x.get_name() for x in self.class_def]
 
     def show(self) -> None:
@@ -4284,6 +4245,10 @@ class ClassHDefItem:
             i.show()
 
     def get_obj(self) -> list[ClassDefItem]:
+        """return a list of `ClassDefItem` objects
+
+        :return: list of `ClassDefItem` objects
+        """
         return [i for i in self.class_def]
 
     def get_raw(self) -> bytes:
@@ -4298,12 +4263,10 @@ class ClassHDefItem:
 
 class EncodedTypeAddrPair:
     """
-    This class can parse an encoded_type_addr_pair of a dex file
+    This class can parse an `encoded_type_addr_pair` of a dex file
 
-    :param buff: a string which represents a Buff object of the encoded_type_addr_pair
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the `encoded_type_addr_pair`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, cm: ClassManager, buff: BinaryIO) -> None:
@@ -4313,9 +4276,9 @@ class EncodedTypeAddrPair:
 
     def get_type_idx(self) -> int:
         """
-        Return the index into the type_ids list for the type of the exception to catch
+        Return the index into the `type_ids` list for the type of the exception to catch
 
-        :rtype: int
+        :returns: the index
         """
         return self.type_idx
 
@@ -4323,7 +4286,7 @@ class EncodedTypeAddrPair:
         """
         Return the bytecode address of the associated exception handler
 
-        :rtype: int
+        :returns: the bytecode address
         """
         return self.addr
 
@@ -4347,12 +4310,10 @@ class EncodedTypeAddrPair:
 
 class EncodedCatchHandler:
     """
-    This class can parse an encoded_catch_handler of a dex file
+    This class can parse an `encoded_catch_handler` of a dex file
 
-    :param buff: a string which represents a Buff object of the encoded_catch_handler
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the `encoded_catch_handler`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -4373,15 +4334,15 @@ class EncodedCatchHandler:
         """
         Return the number of catch types in this list
 
-        :rtype: int
+        :returns: the number of catch types
         """
         return self.size
 
     def get_handlers(self) -> list[EncodedTypeAddrPair]:
         """
-        Return the stream of abs(size) encoded items, one for each caught type, in the order that the types should be tested.
+        Return the stream of `abs(size)` encoded items, one for each caught type, in the order that the types should be tested.
 
-        :rtype: a list of :class:`EncodedTypeAddrPair` objects
+        :returns: a list of `EncodedTypeAddrPair` objects
         """
         return self.handlers
 
@@ -4389,7 +4350,7 @@ class EncodedCatchHandler:
         """
         Return the bytecode address of the catch-all handler. This element is only present if size is non-positive.
 
-        :rtype: int
+        :returns: the bytecode address
         """
         return self.catch_all_addr
 
@@ -4410,9 +4371,6 @@ class EncodedCatchHandler:
             bytecode._PrintDefault("catch_all_addr=%x\n" % self.catch_all_addr)
 
     def get_raw(self) -> bytearray:
-        """
-        :rtype: bytearray
-        """
         buff = bytearray()
         buff += writesleb128(self.CM, self.size)
         for i in self.handlers:
@@ -4437,12 +4395,10 @@ class EncodedCatchHandler:
 
 class EncodedCatchHandlerList:
     """
-    This class can parse an encoded_catch_handler_list of a dex file
+    This class can parse an `encoded_catch_handler_list` of a dex file
 
-    :param buff: a string which represents a Buff object of the encoded_catch_handler_list
-    :type buff: Buff object
-    :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
+    :param buff: a string which represents a Buff object of the `encoded_catch_handler_list`
+    :param cm: a `ClassManager` object
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -4456,7 +4412,7 @@ class EncodedCatchHandlerList:
         """
         Return the size of this list, in entries
 
-        :rtype: int
+        :returns: int
         """
         return self.size
 
@@ -4464,7 +4420,7 @@ class EncodedCatchHandlerList:
         """
         Return the actual list of handler lists, represented directly (not as offsets), and concatenated sequentially
 
-        :rtype: a list of :class:`EncodedCatchHandler` objects
+        :returns: a list of `EncodedCatchHandler` objects
         """
         return self.list
 
@@ -4485,9 +4441,6 @@ class EncodedCatchHandlerList:
         return writeuleb128(self.CM, self.size)
 
     def get_raw(self) -> bytearray:
-        """
-        :rtype: bytearray
-        """
         buff = bytearray()
         buff += self.get_obj()
         for i in self.list:
@@ -4507,13 +4460,10 @@ def get_kind(cm: ClassManager, kind: int, value: int) -> str:
     Return the value of the 'kind' argument
 
     :param cm: a ClassManager object
-    :type cm: :class:`ClassManager`
     :param kind: the type of the 'kind' argument
-    :type kind: int
     :param value: the value of the 'kind' argument
-    :type value: int
 
-    :rtype: string
+    :returns: string
     """
     if kind == Kind.METH:
         method = cm.get_method_ref(value)
@@ -4562,27 +4512,24 @@ class Instruction:
 
     It can both handle normal instructions as well as optimized instructions.
 
-    .. warning::
-        There is not much documentation about the optimized opcodes!
-        Hence, it relies on reverese engineered specification!
+    WARNING: There is not much documentation about the optimized opcodes! Hence, it relies on reverese engineered specification!
 
     More information about the instruction format can be found in the official documentation:
     https://source.android.com/devices/tech/dalvik/instruction-formats.html
 
-    .. warning::
-        Values stored in the instructions are already interpreted at this stage.
+    WARNING: Values stored in the instructions are already interpreted at this stage.
 
     The Dalvik VM has a eight opcodes to create constant integer values.
     There are four variants for 32bit values and four for 64bit.
     If floating point numbers are required, you have to use the conversion opcodes
-    like :code:`int-to-float`, :code:`int-to-double` or the variants using :code:`long`.
+    like `int-to-float`, `int-to-double` or the variants using `long`.
 
     Androguard will always show the values as they are used in the opcode and also extend signs
     and shift values!
-    As an example: The opcode :code:`const/high16` can be used to create constant values
+    As an example: The opcode `const/high16` can be used to create constant values
     where the lower 16 bits are all zero.
-    In this case, androguard will process bytecode :code:`15 00 CD AB` as beeing
-    :code:`const/high16 v0, 0xABCD0000`.
+    In this case, androguard will process bytecode `15 00 CD AB` as beeing
+    `const/high16 v0, 0xABCD0000`.
     For the sign-extension, nothing is really done here, as it only affects the bit represenation
     in the virtual machine. As androguard parses the values and uses python types internally,
     we are not bound to specific size.
@@ -4596,9 +4543,9 @@ class Instruction:
         Return the 'kind' argument of the instruction
 
         This is the type of the argument, i.e. in which kind of table you have
-        to look up the argument in the ClassManager
+        to look up the argument in the `ClassManager`
 
-        :rtype: int
+        :returns: the kind
         """
         if self.OP >= 0xF2FF:
             return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
@@ -4608,7 +4555,7 @@ class Instruction:
         """
         Return the mnemonic of the instruction
 
-        :rtype: string
+        :returns: the mnemonic
         """
         if self.OP >= 0xF2FF:
             return DALVIK_OPCODES_OPTIMIZED[self.OP][1][0]
@@ -4618,15 +4565,17 @@ class Instruction:
         """
         Return the numerical value of the opcode
 
-        :rtype: int
+        :returns: the numerical opcode
         """
         return self.OP
 
     def get_literals(self) -> list:
         """
+        Not Implemented
+
         Return the associated literals
 
-        :rtype: list of int
+        :returns: list of int
         """
         return []
 
@@ -4642,7 +4591,7 @@ class Instruction:
         """
         Return the display of the instruction
 
-        :rtype: string
+        :returns: the display of the instruction
         """
         return self.get_output(idx)
 
@@ -4650,26 +4599,30 @@ class Instruction:
         """
         Return the translated value of the 'kind' argument
 
-        :rtype: string
+        :returns: the translated value
         """
         return get_kind(self.cm, self.get_kind(), self.get_ref_kind())
 
     def get_output(self, idx: int = -1) -> str:
         """
+        Not Implemented
+        
         Return an additional output of the instruction
 
-        :rtype: string
+        :returns: the additional output as a string
         """
         return ""
 
-    def get_operands(self, idx: int = -1) -> list:
+    def get_operands(self, idx:int=-1) -> list[tuple[Operand, object]]:
         """
+        Not Implemented
+
         Return all operands
 
-        This will return a list of tuples, containing the Enum :class:`Operand`
+        This will return a list of tuples, containing the Enum [Operand][androguard.core.dex.dex_types.Operand]
         at the first position and the objects afterwards.
 
-        :rtype: List[Tuple(Operand, object, ...)]
+        :returns: List[Tuple(Operand, object, ...)]
         """
         return []
 
@@ -4677,7 +4630,7 @@ class Instruction:
         """
         Return the length of the instruction in bytes
 
-        :rtype: int
+        :returns: the length
         """
         return self.length
 
@@ -4685,7 +4638,7 @@ class Instruction:
         """
         Return the object in a raw format
 
-        :rtype: string
+        :returns: the raw format
         """
         raise Exception("not implemented")
 
@@ -4693,7 +4646,7 @@ class Instruction:
         """
         Return the value of the 'kind' argument
 
-        :rtype: value
+        :returns: value
         """
         raise Exception("not implemented")
 
@@ -4704,7 +4657,7 @@ class Instruction:
         The hex string contains the raw bytes of the instruction,
         including the opcode and all arguments.
 
-        :rtype: str
+        :returns: the hex string
         """
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i : i + 2] for i in range(0, len(s), 2))
@@ -4724,7 +4677,7 @@ class Instruction:
 
 class FillArrayData:
     """
-    This class can parse a FillArrayData instruction
+    This class can parse a `FillArrayData` instruction
 
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
@@ -4753,7 +4706,6 @@ class FillArrayData:
         Add a note to this instruction
 
         :param msg: the message
-        :type msg: string
         """
         self.notes.append(msg)
 
@@ -4761,7 +4713,7 @@ class FillArrayData:
         """
         Get all notes from this instruction
 
-        :rtype: a list of string notes
+        :returns: a list of string notes
         """
         return self.notes
 
@@ -4769,7 +4721,7 @@ class FillArrayData:
         """
         Get the value of the opcode
 
-        :rtype: int
+        :returns: the value
         """
         return self.ident
 
@@ -4777,7 +4729,7 @@ class FillArrayData:
         """
         Return the data of this instruction (the payload)
 
-        :rtype: bytes
+        :returns: the instruction payload bytes
         """
         return self.data
 
@@ -4785,7 +4737,7 @@ class FillArrayData:
         """
         Return an additional output of the instruction
 
-        :rtype: string
+        :returns: additional output of the instruction
         """
         buff = ""
 
@@ -4797,8 +4749,8 @@ class FillArrayData:
 
         return buff
 
-    def get_operands(self, idx: int = -1) -> tuple[Operand, str]:
-        # FIXME: not sure of binascii is the right choise here,
+    def get_operands(self, idx: int=-1) -> tuple[Operand, str]:
+        # FIXME: not sure of binascii is the right choice here,
         # but before it was repr(), which lead to weird outputs of bytearrays
         if isinstance(self.get_data(), bytearray):
             return [
@@ -4817,7 +4769,7 @@ class FillArrayData:
         """
         Return the name of the instruction
 
-        :rtype: string
+        :returns: name string
         """
         return "fill-array-data-payload"
 
@@ -4825,7 +4777,7 @@ class FillArrayData:
         """
         Return the display of the instruction
 
-        :rtype: string
+        :returns: display string
         """
         buff = self.get_name() + " "
 
@@ -4833,9 +4785,11 @@ class FillArrayData:
             buff += "\\x%02x" % self.data[i]
         return buff
 
-    def show(self, pos) -> None:
+    def show(self, pos: int) -> None:
         """
         Print the instruction
+
+        :param pos: the position of the instruction
         """
         print(self.show_buff(pos), end=' ')
 
@@ -4843,7 +4797,7 @@ class FillArrayData:
         """
         Return the length of the instruction
 
-        :rtype: int
+        :returns: the length
         """
         return ((self.size * self.element_width + 1) // 2 + 4) * 2
 
@@ -4900,7 +4854,6 @@ class SparseSwitch:
         Add a note to this instruction
 
         :param msg: the message
-        :type msg: string
         """
         self.notes.append(msg)
 
@@ -4908,7 +4861,7 @@ class SparseSwitch:
         """
         Get all notes from this instruction
 
-        :rtype: a list of objects
+        :returns: a list of note strings
         """
         return self.notes
 
@@ -4916,7 +4869,7 @@ class SparseSwitch:
         """
         Get the value of the opcode
 
-        :rtype: int
+        :returns: the value
         """
         return self.ident
 
@@ -4924,7 +4877,7 @@ class SparseSwitch:
         """
         Return the keys of the instruction
 
-        :rtype: a list of long (integer)
+        :returns: a list of long (integer)
         """
         return self.keys
 
@@ -4935,7 +4888,7 @@ class SparseSwitch:
         """
         Return the targets (address) of the instruction
 
-        :rtype: a list of long (integer)
+        :returns: a list of long (integer)
         """
         return self.targets
 
@@ -4943,7 +4896,7 @@ class SparseSwitch:
         """
         Return an additional output of the instruction
 
-        :rtype: string
+        :returns: additional output string
         """
         return " ".join("%x" % i for i in self.keys)
 
@@ -4951,7 +4904,7 @@ class SparseSwitch:
         """
         Return an additional output of the instruction
 
-        :rtype: string
+        :returns: additional output string
         """
         return []
 
@@ -4962,7 +4915,7 @@ class SparseSwitch:
         """
         Return the name of the instruction
 
-        :rtype: string
+        :returns: name string
         """
         return "sparse-switch-payload"
 
@@ -4970,7 +4923,7 @@ class SparseSwitch:
         """
         Return the display of the instruction
 
-        :rtype: string
+        :returns: display string
         """
         buff = self.get_name() + " "
         for i in range(0, len(self.keys)):
@@ -4997,6 +4950,8 @@ class SparseSwitch:
     def get_hex(self) -> str:
         """
         Returns a HEX String, separated by spaces every byte
+
+        :returns: hex string
         """
         s = binascii.hexlify(self.get_raw()).decode('ascii')
         return " ".join(s[i : i + 2] for i in range(0, len(s), 2))
@@ -5008,7 +4963,7 @@ class SparseSwitch:
 
 class PackedSwitch:
     """
-    This class can parse a PackedSwitch instruction
+    This class can parse a `PackedSwitch` instruction
 
     :param buff: a Buff object which represents a buffer where the instruction is stored
     """
@@ -5042,7 +4997,6 @@ class PackedSwitch:
         Add a note to this instruction
 
         :param msg: the message
-        :type msg: string
         """
         self.notes.append(msg)
 
@@ -5050,7 +5004,7 @@ class PackedSwitch:
         """
         Get all notes from this instruction
 
-        :rtype: a list of objects
+        :returns: a list of note strings
         """
         return self.notes
 
@@ -5058,7 +5012,7 @@ class PackedSwitch:
         """
         Get the value of the opcode
 
-        :rtype: int
+        :returns: opcode value
         """
         return self.ident
 
@@ -5066,7 +5020,7 @@ class PackedSwitch:
         """
         Return the keys of the instruction
 
-        :rtype: a list of long (integer)
+        :returns: a list of long (integer)
         """
         return [(self.first_key + i) for i in range(0, len(self.targets))]
 
@@ -5077,7 +5031,7 @@ class PackedSwitch:
         """
         Return the targets (address) of the instruction
 
-        :rtype: a list of long (integer)
+        :returns: a list of long (integer)
         """
         return self.targets
 
@@ -5085,8 +5039,7 @@ class PackedSwitch:
         """
         Return an additional output of the instruction
 
-          :rtype: string
-
+        :returns: additional output string
         """
         return " ".join(
             "%x" % (self.first_key + i) for i in range(0, len(self.targets))
@@ -5096,7 +5049,7 @@ class PackedSwitch:
         """
         Return an additional output of the instruction
 
-        :rtype: list
+        :returns: list
         """
         return []
 
@@ -5107,7 +5060,7 @@ class PackedSwitch:
         """
         Return the name of the instruction
 
-        :rtype: string
+        :returns: name string
         """
         return "packed-switch-payload"
 
@@ -5115,7 +5068,7 @@ class PackedSwitch:
         """
         Return the display of the instruction
 
-        :rtype: string
+        :returns: display string
         """
         buff = self.get_name() + " "
         buff += "%x:" % self.first_key
@@ -5563,7 +5516,7 @@ class Instruction31c(Instruction):
         """
         Return the string associated to the 'kind' argument
 
-        :rtype: string
+        :returns: string
         """
         return get_kind(self.cm, self.get_kind(), self.BBBBBBBB)
 
@@ -7007,13 +6960,13 @@ def get_instruction(
     cm: ClassManager, op_value: int, buff: bytearray
 ) -> Instruction:
     """
-    Return the :class:`Instruction` for the given opcode
+    Return the [Instruction][androguard.core.dex.Instruction] for the given opcode
 
-    :param ClassManager cm: ClassManager to propagate to Instruction
-    :param int op_value: integer value of the instruction
-    :param bytearray buff: Bytecode starting with the instruction
-    :return: the parsed Instruction
-    :rtype: Instruction
+    :param cm: `ClassManager` to propagate to `Instruction`
+    :param op_value: integer value of the instruction
+    :param buff: Bytecode starting with the `instruction`
+    :raises InvalidInstruction: if instruction is invalid
+    :returns: the parsed `Instruction`
     """
     try:
         return DALVIK_OPCODES_FORMAT[op_value][0](cm, buff)
@@ -7029,6 +6982,14 @@ def get_instruction(
 def get_optimized_instruction(
     cm: ClassManager, op_value: int, buff: bytearray
 ) -> Instruction:
+    """Return the [Instruction][androguard.core.dex.Instruction] for the given optimized opcode
+
+    :param cm: `ClassManager` to propagate to `Instruction`
+    :param op_value: integer value of the instruction
+    :param buff: Bytecode starting with the `instruction`
+    :raises InvalidInstruction: if instruction is invalid
+    :returns: the parsed `Instruction`
+    """
     try:
         return DALVIK_OPCODES_OPTIMIZED[op_value][0](cm, buff)
     except struct.error:
@@ -7071,13 +7032,12 @@ class LinearSweepAlgorithm:
         That means that the bytecode read might be corrupt
         or was crafted in this way, to break parsers.
 
-        :param ClassManager cm: a ClassManager object
-        :param int size: the total size of the buffer in 16-bit units
-        :param bytearray insn: a raw buffer where are the instructions
-        :param int idx: a start address in the buffer
-        :param bool raise_errors: True to raise errors instead of simply logging them
-
-        :rtype: Iterator[Instruction]
+        :param cm: a `ClassManager` object
+        :param size: the total size of the buffer in 16-bit units
+        :param insn: a raw buffer where are the instructions
+        :param idx: a start address in the buffer
+        :raises InvalidInstruction: if an instruction is invalid
+        :returns: iterator over `Instruction`s
         """
         is_odex = cm.get_odex_format()
 
@@ -7128,14 +7088,10 @@ class DCode:
     """
     This class represents the instructions of a method
 
-    :param class_manager: the ClassManager
-    :type class_manager: :class:`ClassManager` object
+    :param class_manager: the `ClassManager`
     :param offset: the offset of the buffer
-    :type offset: int
     :param size: the total size of the buffer
-    :type size: int
     :param buff: a raw buffer where are the instructions
-    :type buff: bytes
     """
 
     def __init__(
@@ -7155,7 +7111,7 @@ class DCode:
         """
         Get the insn buffer
 
-        :rtype: bytes
+        :returns: insn bytes
         """
         return self.insn
 
@@ -7164,7 +7120,6 @@ class DCode:
         Set a new raw buffer to disassemble
 
         :param insn: the buffer
-        :type insn: bytes
         """
         self.insn = insn
         self.size = len(self.insn)
@@ -7174,7 +7129,6 @@ class DCode:
         Set the start address of the buffer
 
         :param idx: the index
-        :type idx: int
         """
         self.idx = idx
 
@@ -7188,15 +7142,14 @@ class DCode:
         Set the instructions
 
         :param instructions: the list of instructions
-        :type instructions: a list of :class:`Instruction`
         """
         self.cached_instructions = instructions
 
     def get_instructions(self) -> Iterator[Instruction]:
         """
-        Get the instructions
+        Return an iterator over [Instruction][androguard.core.dex.Instruction]
 
-        :rtype: a generator of each :class:`Instruction` (or a cached list of instructions if you have setup instructions)
+        :returns: a generator of each `Instruction` (or a cached list of instructions if you have setup instructions)
         """
         # it is possible to a cache for instructions (avoid a new disasm)
         if self.cached_instructions is None:
@@ -7215,11 +7168,8 @@ class DCode:
         Add a message to a specific instruction by using (default) the index of the address if specified
 
         :param msg: the message
-        :type msg: string
         :param idx: index of the instruction (the position in the list of the instruction)
-        :type idx: int
         :param off: address of the instruction
-        :type off: int
         """
         if off is not None:
             idx = self.off_to_pos(off)
@@ -7236,11 +7186,9 @@ class DCode:
         Get a particular instruction by using (default) the index of the address if specified
 
         :param idx: index of the instruction (the position in the list of the instruction)
-        :type idx: int
         :param off: address of the instruction
-        :type off: int
 
-        :rtype: an :class:`Instruction` object
+        :returns: an `Instruction` object
         """
         if off is not None:
             idx = self.off_to_pos(off)
@@ -7253,9 +7201,8 @@ class DCode:
         Get the position of an instruction by using the address
 
         :param off: address of the instruction
-        :type off: int
 
-        :rtype: int
+        :returns: the offset
         """
         idx = 0
         nb = 0
@@ -7271,9 +7218,8 @@ class DCode:
         Get a particular instruction by using the address
 
         :param off: address of the instruction
-        :type off: int
 
-        :rtype: an :class:`Instruction` object
+        :returns: an `Instruction` object
         """
         idx = 0
         for i in self.get_instructions():
@@ -7303,7 +7249,7 @@ class DCode:
         """
         Return the raw buffer of this object
 
-        :rtype: bytearray
+        :returns: buffer bytearray
         """
         buff = bytearray()
         for i in self.get_instructions():
@@ -7314,19 +7260,17 @@ class DCode:
         """
         Return the length of this object
 
-        :rtype: int
+        :returns: length int
         """
         return len(self.get_raw())
 
 
 class TryItem:
     """
-    This class represents the try_item format
+    This class represents the `try_item` format
 
-    :param buff: a raw buffer where are the try_item format
-    :type buff: BinaryIO.BufferedReader
-    :param cm: the ClassManager
-    :type cm: ClassManager
+    :param buff: a raw buffer where are the `try_item` format
+    :param cm: the `ClassManager`
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -7348,7 +7292,7 @@ class TryItem:
         """
         Get the start address of the block of code covered by this entry. The address is a count of 16-bit code units to the start of the first covered instruction.
 
-        :rtype: int
+        :returns: address int
         """
         return self.start_addr
 
@@ -7356,15 +7300,15 @@ class TryItem:
         """
         Get the number of 16-bit code units covered by this entry
 
-        :rtype: int
+        :returns: int
         """
         return self.insn_count
 
     def get_handler_off(self) -> int:
         """
-        Get the offset in bytes from the start of the associated :class:`EncodedCatchHandlerList` to the :class:`EncodedCatchHandler` for this entry.
+        Get the offset in bytes from the start of the associated `EncodedCatchHandlerList` to the `EncodedCatchHandler` for this entry.
 
-        :rtype: int
+        :returns: int
         """
         return self.handler_off
 
@@ -7382,9 +7326,7 @@ class DalvikCode:
     This class represents the instructions of a method
 
     :param buff: a raw buffer where are the instructions
-    :type buff: BinaryIO.BufferedReader
-    :param cm: the ClassManager
-    :type cm: :class:`ClassManager` object
+    :param cm: the `ClassManager`
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
@@ -7424,7 +7366,7 @@ class DalvikCode:
         """
         Get the number of registers used by this code
 
-        :rtype: int
+        :returns: number of registers
         """
         return self.registers_size
 
@@ -7432,7 +7374,7 @@ class DalvikCode:
         """
         Get the number of words of incoming arguments to the method that this code is for
 
-        :rtype: int
+        :returns: number of words
         """
         return self.ins_size
 
@@ -7440,15 +7382,15 @@ class DalvikCode:
         """
         Get the number of words of outgoing argument space required by this code for method invocation
 
-        :rtype: int
+        :returns: number of words
         """
         return self.outs_size
 
     def get_tries_size(self) -> int:
         """
-        Get the number of :class:`TryItem` for this instance
+        Get the number of [TryItem][androguard.core.dex.TryItem] for this instance
 
-        :rtype: int
+        :returns: number of `TryItem`
         """
         return self.tries_size
 
@@ -7456,7 +7398,7 @@ class DalvikCode:
         """
         Get the offset from the start of the file to the debug info (line numbers + local variable info) sequence for this code, or 0 if there simply is no information
 
-        :rtype: int
+        :returns: offset int
         """
         return self.debug_info_off
 
@@ -7464,7 +7406,7 @@ class DalvikCode:
         """
         Get the size of the instructions list, in 16-bit code units
 
-        :rtype: int
+        :returns: size int
         """
         return self.insns_size
 
@@ -7472,7 +7414,7 @@ class DalvikCode:
         """
         Get the bytes representing a list of lists of catch types and associated handler addresses.
 
-        :rtype: :class:`EncodedCatchHandlerList`
+        :returns: `EncodedCatchHandlerList` object
         """
         return self.handlers
 
@@ -7480,7 +7422,7 @@ class DalvikCode:
         """
         Get the array indicating where in the code exceptions are caught and how to handle them
 
-        :rtype: a list of :class:`TryItem` objects
+        :returns: a list of `TryItem` objects
         """
         return self.tries
 
@@ -7488,7 +7430,7 @@ class DalvikCode:
         """
         Return the associated debug object
 
-        :rtype: :class:`DebugInfoItem`
+        :returns: `DebugInfoItem` object
         """
         return self.CM.get_debug_off(self.debug_info_off)
 
@@ -7496,7 +7438,7 @@ class DalvikCode:
         """
         Return the associated code object
 
-        :rtype: :class:`DCode`
+        :returns: `DCode` object
         """
         return self.code
 
@@ -7531,7 +7473,7 @@ class DalvikCode:
         """
         Get the reconstructed code as bytearray
 
-        :rtype: bytearray
+        :returns: code bytearray
         """
         code_raw = self.code.get_raw()
         self.insns_size = (len(code_raw) // 2) + (len(code_raw) % 2)
@@ -7564,11 +7506,8 @@ class DalvikCode:
         Add a message to a specific instruction by using (default) the index of the address if specified
 
         :param msg: the message
-        :type msg: string
         :param idx: index of the instruction (the position in the list of the instruction)
-        :type idx: int
         :param off: address of the instruction
-        :type off: int
         """
         if self.code:
             return self.code.add_inote(msg, idx, off)
@@ -7681,11 +7620,14 @@ class MapItem:
     def get_size(self) -> int:
         """
         Returns the number of items found at the location indicated by
-        :meth:`get_offset`.
+        [get_offset][androguard.core.dex.MapItem.get_offset].
+
+        :returns: number of items
         """
         return self.size
 
     def parse(self) -> None:
+        """parse this map_item by parsing its potential [TypeMapItem][androguard.core.dex.dex_types.TypeMapItem] type and cast it appropriately."""
         logger.debug("Starting parsing map_item '{}'".format(self.type.name))
         started_at = time.time()
 
@@ -7826,9 +7768,11 @@ class MapItem:
     def get_obj(self) -> object:
         """
         Return the associated item itself.
-        Might return None, if :meth:`parse` was not called yet.
+        Might return `None`, if [parse][androguard.core.dex.MapItem.parse] was not called yet.
 
-        This method is the same as :meth:`get_item`.
+        This method is the same as `item`.
+
+        :returns: item object
         """
         return self.item
 
@@ -7862,7 +7806,7 @@ class ClassManager:
 
     def __init__(self, vm: DEX) -> None:
         """
-        :param DEX vm: the VM to create a ClassManager for
+        :param DEX vm: the VM to create a `ClassManager` for
         """
         self.vm = vm
         self.buff = vm
@@ -7913,12 +7857,15 @@ class ClassManager:
             return d
 
     def get_odex_format(self) -> bool:
-        """Returns True if the underlying VM is ODEX"""
+        """Returns `True` if the underlying VM is ODEX
+
+        :returns: `True` if vm is ODEX, `False` if not
+        """
         return self.odex_format
 
     def get_obj_by_offset(self, offset: int) -> object:
         """
-        Returnes a object from as given offset inside the DEX file
+        Returns a object from as given offset inside the DEX file
         """
         return self.__obj_offset[offset]
 
@@ -8015,7 +7962,9 @@ class ClassManager:
 
         If string is hooked, the hooked string is returned.
 
-        :param int idx: index in the string section
+        :param idx: index in the string section
+
+        :returns: string entry
         """
         if idx in self.hook_strings:
             return self.hook_strings[idx]
@@ -8026,7 +7975,7 @@ class ClassManager:
         """
         Return the (unprocessed) string from the string table at index `idx`.
 
-        :param int idx: the index in the string section
+        :param idx: the index in the string section
         """
         try:
             off = self.__manage_item[TypeMapItem.STRING_ID_ITEM][
@@ -8056,8 +8005,7 @@ class ClassManager:
         This returns the string associated with the type.
 
         :param int idx:
-        :return: the type name
-        :rtype: str
+        :returns: the type name
         """
         _type = self.get_type_ref(idx)
         if _type == -1:
@@ -8068,7 +8016,7 @@ class ClassManager:
         """
         Returns the string reference ID for a given type ID.
 
-        This method is similar to :meth:`get_type` but does not resolve
+        This method is similar to [get_type][androguard.core.dex.ClassManager.get_type] but does not resolve
         the string but returns the ID into the string section.
 
         If the type IDX is not found, -1 is returned.
@@ -8285,9 +8233,9 @@ class MapList:
         """
         Get a particular item type
 
-        :param ttype: a :class:`~TypeMapItem` enum which represents the desired type
+        :param ttype: a `TypeMapItem` enum which represents the desired type
 
-        :rtype: None or the item object
+        :returns: `None` or the item object
         """
         for i in self.map_item:
             if i.get_type() == ttype:
@@ -8362,12 +8310,10 @@ class DEX:
 
     :param buff: a string which represents the classes.dex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: BinaryIO
-    :type decompiler: object
 
-    example::
+    Example:
 
-        d = DEX( read("classes.dex") )
+        >>> d = DEX( read("classes.dex") )
     """
 
     def __init__(
@@ -8458,7 +8404,7 @@ class DEX:
         This method returns api version that should be used for loading api
         specific resources.
 
-        :rtype: string
+        :returns: api version string
         """
         return self.api_version
 
@@ -8466,7 +8412,7 @@ class DEX:
         """
         This function returns the class def item
 
-        :rtype: :class:`ClassHDefItem` object
+        :returns: `ClassHDefItem` object
         """
         return self.classes
 
@@ -8474,7 +8420,7 @@ class DEX:
         """
         This function returns the method id item
 
-        :rtype: :class:`MethodHIdItem` object
+        :returns: `MethodHIdItem` object
         """
         return self.methods
 
@@ -8482,7 +8428,7 @@ class DEX:
         """
         This function returns the field id item
 
-        :rtype: :class:`FieldHIdItem` object
+        :returns: `FieldHIdItem` object
         """
         return self.fields
 
@@ -8490,7 +8436,7 @@ class DEX:
         """
         This function returns the code item
 
-        :rtype: :class:`CodeItem` object
+        :returns: `CodeItem` object
         """
         return self.codes
 
@@ -8498,7 +8444,7 @@ class DEX:
         """
         This function returns the string data item
 
-        :rtype: :class:`StringDataItem` object
+        :returns: `StringDataItem` object
         """
         return self.strings
 
@@ -8506,7 +8452,7 @@ class DEX:
     def get_debug_info_item(self) -> DebugInfoItemEmpty:
         """
         This function returns the debug info item
-        :rtype: :class:`DebugInfoItemEmpty` object
+        :returns: `DebugInfoItemEmpty` object
         """
         return self.debug
 
@@ -8514,7 +8460,7 @@ class DEX:
         """
         This function returns the header item
 
-        :rtype: :class:`HeaderItem` object
+        :returns: `HeaderItem` object
         """
         return self.header
 
@@ -8522,7 +8468,7 @@ class DEX:
         """
         This function returns the hidden api item (from Android 10)
 
-        :rtype: :class:`HiddenApiClassDataItem` object
+        :returns: `HiddenApiClassDataItem` object
         """
         return self.hidden_api
 
@@ -8531,7 +8477,7 @@ class DEX:
         This function returns a ClassManager object which allow you to get
         access to all index references (strings, methods, fields, ....)
 
-        :rtype: :class:`ClassManager` object
+        :returns: `ClassManager` object
         """
         return self.CM
 
@@ -8546,7 +8492,7 @@ class DEX:
         Return the dex (with the modifications) into raw format (fix checksums)
         (beta: do not use !)
 
-        :rtype: bytes
+        :returns: bytes
         """
         l = []
         h = {}
@@ -8636,7 +8582,7 @@ class DEX:
         """
         Fix a dex format buffer by setting all checksums
 
-        :rtype: bytes
+        :returns: bytes
         """
 
         signature = hashlib.sha1(buff[32:]).digest()
@@ -8655,7 +8601,6 @@ class DEX:
         Get a specific field by using an index
 
         :param idx: index of the field
-        :type idx: int
         """
         return self.CM.get_field(idx)
 
@@ -8664,7 +8609,6 @@ class DEX:
         Get a specific method by using an index
 
         :param idx: index of the method
-        :type idx: int
         """
         return self.CM.get_method(idx)
 
@@ -8673,7 +8617,8 @@ class DEX:
         Get a specific string by using an index
 
         :param idx: index of the string
-        :type idx: int
+
+        :returns: the string
         """
         return self.CM.get_raw_string(idx)
 
@@ -8682,7 +8627,8 @@ class DEX:
         Get a specific type by using an index
 
         :param idx: index of the type
-        :type idx: int
+
+        :returns: the string type
         """
         return self.CM.get_type(idx)
 
@@ -8690,9 +8636,8 @@ class DEX:
         """
         Return the names of classes
 
-        :param update: True indicates to recompute the list.
-                       Maybe needed after using a MyClass.set_name().
-        :rtype: a list of string
+        :param update: `True` indicates to recompute the list. Maybe needed after using a MyClass.set_name().
+        :returns: a list of string names
         """
         if self.classes_names is None or update:
             self.classes_names = [i.get_name() for i in self.get_classes()]
@@ -8702,7 +8647,7 @@ class DEX:
         """
         Return all classes
 
-        :rtype: a list of :class:`ClassDefItem` objects
+        :returns: a list of `ClassDefItem` objects
         """
         if self.classes:
             return self.classes.class_def
@@ -8714,7 +8659,7 @@ class DEX:
         """
         Return the number of classes
 
-        :rtype: int
+        :returns: int
         """
         return len(self.get_classes())
 
@@ -8724,7 +8669,7 @@ class DEX:
 
         :param name: the name of the class
 
-        :rtype: a :class:`ClassDefItem` object
+        :returns: a `ClassDefItem`
         """
         for i in self.get_classes():
             if i.get_name() == name:
@@ -8734,10 +8679,8 @@ class DEX:
     def get_field(self, name: str) -> list[FieldIdItem]:
         """get field id item by name
 
-        :param name: the name of the field (a python regexp)
-        :type name: str
-        :return: the list of matching :class:`FieldIdItem` objects
-        :rtype: list
+        :param name: the name of the field (a python string regexp)
+        :returns: the list of matching `FieldIdItem` objects
         """
 
         prog = re.compile(name)
@@ -8751,7 +8694,7 @@ class DEX:
         """
         Return a list of field items
 
-        :rtype: a list of :class:`FieldIdItem` objects
+        :returns: a list of `FieldIdItem` objects
         """
         try:
             return self.fields.gets()
@@ -8762,7 +8705,7 @@ class DEX:
         """
         Return the number of fields
 
-        :rtype: int
+        :returns: int
         """
         return len(self.get_fields())
 
@@ -8770,9 +8713,9 @@ class DEX:
         """
         Return a list all fields which corresponds to the regexp
 
-        :param name: the name of the field (a python regexp)
+        :param name: the name of the field (a python string regexp)
 
-        :rtype: a list with all :class:`EncodedField` objects
+        :returns: a list with all `EncodedField` objects
         """
         # TODO could use a generator here
         prog = re.compile(name)
@@ -8786,7 +8729,7 @@ class DEX:
         """
         Return all field objects
 
-        :rtype: a list of :class:`EncodedField` objects
+        :returns: a list of `EncodedField` objects
         """
         if self.__cache_all_fields is None:
             self.__cache_all_fields = []
@@ -8801,10 +8744,8 @@ class DEX:
     def get_field(self, name: str) -> list[FieldIdItem]:
         """get field id item by name
 
-        :param name: the name of the field (a python regexp)
-        :type name: str
-        :return: the list of matching :class:`FieldIdItem` objects
-        :rtype: list
+        :param name: the name of the field (a python string regexp)
+        :returns: the list of matching `FieldIdItem` objects
         """
         prog = re.compile(name)
         l = []
@@ -8816,10 +8757,8 @@ class DEX:
     def get_method(self, name: str) -> list[MethodIdItem]:
         """get method id item by name
 
-        :param name: the name of the field (a python regexp)
-        :type name: str
-        :return: the list of matching :class:`MethodIdItem` objects
-        :rtype: list
+        :param name: the name of the field (a python string regexp)
+        :returns: the list of matching `MethodIdItem` objects
         """
         prog = re.compile(name)
         l = []
@@ -8832,7 +8771,7 @@ class DEX:
         """
         Return a list of method items
 
-        :rtype: a list of :class:`MethodIdItem` objects
+        :returns: a list of `MethodIdItem` objects
         """
         try:
             return self.methods.gets()
@@ -8843,7 +8782,7 @@ class DEX:
         """
         Return the number of methods
 
-        :rtype: int
+        :returns: int
         """
         return len(self.get_methods())
 
@@ -8851,9 +8790,9 @@ class DEX:
         """
         Return a list all encoded methods whose name corresponds to the regexp
 
-        :param name: the name of the method (a python regexp)
+        :param name: the name of the method (a python string regexp)
 
-        :rtype: a list with all :class:`EncodedMethod` objects
+        :returns: a list with all `EncodedMethod` objects
         """
         prog = re.compile(name)
         l = []
@@ -8866,7 +8805,7 @@ class DEX:
         """
         Return all encoded method objects
 
-        :rtype: a list of :class:`EncodedMethod` objects
+        :returns: a list of `EncodedMethod` objects
         """
         if self.__cache_all_methods is None:
             self.__cache_all_methods = []
@@ -8879,7 +8818,7 @@ class DEX:
         """
         Return the number of encoded methods
 
-        :rtype: int
+        :returns: int
         """
         return len(self.get_encoded_methods())
 
@@ -8889,9 +8828,8 @@ class DEX:
         """
         Return a specific encoded method by using an index
         :param idx: the index of the method
-        :type idx: int
 
-        :rtype: None or an :class:`EncodedMethod` object
+        :returns: `None` or an `EncodedMethod` object
         """
         if self.__cached_methods_idx is None:
             self.__cached_methods_idx = {}
@@ -8911,13 +8849,10 @@ class DEX:
         Return the specific encoded method given a class name, method name, and descriptor
 
         :param class_name: the class name of the method
-        :type class_name: string
         :param method_name: the name of the method
-        :type method_name: string
         :param descriptor: the descriptor of the method
-        :type descriptor: string
 
-        :rtype: None or a :class:`EncodedMethod` object
+        :returns: `None` or a `EncodedMethod` object
         """
         key = class_name + method_name + descriptor
 
@@ -8938,11 +8873,9 @@ class DEX:
         Return the specific encoded methods of the class
 
         :param class_name: the class name of the method
-        :type class_name: string
         :param method_name: the name of the method
-        :type method_name: string
 
-        :rtype: None or a :class:`EncodedMethod` object
+        :returns: `None` or a `EncodedMethod` object
         """
         for i in self.get_encoded_methods():
             if (
@@ -8959,9 +8892,8 @@ class DEX:
         Return all encoded methods of a specific class by class name
 
         :param class_name: the class name
-        :type class_name: string
 
-        :rtype: a list with :class:`EncodedMethod` objects
+        :returns: a list with `EncodedMethod` objects
         """
         l = []
         for i in self.get_encoded_methods():
@@ -8974,9 +8906,8 @@ class DEX:
         Return all encoded fields of a specific class by class name
 
         :param class_name: the class name
-        :type class_name: string
 
-        :rtype: a list with :class:`EncodedField` objects
+        :returns: a list with `EncodedField` objects
         """
         l = []
         for i in self.get_encoded_fields():
@@ -8991,13 +8922,10 @@ class DEX:
         Return the specific encoded field given a class name, field name, and descriptor
 
         :param class_name: the class name of the field
-        :type class_name: string
         :param field_name: the name of the field
-        :type field_name: string
         :param descriptor: the descriptor of the field
-        :type descriptor: string
 
-        :rtype: None or a :class:`EncodedField` object
+        :returns: `None` or a `EncodedField` object
         """
 
         key = class_name + field_name + descriptor
@@ -9019,7 +8947,7 @@ class DEX:
         The strings will have escaped surrogates, if only a single high or low surrogate is found.
         Complete surrogates are put together into the representing 32bit character.
 
-        :rtype: a list with all strings used in the format (types, names ...)
+        :returns: a list with all strings used in the format (types, names ...)
         """
         return (
             [i.get() for i in self.strings] if self.strings is not None else []
@@ -9029,7 +8957,7 @@ class DEX:
         """
         Return the number of strings
 
-        :rtype: int
+        :returns: int
         """
         return len(self.get_strings())
 
@@ -9040,9 +8968,8 @@ class DEX:
         Return all target strings matched the regex
 
         :param regular_expressions: the python regex string
-        :type regular_expressions: string
 
-        :rtype: a list of strings matching the regex expression
+        :returns: a list of strings matching the regex expression
         """
         str_list = []
         if regular_expressions.count is None:
@@ -9056,7 +8983,7 @@ class DEX:
         """
         Return the type
 
-        :rtype: a string
+        :returns: a string
         """
         return "DEX"
 
@@ -9159,9 +9086,9 @@ class DEX:
         Disassembles a given offset in the DEX file
 
         :param offset: offset to disassemble in the file (from the beginning of the file)
-        :type offset: int
         :param size:
-        :type size:
+
+        :returns: iterator over `Instruction`s at the given offset
         """
         for i in DCode(
             self.CM, offset, size, read_at(self.raw, offset, size)
@@ -9173,8 +9100,7 @@ class DEX:
         Constructs a tree out of all the classes.
         The classes are added to this tree by their superclass.
 
-        :return:
-        :rtype: androguard.decompiler.Node
+        :returns: the root `Node` of the tree
         """
         # Contains the class names as well as their running number
         ids = dict()
@@ -9226,11 +9152,10 @@ class DEX:
         Get a tree structure of the classes.
         The parent is always the superclass.
 
-        You can use pprint.pprint to print the
+        You can use `pprint.pprint` to print the
         dictionary in a pretty way.
 
-        :return: a dict with all the classnames
-        :rtype: dict
+        :returns: a tree in dictionary format where the key is the class name and the value is a list of dictionaries containing a child class name as a key and subsequent child classes as a value list
         """
 
         def print_map(node, l):
@@ -9322,7 +9247,7 @@ class OdexDependencies:
         """
         Return the list of dependencies
 
-        :rtype: a list of strings
+        :returns: a list of strings
         """
         return self.dependencies
 
@@ -9351,11 +9276,10 @@ class ODEX(DEX):
 
     :param buff: byteswhich represents the odex file
     :param decompiler: associate a decompiler object to display the java source code
-    :type buff: bytes
-    :type decompiler: object
 
-    :Example:
-      ODEX( read("classes.odex") )
+    Example:
+
+        >>> ODEX( read("classes.odex") )
     """
 
     def _preload(self, buff: BinaryIO):
@@ -9405,7 +9329,7 @@ class ODEX(DEX):
         """
         Return the odex dependencies object
 
-        :rtype: an OdexDependencies object
+        :returns: an `OdexDependencies` object
         """
         return self.dependencies
 
@@ -9413,12 +9337,18 @@ class ODEX(DEX):
         """
         Return the type
 
-        :rtype: a string
+        :returns: a string
         """
         return "ODEX"
 
 
 def get_params_info(nb: int, proto: str) -> str:
+    """return a string of parameter info given a function prototype (proto)
+
+    :param nb: the number of parameters
+    :param proto: the function prototype with parameters
+    :returns: a string representation of the parameter info
+    """
     i_buffer = "# Parameters:\n"
 
     ret = proto.split(')')
@@ -9439,15 +9369,26 @@ def get_params_info(nb: int, proto: str) -> str:
 
     return i_buffer
 
-
 def get_bytecodes_method(
     dex_object, analysis_object: Analysis, method: EncodedMethod
 ) -> str:
+    """return a string representation of method and its code. Wraps [get_bytecodes_methodx][androguard.core.dex.get_bytecodes_methodx]
+    
+    :param dex_object: unused
+    :param analysis_object: the `Analysis` object containing the class
+    :param method: the `EncodedMethod` to get
+    """
     mx = analysis_object.get_method(method)
     return get_bytecodes_methodx(method, mx)
 
 
 def get_bytecodes_methodx(method: EncodedMethod, mx: MethodAnalysis) -> str:
+    """return a string representation of a method and its code
+
+    :param method: the associated`EncodedMethod` to get
+    :param mx: the associated `MethodAnalysis` to get
+    :returns: the string representation
+    """
     basic_blocks = mx.basic_blocks.gets()
     i_buffer = ""
 

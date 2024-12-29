@@ -27,8 +27,8 @@ def load_permissions(
     requested, 7 is returned instead.
 
     :param apilevel:  integer value of the API level
-    :param permtype: either load permissions (:code:`'permissions'`) or
-    permission groups (:code:`'groups'`)
+    :param permtype: either load permissions (`'permissions'`) or
+    permission groups (`'groups'`)
     :return: a dictionary of {Permission Name: {Permission info}
     """
 

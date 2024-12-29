@@ -267,11 +267,11 @@ def _get_operand_html(operand, registers_colors, colors):
     The HTML should be compatible with pydot/graphviz to be used
     inside a node label.
 
-    This is solely used in :func:`~androguard.core.bytecode.method2dot`
+    This is solely used in [method2dot][androguard.core.bytecode.method2dot]
 
     :param operand: tuple containing the operand type and operands
-    :param dict register_colors: key: register number, value: register color
-    :param dict colors: dictionary containing the register colors
+    :param register_colors: key: register number, value: register color
+    :param colors: dictionary containing the register colors
     :returns: HTML code of the operands
     """
     if operand[0] == Operand.REGISTER:
@@ -333,8 +333,8 @@ def method2dot(
     A control flow graph is created by using the concept of BasicBlocks.
     Each BasicBlock is a sequence of opcode without any jumps or branch.
 
-    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
-    :param colors: dict of colors to use, if colors is None the default colors are used
+    :param mx: `androguard.core.analysis.analysis.MethodAnalysis`
+    :param colors: dict of colors to use, if colors is `None` the default colors are used
 
     :returns: a string which contains the dot graph
     """
@@ -570,24 +570,25 @@ def method2format(
 ):
     """
     Export method structure as a graph to a specific file format using dot from the graphviz package.
-    The result is written to the file specified via :code:`output`.
+    The result is written to the file specified via `output`.
 
     There are two possibilites to give input for this method:
 
-    1) use :code:`raw` argument and pass a dictionary containing the keys
-    :code:`name`, :code:`nodes` and :code:`edges`.
-    This can be created using :func:`method2dot`.
-    2) give a :class:`~androguard.core.analysis.analysis.MethodAnalysis`.
+    1) use `raw` argument and pass a dictionary containing the keys
+    `name`, `nodes` and `edges`. This can be created using [method2dot][androguard.core.bytecode.method2dot].
+
+    
+    2) give a [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis].
 
     This function requires pydot!
 
-    There is a special format :code:`raw` which saves the dot buffer before it
+    There is a special format `raw` which saves the dot buffer before it
     is handled by pydot.
 
-    :param str output: output filename
-    :param str _format: format type (png, jpg ...). Can use all formats which are understood by pydot.
-    :param androguard.core.analysis.analysis.MethodAnalysis mx: specify the MethodAnalysis object
-    :param dict raw: use directly a dot raw buffer if None
+    :param output: output filename
+    :param _format: format type (png, jpg ...). Can use all formats which are understood by pydot.
+    :param mx: specify the `MethodAnalysis` object
+    :param raw: use directly a dot raw buffer if None
     """
     # pydot is optional, it's only needed for png, jpg formats
     import pydot
@@ -658,11 +659,8 @@ def method2png(
     Export method to a png file format
 
     :param output: output filename
-    :type output: string
-    :param mx: specify the MethodAnalysis object
-    :type mx: :class:`MethodAnalysis` object
+    :param mx: specify the `MethodAnalysis` object
     :param raw: use directly a dot raw buffer
-    :type raw: string
     """
     buff = raw
     if not raw:
@@ -678,11 +676,8 @@ def method2jpg(
     Export method to a jpg file format
 
     :param output: output filename
-    :type output: string
-    :param mx: specify the MethodAnalysis object
-    :type mx: :class:`MethodAnalysis` object
+    :param mx: specify the `MethodAnalysis` object
     :param raw: use directly a dot raw buffer (optional)
-    :type raw: string
     """
     buff = raw
     if not raw:
@@ -695,8 +690,8 @@ def vm2json(vm: DEX) -> str:
     """
     Get a JSON representation of a DEX file
 
-    :param vm: :class:`~androguard.core.dex.DEX`
-    :return: str
+    :param vm: `androguard.core.dex.DEX` object
+    :returns: str
     """
     d = {"name": "root", "children": []}
 
@@ -725,9 +720,9 @@ def method2json(mx: MethodAnalysis, directed_graph: bool = False) -> str:
     """
     Create directed or undirected graph in the json format.
 
-    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
-    :param directed_graph: True if a directed graph should be created (default: False)
-    :return: str
+    :param mx: `androguard.core.analysis.analysis.MethodAnalysis`
+    :param directed_graph: `True` if a directed graph should be created (default: `False`)
+    :returns: json str
     """
     if directed_graph:
         return method2json_direct(mx)
@@ -736,9 +731,10 @@ def method2json(mx: MethodAnalysis, directed_graph: bool = False) -> str:
 
 def method2json_undirect(mx: MethodAnalysis) -> str:
     """
+    Create an undirected graph in the json format
 
-    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
-    :return: str
+    :param mx: `androguard.core.analysis.analysis.MethodAnalysis`
+    :return: json str
     """
     d = {}
     reports = []
@@ -777,9 +773,10 @@ def method2json_undirect(mx: MethodAnalysis) -> str:
 
 def method2json_direct(mx: MethodAnalysis) -> str:
     """
+    Create a directed graph in the json format
 
-    :param mx: :class:`~androguard.core.analysis.analysis.MethodAnalysis`
-    :return:
+    :param mx: `androguard.core.analysis.analysis.MethodAnalysis`
+    :returns: the method json string
     """
     d = {}
     reports = []
@@ -896,8 +893,11 @@ def method2json_direct(mx: MethodAnalysis) -> str:
 
 def object_to_bytes(obj: Union[str, bool, int, bytearray]) -> bytearray:
     """
-    Convert a object to a bytearray or call get_raw() of the object
+    Convert a object to a bytearray or call `get_raw()` of the object
     if no useful type was found.
+
+    :param obj: the object to convert
+    :returns: the bytes
     """
     if isinstance(obj, str):
         return bytearray(obj, "UTF-8")
@@ -917,13 +917,13 @@ def FormatClassToJava(i: str) -> str:
     """
     Transform a java class name into the typed variant found in DEX files.
 
-    example::
+    Example:
 
         >>> FormatClassToJava('java.lang.Object')
         'Ljava/lang/Object;'
 
     :param i: the input class name
-    :rtype: str
+    :returns: the formatted string
     """
     return "L" + i.replace(".", "/") + ";"
 
@@ -933,13 +933,13 @@ def FormatClassToPython(i: str) -> str:
     Transform a typed class name into a form which can be used as a python
     attribute
 
-    example::
+    Example:
 
         >>> FormatClassToPython('Lfoo/bar/foo/Barfoo$InnerClass;')
         'Lfoo_bar_foo_Barfoo_InnerClass'
 
     :param i: classname to transform
-    :rtype: str
+    :returns: the formatted string
     """
     i = i[:-1]
     i = i.replace("/", "_")
@@ -956,7 +956,7 @@ def get_package_class_name(name: str) -> tuple[str, str]:
 
     If the name is an array type, the array is discarded.
 
-    example::
+    Example:
 
         >>> get_package_class_name('Ljava/lang/Object;')
         ('java.lang', 'Object')
@@ -966,8 +966,7 @@ def get_package_class_name(name: str) -> tuple[str, str]:
         ('', 'SomeClass')
 
     :param name: the name
-    :rtype: tuple
-    :return:
+    :returns: the formatted package class name
     """
     # name is MUTF8, so make sure we get the string variant
     name = str(name)
@@ -999,13 +998,13 @@ def FormatNameToPython(i: str) -> str:
     Transform a (method) name into a form which can be used as a python
     attribute
 
-    example::
+    Example:
 
         >>> FormatNameToPython('<clinit>')
         'clinit'
 
     :param i: name to transform
-    :rtype: str
+    :returns: the transformed name
     """
 
     i = i.replace("<", "")
@@ -1019,13 +1018,13 @@ def FormatDescriptorToPython(i: str) -> str:
     """
     Format a descriptor into a form which can be used as a python attribute
 
-    example::
+    Example:
 
         >>> FormatDescriptorToPython('(Ljava/lang/Long; Ljava/lang/Long; Z Z)V')
         'Ljava_lang_LongLjava_lang_LongZZV
 
     :param i: name to transform
-    :rtype: str
+    :returns: the formatted descriptor string
     """
 
     i = i.replace("/", "_")

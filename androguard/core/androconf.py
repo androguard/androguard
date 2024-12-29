@@ -25,7 +25,7 @@ init()
 
 class InvalidResourceError(Exception):
     """
-    Invalid Resource Erorr is thrown by load_api_specific_resource_module
+    Invalid Resource Erorr is thrown by [load_api_specific_resource_module][androguard.core.androconf.load_api_specific_resource_module]
     """
 
     pass
@@ -35,9 +35,8 @@ def is_ascii_problem(s: str) -> bool:
     """
     Test if a string contains other chars than ASCII
 
-    :param androguard.core.mutf8.MUTF8String s: a string to test
-    :return: True if string contains other chars than ASCII, False otherwise
-    :rtype: bool
+    :param s: a string to test
+    :returns: `True` if string contains other chars than ASCII, `False` otherwise
     """
     try:
         # As MUTF8Strings are actually bytes, we can simply check if they are ASCII or not
@@ -82,8 +81,8 @@ default_conf = {
             "meth": Fore.CYAN,
             "type": Fore.BLUE,
             "field": Fore.GREEN,
-        },
-    },
+        }
+    }
 }
 
 
@@ -121,7 +120,7 @@ def is_android(filename: str) -> str:
     """
     Return the type of the file
 
-    :param filename : the filename
+    :param filename: the filename
     :returns: "APK", "DEX", None
     """
     if not filename:
@@ -136,6 +135,9 @@ def is_android_raw(raw: bytes) -> str:
     """
     Returns a string that describes the type of file, for common Android
     specific formats
+
+    :param raw: the file bytes to check
+    :returns: the type of file
     """
     val = None
 
@@ -163,7 +165,7 @@ def is_android_raw(raw: bytes) -> str:
 
 def rrmdir(directory: str) -> None:
     """
-    Recursivly delete a directory
+    Recursively delete a directory
 
     :param directory: directory to remove
     """
@@ -177,8 +179,8 @@ def rrmdir(directory: str) -> None:
 
 def make_color_tuple(color: str) -> tuple[int, int, int]:
     """
-    turn something like "#000000" into 0,0,0
-    or "#FFFFFF into "255,255,255"
+    turn something like `#000000` into `0,0,0`
+    or `#FFFFFF` into `255,255,255`
     """
     R = color[1:3]
     G = color[3:5]
@@ -244,7 +246,12 @@ def color_range(
     steps: int,
 ) -> list[str]:
     """
-    wrapper for interpolate_tuple that accepts colors as html ("#CCCCC" and such)
+    wrapper for interpolate_tuple that accepts colors as html (`#CCCCC` and such)
+
+    :param startcolor: the start RGB color tuple
+    :param goalcolor: the goal RGB color tuple
+    :param steps: amount of steps
+    :returns: the interpolated RGB tuple
     """
     start_tuple = make_color_tuple(startcolor)
     goal_tuple = make_color_tuple(goalcolor)
@@ -263,7 +270,8 @@ def load_api_specific_resource_module(
 
     :param resource_name: Name of the resource to load
     :param api: API version
-    :return: dict
+    :raises InvalidResourceError: if resource not found
+    :returns: dict
     """
     loader = dict(
         aosp_permissions=load_permissions,
