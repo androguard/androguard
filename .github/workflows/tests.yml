@@ -48,11 +48,8 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install Documentation Dependencies
-      run: |
-        pip install -r requirements.docs.txt
-
-    - name: Build Documentation
+    - name: nstall Dependencies and Build Documentation
       run: |
         cd docs
-        mkdocs build
+        pip3 install -r requirements.docs.txt
+        mkdocs gh-deploy --force
