@@ -1,13 +1,11 @@
-name: Run Tests
+name: Build Documentation
 
 on:
-  pull_request:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
-  tests:
-    name: Run Tests
+  docs:
+    name: Build Documentation
     runs-on: ubuntu-latest
 
     steps:
@@ -27,9 +25,8 @@ jobs:
     - name: Install Dependencies
       run: poetry install
 
-    - name: Run unittest tests
-      run: poetry run python -m unittest discover -s tests -p 'test_*.py'
-
-    - name: Build with Poetry
+    - name: Install Dependencies and Build Documentation
       run: |
-        poetry build
+        cd docs
+        pip3 install -r requirements.docs.txt
+        mkdocs gh-deploy --force
