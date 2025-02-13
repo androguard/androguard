@@ -2761,7 +2761,7 @@ class APK:
 
         :returns: List of filenames matching a Signature
         """
-        signature_expr = re.compile(r"^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
+        signature_expr = re.compile(r"^META-INF/[^\n]*\.(RSA|EC|DSA)\Z")
         signatures = []
 
         for i in self.get_files():
@@ -2796,7 +2796,7 @@ class APK:
 
         :returns: list of bytes
         """
-        signature_expr = re.compile(r"^(META-INF/)(.*)(\.RSA|\.EC|\.DSA)$")
+        signature_expr = re.compile(r"^META-INF/[^\n]*\.(RSA|EC|DSA)\Z")
         signature_datas = []
 
         for i in self.get_files():
