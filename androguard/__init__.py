@@ -1,4 +1,4 @@
 # The current version of Androguard
 # Please use only this variable in any scripts,
 # to keep the version number the same everywhere.
-__version__ = "4.1.2"
+__version__ = "4.1.3"
