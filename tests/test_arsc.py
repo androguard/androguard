@@ -11,6 +11,7 @@ from operator import itemgetter
 from androguard.core import apk, axml
 
 TEST_APP_NAME = "TestsAndroguardApplication"
+TEST_PACKAGE_NAME = "tests.androguard"
 TEST_ICONS = {
     120: "res/drawable-ldpi/icon.png",
     160: "res/drawable-mdpi/icon.png",
@@ -47,6 +48,18 @@ class ARSCTest(unittest.TestCase):
             TEST_APP_NAME,
             "Couldn't deduce application/activity label",
         )
+
+    def testGetResIdByKey(self):
+        arsc = self.apk.get_android_resources()
+        expected_id = 2130968577
+
+        app_name_res_id = arsc.get_res_id_by_key(
+            TEST_PACKAGE_NAME,
+            "string",
+            "app_name"
+        )
+
+        self.assertEqual(app_name_res_id, expected_id)
 
     def testAppIcon(self):
         for wanted_density, correct_path in TEST_ICONS.items():
