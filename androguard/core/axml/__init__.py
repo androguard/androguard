@@ -2612,7 +2612,8 @@ class ARSCParser:
         except KeyError:
             return None
 
-    def get_res_id_by_key(self, package_name, resource_type, key):
+    def get_res_id_by_key(self, package_name: str, resource_type: str, key: str) -> Union[int, None]:
+        self._analyse()
         try:
             return self.resource_keys[package_name][resource_type][key]
         except KeyError:
