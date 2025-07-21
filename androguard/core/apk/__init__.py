@@ -294,6 +294,7 @@ class APK:
     _APK_SIG_MAGIC = b"APK Sig Block 42"
     _APK_SIG_KEY_V2_SIGNATURE = 0x7109871A
     _APK_SIG_KEY_V3_SIGNATURE = 0xF05368C0
+    _APK_SIG_KEY_V31_SIGNATURE = 0x1B93AD61
     _APK_SIG_ATTR_V2_STRIPPING_PROTECTION = 0xBEEFF00D
 
     _APK_SIG_ALGO_IDS = {
@@ -350,9 +351,11 @@ class APK:
 
         self._is_signed_v2 = None
         self._is_signed_v3 = None
+        self._is_signed_v31 = None
         self._v2_blocks = {}
         self._v2_signing_data = None
         self._v3_signing_data = None
+        self._v31_signing_data = None
 
         self._files = {}
         self.files_crc32 = {}
@@ -2220,12 +2223,12 @@ class APK:
 
     def is_signed(self) -> bool:
         """
-        Returns true if any of v1, v2, or v3 signatures were found.
+        Returns true if any of v1, v2, v3 or v3.1 signatures were found.
 
-        :returns: True if any of v1, v2, or v3 signatures were found, else False
+        :returns: True if any of v1, v2, v3 or v3.1 signatures were found, else False
         """
         return (
-            self.is_signed_v1() or self.is_signed_v2() or self.is_signed_v3()
+            self.is_signed_v1() or self.is_signed_v2() or self.is_signed_v3() or self.is_signed_v31()
         )
 
     def is_signed_v1(self) -> bool:
@@ -2266,6 +2269,20 @@ class APK:
             self.parse_v2_v3_signature()
 
         return self._is_signed_v3
+
+    def is_signed_v31(self) -> bool:
+        """
+        Returns `True` of a v3.1 / APK signature was found.
+
+        Returning `True` does not mean that the file is properly signed!
+        It just says that there is a signature file which needs to be validated.
+
+        :returns: `True` of a v3.1 / APK signature was found, else `False`
+        """
+        if self._is_signed_v31 is None:
+            self.parse_v2_v3_signature()
+
+        return self._is_signed_v31
 
     def read_uint32_le(self, io_stream) -> int:
         """read a `uint32_le` from `io_stream`
@@ -2370,6 +2387,7 @@ class APK:
 
         self._is_signed_v2 = False
         self._is_signed_v3 = False
+        self._is_signed_v31 = False
 
         if magic != self._APK_SIG_MAGIC:
             return
@@ -2400,18 +2418,29 @@ class APK:
         if self._APK_SIG_KEY_V3_SIGNATURE in self._v2_blocks:
             self._is_signed_v3 = True
 
-    def parse_v3_signing_block(self) -> None:
+        if self._APK_SIG_KEY_V31_SIGNATURE in self._v2_blocks:
+            self._is_signed_v31 = True
+
+    def parse_v3_signing_block(self, v31=False) -> None:
         """
         Parse the V2 signing block and extract all features
+        V3 and V31 signing blocks are structurally identical, the only
+        difference for parsing is a different signing block key.
+        see: https://source.android.com/docs/security/features/apksigning/v3-1
         """
 
-        self._v3_signing_data = []
+        if v31:
+            self._v31_signing_data = []
+        else:
+            self._v3_signing_data = []
 
         # calling is_signed_v3 should also load the signature, if any
-        if not self.is_signed_v3():
+        if v31 and not self.is_signed_v31():
+            return
+        elif not self.is_signed_v3():
             return
 
-        block_bytes = self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
+        block_bytes = self._v2_blocks[self._APK_SIG_KEY_V31_SIGNATURE] if v31 else self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
 
@@ -2498,7 +2527,10 @@ class APK:
             signer.minSDK = signer_min_sdk
             signer.maxSDK = signer_max_sdk
 
-            self._v3_signing_data.append(signer)
+            if v31:
+                self._v31_signing_data.append(signer)
+            else:
+                self._v3_signing_data.append(signer)
 
     def parse_v2_signing_block(self) -> None:
         """
@@ -2584,6 +2616,23 @@ class APK:
 
             self._v2_signing_data.append(signer)
 
+    def get_public_keys_der_v31(self) -> list[bytes]:
+        """
+        Return a list of DER coded X.509 public keys from the v3.1 signature block
+
+        :returns: the list of public key bytes
+        """
+
+        if self._v31_signing_data == None:
+            self.parse_v3_signing_block(v31=True)
+
+        public_keys = []
+
+        for signer in self._v31_signing_data:
+            public_keys.append(signer.public_key)
+
+        return public_keys
+
     def get_public_keys_der_v3(self) -> list[bytes]:
         """
         Return a list of DER coded X.509 public keys from the v3 signature block
@@ -2617,6 +2666,25 @@ class APK:
             public_keys.append(signer.public_key)
 
         return public_keys
+
+    def get_certificates_der_v31(self) -> list[bytes]:
+        """
+        Return a list of DER coded X.509 certificates from the v3.1 signature block
+
+        :returns: the list of public key bytes
+        """
+
+        if self._v31_signing_data == None:
+            self.parse_v3_signing_block(v31=True)
+
+        certs = []
+        for signed_data in [
+            signer.signed_data for signer in self._v31_signing_data
+        ]:
+            for cert in signed_data.certificates:
+                certs.append(cert)
+
+        return certs
 
     def get_certificates_der_v3(self) -> list[bytes]:
         """
@@ -2656,6 +2724,18 @@ class APK:
 
         return certs
 
+    def get_public_keys_v31(self) -> list[asn1crypto.keys.PublicKeyInfo]:
+        """
+        Return a list of `asn1crypto.keys.PublicKeyInfo` which are found
+        in the v3.1 signing block.
+
+        :returns: a list of the found `asn1crypto.keys.PublicKeyInfo`
+        """
+        return [
+            keys.PublicKeyInfo.load(pkey)
+            for pkey in self.get_public_keys_der_v31()
+        ]
+
     def get_public_keys_v3(self) -> list[asn1crypto.keys.PublicKeyInfo]:
         """
         Return a list of `asn1crypto.keys.PublicKeyInfo` which are found
@@ -2678,6 +2758,20 @@ class APK:
         return [
             keys.PublicKeyInfo.load(pkey)
             for pkey in self.get_public_keys_der_v2()
+        ]
+
+    def get_certificates_v31(self) -> list[asn1crypto.x509.Certificate]:
+        """
+        Return a list of `asn1crypto.x509.Certificate` which are found
+        in the v3.1 signing block.
+        Note that we simply extract all certificates regardless of the signer.
+        Therefore this is just a list of all certificates found in all signers.
+
+        :returns: a list of the found `asn1crypto.x509.Certificate`
+        """
+        return [
+            x509.Certificate.load(cert)
+            for cert in self.get_certificates_der_v31()
         ]
 
     def get_certificates_v3(self) -> list[asn1crypto.x509.Certificate]:
@@ -2736,6 +2830,7 @@ class APK:
             self.get_certificates_v1()
             + self.get_certificates_v2()
             + self.get_certificates_v3()
+            + self.get_certificates_v31()
         ):
             if x.sha256 not in fps:
                 fps.append(x.sha256)
