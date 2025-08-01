@@ -2966,3 +2966,12 @@ def get_apkid(apkfile: str) -> tuple[str, str, str]:
         versionName = ''  # versionName is expected to always be a str
 
     return appid, versionCode, versionName.strip('\0')
+
+
+__all__ = [
+    'APK',
+    'APKV2SignedData',
+    'APKV3SignedData', 
+    'APKV2Signer',
+    'APKV3Signer',
+]
