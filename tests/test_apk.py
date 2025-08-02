@@ -286,9 +286,9 @@ class APKTest(unittest.TestCase):
                     methods = apath.split("-", 1)[0].split("v")[1:]
                     for m, f in m_tests.items():
                         if m in methods:
-                            self.assertTrue(f())
+                            self.assertTrue(f(), f"expected 'is_signed_v{m}' to be 'True' on '{apath}'")
                         else:
-                            self.assertFalse(f())
+                            self.assertFalse(f(), f"expected 'is_signed_v{m}' to be 'False' on '{apath}'")
 
                 # Special error cases
                 if apath == "v2-only-apk-sig-block-size-mismatch.apk":
