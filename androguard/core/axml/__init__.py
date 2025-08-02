@@ -274,11 +274,10 @@ class StringBlock:
         data = self.m_charbuff[offset : offset + encoded_bytes]
 
         if self.m_charbuff[offset + encoded_bytes] != 0:
-            raise ResParserError(
-                "UTF-8 String is not null terminated! At offset={}".format(
-                    offset
-                )
+            logger.warning(
+                "UTF-8 String is not null terminated! At offset={}".format(offset)
             )
+            return ""
 
         return self._decode_bytes(data, 'utf-8', str_len)
 
