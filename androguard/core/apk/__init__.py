@@ -2969,9 +2969,13 @@ def get_apkid(apkfile: str) -> tuple[str, str, str]:
 
 
 __all__ = [
-    'APK',
-    'APKV2SignedData',
-    'APKV3SignedData', 
-    'APKV2Signer',
-    'APKV3Signer',
+    "APK",
+    "APKV2Signer",
+    "APKV3Signer",
+    "APKV2SignedData",
+    "APKV3SignedData",
+    "BrokenAPKError",
+    "FileNotPresent",
+    "Error",
 ]
+
