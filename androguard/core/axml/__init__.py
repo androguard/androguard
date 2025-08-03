@@ -274,11 +274,10 @@ class StringBlock:
         data = self.m_charbuff[offset : offset + encoded_bytes]
 
         if self.m_charbuff[offset + encoded_bytes] != 0:
-            raise ResParserError(
-                "UTF-8 String is not null terminated! At offset={}".format(
-                    offset
-                )
+            logger.warning(
+                "UTF-8 String is not null terminated! At offset={}".format(offset)
             )
+            return ""
 
         return self._decode_bytes(data, 'utf-8', str_len)
 
@@ -2962,7 +2961,8 @@ class ARSCResType:
         (self.flags,) = unpack('<B', buff.read(1))
         self.reserved = unpack('<H', buff.read(2))[0]
         if self.reserved != 0:
-            raise ResParserError("reserved must be zero!")
+            # /libs/androidfw/LoadedArsc.cpp -> VerifyResTableType does not verify reserved value!
+            logger.warning("Reserved must be zero! Meta is that you?")
         self.entryCount = unpack('<I', buff.read(4))[0]
         self.entriesStart = unpack('<I', buff.read(4))[0]
 
