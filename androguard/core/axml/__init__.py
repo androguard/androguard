@@ -3743,3 +3743,20 @@ def get_arsc_info(arscobj: ARSCParser) -> str:
                 except AttributeError:
                     pass
     return buff
+
+__all__ = [
+    "AXMLParser",
+    "AXMLPrinter",
+    "ARSCParser",
+    "ARSCHeader",
+    "ARSCResTablePackage",
+    "ARSCResTypeSpec",
+    "ARSCResType",
+    "ARSCResTableConfig",
+    "ARSCResTableEntry",
+    "ARSCComplex",
+    "ARSCResStringPoolRef",
+    "ResParserError",
+    "StringBlock",
+    "PackageContext",
+]
