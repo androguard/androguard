@@ -1538,12 +1538,20 @@ class APK:
                 x = self.permission_module[i]
                 l[i] = [x["protectionLevel"], x["label"], x["description"]]
             elif i in self.declared_permissions:
-                protectionLevel_hex = self.declared_permissions[i][
-                    "protectionLevel"
-                ]
-                protectionLevel = protection_flags_to_attributes[
-                    protectionLevel_hex
-                ]
+                protectionLevel_hex = self.declared_permissions[i]["protectionLevel"]
+                try:
+                    key = int(protectionLevel_hex, 0) if isinstance(protectionLevel_hex, str) else protectionLevel_hex
+                except Exception:
+                    key = None
+
+                protectionLevel = protection_flags_to_attributes.get(key) if isinstance(key, int) else None
+                if protectionLevel is None:
+                    protectionLevel = protection_flags_to_attributes.get(protectionLevel_hex)
+                if protectionLevel is None and isinstance(key, int):
+                    protectionLevel = protection_flags_to_attributes.get(key & 0xF)
+                if protectionLevel is None:
+                    protectionLevel = f"unknown({protectionLevel_hex!r})"
+
                 l[i] = [
                     protectionLevel,
                     "Unknown permission from android reference",
