@@ -603,8 +603,7 @@ class AXMLParser:
 
             # Again, we read an ARSCHeader
             try:
-                possible_types = {256, 257, 258, 259, 260, 384}
-                h = ARSCHeader(self.buff, possible_types=possible_types)
+                h = ARSCHeader(self.buff)
                 logger.debug("NEXT HEADER {}".format(h))
             except ResParserError as e:
                 logger.error("Error parsing resource header: {}".format(e))
@@ -820,6 +819,11 @@ class AXMLParser:
                 )
             )
             self.buff.seek(h.end)
+        # added to cover the case where reading the element chunk was not adequate to read
+        # the same amount of bytes as instructed by the header
+        if 'h' in locals():
+            if self.buff.tell() != h.end:
+                self.buff.seek(h.end)
 
     @property
     def name(self) -> str:
@@ -2773,8 +2777,7 @@ class ARSCHeader:
     def __init__(
         self,
         buff: BinaryIO,
-        expected_type: Union[int, None] = None,
-        possible_types: Union[set[int], None] = None,
+        expected_type: Union[int, None] = None
     ) -> None:
         """
         :raises ResParserError: if header malformed
@@ -2791,34 +2794,27 @@ class ARSCHeader:
             )
 
         # Checking for dummy data between elements
-        if possible_types:
-            while True:
-                cur_pos = buff.tell()
-                self._type, self._header_size, self._size = unpack(
-                    '<HHL', buff.read(self.SIZE)
-                )
-
-                # cases where packers set the EndNamespace with zero size: check we are the end and add the prefix + uri
-                if self._size < self.SIZE and (
-                    buff.raw.getbuffer().nbytes
-                    == cur_pos + self._header_size + 4 + 4
-                ):
-                    self._size = 24
-
-                if cur_pos == 0 or (
-                    self._type in possible_types
-                    and self._header_size >= self.SIZE
-                    and self._size > self.SIZE
-                ):
-                    break
-                buff.seek(cur_pos)
-                buff.read(1)
-                logger.warning(
-                    "Appears that dummy data are found between elements!"
-                )
-        else:
+        while True:
+            cur_pos = buff.tell()
             self._type, self._header_size, self._size = unpack(
                 '<HHL', buff.read(self.SIZE)
+            )
+
+            # cases where packers set the EndNamespace with zero size: check we are the end and add the prefix + uri
+            if self._size < self.SIZE and (
+                buff.raw.getbuffer().nbytes
+                == cur_pos + self._header_size + 4 + 4
+            ):
+                self._size = 24
+            header_ok = self._header_size >= self.SIZE and self._size > self.SIZE
+            if (self._type < RES_XML_FIRST_CHUNK_TYPE or self._type > RES_XML_LAST_CHUNK_TYPE) and header_ok:
+                break
+            if cur_pos == 0 or header_ok:
+                break
+            buff.seek(cur_pos)
+            buff.read(1)
+            logger.warning(
+                "Appears that dummy data are found between elements!"
             )
 
         if expected_type and self._type != expected_type:
