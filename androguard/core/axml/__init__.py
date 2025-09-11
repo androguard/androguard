@@ -6,6 +6,7 @@ from __future__ import annotations
 import binascii
 import collections
 import io
+import random
 import re
 from collections import defaultdict
 from struct import pack, unpack
@@ -996,7 +997,7 @@ class AXMLParser:
         logger.debug(index)
         offset = self._get_attribute_offset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
-
+        attr = None
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
         if name < len(self.m_resourceIDs):
@@ -1011,7 +1012,10 @@ class AXMLParser:
         if not res or res == ":":
             # Attach the HEX Number, so for multiple missing attributes we do not run
             # into problems.
-            res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+            if attr:
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+            else:
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(random.randint(1, 1137))
         return res
 
     def getAttributeValueType(self, index: int):
