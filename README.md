@@ -1,6 +1,15 @@
-![banner](https://raw.githubusercontent.com/androguard/androguard/master/assets/web/androguardwithname.jpg)
 
-# Androguard
+<p align="center"><img width="120" src="./.github/logo.png"></p>
+<h2 align="center">Androguard</h2>
+
+# Androguard: Reverse engineering and pentesting for Android applications
+
+<div align="center">
+
+![Powered By: Androguard](https://img.shields.io/badge/androguard-green?style=for-the-badge&label=Powered%20by&link=https%3A%2F%2Fgithub.com%2Fandroguard)
+
+</div>
+
 
 [![PyPI Upload](https://github.com/androguard/androguard/actions/workflows/pythonpublish.yml/badge.svg)](https://github.com/androguard/androguard/actions/workflows/pythonpublish.yml)
 ![PyPI - Version](https://img.shields.io/pypi/v/androguard)
@@ -12,6 +21,7 @@ New tool: Goauld [Dynamic injection tool for Linux/Android ](https://github.com/
 
 
 ## Installation
+
 Quick installation:
 ~~~~
 pip install androguard
@@ -43,7 +53,7 @@ Androguard is a full python tool to play with Android files.
 
 ## Authors: Androguard Team
 
-Androguard + tools: Anthony Desnos (desnos at t0t0.fr).
+Androguard + tools: Anthony Desnos (anthony at 42.bzh).
 
 DAD (DAD is A Decompiler): Geoffroy Gueguen (geoffroy dot gueguen at gmail dot com)
 
@@ -73,24 +83,7 @@ You are using Androguard and are not listed here? Just create a [ticket](https:/
 
 ### Androguard
 
-Copyright (C) 2012 - 2024, Anthony Desnos (desnos at t0t0.fr)
-All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS-IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-### DAD
-
-Copyright (C) 2012 - 2016, Geoffroy Gueguen (geoffroy dot gueguen at gmail dot com)
+Copyright (C) 2012 - 2025, Anthony Desnos (anthony at 42.bzh)
 All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,9 +1,0 @@
-mkdocs
-mkdocs-material
-mkdocs-with-pdf
-mkdocstrings-python
-mkdocs-glightbox
-mkdocs-table-reader-plugin
-mkdocs-gen-files
-mkdocs-section-index
-mkdocs-literate-nav
