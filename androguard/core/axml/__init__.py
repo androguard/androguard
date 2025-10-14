@@ -3595,11 +3595,14 @@ class ARSCResTableEntry:
         return self.index
 
     def get_value(self) -> str:
-        return self.parent.mKeyStrings.getString(self.index)
+        if self.is_compact():
+            return self.parent.mKeyStrings.getString(self.key)
+        else:
+            return self.parent.mKeyStrings.getString(self.index)
 
     def get_key_data(self) -> str:
         if self.is_compact():
-            return self.parent.stringpool_main.getString(self.key)
+            return self.parent.stringpool_main.getString(self.data)
         else:
             return self.key.get_data_value()
 
