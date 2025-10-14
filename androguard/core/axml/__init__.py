@@ -1840,6 +1840,7 @@ class ARSCParser:
                         logger.debug("Config: {}".format(a_res_type.config))
 
                         entries = []
+                        FLAG_SPARSE = 0x01
                         FLAG_OFFSET16 = 0x02
                         NO_ENTRY_16 = 0xFFFF
                         NO_ENTRY_32 = 0xFFFFFFFF
@@ -1856,21 +1857,30 @@ class ARSCParser:
                             )
 
                         for i in range(0, a_res_type.entryCount):
-                            current_package.mResId = (
-                                current_package.mResId & 0xFFFF0000 | i
-                            )
-                            # Check if FLAG_OFFSET16 is set
-                            if a_res_type.flags & FLAG_OFFSET16:
-                                # Read as 16-bit offset
-                                offset_16 = unpack('<H', self.buff.read(2))[0]
-                                offset = offset_from16(offset_16)
-                                if offset == NO_ENTRY_16:
-                                    continue
+                            # Check if FLAG_SPARSE is set
+                            if a_res_type.flags & FLAG_SPARSE:
+                                entry = self.buff.read(4)
+                                idx, off = unpack('<HH', entry)
+                                current_package.mResId = (
+                                    current_package.mResId & 0xFFFF0000 | idx
+                                )
+                                offset = off * 4
                             else:
-                                # Read as 32-bit offset
-                                offset = unpack('<I', self.buff.read(4))[0]
-                                if offset == NO_ENTRY_32:
-                                    continue
+                                current_package.mResId = (
+                                    current_package.mResId & 0xFFFF0000 | i
+                                )
+                                # Check if FLAG_OFFSET16 is set
+                                if a_res_type.flags & FLAG_OFFSET16:
+                                    # Read as 16-bit offset
+                                    offset_16 = unpack('<H', self.buff.read(2))[0]
+                                    offset = offset_from16(offset_16)
+                                    if offset == NO_ENTRY_16:
+                                        continue
+                                else:
+                                    # Read as 32-bit offset
+                                    offset = unpack('<I', self.buff.read(4))[0]
+                                    if offset == NO_ENTRY_32:
+                                        continue
                             entries.append((offset, current_package.mResId))
 
                         self.packages[package_name].append(entries)
