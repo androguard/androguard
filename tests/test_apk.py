@@ -266,6 +266,7 @@ class APKTest(unittest.TestCase):
                     '1': a.is_signed_v1,
                     '2': a.is_signed_v2,
                     '3': a.is_signed_v3,
+                    '31': a.is_signed_v31,
                 }
 
                 # These APKs will raise an error
@@ -379,6 +380,34 @@ class APKTest(unittest.TestCase):
                             self.assertIn(h, certfp.values())
                             # Check that we get the same signature if we take the DER
                             self.assertEqual(hashlib.sha256(c).hexdigest(), h)
+
+    def testV31SignatureExtraction(self):
+        root = os.path.join(test_dir, 'data/APK/apksig')
+
+        apath = 'v31-ec-p256-2-tgt-33-1-tgt-28-targetSdk-30.apk'
+        fullpath = os.path.join(root, apath)
+        a = APK(fullpath)
+        self.assertIsInstance(a, APK)
+
+        self.assertTrue(a.is_signed_v1, "check for v1 signature")
+        self.assertTrue(a.is_signed_v2, "check for v2 signature")
+        self.assertTrue(a.is_signed_v3, "check for v3 signature")
+        self.assertTrue(a.is_signed_v31, "check for v3.1 signature")
+
+        self.assertEqual(len(a.get_certificates_v1()), 1)
+        self.assertEqual(len(a.get_certificates_v2()), 1)
+        self.assertEqual(len(a.get_certificates_v3()), 1)
+        self.assertEqual(len(a.get_certificates_v31()), 1)
+
+        # fingerprint values copied from output of:
+        # apksigner verify --print-certs --verbose --min-sdk-version=18 tests/data/APK/apksig/v31-ec-p256-2-tgt-33-1-tgt-28-targetSdk-30.apk
+        orig_cert_fp = '6a8b96e278e58f62cfe3584022cec1d0527fcb85a9e5d2e1694eb0405be5b599'
+        rotated_cert_fp = 'd78405f761ff6236cc9b570347a570aba0c62a129a3ac30c831c64d09ad95469'
+        v1_certs = [a.get_certificate_der(x) for x in a.get_signature_names()]
+        self.assertEqual(hashlib.sha256(v1_certs[0]).hexdigest(), orig_cert_fp)
+        self.assertEqual(hashlib.sha256(a.get_certificates_der_v2()[0]).hexdigest(), orig_cert_fp)
+        self.assertEqual(hashlib.sha256(a.get_certificates_der_v3()[0]).hexdigest(), orig_cert_fp)
+        self.assertEqual(hashlib.sha256(a.get_certificates_der_v31()[0]).hexdigest(), rotated_cert_fp)
 
     def testMultipleCertsReturnTheCorrect(self):
         sha256_fingerprint = (
