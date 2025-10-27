@@ -2656,7 +2656,7 @@ class ARSCParser:
         return result
 
     @staticmethod
-    def parse_id(name: str) -> tuple[str, str]:
+    def parse_id(name: str) -> tuple[int, str | None]:
         """
         Resolves an id from a binary XML file in the form `@[package:]DEADBEEF`
         and returns a tuple of package name and resource id.
