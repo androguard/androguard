@@ -30,7 +30,6 @@ from androguard.ui.widget.help import HelpPanel
 from androguard.ui.widget.toolbar import StatusToolbar
 from androguard.ui.widget.transactions import TransactionFrame
 
-
 class DummyControl(UIControl):
     """
     A dummy control object that doesn't paint any content.
@@ -265,3 +264,4 @@ class DynamicUI:
             self.all_transactions.append(block)
 
         return bool(blocks)
+__all__ = ["DynamicUI", "DummyControl"]
