@@ -137,7 +137,7 @@ class BasicBlocks:
         return self.bb.pop(idx)
 
     def get_basic_block(self, idx: int) -> Union[DEXBasicBlock,None]:
-        """return the [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] at `idx` 
+        """return the [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] at `idx`
 
         :param idx: the index of the `DEXBasicBlock` to return
         :return: the `DEXBasicBlock` or `None` if not found
@@ -420,7 +420,7 @@ class MethodAnalysis:
     @property
     def name(self) -> str:
         """Returns the name of this method
-        
+
         :returns: the name
         """
         return self.method.get_name()
@@ -428,7 +428,7 @@ class MethodAnalysis:
     @property
     def descriptor(self) -> str:
         """Returns the type descriptor for this method
-        
+
         :returns: the type descriptor
         """
         return self.method.get_descriptor()
@@ -436,7 +436,7 @@ class MethodAnalysis:
     @property
     def access(self) -> str:
         """Returns the access flags to the method as a string
-        
+
         :returns: the access flags
         """
         return self.method.get_access_flags_string()
@@ -444,7 +444,7 @@ class MethodAnalysis:
     @property
     def class_name(self) -> str:
         """Returns the name of the class of this method
-        
+
         :returns: the name of the class
         """
         return self.method.class_name
@@ -452,21 +452,21 @@ class MethodAnalysis:
     @property
     def full_name(self) -> str:
         """Returns classname + name + descriptor, separated by spaces (no access flags)
-        
+
         :returns: the method full name
         """
         return self.method.full_name
 
     def get_class_name(self) -> str:
         """Return the class name of the method
-        
+
         :returns: the name of the class
         """
         return self.class_name
 
     def get_access_flags_string(self) -> str:
         """Returns the concatenated access flags string
-        
+
         :returns: the access flags
         """
         return self.access
@@ -569,7 +569,7 @@ class MethodAnalysis:
         """
         self.xrefwrite.add((classobj, fieldobj, offset))
 
-    def get_xref_read(self) -> list[tuple[ClassAnalysis, FieldAnalysis]]:
+    def get_xref_read(self) -> list[tuple[ClassAnalysis, FieldAnalysis, int]]:
         """
         Returns a list of xrefs where a field is read by this method.
 
@@ -581,7 +581,7 @@ class MethodAnalysis:
         """
         return self.xrefread
 
-    def get_xref_write(self) -> list[tuple[ClassAnalysis, FieldAnalysis]]:
+    def get_xref_write(self) -> list[tuple[ClassAnalysis, FieldAnalysis, int]]:
         """
         Returns a list of xrefs where a field is written to by this method.
 
@@ -1097,7 +1097,7 @@ class ExternalMethod:
     @property
     def full_name(self) -> str:
         """Returns classname + name + descriptor, separated by spaces (no access flags)'
-        
+
         :returns: the formatted name
         """
         return (
@@ -1111,7 +1111,7 @@ class ExternalMethod:
     @property
     def permission_api_name(self) -> str:
         """Returns a name which can be used to look up in the permission maps
-        
+
         :returns: the formatted name
         """
         return (
@@ -1470,7 +1470,7 @@ class ClassAnalysis:
         the second one is the method in which the class is called ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis])
         and the third the offset in the method where the call is originating.
 
-        Examples: 
+        Examples:
 
             >>> # dx is an Analysis object
             for cls in dx.find_classes('.*some/name.*'):
@@ -1649,11 +1649,11 @@ class Analysis:
     XREFs are created for:
 
     * classes ([ClassAnalysis][androguard.core.analysis.analysis.ClassAnalysis])
-    
+
     * methods ([MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis])
-    
+
     * strings ([StringAnalysis][androguard.core.analysis.analysis.StringAnalysis])
-    
+
     * fields ([FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis])
 
     The Analysis should be the only object you are using next to the [APK][androguard.core.apk.APK].
@@ -1664,7 +1664,7 @@ class Analysis:
 
     def __init__(self, vm: Union[dex.DEX, None] = None) -> None:
         """Initialize a new [Analysis][androguard.core.analysis.analysis.Analysis] object
-        
+
         :param vm: inital DEX object (default None)
         """
         # Contains DEX objects
@@ -1687,7 +1687,7 @@ class Analysis:
     @property
     def fields(self) -> Iterator[FieldAnalysis]:
         """Returns [FieldAnalysis][androguard.core.analysis.analysis.FieldAnalysis] generator of this `Analysis`
-        
+
         :returns: iterator of `FieldAnalysis` objects
         """
         return self.get_fields()
@@ -2423,7 +2423,7 @@ class Analysis:
 
         The following example shows the usage and how to get the calling methods using XREF:
 
-        Examples: 
+        Examples:
 
             >>> from androguard.misc import AnalyzeAPK
             >>> a, d, dx = AnalyzeAPK("somefile.apk")
