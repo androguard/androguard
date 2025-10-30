@@ -136,7 +136,7 @@ class BasicBlocks:
         """
         return self.bb.pop(idx)
 
-    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock,None]:
+    def get_basic_block(self, idx: int) -> Union[DEXBasicBlock, None]:
         """return the [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] at `idx`
 
         :param idx: the index of the `DEXBasicBlock` to return
@@ -373,6 +373,7 @@ class MethodAnalysis:
     It is a wrapper around a [androguard.core.dex.EncodedMethod][] and enhances it
     by using multiple [DEXBasicBlock][androguard.core.analysis.analysis.DEXBasicBlock] encapsulated in a [BasicBlocks][androguard.core.analysis.analysis.BasicBlocks] object.
     """
+
     def __init__(self, vm: dex.DEX, method: dex.EncodedMethod) -> None:
         """Initialize new [MethodAnalysis][androguard.core.analysis.analysis.MethodAnalysis]
 
@@ -768,12 +769,17 @@ class MethodAnalysis:
             args = args.split(" ")
 
             reg_len = self.code.get_registers_size()
-            nb_args = len(args)
+
+            arg_sizes = [2 if a in ("D", "J") else 1 for a in args]
+            nb_args = sum(arg_sizes)
 
             start_reg = reg_len - nb_args
-            args = [
-                "{} v{}".format(a, start_reg + i) for i, a in enumerate(args)
-            ]
+            for i, a in enumerate(args):
+                if a in ("D", "J"):
+                    args[i] = "{} v{}..v{}".format(a, start_reg, start_reg + 1)
+                else:
+                    args[i] = "{} v{}".format(a, start_reg)
+                start_reg += arg_sizes[i]
 
         print(
             "METHOD {} {} {} ({}){}".format(
