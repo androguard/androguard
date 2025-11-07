@@ -891,8 +891,8 @@ class AnnotationSetRefItem:
     """
     This class can parse an `annotation_set_ref_item` of a dex file
     """
-    
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `annotation_set_ref_item`
         :param cm: a `ClassManager` object
@@ -929,8 +929,8 @@ class AnnotationSetRefList:
     """
     This class can parse an `annotation_set_ref_list_item` of a dex file
     """
-    
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `annotation_set_ref_list_item`
         :param cm: a ClassManager object
@@ -1158,7 +1158,7 @@ class AnnotationsDirectoryItem:
     This class can parse an `annotations_directory_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `annotations_directory_item`
         :param cm: a `ClassManager` object
@@ -1728,7 +1728,7 @@ class EncodedArray:
     This class can parse an `encoded_array` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a buff object of the `encoded_array`
         :param cm: a ClassManager object
@@ -1782,7 +1782,8 @@ class EncodedValue:
     """
     This class can parse an `encoded_value` of a dex file
     """
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `encoded_value`
         :param cm: a `ClassManager` object
@@ -1942,8 +1943,8 @@ class EncodedAnnotation:
     """
     This class can parse an `encoded_annotation` of a dex file
     """
-    
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `encoded_annotation`
         :param cm: a `ClassManager` object
@@ -2015,11 +2016,11 @@ class AnnotationItem:
     """
     This class can parse an `annotation_item` of a dex file
     """
-    
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `annotation_item`
-        :param cm: a `ClassManager` object 
+        :param cm: a `ClassManager` object
         """
         self.CM = cm
 
@@ -2471,7 +2472,7 @@ class ProtoHIdItem:
     This class can parse a list of `proto_id_item` of a dex file
     """
 
-    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the list of `proto_id_item`
         :param cm: a `ClassManager` object
@@ -2518,7 +2519,7 @@ class FieldIdItem:
     """
 
     def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
-        """"
+        """ "
         :param buff: a string which represents a Buff object of the `field_id_item`
         :param cm: a `ClassManager` object
         """
@@ -2631,7 +2632,7 @@ class FieldHIdItem:
     This class can parse a list of `field_id_item` of a dex file
     """
 
-    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a buff object of the list of `field_id_item`
         :param cm: a `ClassManager` object
@@ -2679,8 +2680,8 @@ class MethodIdItem:
     """
     This class can parse a `method_id_item` of a dex file
     """
-    
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `method_id_item`
         :param cm: a `ClassManager` object
@@ -2811,8 +2812,7 @@ class MethodHIdItem:
     This class can parse a list of `method_id_item` of a dex file
     """
 
-
-    def __init__(self, size:int, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, size: int, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the list of `method_id_item`
         :param cm: a `ClassManager` object
@@ -2927,7 +2927,7 @@ class EncodedField:
     This class can parse an `encoded_field` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a buff object of the `encoded_field`
         :param cm: a `ClassManager` object
@@ -3109,7 +3109,7 @@ class EncodedMethod:
     This class can parse an `encoded_method` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a buff object of the `encoded_method`
         :param cm: a `ClassManager` object
@@ -3494,14 +3494,14 @@ class EncodedMethod:
 
     def get_instruction(
         self, idx, off: Union[int, None] = None
-    ) -> Iterator[Instruction]:
+    ) -> Union[Instruction, None]:
         """
         Get a particular instruction by using (default) the index of the address if specified
 
         :param idx: index of the instruction (the position in the list of the instruction)
         :param off: address of the instruction
 
-        :returns: a generator of `Instructions`
+        :returns: `Instruction` object
         """
         if self.get_code() is not None:
             return self.get_code().get_bc().get_instruction(idx, off)
@@ -3619,7 +3619,7 @@ class ClassDataItem:
     This class can parse a `class_data_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `class_data_item`
         :param cm: a `ClassManager` object
@@ -3853,7 +3853,7 @@ class ClassDefItem:
     This class can parse a `class_def_item` of a dex file
     """
 
-    def __init__(self, buff: BinaryIO, cm:ClassManager) -> None:
+    def __init__(self, buff: BinaryIO, cm: ClassManager) -> None:
         """
         :param buff: a string which represents a Buff object of the `class_def_item`
         :param cm: a `ClassManager` object
@@ -4606,14 +4606,14 @@ class Instruction:
     def get_output(self, idx: int = -1) -> str:
         """
         Not Implemented
-        
+
         Return an additional output of the instruction
 
         :returns: the additional output as a string
         """
         return ""
 
-    def get_operands(self, idx:int=-1) -> list[tuple[Operand, object]]:
+    def get_operands(self, idx: int = -1) -> list[tuple[Operand, object]]:
         """
         Not Implemented
 
@@ -4749,7 +4749,7 @@ class FillArrayData:
 
         return buff
 
-    def get_operands(self, idx: int=-1) -> tuple[Operand, str]:
+    def get_operands(self, idx: int = -1) -> tuple[Operand, str]:
         # FIXME: not sure of binascii is the right choice here,
         # but before it was repr(), which lead to weird outputs of bytearrays
         if isinstance(self.get_data(), bytearray):
@@ -9369,11 +9369,12 @@ def get_params_info(nb: int, proto: str) -> str:
 
     return i_buffer
 
+
 def get_bytecodes_method(
     dex_object, analysis_object: Analysis, method: EncodedMethod
 ) -> str:
     """return a string representation of method and its code. Wraps [get_bytecodes_methodx][androguard.core.dex.get_bytecodes_methodx]
-    
+
     :param dex_object: unused
     :param analysis_object: the `Analysis` object containing the class
     :param method: the `EncodedMethod` to get
