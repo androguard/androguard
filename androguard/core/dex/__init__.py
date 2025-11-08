@@ -3274,11 +3274,16 @@ class EncodedMethod:
             info["return"] = get_type(ret[1])
 
             if params:
-                info["registers"] = (0, nb - len(params) - 1)
+                param_sizes = [
+                    2 if param in ("D", "J") else 1 for param in params
+                ]
+                info["registers"] = (0, nb - sum(param_sizes) - 1)
                 j = 0
                 info["params"] = []
-                for i in range(nb - len(params), nb):
+                i = nb - sum(param_sizes)
+                while i < nb:
                     info["params"].append((i, get_type(params[j])))
+                    i += param_sizes[j]
                     j += 1
             else:
                 info["registers"] = (0, nb - 1)
