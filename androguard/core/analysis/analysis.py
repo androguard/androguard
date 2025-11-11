@@ -1679,6 +1679,10 @@ class Analysis:
         # Used to quickly look up methods
         self.__method_hashes = dict()
 
+        # classes to ignore due to already being present in another dex file with higher priority
+        # populated by add(vm), self.__ignore_classes[i] is the set of classes to ignore in self.vms[i]
+        self.__ignore_classes: list[set[str]] = []
+
         if vm:
             self.add(vm)
 
@@ -1700,6 +1704,7 @@ class Analysis:
         """
 
         self.vms.append(vm)
+        self.__ignore_classes.append(set())
 
         logger.info("Adding DEX file version {}".format(vm.version))
 
@@ -1707,6 +1712,9 @@ class Analysis:
         tic = time.time()
         for i, current_class in enumerate(vm.get_classes()):
             # seed ClassAnalysis objects into classes attribute and add as new class
+            if current_class.get_name() in self.classes and not self.classes[current_class.get_name()].is_external():
+                self.__ignore_classes[-1].add(current_class.get_name())
+                continue
             self.classes[current_class.get_name()] = ClassAnalysis(
                 current_class
             )
@@ -1776,8 +1784,10 @@ class Analysis:
         # TODO multiprocessing
         # One reason why multiprocessing is hard to implement is the creation of
         # the external classes and methods. This must be synchronized, which is now possible as we have a single method!
-        for vm in self.vms:
+        for (vm, classes_to_ignore) in zip(self.vms, self.__ignore_classes):
             for current_class in vm.get_classes():
+                if current_class.get_name() in classes_to_ignore:
+                    continue
                 self._create_xref(current_class)
 
         # TODO: After we collected all the information, we should add field and
