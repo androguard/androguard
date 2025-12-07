@@ -6,6 +6,7 @@ from __future__ import annotations
 import binascii
 import collections
 import io
+import random
 import re
 from collections import defaultdict
 from struct import pack, unpack
@@ -274,11 +275,10 @@ class StringBlock:
         data = self.m_charbuff[offset : offset + encoded_bytes]
 
         if self.m_charbuff[offset + encoded_bytes] != 0:
-            raise ResParserError(
-                "UTF-8 String is not null terminated! At offset={}".format(
-                    offset
-                )
+            logger.warning(
+                "UTF-8 String is not null terminated! At offset={}".format(offset)
             )
+            return ""
 
         return self._decode_bytes(data, 'utf-8', str_len)
 
@@ -604,8 +604,7 @@ class AXMLParser:
 
             # Again, we read an ARSCHeader
             try:
-                possible_types = {256, 257, 258, 259, 260, 384}
-                h = ARSCHeader(self.buff, possible_types=possible_types)
+                h = ARSCHeader(self.buff)
                 logger.debug("NEXT HEADER {}".format(h))
             except ResParserError as e:
                 logger.error("Error parsing resource header: {}".format(e))
@@ -821,6 +820,11 @@ class AXMLParser:
                 )
             )
             self.buff.seek(h.end)
+        # added to cover the case where reading the element chunk was not adequate to read
+        # the same amount of bytes as instructed by the header
+        if 'h' in locals():
+            if self.buff.tell() != h.end:
+                self.buff.seek(h.end)
 
     @property
     def name(self) -> str:
@@ -993,7 +997,7 @@ class AXMLParser:
         logger.debug(index)
         offset = self._get_attribute_offset(index)
         name = self.m_attributes[offset + ATTRIBUTE_IX_NAME]
-
+        attr = None
         res = self.sb[name]
         # If the result is a (null) string, we need to look it up.
         if name < len(self.m_resourceIDs):
@@ -1008,7 +1012,10 @@ class AXMLParser:
         if not res or res == ":":
             # Attach the HEX Number, so for multiple missing attributes we do not run
             # into problems.
-            res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+            if attr:
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(attr)
+            else:
+                res = 'android:UNKNOWN_SYSTEM_ATTRIBUTE_{:08x}'.format(random.randint(1, 1137))
         return res
 
     def getAttributeValueType(self, index: int):
@@ -1833,6 +1840,7 @@ class ARSCParser:
                         logger.debug("Config: {}".format(a_res_type.config))
 
                         entries = []
+                        FLAG_SPARSE = 0x01
                         FLAG_OFFSET16 = 0x02
                         NO_ENTRY_16 = 0xFFFF
                         NO_ENTRY_32 = 0xFFFFFFFF
@@ -1849,21 +1857,30 @@ class ARSCParser:
                             )
 
                         for i in range(0, a_res_type.entryCount):
-                            current_package.mResId = (
-                                current_package.mResId & 0xFFFF0000 | i
-                            )
-                            # Check if FLAG_OFFSET16 is set
-                            if a_res_type.flags & FLAG_OFFSET16:
-                                # Read as 16-bit offset
-                                offset_16 = unpack('<H', self.buff.read(2))[0]
-                                offset = offset_from16(offset_16)
-                                if offset == NO_ENTRY_16:
-                                    continue
+                            # Check if FLAG_SPARSE is set
+                            if a_res_type.flags & FLAG_SPARSE:
+                                entry = self.buff.read(4)
+                                idx, off = unpack('<HH', entry)
+                                current_package.mResId = (
+                                    current_package.mResId & 0xFFFF0000 | idx
+                                )
+                                offset = off * 4
                             else:
-                                # Read as 32-bit offset
-                                offset = unpack('<I', self.buff.read(4))[0]
-                                if offset == NO_ENTRY_32:
-                                    continue
+                                current_package.mResId = (
+                                    current_package.mResId & 0xFFFF0000 | i
+                                )
+                                # Check if FLAG_OFFSET16 is set
+                                if a_res_type.flags & FLAG_OFFSET16:
+                                    # Read as 16-bit offset
+                                    offset_16 = unpack('<H', self.buff.read(2))[0]
+                                    offset = offset_from16(offset_16)
+                                    if offset == NO_ENTRY_16:
+                                        continue
+                                else:
+                                    # Read as 32-bit offset
+                                    offset = unpack('<I', self.buff.read(4))[0]
+                                    if offset == NO_ENTRY_32:
+                                        continue
                             entries.append((offset, current_package.mResId))
 
                         self.packages[package_name].append(entries)
@@ -2612,7 +2629,8 @@ class ARSCParser:
         except KeyError:
             return None
 
-    def get_res_id_by_key(self, package_name, resource_type, key):
+    def get_res_id_by_key(self, package_name: str, resource_type: str, key: str) -> Union[int, None]:
+        self._analyse()
         try:
             return self.resource_keys[package_name][resource_type][key]
         except KeyError:
@@ -2773,8 +2791,7 @@ class ARSCHeader:
     def __init__(
         self,
         buff: BinaryIO,
-        expected_type: Union[int, None] = None,
-        possible_types: Union[set[int], None] = None,
+        expected_type: Union[int, None] = None
     ) -> None:
         """
         :raises ResParserError: if header malformed
@@ -2791,34 +2808,27 @@ class ARSCHeader:
             )
 
         # Checking for dummy data between elements
-        if possible_types:
-            while True:
-                cur_pos = buff.tell()
-                self._type, self._header_size, self._size = unpack(
-                    '<HHL', buff.read(self.SIZE)
-                )
-
-                # cases where packers set the EndNamespace with zero size: check we are the end and add the prefix + uri
-                if self._size < self.SIZE and (
-                    buff.raw.getbuffer().nbytes
-                    == cur_pos + self._header_size + 4 + 4
-                ):
-                    self._size = 24
-
-                if cur_pos == 0 or (
-                    self._type in possible_types
-                    and self._header_size >= self.SIZE
-                    and self._size > self.SIZE
-                ):
-                    break
-                buff.seek(cur_pos)
-                buff.read(1)
-                logger.warning(
-                    "Appears that dummy data are found between elements!"
-                )
-        else:
+        while True:
+            cur_pos = buff.tell()
             self._type, self._header_size, self._size = unpack(
                 '<HHL', buff.read(self.SIZE)
+            )
+
+            # cases where packers set the EndNamespace with zero size: check we are the end and add the prefix + uri
+            if self._size < self.SIZE and (
+                buff.raw.getbuffer().nbytes
+                == cur_pos + self._header_size + 4 + 4
+            ):
+                self._size = 24
+            header_ok = self._header_size >= self.SIZE and self._size > self.SIZE
+            if (self._type < RES_XML_FIRST_CHUNK_TYPE or self._type > RES_XML_LAST_CHUNK_TYPE) and header_ok:
+                break
+            if cur_pos == 0 or header_ok:
+                break
+            buff.seek(cur_pos)
+            buff.read(1)
+            logger.warning(
+                "Appears that dummy data are found between elements!"
             )
 
         if expected_type and self._type != expected_type:
@@ -2961,7 +2971,8 @@ class ARSCResType:
         (self.flags,) = unpack('<B', buff.read(1))
         self.reserved = unpack('<H', buff.read(2))[0]
         if self.reserved != 0:
-            raise ResParserError("reserved must be zero!")
+            # /libs/androidfw/LoadedArsc.cpp -> VerifyResTableType does not verify reserved value!
+            logger.warning("Reserved must be zero! Meta is that you?")
         self.entryCount = unpack('<I', buff.read(4))[0]
         self.entriesStart = unpack('<I', buff.read(4))[0]
 
@@ -3584,11 +3595,14 @@ class ARSCResTableEntry:
         return self.index
 
     def get_value(self) -> str:
-        return self.parent.mKeyStrings.getString(self.index)
+        if self.is_compact():
+            return self.parent.mKeyStrings.getString(self.key)
+        else:
+            return self.parent.mKeyStrings.getString(self.index)
 
     def get_key_data(self) -> str:
         if self.is_compact():
-            return self.parent.stringpool_main.getString(self.key)
+            return self.parent.stringpool_main.getString(self.data)
         else:
             return self.key.get_data_value()
 
