@@ -776,9 +776,9 @@ class MethodAnalysis:
             start_reg = reg_len - nb_args
             for i, a in enumerate(args):
                 if a in ("D", "J"):
-                    args[i] = "{} v{}..v{}".format(a, start_reg, start_reg + 1)
+                    args[i] = f"{a} v{start_reg}..v{start_reg + 1}"
                 else:
-                    args[i] = "{} v{}".format(a, start_reg)
+                    args[i] = f"{a} v{start_reg}"
                 start_reg += arg_sizes[i]
 
         print(
