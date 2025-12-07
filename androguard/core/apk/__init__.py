@@ -2445,7 +2445,7 @@ class APK:
         if self._APK_SIG_KEY_V3_SIGNATURE in [b.id for b in self._v2_blocks]:
             self._is_signed_v3 = True
 
-        if self._APK_SIG_KEY_V31_SIGNATURE in self._v2_blocks:
+        if self._APK_SIG_KEY_V31_SIGNATURE in [b.id for b in self._v2_blocks]:
             self._is_signed_v31 = True
 
     def parse_v3_signing_block(self, v31=False) -> None:
