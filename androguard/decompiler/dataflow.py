@@ -498,3 +498,5 @@ def place_declarations(graph, dvars, du, ud):
                 ):
                     continue
                 common_dominator.add_variable_declaration(dvars[var])
+
+__all__ = ["BasicReachDef", "DummyNode"]

@@ -34,6 +34,7 @@ cryptography = "*"
     "api_permission_mappings/*.json",
 ]
 "androguard.core.resources" = ["public.xml"]
+"androguard" = ["py.typed"]
 
 [tool.poetry.scripts]
 androguard = "androguard.cli.cli:entry_point"
