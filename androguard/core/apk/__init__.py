@@ -147,9 +147,16 @@ def _dump_digests_or_signatures(digests_or_sigs):
     return infos
 
 
+class APKV2SignatureBlock:
+    def __init__(self, id, is_duplicate_id, data):
+        self.id = id
+        self.is_duplicate_id = is_duplicate_id
+        self.data = data
+
+
 class APKV2SignedData:
     """
-    This class holds all data associated with an APK V3 SigningBlock signed data.
+    This class holds all data associated with an APK V2 SigningBlock signed data.
     source : [apksigning v2](https://source.android.com/security/apksigning/v2.html)
     """
 
@@ -351,8 +358,8 @@ class APK:
 
         self._is_signed_v2 = None
         self._is_signed_v3 = None
+        self._v2_blocks = []
         self._is_signed_v31 = None
-        self._v2_blocks = {}
         self._v2_signing_data = None
         self._v3_signing_data = None
         self._v31_signing_data = None
@@ -583,6 +590,19 @@ class APK:
         :returns: filename
         """
         return self.filename
+
+
+    def has_duplicate_apk_signature_ids(self):
+        """
+        Return whether there are multiple V2 or V3 signing blocks in the APK.
+        This could be a sign of tampering, apksig will pick the first of these
+        blocks ignoring additional signature blocks.
+        also see: https://github.com/androguard/androguard/issues/1030
+
+        :returns: boolean
+        """
+        return any([b.is_duplicate_id for b in self._v2_blocks])
+
 
     def get_app_name(self, locale=None) -> str:
         """
@@ -2410,28 +2430,27 @@ class APK:
         while f.tell() < end_offset - 24:
             size, key = unpack('<QI', f.read(12))
             value = f.read(size - 4)
-            if key in self._v2_blocks:
-                # TODO: Store the duplicate V2 Signature blocks and offer a way to show them
-                # https://github.com/androguard/androguard/issues/1030
+            is_duplicate_id = False
+            if key in [b.id for b in self._v2_blocks]:
+                is_duplicate_id = True
                 logger.warning(
                     "Duplicate block ID in APK Signing Block: {}".format(key)
                 )
-            else:
-                self._v2_blocks[key] = value
+            self._v2_blocks.append(APKV2SignatureBlock(key, is_duplicate_id, value))
 
         # Test if a signature is found
-        if self._APK_SIG_KEY_V2_SIGNATURE in self._v2_blocks:
+        if self._APK_SIG_KEY_V2_SIGNATURE in [b.id for b in self._v2_blocks]:
             self._is_signed_v2 = True
 
-        if self._APK_SIG_KEY_V3_SIGNATURE in self._v2_blocks:
+        if self._APK_SIG_KEY_V3_SIGNATURE in [b.id for b in self._v2_blocks]:
             self._is_signed_v3 = True
 
-        if self._APK_SIG_KEY_V31_SIGNATURE in self._v2_blocks:
+        if self._APK_SIG_KEY_V31_SIGNATURE in [b.id for b in self._v2_blocks]:
             self._is_signed_v31 = True
 
     def parse_v3_signing_block(self, v31=False) -> None:
         """
-        Parse the V2 signing block and extract all features
+        Parse the V3 signing block and extract all features
         V3 and V31 signing blocks are structurally identical, the only
         difference for parsing is a different signing block key.
         see: https://source.android.com/docs/security/features/apksigning/v3-1
@@ -2448,7 +2467,13 @@ class APK:
         elif not self.is_signed_v3():
             return
 
-        block_bytes = self._v2_blocks[self._APK_SIG_KEY_V31_SIGNATURE] if v31 else self._v2_blocks[self._APK_SIG_KEY_V3_SIGNATURE]
+        # only selecting the first block to mimic apksig behavior
+        sig_key = self._APK_SIG_KEY_V31_SIGNATURE if v31 else self._APK_SIG_KEY_V3_SIGNATURE
+        try:
+            block_bytes = next(b.data for b in self._v2_blocks if b.id == sig_key)
+        except StopIteration:
+            raise ValueError(f"Missing signature block for {sig_key!r}")
+            
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
 
@@ -2551,7 +2576,8 @@ class APK:
         if not self.is_signed_v2():
             return
 
-        block_bytes = self._v2_blocks[self._APK_SIG_KEY_V2_SIGNATURE]
+        # only selecting the first block to mimic apksig behavior
+        block_bytes = next((b.data for b in self._v2_blocks if b.id == self._APK_SIG_KEY_V2_SIGNATURE))
         block = io.BytesIO(block_bytes)
         view = block.getvalue()
 
