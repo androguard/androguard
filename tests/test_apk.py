@@ -222,6 +222,7 @@ class APKTest(unittest.TestCase):
             "debuggable-boolean.apk",
             "debuggable-resource.apk",
             "mismatched-compression-method.apk",
+            "v31-ec-p256-2-tgt-33-1-tgt-28-targetSdk-30.apk"
         ]
 
         v1_only_signed_attrs_fail = [
