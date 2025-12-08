@@ -350,7 +350,7 @@ class DEXBasicBlock:
         else:
             return None
 
-    def get_exception_analysis(self) -> ExceptionAnalysis:
+    def get_exception_analysis(self) -> Union[ExceptionAnalysis, None]:
         return self.exception_analysis
 
     def set_exception_analysis(self, exception_analysis: ExceptionAnalysis):
