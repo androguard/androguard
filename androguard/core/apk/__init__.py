@@ -1013,7 +1013,20 @@ class APK:
         :returns: the names of all DEX files found in the APK
         """
         dexre = re.compile(r"^classes(\d*).dex$")
-        return filter(lambda x: dexre.match(x), self.get_files())
+        dex_names = list(filter(
+            lambda x: (
+                dexre.match(x) and 
+                # classes0\d*.dex are not official dex files
+                not x.startswith("classes0") and 
+                # classes1.dex it not an official dex file
+                x != "classes1.dex"
+            ),
+            self.get_files()
+        ))
+        dex_names.sort(
+            key=lambda x: 0 if x == "classes.dex" else int(dexre.match(x).group(1)) - 1
+        )
+        return dex_names
 
     def get_all_dex(self) -> Iterator[bytes]:
         """
