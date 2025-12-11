@@ -1945,6 +1945,9 @@ class Analysis:
                     )
                     if not field_item:
                         continue
+                    field_analysis = self.get_field_analysis(field_item)
+                    if not field_analysis:
+                        continue
 
                     if (0x52 <= op_value <= 0x58) or (
                         0x60 <= op_value <= 0x66
@@ -1953,13 +1956,13 @@ class Analysis:
                         self.classes[cur_cls_name].add_field_xref_read(
                             cur_meth, cur_cls, field_item, off
                         )
-                        cur_meth.add_xref_read(cur_cls, field_item, off)
+                        cur_meth.add_xref_read(cur_cls, field_analysis, off)
                     else:
                         # write access to a field
                         self.classes[cur_cls_name].add_field_xref_write(
                             cur_meth, cur_cls, field_item, off
                         )
-                        cur_meth.add_xref_write(cur_cls, field_item, off)
+                        cur_meth.add_xref_write(cur_cls, field_analysis, off)
 
     def get_method(
         self, method: dex.EncodedMethod
