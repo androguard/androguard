@@ -3,7 +3,7 @@ name = "androguard"
 description = "Androguard is a full python tool to play with Android files."
 authors = [{ name = "Anthony Desnos", email = "anthony@42.bzh" }]
 version = "5.0.0"
-license = { file = "LICENSE" }
+license = { file = "LICENCE" }
 readme = "README.md"
 requires-python = ">=3.10"
 
@@ -13,7 +13,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -23,15 +22,30 @@ classifiers = [
     "Topic :: Utilities",
 ]
 
-dependencies = ["apkparser-ag", "dex-parser"]
+dependencies = [
+    "apkparser-ag>=0.0.2",
+    "dexparser-ag>=0.0.1",
+    "axml>=0.0.2",
+    "rich>=14.0.0",
+]
+
+[project.optional-dependencies]
+disasm = [
+    "dex-bytecode-py @ git+https://github.com/androguard/dex-bytecode.git#subdirectory=dex-bytecode-py",
+]
+decompile = [
+    "dex-decompiler @ git+https://github.com/androguard/dex-decompiler.git#subdirectory=dex-decompiler-py",
+]
+full = [
+    "androguard[disasm,decompile]",
+]
 
 [project.scripts]
-androguard = "androguard.main:app"
+androguard = "androguard.cli.main:app"
 
 [build-system]
 requires = ["setuptools>=68", "setuptools_scm>=8.0"]
 build-backend = "setuptools.build_meta"
-
 
 [tool.setuptools.packages.find]
 where = ["."]
