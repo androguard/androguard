@@ -6,7 +6,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/androguard)
 ![Static Badge](https://img.shields.io/badge/Documentation-InProgress-red)
 
-Live version: [Andorguard Live](https://ismyphonepwned.com/droid2web/)
+Live version: [Andorguard Live](https://ismyphonepwned.com/droid2web/). It is a full local wasm version, with diassembler, decompiler, security checks and much more !!
 
 Do you think your phone has been pwned ? please check [IsMyPhonePwned](https://github.com/IsMyPhonePwned)
 
