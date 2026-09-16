@@ -282,23 +282,23 @@ class DEXBasicBlock:
         """
         return list(self.get_instructions())[-1]
 
-    def get_next(self) -> DEXBasicBlock:
+    def get_next(self) -> list[DEXBasicBlock]:
         """
         Get next basic blocks
 
         :returns: a list of the next `DEXBasicBlock` objects
         """
-        return self.childs
+        return [bb for _, _, bb in self.childs]
 
-    def get_prev(self) -> DEXBasicBlock:
+    def get_prev(self) -> list[DEXBasicBlock]:
         """
         Get previous basic blocks
 
         :returns: a list of the previous `DEXBasicBlock` objects
         """
-        return self.fathers
+        return [bb for _, _, bb in self.fathers]
 
-    def set_fathers(self, f: DEXBasicBlock) -> None:
+    def set_fathers(self, f: tuple[int, int, DEXBasicBlock]) -> None:
         self.fathers.append(f)
 
     def get_last_length(self) -> int:
