@@ -61,6 +61,7 @@ In alphabetical order
 * [Droidstatx](https://github.com/integrity-sa/droidstatx)
 * [εxodus](https://github.com/Exodus-Privacy/exodus)
 * [F-Droid Server](https://gitlab.com/fdroid/fdroidserver)
+* [FirmwareDroid](https://github.com/FirmwareDroid/FirmwareDroid)
 * [gplaycli](https://github.com/matlink/gplaycli)
 * [Koodous](https://koodous.com)
 * [MobSF](https://github.com/MobSF/Mobile-Security-Framework-MobSF)
