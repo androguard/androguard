@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Unit tests (no APK fixtures required)."""
+"""Unit tests (no APK fixtures required for most cases)."""
 
 from __future__ import annotations
 
-import tempfile
 import unittest
 
+from androguard.core.bytecode import (
+    BytecodeNotAvailable,
+    decode_instruction,
+    disassemble,
+    format_instruction,
+    method_insns_bytes,
+)
 from androguard.core.decompiler import (
     DecompilerNotAvailable,
     descriptor_to_java,
@@ -15,7 +21,12 @@ from androguard.core.decompiler import (
 )
 from androguard.misc import AnalyzeDex, clean_file_name
 
-from tests.helpers import HAS_DECOMPILER, TEST_DEX, file_exists
+from tests.helpers import (
+    HAS_BYTECODE,
+    HAS_DECOMPILER,
+    TEST_DEX,
+    file_exists,
+)
 
 
 class DescriptorTest(unittest.TestCase):
@@ -28,6 +39,7 @@ class DescriptorTest(unittest.TestCase):
             descriptor_to_java("Ljava/lang/String;"),
             "java.lang.String",
         )
+        self.assertEqual(descriptor_to_java("I"), "I")
 
     def test_java_class_from_method(self):
         self.assertEqual(
@@ -36,6 +48,10 @@ class DescriptorTest(unittest.TestCase):
         )
         self.assertEqual(
             java_class_from_method("com.foo.Bar"),
+            "com.foo.Bar",
+        )
+        self.assertEqual(
+            java_class_from_method("com/foo/Bar"),
             "com.foo.Bar",
         )
 
@@ -50,6 +66,10 @@ class ParseMethodSelectorTest(unittest.TestCase):
         cls, meth = parse_method_selector("  com.Foo # bar  ")
         self.assertEqual(cls, "com.Foo")
         self.assertEqual(meth, "bar")
+
+    def test_constructor_selector(self):
+        cls, meth = parse_method_selector("com.example.Main#<init>")
+        self.assertEqual(meth, "<init>")
 
     def test_invalid_selector_raises(self):
         with self.assertRaises(ValueError) as ctx:
@@ -72,6 +92,62 @@ class CleanFileNameTest(unittest.TestCase):
         result = clean_file_name("my_export", unique=True)
         self.assertNotEqual(result, "my_export")
         self.assertTrue(result.startswith("my_export"))
+
+
+class MethodInsnsBytesTest(unittest.TestCase):
+    def test_none_returns_empty(self):
+        self.assertEqual(method_insns_bytes(None), b"")
+
+    def test_dict_like_insns(self):
+        class Field:
+            value = b"\x0e\x00"
+
+        class Code:
+            def __getitem__(self, key):
+                if key == "insns":
+                    return Field()
+                raise KeyError(key)
+
+        self.assertEqual(method_insns_bytes(Code()), b"\x0e\x00")
+
+    def test_attr_insns(self):
+        class Code:
+            insns = b"\x00\x00"
+
+        self.assertEqual(method_insns_bytes(Code()), b"\x00\x00")
+
+
+@unittest.skipUnless(HAS_BYTECODE, "dex-bytecode not installed")
+class BytecodeUnitTest(unittest.TestCase):
+    def test_decode_one_nop(self):
+        ins = decode_instruction(b"\x00\x00")
+        self.assertEqual(ins["mnemonic"], "nop")
+        self.assertEqual(ins["length"], 2)
+
+    def test_format_instruction(self):
+        ins = {
+            "offset": 4,
+            "opcode": 0x0E,
+            "mnemonic": "return-void",
+            "operands": "",
+        }
+        line = format_instruction(ins)
+        self.assertIn("00000004", line)
+        self.assertIn("return-void", line)
+
+    def test_disassemble_offset(self):
+        data = b"\x00\x00\x00\x00\x0e\x00"
+        insns = disassemble(data, offset=4)
+        self.assertEqual(len(insns), 1)
+        self.assertEqual(insns[0]["mnemonic"], "return-void")
+        self.assertEqual(insns[0]["offset"], 4)
+
+
+class BytecodeNotAvailableTest(unittest.TestCase):
+    @unittest.skipIf(HAS_BYTECODE, "dex-bytecode is installed")
+    def test_disassemble_raises(self):
+        with self.assertRaises(BytecodeNotAvailable):
+            disassemble(b"\x00\x00")
 
 
 @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
@@ -110,6 +186,13 @@ class AnalyzeDexTest(unittest.TestCase):
     def test_analyze_dex_bytes(self):
         dh = AnalyzeDex(TEST_DEX.read_bytes())
         self.assertGreater(len(list(dh.get_strings())), 0)
+
+    def test_code_item_present(self):
+        dh = AnalyzeDex(str(TEST_DEX))
+        coded = [m for m in dh.get_methods() if m.get_code()]
+        self.assertGreater(len(coded), 0)
+        code = coded[0].get_code()
+        self.assertGreater(code.insns_size, 0)
 
 
 if __name__ == "__main__":

@@ -29,7 +29,13 @@ pip install 'androguard[disasm]'
 # optional Java decompiler (Rust extension)
 pip install 'androguard[decompile]'
 
-# both extensions
+# optional ARM64 disasm / decompile
+pip install 'androguard[arm]'
+
+# optional APK decode/rebuild (apk-patch)
+pip install 'androguard[patch]'
+
+# everything
 pip install 'androguard[full]'
 ```
 
@@ -56,8 +62,26 @@ Androguard v5 is built on dedicated libraries:
 | APK archive | [apk-parser](https://github.com/androguard/apk-parser) (`apkparser-ag`) | ZIP structure, signatures, manifest hooks |
 | DEX structure | [dex-parser](https://github.com/androguard/dex-parser) (`dexparser-ag`) | Rust core + Python bindings: classes, methods, fields, bytecode |
 | Binary XML / ARSC | [axml](https://github.com/androguard/axml) / [axml-parser](https://github.com/androguard/axml-parser) (Rust) | `AndroidManifest.xml`, `resources.arsc` |
-| Bytecode (optional) | [dex-bytecode](https://github.com/androguard/dex-bytecode) | Dalvik disassembly via `androguard[disasm]` |
-| Decompiler (optional) | [dex-decompiler](https://github.com/androguard/dex-decompiler) | DEX → Java via `androguard[decompile]` |
+| Bytecode (optional) | [dex-bytecode](https://github.com/androguard/dex-bytecode) | Dalvik disassembly / CFG / patch via `androguard[disasm]` |
+| Decompiler (optional) | [dex-decompiler](https://github.com/androguard/dex-decompiler) | DEX → Java, ASC getclass/findrefs, vulns via `androguard[decompile]` |
+| ARM64 (optional) | [arm_disassembler](https://github.com/androguard/arm_disassembler) / [arm_decompiler](https://github.com/androguard/arm_decompiler) | Native code via `androguard[arm]` |
+| APK patch (optional) | [apk-patch](https://github.com/androguard/apk-patch) | In-memory decode/build via `androguard[patch]` |
+
+## Examples
+
+Runnable demos live in [`examples/`](examples/) and are also executed by the
+test suite (`tests/test_examples.py`):
+
+```bash
+python -m examples.application_summary
+python -m examples.disassemble      # androguard[disasm]
+python -m examples.decompile       # androguard[decompile]
+python -m examples.arm             # androguard[arm]
+python -m examples.patch_decode    # androguard[patch]
+python -m examples.run_all
+```
+
+See [`examples/README.md`](examples/README.md).
 
 ## Quick start
 
@@ -75,12 +99,20 @@ androguard -i my.apk --list-methods
 androguard -i my.apk --disasm --class 'TestActivity' --method 'onCreate'
 androguard -i my.apk --disasm --class 'Ltests/androguard/.*' --method '<init>'
 androguard -i my.apk --disasm --method 'onCreate' --limit 10
+androguard -i my.apk --disasm --class TestActivity --method onCreate --cfg
 
 # Decompile to Java (requires androguard[decompile])
 androguard -i my.apk --decompile-method 'tests.androguard.TestActivity#onCreate'
 androguard -i my.apk --decompile --class TestActivity --method onCreate
 androguard -i my.apk --decompile -o out.java
 androguard -i my.apk -d decompiled/ --only-package tests.androguard
+androguard -i my.apk --getclass tests.androguard.TestActivity
+androguard -i my.apk --findrefs string --findrefs-value password
+androguard -i my.apk --scan-vulns
+androguard -i my.apk --emulate 'tests.androguard.TestActivity#onCreate'
+
+# Decode project tree (requires androguard[patch])
+androguard -i my.apk --decode-project
 ```
 
 ### High-level API (`Application`)
@@ -193,11 +225,28 @@ dh = AnalyzeDex("classes.dex")       # path or bytes
 ### Dalvik disassembly (`dex-bytecode`, optional)
 
 ```python
-from androguard.core.bytecode import disassemble, disassemble_method_code
+from androguard.core.bytecode import (
+    disassemble,
+    disassemble_method_code,
+    basic_blocks,
+    cfg_edges,
+    patch_branch,
+    encode_instruction,
+    encode_nop,
+)
 
 # Raw bytecode
 for ins in disassemble(b"\x00\x00\x0e\x00"):
     print(f"{ins['offset']:08x}  {ins['mnemonic']} {ins['operands']}")
+
+# CFG / basic blocks
+print(basic_blocks(b"\x00\x00\x28\x00\x0e\x00"))  # nop; goto +0; return-void
+print(cfg_edges(b"\x00\x00\x28\x00\x0e\x00"))
+
+# Encode / patch
+print(encode_instruction("const/4", "v0, 1").hex())
+print(encode_nop().hex())
+mutated = patch_branch(b"\x28\x01\x0e\x00", 0, 2)
 
 # From a parsed method
 code = method.get_code()
@@ -215,6 +264,8 @@ for method in app.methods:
         continue
     for line in app.iter_disassembly(method):
         print(line)
+    print(app.method_basic_blocks(method))
+    print(app.method_cfg_edges(method))
 ```
 
 ### Java decompilation ([dex-decompiler](https://github.com/androguard/dex-decompiler), optional)
@@ -223,6 +274,11 @@ for method in app.methods:
 from androguard.core.decompiler import (
     parse_dex,
     decompile_method,
+    getclass,
+    findrefs,
+    scan_vulns,
+    method_cfg,
+    emulate_method,
     descriptor_to_java,
 )
 
@@ -237,6 +293,13 @@ java = dex.decompile_method("tests.androguard.TestActivity", "onCreate")
 
 # Package layout on disk
 dex.decompile_to_dir("out/")
+
+# ASC helpers (APK or DEX bytes)
+print(getclass(apk_bytes, "tests.androguard.TestActivity")[:500])
+print(findrefs(apk_bytes, "string", "password")[:5])
+print(scan_vulns(raw)[:3])
+rows, nodes, edges = method_cfg(raw, "tests.androguard.TestActivity", "onCreate")
+print(emulate_method(raw, "tests.androguard.TestActivity", "onCreate"))
 
 # Dalvik descriptor → Java name
 print(descriptor_to_java("Ltests/androguard/TestActivity;"))
@@ -258,6 +321,12 @@ for method, source in app.iter_decompiled_methods(
 
 # All DEX files from the APK → decompiled/ classes/ classes2/ …
 app.decompile_apk_to_dir("decompiled/", only_package="tests.androguard")
+
+# ASC + analysis
+print(app.getclass("tests.androguard.TestActivity")[:500])
+print(app.findrefs("type", "Landroid/app/Activity;"))
+print(app.scan_vulns()[:3])
+print(app.emulate("tests.androguard.TestActivity", "onCreate"))
 ```
 
 Build from source (requires Rust + maturin):
@@ -266,6 +335,35 @@ Build from source (requires Rust + maturin):
 git clone https://github.com/androguard/dex-decompiler.git
 cd dex-decompiler/dex-decompiler-py
 PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
+```
+
+### ARM64 (`arm_disassembler` / `arm_decompiler`, optional)
+
+```python
+from androguard.core import arm
+
+print(arm.decode_one(0xD503201F))  # nop
+for ins in arm.disassemble(bytes.fromhex("1f2003d5c0035fd6")):
+    print(ins["text"])
+
+out = arm.decompile(bytes.fromhex("1f2003d5c0035fd6"), name="foo")
+print(out["source"])
+```
+
+### APK patch ([apk-patch](https://github.com/androguard/apk-patch), optional)
+
+```python
+from androguard.core import patch
+
+project = patch.decode(apk_bytes, no_res=True)
+# edit project["files"]["project/AndroidManifest.xml"] etc.
+rebuilt = patch.build(project["files"], project_root=project["project_root"])
+
+# or one-shot
+rebuilt = patch.roundtrip(apk_bytes, sign=True)
+# via Application
+project = app.decode_project(only_manifest=True)
+rebuilt = app.rebuild(sign=True, no_res=True)
 ```
 
 ### Legacy entry point

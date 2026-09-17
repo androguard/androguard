@@ -58,6 +58,11 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Stop after N matching methods (0 = no limit)",
     )
+    disasm.add_argument(
+        "--cfg",
+        action="store_true",
+        help="Print Dalvik CFG edges for matching methods (with --disasm)",
+    )
     decompile = parser.add_argument_group(
         "decompilation",
         "Java decompilation (requires androguard[decompile])",
@@ -97,6 +102,41 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="PKG",
         help="Exclude package prefix (repeatable, e.g. android.)",
     )
+    decompile.add_argument(
+        "--getclass",
+        metavar="CLASS",
+        help="Decompile a single class (ASC getclass; Java or Dalvik name)",
+    )
+    decompile.add_argument(
+        "--findrefs",
+        metavar="KIND",
+        choices=["string", "type", "method", "field"],
+        help="ASC findrefs kind (use with --findrefs-value)",
+    )
+    decompile.add_argument(
+        "--findrefs-value",
+        metavar="VALUE",
+        help="Needle for --findrefs",
+    )
+    decompile.add_argument(
+        "--scan-vulns",
+        action="store_true",
+        help="Run vulnerability detectors on all DEX files",
+    )
+    decompile.add_argument(
+        "--emulate",
+        metavar="CLASS#METHOD",
+        help="Emulate one method (Java CLASS#METHOD)",
+    )
+    patch = parser.add_argument_group(
+        "apk-patch",
+        "Decode/rebuild via apk-patch (requires androguard[patch])",
+    )
+    patch.add_argument(
+        "--decode-project",
+        action="store_true",
+        help="Decode APK to in-memory project and list entry paths",
+    )
     parser.add_argument(
         "--list-classes",
         action="store_true",
@@ -125,6 +165,11 @@ def _run_disassembly(application: Application, args: argparse.Namespace) -> int:
     ):
         print(f"\n# {method.class_name}.{method.name}")
         try:
+            if getattr(args, "cfg", False):
+                for edge in application.method_cfg_edges(method):
+                    print(f"  {edge['from']:08x} -> {edge['to']:08x}")
+                blocks = application.method_basic_blocks(method)
+                print(f"  # {len(blocks)} basic block(s)")
             for line in application.iter_disassembly(method):
                 print(line)
         except BytecodeNotAvailable as exc:
@@ -253,6 +298,77 @@ def app(argv: list[str] | None = None) -> int:
     if args.list_methods:
         for method in application.methods:
             print(f"{method.class_name} -> {method.name}")
+
+    if getattr(args, "scan_vulns", False):
+        try:
+            findings = application.scan_vulns()
+        except DecompilerNotAvailable as exc:
+            LOGGER.error("%s", exc)
+            return 1
+        for f in findings:
+            print(
+                f"[{f.get('severity', '?')}] {f.get('category')}: "
+                f"{f.get('class_name')}#{f.get('method_name')} — {f.get('title')}"
+            )
+        return 0
+
+    if getattr(args, "getclass", None):
+        try:
+            print(application.getclass(args.getclass))
+        except Exception as exc:
+            LOGGER.error("%s", exc)
+            return 1
+        return 0
+
+    if getattr(args, "findrefs", None):
+        if not args.findrefs_value:
+            LOGGER.error("--findrefs requires --findrefs-value")
+            return 1
+        try:
+            sites = application.findrefs(
+                args.findrefs, args.findrefs_value
+            )
+        except Exception as exc:
+            LOGGER.error("%s", exc)
+            return 1
+        for s in sites:
+            print(
+                f"{s.get('class_name')}#{s.get('method_name')} "
+                f"@ {s.get('file_offset')}"
+            )
+        return 0
+
+    if getattr(args, "emulate", None):
+        try:
+            cls, meth = parse_method_selector(args.emulate)
+            result = application.emulate(cls, meth)
+        except Exception as exc:
+            LOGGER.error("%s", exc)
+            return 1
+        print(
+            f"steps={result.get('steps')} finished={result.get('finished')}"
+        )
+        regs = result.get("registers") or {}
+        for k in sorted(regs, key=lambda x: int(x) if str(x).isdigit() else 0):
+            print(f"  v{k} = {regs[k]}")
+        return 0
+
+    if getattr(args, "decode_project", False):
+        try:
+            project = application.decode_project(no_res=True)
+        except Exception as exc:
+            LOGGER.error("%s", exc)
+            return 1
+        print(
+            f"project_root={project['project_root']} "
+            f"entries={project['entry_count']} "
+            f"dex_classes={project['dex_class_count']}"
+        )
+        for path in sorted(project["files"])[:50]:
+            print(path)
+        if len(project["files"]) > 50:
+            print(f"... ({len(project['files']) - 50} more)")
+        return 0
 
     if args.disasm:
         return _run_disassembly(application, args)

@@ -17,12 +17,20 @@ from androguard.core.bytecode import (
     BytecodeNotAvailable,
     disassemble_method_code,
     format_instruction,
+    method_basic_blocks,
+    method_cfg_edges,
 )
 from androguard.core.decompiler import (
     decompile_method as decompile_method_bytes,
     decompile_dex_to_dir,
+    emulate_method as decompiler_emulate,
+    findrefs as decompiler_findrefs,
+    getclass as decompiler_getclass,
     java_class_from_method,
+    method_cfg as decompiler_method_cfg,
     parse_method_selector,
+    scan_vulns as decompiler_scan_vulns,
+    taint_solve as decompiler_taint_solve,
 )
 
 PathLike = Union[str, Path]
@@ -248,6 +256,116 @@ class Application:
                 only_package=only_package,
                 exclude=exclude,
             )
+
+    def _apk_bytes(self) -> bytes:
+        self._apk._raw.seek(0)
+        return self._apk._raw.read()
+
+    def getclass(self, class_name: str) -> str:
+        """Slice + decompile a single class (ASC getclass; APK-aware)."""
+        return decompiler_getclass(self._apk_bytes(), class_name)
+
+    def findrefs(
+        self,
+        kind: str,
+        value: str,
+        *,
+        class_name: str | None = None,
+        fuzzy_class: bool = False,
+    ) -> list:
+        """ASC findrefs over this APK (string/type/method/field)."""
+        return decompiler_findrefs(
+            self._apk_bytes(),
+            kind,
+            value,
+            class_name=class_name,
+            fuzzy_class=fuzzy_class,
+        )
+
+    def scan_vulns(self) -> list:
+        """Run vulnerability detectors across all DEX files."""
+        findings: list = []
+        for _name, raw in self._dex_blobs():
+            findings.extend(decompiler_scan_vulns(raw))
+        return findings
+
+    def decode_project(self, **kwargs):
+        """Decode this APK to an in-memory apk-patch project (requires ``androguard[patch]``)."""
+        from androguard.core import patch as apk_patch
+
+        return apk_patch.decode(self._apk_bytes(), **kwargs)
+
+    def rebuild(self, *, sign: bool = True, **decode_kw) -> bytes:
+        """Decode → rebuild APK bytes via apk-patch (requires ``androguard[patch]``)."""
+        from androguard.core import patch as apk_patch
+
+        return apk_patch.roundtrip(self._apk_bytes(), sign=sign, **decode_kw)
+
+    def method_basic_blocks(self, method: MethodHelper) -> list:
+        """Dalvik basic blocks for ``method`` (requires ``androguard[disasm]``)."""
+        return method_basic_blocks(method.get_code())
+
+    def method_cfg_edges(self, method: MethodHelper) -> list:
+        """Dalvik CFG edges for ``method`` (requires ``androguard[disasm]``)."""
+        return method_cfg_edges(method.get_code())
+
+    def method_cfg(
+        self, class_name: str, method_name: str
+    ) -> tuple[list, list, list]:
+        """
+        Decompiler CFG for ``class_name#method_name`` across DEX files.
+
+        Returns ``(bytecode_rows, cfg_nodes, cfg_edges)``.
+        """
+        java_class = java_class_from_method(class_name)
+        last_error: Exception | None = None
+        for _name, raw in self._dex_blobs():
+            try:
+                return decompiler_method_cfg(raw, java_class, method_name)
+            except ValueError as exc:
+                last_error = exc
+                continue
+        if last_error:
+            raise last_error
+        raise ValueError(f"method not found: {java_class}#{method_name}")
+
+    def emulate(
+        self,
+        class_name: str,
+        method_name: str,
+        *,
+        max_steps: int | None = None,
+    ) -> dict:
+        """Emulate a method (requires ``androguard[decompile]``)."""
+        java_class = java_class_from_method(class_name)
+        last_error: Exception | None = None
+        for _name, raw in self._dex_blobs():
+            try:
+                return decompiler_emulate(
+                    raw, java_class, method_name, max_steps=max_steps
+                )
+            except ValueError as exc:
+                last_error = exc
+                continue
+        if last_error:
+            raise last_error
+        raise ValueError(f"method not found: {java_class}#{method_name}")
+
+    def taint_solve(
+        self,
+        *,
+        config_json: str | None = None,
+        max_iterations: int | None = None,
+    ) -> list[str]:
+        """Run taint solver on each DEX; returns JSON report strings."""
+        return [
+            decompiler_taint_solve(
+                raw,
+                config_json=config_json,
+                max_iterations=max_iterations,
+            )
+            for _name, raw in self._dex_blobs()
+        ]
 
     def summary(self) -> dict[str, object]:
         """Short metadata dict suitable for logging or CLI output."""

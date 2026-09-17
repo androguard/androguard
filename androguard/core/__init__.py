@@ -1,5 +1,5 @@
-"""Low-level parsers from the Androguard ecosystem."""
+"""Low-level parsers and optional analysis backends from the Androguard ecosystem."""
 
-from androguard.core import apk, axml, bytecode, decompiler, dex
+from androguard.core import apk, arm, axml, bytecode, decompiler, dex, patch
 
-__all__ = ["apk", "axml", "bytecode", "decompiler", "dex"]
+__all__ = ["apk", "arm", "axml", "bytecode", "decompiler", "dex", "patch"]

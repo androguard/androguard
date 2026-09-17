@@ -36,8 +36,15 @@ disasm = [
 decompile = [
     "dex-decompiler @ git+https://github.com/androguard/dex-decompiler.git#subdirectory=dex-decompiler-py",
 ]
+arm = [
+    "arm-disassembler @ git+https://github.com/androguard/arm_disassembler.git#subdirectory=arm_disassembler-py",
+    "arm-decompiler @ git+https://github.com/androguard/arm_decompiler.git#subdirectory=arm_decompiler-py",
+]
+patch = [
+    "apk-patch @ git+https://github.com/androguard/apk-patch.git#subdirectory=crates/apk-patch-py",
+]
 full = [
-    "androguard[disasm,decompile]",
+    "androguard[disasm,decompile,arm,patch]",
 ]
 
 [project.scripts]

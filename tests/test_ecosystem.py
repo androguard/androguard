@@ -24,8 +24,10 @@ from androguard.misc import AnalyzeAPK as misc_analyze
 from apkparser import APK as ApkParserAPK
 
 from tests.helpers import (
+    HAS_ARM,
     HAS_BYTECODE,
     HAS_DECOMPILER,
+    HAS_PATCH,
     MULTIDEX_APK,
     TEST_APK,
     file_exists,
@@ -229,6 +231,38 @@ class BytecodeTest(unittest.TestCase):
         self.assertGreater(len(lines), 5)
         self.assertTrue(all("  " in line for line in lines[:3]))
 
+    def test_basic_blocks_and_cfg(self):
+        from androguard.core.bytecode import (
+            basic_blocks,
+            cfg_edges,
+            encode_goto,
+            encode_instruction,
+            encode_nop,
+            encode_return_void,
+        )
+
+        data = encode_nop() + encode_return_void()
+        blocks = basic_blocks(data)
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(blocks[0]["start_offset"], 0)
+        self.assertEqual(blocks[0]["end_offset"], 4)
+        self.assertEqual(encode_instruction("nop", "").hex(), "0000")
+
+        method = next(
+            self.app.iter_methods(
+                class_pattern=r"TestActivity",
+                method_pattern=r"onCreate",
+                with_code=True,
+            )
+        )
+        blocks = self.app.method_basic_blocks(method)
+        self.assertGreaterEqual(len(blocks), 1)
+        self.assertLess(blocks[0]["end_offset"], 0xFFFFFFFF)
+        edges = self.app.method_cfg_edges(method)
+        self.assertIsInstance(edges, list)
+        branched = encode_nop() + encode_goto(1) + encode_return_void()
+        self.assertGreater(len(cfg_edges(branched)), 0)
+
 
 class BytecodeNotAvailableTest(unittest.TestCase):
     @unittest.skipIf(HAS_BYTECODE, "dex-bytecode is installed")
@@ -292,6 +326,58 @@ class DecompilerIntegrationTest(unittest.TestCase):
     def test_invalid_selector_on_app(self):
         with self.assertRaises(ValueError):
             parse_method_selector("invalid")
+
+    def test_getclass_and_emulate(self):
+        java = self.app.getclass("tests.androguard.TestActivity")
+        self.assertIn("TestActivity", java)
+        self.assertIn("onCreate", java)
+        result = self.app.emulate(
+            "tests.androguard.TestActivity", "onCreate", max_steps=32
+        )
+        self.assertIn("steps", result)
+        self.assertIn("registers", result)
+        rows, nodes, edges = self.app.method_cfg(
+            "tests.androguard.TestActivity", "onCreate"
+        )
+        self.assertGreater(len(rows), 0)
+        self.assertGreater(len(nodes), 0)
+        self.assertIsInstance(edges, list)
+
+
+@unittest.skipUnless(HAS_ARM, "arm bindings missing")
+class ArmIntegrationTest(unittest.TestCase):
+    def test_disassemble_and_decompile(self):
+        from androguard.core import arm
+
+        code = bytes.fromhex("1f2003d5c0035fd6")
+        insns = arm.disassemble(code)
+        self.assertEqual(insns[0]["mnemonic"], "nop")
+        out = arm.decompile(code, name="foo")
+        self.assertIn("foo", out["source"])
+        self.assertEqual(arm.decode_one(0xD503201F)["mnemonic"], "nop")
+
+
+@unittest.skipUnless(
+    HAS_PATCH and file_exists(TEST_APK),
+    "apk-patch or TestActivity.apk missing",
+)
+class PatchIntegrationTest(unittest.TestCase):
+    def test_decode_and_roundtrip_manifest(self):
+        from androguard.core import patch
+
+        app = Application(TEST_APK)
+        project = app.decode_project(only_manifest=True, no_res=True)
+        self.assertGreater(project["entry_count"], 0)
+        self.assertTrue(
+            any("AndroidManifest" in p for p in project["files"])
+        )
+        rebuilt = patch.build(
+            project["files"],
+            project_root=project["project_root"],
+            sign=False,
+        )
+        self.assertGreater(len(rebuilt), 100)
+        self.assertEqual(rebuilt[:2], b"PK")
 
 
 if __name__ == "__main__":
