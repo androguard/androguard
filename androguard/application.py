@@ -75,7 +75,8 @@ class Application:
     Unified view of one APK: manifest metadata, DEX helpers, and optional disassembly.
 
     Uses ``apkparser-ag`` for the archive layer and ``dexparser-ag`` (Rust core) for each
-    ``classes*.dex`` via :meth:`DEXHelper.from_string`.
+    ``classes*.dex``. ``APK.get_all_dex`` may already yield :class:`DEXHelper`
+    instances; raw bytes are still accepted.
     """
 
     def __init__(
@@ -101,10 +102,15 @@ class Application:
 
     @LazyProperty
     def dex(self) -> list[DEXHelper]:
-        return [
-            DEXHelper.from_string(raw)
-            for raw in self._apk.get_all_dex()
-        ]
+        helpers: list[DEXHelper] = []
+        for item in self._apk.get_all_dex():
+            if isinstance(item, DEXHelper):
+                helpers.append(item)
+            elif isinstance(item, (bytes, bytearray)):
+                helpers.append(DEXHelper.from_string(bytes(item)))
+            else:
+                helpers.append(DEXHelper.from_string(item))
+        return helpers
 
     @LazyProperty
     def class_names(self) -> list[str]:

@@ -106,7 +106,7 @@ class DexIntegrationTest(unittest.TestCase):
             open_apk_stream(TEST_APK),
             {apk.OPTION_AXML: True},
         )
-        raw = next(apk_obj.get_all_dex())
+        raw = apk_obj.get_file("classes.dex")
         dh = dex.DEXHelper.from_string(raw)
         methods = list(dh.get_methods())
         self.assertGreater(len(methods), 0)
@@ -119,7 +119,7 @@ class DexIntegrationTest(unittest.TestCase):
                 {apk.OPTION_AXML: True},
             )
             dex_path = Path(tmp) / "classes.dex"
-            dex_path.write_bytes(next(apk_obj.get_all_dex()))
+            dex_path.write_bytes(apk_obj.get_file("classes.dex"))
             d = dex.DEX.from_path(str(dex_path))
             dh = dex.DEXHelper.from_rawdex(d)
             self.assertGreater(len(list(dh.get_classes())), 0)
