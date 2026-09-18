@@ -23,7 +23,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "apkparser-ag>=0.0.2",
+    # PyPI apkparser-ag==0.0.2 requires the unpublished name "dex-parser".
+    # Track git until apkparser-ag>=0.0.3 is published with dexparser-ag.
+    "apkparser-ag @ git+https://github.com/androguard/apk-parser.git",
     "dexparser-ag>=0.0.1",
     "axml>=0.0.2",
     "rich>=14.0.0",
