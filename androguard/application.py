@@ -369,10 +369,11 @@ class Application:
 
     def summary(self) -> dict[str, object]:
         """Short metadata dict suitable for logging or CLI output."""
+        axml = self._apk.axml
         return {
-            "app_name": self._apk.get_app_name(),
-            "main_activity": self._apk.get_main_activity(),
-            "package": self._apk.axml.package if self._apk.axml else "",
+            "app_name": self._apk.get_app_name() if axml else "",
+            "main_activity": self._apk.get_main_activity() if axml else "",
+            "package": axml.package if axml else "",
             "dex_files": list(self._apk.get_dex_names()),
             "classes": len(self.class_names),
             "strings": len(self.strings),

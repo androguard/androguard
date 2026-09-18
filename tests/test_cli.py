@@ -135,6 +135,52 @@ class CliSummaryTest(unittest.TestCase):
         self.assertIn("project_root=", out)
         self.assertIn("AndroidManifest", out)
 
+    def test_verbose_still_succeeds(self):
+        code, out = self._run("-v")
+        self.assertEqual(code, 0)
+        self.assertIn("package:", out)
+
+    def test_disasm_no_match(self):
+        code, out = self._run(
+            "--disasm", "--class", "NoSuchClassXYZ123"
+        )
+        self.assertEqual(code, 1)
+        self.assertIn("No methods", out)
+
+    def test_findrefs_requires_value(self):
+        code, out = self._run("--findrefs", "string")
+        self.assertEqual(code, 1)
+        self.assertIn("--findrefs-value", out)
+
+    def test_emulate_bad_selector(self):
+        code, out = self._run("--emulate", "not-a-selector")
+        self.assertEqual(code, 1)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_findrefs_string(self):
+        code, out = self._run(
+            "--findrefs", "string", "--findrefs-value", "this is a test"
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("#", out)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_scan_vulns_runs(self):
+        code, out = self._run("--scan-vulns")
+        self.assertEqual(code, 0)
+        self.assertIn("classes:", out)
+
+
+class CliUsageTest(unittest.TestCase):
+    def test_missing_input_exits(self):
+        with self.assertRaises(SystemExit) as ctx:
+            cli_app([])
+        self.assertEqual(ctx.exception.code, 2)
+
+    def test_missing_apk_raises(self):
+        with self.assertRaises(FileNotFoundError):
+            cli_app(["-i", "/tmp/androguard-missing-apk.apk"])
+
 
 if __name__ == "__main__":
     unittest.main()
