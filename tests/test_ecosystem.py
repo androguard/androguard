@@ -316,12 +316,14 @@ class DecompilerIntegrationTest(unittest.TestCase):
     def test_decompile_apk_to_dir(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "out"
-            self.app.decompile_apk_to_dir(
+            n = self.app.decompile_apk_to_dir(
                 out, only_package="tests.androguard"
             )
+            self.assertGreater(n, 0)
             self.assertTrue(out.exists())
-            sub = out / "classes"
-            self.assertTrue(sub.is_dir() or (out / "Decompiled.java").exists())
+            java_files = list(out.rglob("*.java"))
+            self.assertTrue(java_files, "expected per-class .java files")
+            self.assertTrue(any("TestActivity" in p.name for p in java_files))
 
     def test_invalid_selector_on_app(self):
         with self.assertRaises(ValueError):

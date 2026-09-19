@@ -20,22 +20,20 @@ Do you think your phone has been pwned ? please check [IsMyPhonePwned](https://g
 
 ## Installation
 
+Androguard 5 is this repository. It is not the package currently published on PyPI (`androguard` 4.1.4). From a checkout, install the local tree. A bare `pip install androguard` or `pip install 'androguard[full]'` downloads 4.1.4 and uninstalls 5.0.0.
+
+```bash
+# from this repo (Rust toolchain required for the optional extras)
+# Python 3.14+ needs the PyO3 forward-compat flag (bindings use PyO3 0.23, max 3.13)
+export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+pip install -e .
+pip install -e '.[full]'
+```
+
+After 5.0.0 is published, the same extras install from PyPI:
+
 ```bash
 pip install androguard
-
-# optional Dalvik disassembly (Rust extension)
-pip install 'androguard[disasm]'
-
-# optional Java decompiler (Rust extension)
-pip install 'androguard[decompile]'
-
-# optional ARM64 disasm / decompile
-pip install 'androguard[arm]'
-
-# optional APK decode/rebuild (apk-patch)
-pip install 'androguard[patch]'
-
-# everything
 pip install 'androguard[full]'
 ```
 

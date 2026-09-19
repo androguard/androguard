@@ -26,6 +26,7 @@ jobs:
         run: |
           brew install libmagic
           python -m pip install --upgrade pip
+          export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
           pip install -e .
 
       - name: Run tests

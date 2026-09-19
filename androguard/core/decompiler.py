@@ -92,22 +92,20 @@ def decompile_dex_to_dir(
     *,
     only_package: str | None = None,
     exclude: list[str] | None = None,
-) -> None:
-    """Write decompiled sources under ``base_path``."""
+) -> int:
+    """Write decompiled sources under ``base_path``. Returns class count written."""
     from pathlib import Path
 
     dex = parse_dex(dex_data)
-    if only_package or exclude:
-        java_src = dex.decompile_with_options(
+    Path(base_path).mkdir(parents=True, exist_ok=True)
+    return int(
+        dex.decompile_to_dir(
+            base_path,
             only_package=only_package,
             exclude=exclude,
         )
-        Path(base_path).mkdir(parents=True, exist_ok=True)
-        (Path(base_path) / "Decompiled.java").write_text(
-            java_src, encoding="utf-8"
-        )
-        return
-    dex.decompile_to_dir(base_path)
+        or 0
+    )
 
 
 def getclass(data: bytes, class_name: str) -> str:

@@ -250,18 +250,32 @@ class Application:
         *,
         only_package: str | None = None,
         exclude: list[str] | None = None,
-    ) -> None:
-        """Decompile every ``classes*.dex`` in the APK under ``base_path``."""
+    ) -> int:
+        """Decompile every ``classes*.dex`` in the APK under ``base_path``.
+
+        Returns the number of classes written. Empty DEX slices (no filter match)
+        are skipped without creating a placeholder file.
+        """
         root = Path(base_path)
         root.mkdir(parents=True, exist_ok=True)
+        total = 0
         for dex_name, raw in self._dex_blobs():
             sub = root / Path(dex_name).stem
-            decompile_dex_to_dir(
+            n = decompile_dex_to_dir(
                 raw,
                 str(sub),
                 only_package=only_package,
                 exclude=exclude,
             )
+            if n == 0:
+                # Avoid empty package trees when --only-package matches nothing in this DEX.
+                if sub.exists() and not any(sub.rglob("*.java")):
+                    try:
+                        sub.rmdir()
+                    except OSError:
+                        pass
+            total += n
+        return total
 
     def _apk_bytes(self) -> bytes:
         self._apk._raw.seek(0)

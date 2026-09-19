@@ -168,7 +168,8 @@ class CliSummaryTest(unittest.TestCase):
     def test_scan_vulns_runs(self):
         code, out = self._run("--scan-vulns")
         self.assertEqual(code, 0)
-        self.assertIn("classes:", out)
+        self.assertIn("scan-vulns:", out)
+        self.assertIn("finding", out)
 
 
 class CliUsageTest(unittest.TestCase):
@@ -180,6 +181,21 @@ class CliUsageTest(unittest.TestCase):
     def test_missing_apk_raises(self):
         with self.assertRaises(FileNotFoundError):
             cli_app(["-i", "/tmp/androguard-missing-apk.apk"])
+
+    def test_version_command(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            code = cli_app(["version"])
+        self.assertEqual(code, 0)
+        self.assertIn("androguard", buf.getvalue())
+        self.assertRegex(buf.getvalue(), r"\d+\.\d+")
+
+    def test_version_flag(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf), self.assertRaises(SystemExit) as ctx:
+            cli_app(["--version"])
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertIn("androguard", buf.getvalue())
 
 
 if __name__ == "__main__":

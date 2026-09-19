@@ -6,6 +6,7 @@ import argparse
 import io
 import sys
 
+from androguard import __version__ as ANDROGUARD_VERSION
 from androguard.application import Application
 from androguard.core.bytecode import BytecodeNotAvailable
 from androguard.core.decompiler import DecompilerNotAvailable, parse_method_selector
@@ -18,9 +19,19 @@ def _build_parser() -> argparse.ArgumentParser:
         description="Analyze Android APK files using the Androguard ecosystem parsers.",
     )
     parser.add_argument(
+        "--version",
+        action="version",
+        version=f"androguard {ANDROGUARD_VERSION}",
+    )
+    parser.add_argument(
+        "command",
+        nargs="?",
+        choices=["version"],
+        help="Print the Androguard version and exit (no APK required)",
+    )
+    parser.add_argument(
         "-i",
         "--input",
-        required=True,
         metavar="APK",
         help="Path to an APK file",
     )
@@ -216,12 +227,23 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
         return 0
 
     if args.output_dir:
-        application.decompile_apk_to_dir(
+        n = application.decompile_apk_to_dir(
             args.output_dir,
             only_package=args.only_package,
             exclude=exclude,
         )
-        LOGGER.info("Decompiled APK to %s", args.output_dir)
+        if n == 0:
+            if args.only_package:
+                LOGGER.error(
+                    "No classes matched --only-package %r in this APK "
+                    "(multi-DEX APKs only write matching packages; "
+                    "check the package name, e.g. tests.androguard vs androguard.test)",
+                    args.only_package,
+                )
+            else:
+                LOGGER.error("No classes were decompiled from this APK")
+            return 1
+        LOGGER.info("Decompiled %d class(es) to %s", n, args.output_dir)
         return 0
 
     if args.output and not args.decompile:
@@ -281,6 +303,13 @@ def app(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
+    if args.command == "version":
+        print(f"androguard {ANDROGUARD_VERSION}")
+        return 0
+
+    if not args.input:
+        parser.error("the following arguments are required: -i/--input")
+
     if args.verbose:
         LOGGER.setLevel("DEBUG")
 
@@ -305,6 +334,7 @@ def app(argv: list[str] | None = None) -> int:
         except DecompilerNotAvailable as exc:
             LOGGER.error("%s", exc)
             return 1
+        print(f"scan-vulns: {len(findings)} finding(s)")
         for f in findings:
             print(
                 f"[{f.get('severity', '?')}] {f.get('category')}: "
@@ -331,11 +361,23 @@ def app(argv: list[str] | None = None) -> int:
         except Exception as exc:
             LOGGER.error("%s", exc)
             return 1
+        print(
+            f"findrefs: {len(sites)} code site(s) for "
+            f"{args.findrefs} {args.findrefs_value!r}"
+        )
         for s in sites:
             print(
                 f"{s.get('class_name')}#{s.get('method_name')} "
                 f"@ {s.get('file_offset')}"
             )
+        if not sites and args.findrefs == "string":
+            needle = args.findrefs_value.casefold()
+            pool = [s for s in application.strings if needle in s.casefold()]
+            print(f"string pool: {len(pool)} match(es) with no code reference")
+            for s in pool[:30]:
+                print(f"  {s!r}")
+            if len(pool) > 30:
+                print(f"  ... ({len(pool) - 30} more)")
         return 0
 
     if getattr(args, "emulate", None):
