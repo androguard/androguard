@@ -26,6 +26,7 @@
 - **Native ARM64** — disassemble / decompile `.so` code via `androguard[arm]`
 - **APK patch** — decode / rebuild project trees via `androguard[patch]`
 - **LLM integration** — Claude Code agent & skills, plus an **MCP server** (`androguard-mcp`) for Claude Code, Cursor, and other MCP clients
+- **MASTG demo coverage** — status of every OWASP MASTG Android demo vs `scan_vulns` in [`docs/mastg-coverage.md`](docs/mastg-coverage.md)
 
 Do you think your phone has been pwned? Please check [IsMyPhonePwned](https://github.com/IsMyPhonePwned).
 
@@ -196,6 +197,22 @@ Or run the Python demos (same coverage, including optional ARM):
 
 ```bash
 python -m examples.run_all
+```
+
+### MASTG demo coverage
+
+Androguard’s vulnerability scanner is validated against **all** OWASP MASTG Android demos.
+The checked-in results live in:
+
+**[`docs/mastg-coverage.md`](docs/mastg-coverage.md)**
+
+It lists every `MASTG-DEMO-*` with validate status (`pass` / `gap` / `skip`), Frida static assessment when relevant, and the `scan_vulns` categories found.
+
+```bash
+# regenerate after a validate run (needs JDK 17 + ANDROID_HOME for a full rebuild)
+python scripts/mastg_validate.py --setup
+python scripts/mastg_validate.py            # builds/scans demos → JSON + refreshes docs/mastg-coverage.md
+python scripts/mastg_coverage_doc.py        # refresh the markdown from the latest JSON only
 ```
 
 ### High-level API (`Application`)

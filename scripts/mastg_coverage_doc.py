@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Regenerate workspace/reports/mastg-coverage.md from the latest validate JSON.
+"""Regenerate docs/mastg-coverage.md from the latest validate JSON.
 
 Run after ``python scripts/mastg_validate.py`` (or ``--scan-only``).
-This is the single human-readable MASTG coverage reference.
+This is the single human-readable MASTG coverage reference (checked into docs/).
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ REPO = Path(__file__).resolve().parents[1]
 REPORTS = REPO / "workspace" / "reports"
 MASTG = REPO / "workspace" / "mastg-validation" / "mastg" / "demos" / "android"
 EXPECTED = REPO / "scripts" / "mastg_expected.json"
-OUT = REPORTS / "mastg-coverage.md"
+OUT = REPO / "docs" / "mastg-coverage.md"
 
 FRIDA_STATIC = {
     "MASTG-DEMO-0002": (
@@ -124,7 +124,8 @@ def main() -> int:
         "[OWASP MASTG `demos/android`](https://github.com/OWASP/mastg/tree/master/demos/android), "
         "built via [mas-app-android](https://github.com/cpholguera/mas-app-android).",
         "",
-        "This is the **single** reference document for MASTG ↔ Androguard security-scanner coverage.",
+        "This is the **single** reference document for MASTG ↔ Androguard security-scanner coverage "
+        "(checked into `docs/`).",
         f"Machine JSON: `{vjson.relative_to(REPO)}`. Expectations: `scripts/mastg_expected.json`.",
         "",
         "## Overall status",

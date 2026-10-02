@@ -30,8 +30,7 @@ ak_androguard.egg-info
 .claude/settings.local.json
 workspace/samples/
 workspace/output/
-workspace/reports/*
-!workspace/reports/mastg-coverage.md
+workspace/reports/
 workspace/mastg-validation/
 *.apk
 !tests/**/*.apk

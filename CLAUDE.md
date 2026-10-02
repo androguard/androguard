@@ -102,7 +102,7 @@ Expectations live in `scripts/mastg_expected.json` (one entry per demo). Gaps (e
 are reported as `gap`, not `fail`. Sibling/Frida demos (e.g. MASTG-DEMO-0158 → 0157 sources) are built
 via markdown `{{ ../MASTG-DEMO-… }}` includes.
 
-**Coverage reference (single doc):** [`workspace/reports/mastg-coverage.md`](workspace/reports/mastg-coverage.md)
+**Coverage reference (single doc):** [`docs/mastg-coverage.md`](docs/mastg-coverage.md)
 — Frida static hit/partial/miss included; dated markdown reports are not kept.
 
 ## Tests

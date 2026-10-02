@@ -477,7 +477,7 @@ def write_report(results: list[DemoResult], out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     day = date.today().isoformat()
     path = out_dir / f"mastg-scan-validate-{day}.json"
-    # Human-readable reference is a single file: mastg-coverage.md (see mastg_coverage_doc.py).
+    # Human-readable reference is docs/mastg-coverage.md (see mastg_coverage_doc.py).
     path.write_text(json.dumps([asdict(r) for r in results], indent=2) + "\n")
     print(f"[report] {path}")
     coverage_script = REPO_ROOT / "scripts" / "mastg_coverage_doc.py"
@@ -486,7 +486,7 @@ def write_report(results: list[DemoResult], out_dir: Path) -> Path:
         if proc.returncode != 0:
             print(f"[report] coverage doc refresh failed:\n{proc.stderr[-1000:]}")
         else:
-            print("[report] workspace/reports/mastg-coverage.md")
+            print("[report] docs/mastg-coverage.md")
     return path
 
 
