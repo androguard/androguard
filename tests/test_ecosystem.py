@@ -78,6 +78,14 @@ class EcosystemImportTest(unittest.TestCase):
         self.assertTrue(hasattr(dex, "DEXHelper"))
         self.assertTrue(hasattr(dex, "DEX_from_source"))
 
+    def test_rust_parser_backends(self):
+        import apkparser_rs
+        import dexparser_rs
+
+        self.assertTrue(hasattr(apkparser_rs, "ZipArchive"))
+        self.assertTrue(hasattr(apkparser_rs, "Apk"))
+        self.assertTrue(hasattr(dexparser_rs, "DEXHelper"))
+
 
 @unittest.skipUnless(file_exists(TEST_APK), "TestActivity.apk not present")
 class AnalyzeAPKTest(unittest.TestCase):

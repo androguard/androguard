@@ -59,9 +59,9 @@ class LazyProperty(property):
 
 def _read_source(
     source: Union[PathLike, bytes, BinaryIO],
-) -> io.BytesIO:
+):
     if isinstance(source, (str, Path)):
-        return io.BytesIO(Path(source).read_bytes())
+        return Path(source)
     if isinstance(source, bytes):
         return io.BytesIO(source)
     if isinstance(source, io.BytesIO):
@@ -74,7 +74,8 @@ class Application:
     """
     Unified view of one APK: manifest metadata, DEX helpers, and optional disassembly.
 
-    Uses ``apkparser-ag`` for the archive layer and ``dexparser-ag`` (Rust core) for each
+    Uses ``apkparser-ag`` (Rust ZIP via ``apkparser_rs``, Python APK façade) and
+    ``dexparser-ag`` (Rust ``dexparser_rs``) for each ``classes*.dex``.
     ``classes*.dex``. ``APK.get_all_dex`` may already yield :class:`DEXHelper`
     instances; raw bytes are still accepted.
     """

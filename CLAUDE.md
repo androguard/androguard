@@ -8,21 +8,25 @@ Androguard 5 is a thin Python app over Rust ecosystem libraries for Android APK 
 # from repo root; Rust toolchain required for native extras
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1   # needed on Python 3.14+
 python3 -m venv .venv && source .venv/bin/activate
+# local Rust parsers (siblings under ../). Python 3.14+ needs the PyO3 flag.
+export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+pip install -e ../apk-parser
+pip install -e ../dex-parser
 pip install -e .
 pip install -e '.[full]'   # disasm + decompile + arm + patch
 ```
 
 Optional extras: `androguard[disasm]`, `[decompile]`, `[arm]`, `[patch]`.
 
-Local sibling crates (dex-parser, dex-decompiler, …) under `../` may be installed with `maturin develop --release` when hacking those libs; prefer `pip install -e '.[full]'` for normal use.
+Local sibling crates (apk-parser, dex-parser, dex-decompiler, …) under `../` are installed with `pip install -e ../apk-parser` / `pip install -e ../dex-parser` (maturin) when hacking those libs.
 
 ## Architecture
 
 | Layer | Package | Role |
 |-------|---------|------|
 | Thin app | this repo (`androguard`) | CLI + `Application` façade |
-| APK | `apkparser-ag` | ZIP, signatures, manifest hooks |
-| DEX | `dexparser-ag` | Classes, methods, fields, strings |
+| APK | `apkparser-ag` (`apkparser-rs` ZIP) | ZIP, signatures, manifest hooks |
+| DEX | `dexparser-ag` (`dexparser-rs`) | Classes, methods, fields, strings |
 | AXML / ARSC | `axml` | Manifest + resources |
 | Disasm | `dex-bytecode` via `[disasm]` | Dalvik disassembly / CFG |
 | Decompile | `dex-decompiler` via `[decompile]` | DEX → Java, findrefs, vulns, emulate |

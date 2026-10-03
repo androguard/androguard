@@ -39,6 +39,9 @@ Androguard 5 is this repository. It is not the package currently published on Py
 # from this repo (Rust toolchain required for the optional extras)
 # Python 3.14+ needs the PyO3 forward-compat flag (bindings use PyO3 0.23, max 3.13)
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+# Rust apk-parser + dex-parser (siblings under ../)
+pip install -e ../apk-parser
+pip install -e ../dex-parser
 pip install -e .
 pip install -e '.[full]'
 ```

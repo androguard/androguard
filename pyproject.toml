@@ -23,11 +23,9 @@ classifiers = [
 ]
 
 dependencies = [
-    # PyPI apkparser-ag==0.0.2 requires the unpublished name "dex-parser".
-    # Track git until apkparser-ag>=0.0.3 is published with dexparser-ag.
+    # Rust ZIP/APK core (maturin) + Python APK API. Git until 0.0.3 is on PyPI.
     "apkparser-ag @ git+https://github.com/androguard/apk-parser.git",
-    # PyPI dexparser-ag==0.0.1 is the old hachoir parser (no DEX_from_source).
-    # Track git until a wheel of the Rust bindings is published.
+    # Rust DEX core (maturin). PyPI 0.0.1 is the old hachoir parser.
     "dexparser-ag @ git+https://github.com/androguard/dex-parser.git",
     "axml>=0.0.2",
     "rich>=14.0.0",
