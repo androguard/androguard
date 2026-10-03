@@ -6,115 +6,31 @@ import argparse
 import io
 import sys
 
-from rich.console import Console
-from rich.text import Text
-
 from androguard import __version__ as ANDROGUARD_VERSION
 from androguard.application import Application
+from androguard.cli.display import (
+    print_class_names,
+    print_cfg_edges,
+    print_decode_project,
+    print_disasm_header,
+    print_disasm_line,
+    print_emulate,
+    print_error,
+    print_findrefs,
+    print_info,
+    print_java,
+    print_methods,
+    print_scan_vulns,
+    print_summary,
+    print_version,
+    print_warning,
+)
 from androguard.core.bytecode import BytecodeNotAvailable
-from androguard.core.decompiler import DecompilerNotAvailable, parse_method_selector
+from androguard.core.decompiler import (
+    DecompilerNotAvailable,
+    parse_method_selector,
+)
 from androguard.helper.logging import LOGGER
-
-_SEVERITY_STYLE = {
-    "critical": "bold white on dark_red",
-    "high": "bold white on red",
-    "medium": "bold black on yellow",
-    "low": "bold white on blue",
-    "info": "bold white on cyan",
-}
-
-
-def _mas_ids(links) -> list[str]:
-    ids: list[str] = []
-    for link in links or []:
-        if isinstance(link, dict):
-            lid = (link.get("id") or "").strip()
-            if lid:
-                ids.append(lid)
-        elif link:
-            ids.append(str(link))
-    # preserve order, drop dupes
-    seen: set[str] = set()
-    out: list[str] = []
-    for i in ids:
-        if i not in seen:
-            seen.add(i)
-            out.append(i)
-    return out
-
-
-def _print_vuln_finding(console: Console, index: int, f: dict) -> None:
-    """Print one scan_vulns finding with colored severity and compact MAS ids (no URLs)."""
-    severity = str(f.get("severity") or "?").lower()
-    style = _SEVERITY_STYLE.get(severity, "bold white on grey37")
-    category = str(f.get("category") or "")
-    title = str(f.get("title") or "")
-    cls = str(f.get("class_name") or "")
-    meth = str(f.get("method_name") or "")
-    loc = f"{cls}#{meth}" if meth else cls
-
-    head = Text()
-    head.append(f"{index}. ", style="bold dim")
-    head.append(f" {severity.upper()} ", style=style)
-    head.append(" ")
-    head.append(category, style="bold cyan")
-    if title:
-        head.append(" — ", style="dim")
-        head.append(title, style="bold")
-    console.print(head)
-
-    if loc:
-        console.print(Text.assemble(("   at     ", "dim"), (loc, "white")))
-    if f.get("cwe"):
-        console.print(Text.assemble(("   CWE    ", "dim"), (str(f["cwe"]), "magenta")))
-
-    msg = str(f.get("message") or "").strip()
-    if msg and msg != title:
-        # Prefer a short first sentence; full dump is noisy in CLI
-        short = msg.split(". Sink:")[0].split(". Source:")[0].strip()
-        if short and not short.endswith("."):
-            short += "."
-        console.print(Text.assemble(("   note   ", "dim"), (short, "white")))
-
-    mas_rows = (
-        ("MASWE  ", "maswe", "red"),
-        ("MASVS  ", "masvs", "yellow"),
-        ("MASTG  ", "mastg_know", "green"),
-        ("BEST   ", "mastg_best", "green"),
-    )
-    # Merge KNOW under MASTG label; BEST separate
-    for label, key, color in mas_rows:
-        ids = _mas_ids(f.get(key))
-        if not ids:
-            continue
-        # Relabel KNOW for clarity
-        shown = "KNOW   " if key == "mastg_know" else label
-        console.print(
-            Text.assemble(
-                (f"   {shown}", "dim"),
-                (", ".join(ids), color),
-            )
-        )
-
-    rec = str(f.get("recommendation") or "").strip()
-    if rec:
-        console.print(Text.assemble(("   fix    ", "dim"), (rec, "italic bright_white")))
-    console.print()
-
-
-def _print_scan_vulns(findings: list) -> None:
-    console = Console(file=sys.stdout, highlight=False, soft_wrap=True)
-    console.print(
-        Text.assemble(
-            ("scan-vulns: ", "bold"),
-            (f"{len(findings)} finding(s)", "bold cyan"),
-        )
-    )
-    if not findings:
-        return
-    console.print()
-    for i, f in enumerate(findings, 1):
-        _print_vuln_finding(console, i, f if isinstance(f, dict) else dict(f))
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -267,7 +183,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _run_disassembly(application: Application, args: argparse.Namespace) -> int:
     if not args.class_pattern and not args.method_pattern and args.limit <= 0:
-        LOGGER.error(
+        print_error(
             "With --disasm, set --class and/or --method (regex), or --limit N"
         )
         return 1
@@ -278,27 +194,28 @@ def _run_disassembly(application: Application, args: argparse.Namespace) -> int:
         method_pattern=args.method_pattern,
         with_code=True,
     ):
-        print(f"\n# {method.class_name}.{method.name}")
+        print_disasm_header(method.class_name, method.name)
         try:
             if getattr(args, "cfg", False):
-                for edge in application.method_cfg_edges(method):
-                    print(f"  {edge['from']:08x} -> {edge['to']:08x}")
                 blocks = application.method_basic_blocks(method)
-                print(f"  # {len(blocks)} basic block(s)")
+                print_cfg_edges(
+                    application.method_cfg_edges(method),
+                    len(blocks),
+                )
             for line in application.iter_disassembly(method):
-                print(line)
+                print_disasm_line(line)
         except BytecodeNotAvailable as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
         count += 1
         if args.limit > 0 and count >= args.limit:
             break
 
     if count == 0:
-        LOGGER.warning("No methods with code matched the given filters")
+        print_warning("No methods with code matched the given filters")
         return 1
     if args.verbose:
-        LOGGER.info("Disassembled %d method(s)", count)
+        print_info(f"Disassembled {count} method(s)")
     return 0
 
 
@@ -308,7 +225,7 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
     try:
         ensure_loaded()
     except DecompilerNotAvailable as exc:
-        LOGGER.error("%s", exc)
+        print_error(str(exc))
         return 1
 
     exclude = args.exclude or None
@@ -320,14 +237,14 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
                 args.decompile_selector
             )
         except ValueError as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
         if args.output:
             with open(args.output, "w", encoding="utf-8") as out:
                 out.write(java)
-            LOGGER.info("Wrote %s", args.output)
+            print_info(f"Wrote {args.output}")
         else:
-            print(java)
+            print_java(java)
         return 0
 
     if args.output_dir:
@@ -338,20 +255,21 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
         )
         if n == 0:
             if args.only_package:
-                LOGGER.error(
-                    "No classes matched --only-package %r in this APK "
+                print_error(
+                    "No classes matched --only-package "
+                    f"{args.only_package!r} in this APK "
                     "(multi-DEX APKs only write matching packages; "
-                    "check the package name, e.g. tests.androguard vs androguard.test)",
-                    args.only_package,
+                    "check the package name, e.g. tests.androguard vs "
+                    "androguard.test)"
                 )
             else:
-                LOGGER.error("No classes were decompiled from this APK")
+                print_error("No classes were decompiled from this APK")
             return 1
-        LOGGER.info("Decompiled %d class(es) to %s", n, args.output_dir)
+        print_info(f"Decompiled {n} class(es) to {args.output_dir}")
         return 0
 
     if args.output and not args.decompile:
-        LOGGER.error("--output requires --decompile or --decompile-method")
+        print_error("--output requires --decompile or --decompile-method")
         return 1
 
     if args.decompile:
@@ -367,9 +285,9 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
                 )
                 with open(args.output, "w", encoding="utf-8") as out:
                     out.write(java)
-                LOGGER.info("Wrote %s", args.output)
+                print_info(f"Wrote {args.output}")
                 return 0
-            LOGGER.error(
+            print_error(
                 "With --decompile, set --class/--method (regex), "
                 "--decompile-method CLASS#METHOD, -d DIR, or -o FILE"
             )
@@ -381,23 +299,25 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
                 class_pattern=args.class_pattern,
                 method_pattern=args.method_pattern,
             ):
-                print(f"\n// {method.class_name}.{method.name}")
-                print(java)
+                print_java(
+                    java,
+                    heading=f"// {method.class_name}.{method.name}",
+                )
                 count += 1
                 if args.limit > 0 and count >= args.limit:
                     break
         except DecompilerNotAvailable as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
         except ValueError as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
 
         if count == 0:
-            LOGGER.warning("No methods matched for decompilation")
+            print_warning("No methods matched for decompilation")
             return 1
         if args.verbose:
-            LOGGER.info("Decompiled %d method(s)", count)
+            print_info(f"Decompiled {count} method(s)")
         return 0
 
     return 0
@@ -408,7 +328,7 @@ def app(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "version":
-        print(f"androguard {ANDROGUARD_VERSION}")
+        print_version()
         return 0
 
     if not args.input:
@@ -421,62 +341,49 @@ def app(argv: list[str] | None = None) -> int:
         application = Application(io.BytesIO(fd.read()))
 
     summary = application.summary()
-    for key, value in summary.items():
-        print(f"{key}: {value}")
+    print_summary(summary, args.input)
 
     if args.list_classes:
-        for name in application.class_names:
-            print(name)
+        print_class_names(application.class_names)
 
     if args.list_methods:
-        for method in application.methods:
-            print(f"{method.class_name} -> {method.name}")
+        print_methods(application.methods)
 
     if getattr(args, "scan_vulns", False):
         try:
             findings = application.scan_vulns()
         except DecompilerNotAvailable as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
-        _print_scan_vulns(findings)
+        print_scan_vulns(findings)
         return 0
 
     if getattr(args, "getclass", None):
         try:
-            print(application.getclass(args.getclass))
+            print_java(application.getclass(args.getclass))
         except Exception as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
         return 0
 
     if getattr(args, "findrefs", None):
         if not args.findrefs_value:
-            LOGGER.error("--findrefs requires --findrefs-value")
+            print_error("--findrefs requires --findrefs-value")
             return 1
         try:
             sites = application.findrefs(
                 args.findrefs, args.findrefs_value
             )
         except Exception as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
-        print(
-            f"findrefs: {len(sites)} code site(s) for "
-            f"{args.findrefs} {args.findrefs_value!r}"
-        )
-        for s in sites:
-            print(
-                f"{s.get('class_name')}#{s.get('method_name')} "
-                f"@ {s.get('file_offset')}"
-            )
+        pool = None
         if not sites and args.findrefs == "string":
             needle = args.findrefs_value.casefold()
             pool = [s for s in application.strings if needle in s.casefold()]
-            print(f"string pool: {len(pool)} match(es) with no code reference")
-            for s in pool[:30]:
-                print(f"  {s!r}")
-            if len(pool) > 30:
-                print(f"  ... ({len(pool) - 30} more)")
+        print_findrefs(
+            args.findrefs, args.findrefs_value, sites, pool=pool
+        )
         return 0
 
     if getattr(args, "emulate", None):
@@ -484,31 +391,18 @@ def app(argv: list[str] | None = None) -> int:
             cls, meth = parse_method_selector(args.emulate)
             result = application.emulate(cls, meth)
         except Exception as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
-        print(
-            f"steps={result.get('steps')} finished={result.get('finished')}"
-        )
-        regs = result.get("registers") or {}
-        for k in sorted(regs, key=lambda x: int(x) if str(x).isdigit() else 0):
-            print(f"  v{k} = {regs[k]}")
+        print_emulate(result)
         return 0
 
     if getattr(args, "decode_project", False):
         try:
             project = application.decode_project(no_res=True)
         except Exception as exc:
-            LOGGER.error("%s", exc)
+            print_error(str(exc))
             return 1
-        print(
-            f"project_root={project['project_root']} "
-            f"entries={project['entry_count']} "
-            f"dex_classes={project['dex_class_count']}"
-        )
-        for path in sorted(project["files"])[:50]:
-            print(path)
-        if len(project["files"]) > 50:
-            print(f"... ({len(project['files']) - 50} more)")
+        print_decode_project(project)
         return 0
 
     if args.disasm:
