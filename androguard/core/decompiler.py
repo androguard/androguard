@@ -93,14 +93,19 @@ def decompile_dex_to_dir(
     only_package: str | None = None,
     exclude: list[str] | None = None,
 ) -> int:
-    """Write decompiled sources under ``base_path``. Returns class count written."""
+    """Write decompiled sources under ``base_path``. Returns class count written.
+
+    Path containment for class-derived filenames is enforced inside dex-decompiler
+    (rejects ``..`` / absolute segments; see androguard/androguard#1172).
+    """
     from pathlib import Path
 
+    root = Path(base_path).expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
     dex = parse_dex(dex_data)
-    Path(base_path).mkdir(parents=True, exist_ok=True)
     return int(
         dex.decompile_to_dir(
-            base_path,
+            str(root),
             only_package=only_package,
             exclude=exclude,
         )
