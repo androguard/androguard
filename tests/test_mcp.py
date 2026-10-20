@@ -170,6 +170,26 @@ class McpSessionTest(unittest.TestCase):
             self.store.open(missing)
         self.assertEqual(ctx.exception.code, "not_found")
 
+    def test_removed_apk_releases_parser(self):
+        import shutil
+        from unittest.mock import patch
+
+        from androguard.mcp.session import SessionStore
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "test.apk"
+            shutil.copyfile(TEST_APK, path)
+            store = SessionStore(allow_any=True)
+            sid = store.open(path)["session_id"]
+            path.unlink()
+
+            with patch.object(store, "_release_app", wraps=store._release_app) as release:
+                with self.assertRaises(self.McpToolError) as ctx:
+                    store.get(sid)
+                release.assert_called_once()
+            self.assertEqual(ctx.exception.code, "not_found")
+            self.assertNotIn(sid, store._sessions)
+
     def test_unknown_session(self):
         from androguard.mcp import tools as T
 
@@ -343,6 +363,7 @@ class McpServerRegistrationTest(unittest.TestCase):
         if not file_exists(TEST_APK):
             self.skipTest("TestActivity.apk missing")
         server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
         result = asyncio.run(
             server.call_tool("open_apk", {"path": str(TEST_APK)})
         )
@@ -358,6 +379,67 @@ class McpServerRegistrationTest(unittest.TestCase):
         self.assertFalse(err.get("ok"))
         self.assertEqual(err["error"]["code"], "session_expired")
 
+    def test_session_calls_stay_on_one_thread(self):
+        import asyncio
+        import threading
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+
+        class TrackingStore(SessionStore):
+            def __init__(self):
+                super().__init__(allow_any=True, max_sessions=1)
+                self.threads = []
+
+            def open(self, path):
+                self.threads.append(threading.get_ident())
+                return super().open(path)
+
+            def get(self, session_id):
+                self.threads.append(threading.get_ident())
+                return super().get(session_id)
+
+            def close(self, session_id):
+                self.threads.append(threading.get_ident())
+                return super().close(session_id)
+
+            def close_all(self):
+                self.threads.append(threading.get_ident())
+                return super().close_all()
+
+        store = TrackingStore()
+        server = create_server(store)
+
+        def call(name, **kwargs):
+            response = asyncio.run(server.call_tool(name, kwargs))
+            return json.loads(response.content[0].text)
+
+        try:
+            sid = call("open_apk", path=str(TEST_APK))["session_id"]
+            # Separate event loops used to dispatch on different threads.
+            self.assertTrue(call("apk_summary", session_id=sid)["ok"])
+
+            async def concurrent_calls():
+                return await asyncio.gather(*(
+                    server.call_tool("apk_summary", {"session_id": sid})
+                    for _ in range(4)
+                ))
+
+            for response in asyncio.run(concurrent_calls()):
+                self.assertTrue(json.loads(response.content[0].text)["ok"])
+
+            self.assertTrue(call("close_apk", session_id=sid)["closed"])
+            for _ in range(2):  # Overflow eviction.
+                self.assertTrue(call("open_apk", path=str(TEST_APK))["ok"])
+        finally:
+            self.assertEqual(server._androguard_shutdown(), 1)
+
+        self.assertEqual(len(set(store.threads)), 1)
+        self.assertNotEqual(store.threads[0], threading.get_ident())
+
     def test_call_list_classes_tool(self):
         import asyncio
 
@@ -367,6 +449,7 @@ class McpServerRegistrationTest(unittest.TestCase):
         if not file_exists(TEST_APK):
             self.skipTest("TestActivity.apk missing")
         server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
         opened = json.loads(
             asyncio.run(
                 server.call_tool("open_apk", {"path": str(TEST_APK)})

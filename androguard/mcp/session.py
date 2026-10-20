@@ -130,6 +130,13 @@ class SessionStore:
                 ),
             )
 
+    @staticmethod
+    def _release_app(app: Application) -> None:
+        # apkparser.Permissions references its APK, creating a cycle that
+        # could otherwise be finalized by GC on a different (unsafe) thread.
+        app.apk.permissions = None
+        app.apk.close()
+
     def _evict_expired(self) -> None:
         now = time.time()
         expired = [
@@ -138,13 +145,16 @@ class SessionStore:
             if now - s.last_used > self.ttl_seconds
         ]
         for sid in expired:
-            self._sessions.pop(sid, None)
+            session = self._sessions.pop(sid, None)
+            if session is not None:
+                self._release_app(session.app)
 
     def _evict_overflow(self) -> None:
         """Drop oldest sessions until there is room for one more open."""
         while len(self._sessions) >= self.max_sessions:
             oldest = min(self._sessions.values(), key=lambda s: s.last_used)
             self._sessions.pop(oldest.session_id, None)
+            self._release_app(oldest.app)
 
     def open(self, path: str | Path) -> dict:
         resolved = self.resolve_path(path)
@@ -181,19 +191,36 @@ class SessionStore:
             mtime = session.path.stat().st_mtime
         except OSError as exc:
             self._sessions.pop(session_id, None)
+            self._release_app(session.app)
             raise McpToolError(
                 "not_found",
                 f"APK disappeared: {session.path}",
             ) from exc
         if mtime != session.mtime:
+            previous = session.app
             session.app = Application(session.path)
             session.mtime = mtime
+            self._release_app(previous)
         session.last_used = time.time()
         return session
 
     def close(self, session_id: str) -> dict:
-        existed = self._sessions.pop(session_id, None) is not None
-        return {"ok": True, "closed": existed, "session_id": session_id}
+        session = self._sessions.pop(session_id, None)
+        if session is not None:
+            self._release_app(session.app)
+        return {
+            "ok": True,
+            "closed": session is not None,
+            "session_id": session_id,
+        }
+
+    def close_all(self) -> int:
+        """Release cached Rust-backed objects on the session owner thread."""
+        count = len(self._sessions)
+        for session in self._sessions.values():
+            self._release_app(session.app)
+        self._sessions.clear()
+        return count
 
     def list_sessions(self) -> dict:
         self._evict_expired()
