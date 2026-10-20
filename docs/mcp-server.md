@@ -65,7 +65,7 @@ Or run via the venv Python:
 
 1. `open_apk` with a path under the allowlist → `session_id` + summary  
 2. `list_classes` / `list_methods` / `search_strings`  
-3. `find_refs` / `scan_vulns` / `decompile_method` / `get_class`  
+3. `find_refs` / `scan_vulns` / `inspect_code`
 4. `decompile_package` for larger trees (writes under `workspace/output/`)  
 5. `close_apk` when done  
 
@@ -94,12 +94,29 @@ All tool results are **JSON strings** with `ok: true|false`. On failure:
 | `list_classes` | — | Class names (regex + paging) |
 | `list_methods` | — | Methods (regex + paging) |
 | `list_strings` / `search_strings` | — | String pool |
+| `inspect_code` | `[decompile]` Java / `[disasm]` Dalvik | Class/method Java or Dalvik, paged |
 | `decompile_method` | `[decompile]` | `Class#method` → Java |
 | `get_class` | `[decompile]` | One class → Java |
 | `decompile_package` | `[decompile]` | Package tree → disk |
 | `find_refs` | `[decompile]` | string/type/method/field refs |
 | `scan_vulns` | `[decompile]` | Vulnerability detectors |
-| `disassemble_method` | `[disasm]` | Dalvik disassembly |
+| `disassemble_method` | `[disasm]` | Legacy: regex-based Dalvik disassembly |
+
+### Code inspection
+
+`inspect_code` accepts a literal class name or `Class#method` selector:
+
+```text
+inspect_code(sid, "com.example.Auth")                         # Java class
+inspect_code(sid, "com.example.Auth#login", format="dalvik")  # Dalvik method
+inspect_code(sid, "com.example.Auth", offset=32000)          # Next page
+```
+
+Java is the default; DEX descriptors (`Lcom/example/Auth;`) are accepted.
+Dalvik output is an instruction listing, not Smali. Same-name overloads are
+included in Dalvik mode; Java mode retains the backend's name-only selection.
+Large responses include `next_offset` for pagination. Existing tools remain
+available; `disassemble_method` still supports regex selection.
 
 ## Environment
 

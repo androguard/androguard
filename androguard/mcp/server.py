@@ -36,6 +36,7 @@ _TOOL_NAMES = (
     "search_strings",
     "decompile_method",
     "get_class",
+    "inspect_code",
     "decompile_package",
     "find_refs",
     "scan_vulns",
@@ -366,6 +367,30 @@ def create_server(store: SessionStore | None = None):
             store=store,
             session_id=session_id,
             class_name=class_name,
+            max_chars=max_chars,
+        )
+
+    @mcp.tool(
+        description=(
+            "Inspect Class or Class#method as java ([decompile]) or dalvik "
+            "([disasm]); page long results with offset."
+        )
+    )
+    def inspect_code(
+        session_id: str,
+        selector: str,
+        format: str = "java",
+        offset: int = 0,
+        max_chars: int = 32000,
+    ) -> str:
+        return _call(
+            T.inspect_code,
+            tool="inspect_code",
+            store=store,
+            session_id=session_id,
+            selector=selector,
+            format=format,
+            offset=offset,
             max_chars=max_chars,
         )
 
