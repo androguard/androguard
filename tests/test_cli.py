@@ -10,7 +10,6 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from androguard.cli.main import app as cli_app
-
 from tests.helpers import (
     HAS_BYTECODE,
     HAS_DECOMPILER,
@@ -46,6 +45,11 @@ class CliSummaryTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("onCreate", out)
         self.assertIn("TestActivity", out)
+
+    def test_show_signature(self):
+        code, out = self._run("--show-signature")
+        self.assertEqual(code, 0)
+        self.assertIn("APK Signature & Certificate Info", out)
 
     def test_disasm_requires_filter(self):
         code, out = self._run("--disasm")
@@ -141,9 +145,7 @@ class CliSummaryTest(unittest.TestCase):
         self.assertIn("package:", out)
 
     def test_disasm_no_match(self):
-        code, out = self._run(
-            "--disasm", "--class", "NoSuchClassXYZ123"
-        )
+        code, out = self._run("--disasm", "--class", "NoSuchClassXYZ123")
         self.assertEqual(code, 1)
         self.assertIn("No methods", out)
 
@@ -180,14 +182,20 @@ class CliSummaryTest(unittest.TestCase):
         enriched = [
             f
             for f in findings
-            if f.get("maswe") or f.get("masvs") or f.get("mastg_know") or f.get("mastg_best")
+            if f.get("maswe")
+            or f.get("masvs")
+            or f.get("mastg_know")
+            or f.get("mastg_best")
         ]
         if not enriched:
             self.skipTest("fixture APK has no MAS-enriched findings")
         code, out = self._run("--scan-vulns")
         self.assertEqual(code, 0)
         self.assertTrue(
-            any(tag in out for tag in ("MASWE", "MASVS", "MASTG-KNOW", "KNOW", "BEST")),
+            any(
+                tag in out
+                for tag in ("MASWE", "MASVS", "MASTG-KNOW", "KNOW", "BEST")
+            ),
             msg=out[:2000],
         )
         self.assertNotIn("https://mas.owasp.org", out)

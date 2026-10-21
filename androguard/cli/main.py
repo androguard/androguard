@@ -9,8 +9,8 @@ import sys
 from androguard import __version__ as ANDROGUARD_VERSION
 from androguard.application import Application
 from androguard.cli.display import (
-    print_class_names,
     print_cfg_edges,
+    print_class_names,
     print_decode_project,
     print_disasm_header,
     print_disasm_line,
@@ -21,6 +21,7 @@ from androguard.cli.display import (
     print_java,
     print_methods,
     print_scan_vulns,
+    print_signature,
     print_summary,
     print_version,
     print_warning,
@@ -178,10 +179,19 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print all method signatures",
     )
+    parser.add_argument(
+        "--show-signature",
+        "--cert-info",
+        dest="show_signature",
+        action="store_true",
+        help="Display APK signature schemes and signer certificates",
+    )
     return parser
 
 
-def _run_disassembly(application: Application, args: argparse.Namespace) -> int:
+def _run_disassembly(
+    application: Application, args: argparse.Namespace
+) -> int:
     if not args.class_pattern and not args.method_pattern and args.limit <= 0:
         print_error(
             "With --disasm, set --class and/or --method (regex), or --limit N"
@@ -219,7 +229,9 @@ def _run_disassembly(application: Application, args: argparse.Namespace) -> int:
     return 0
 
 
-def _run_decompilation(application: Application, args: argparse.Namespace) -> int:
+def _run_decompilation(
+    application: Application, args: argparse.Namespace
+) -> int:
     from androguard.core.decompiler import ensure_loaded
 
     try:
@@ -273,7 +285,11 @@ def _run_decompilation(application: Application, args: argparse.Namespace) -> in
         return 1
 
     if args.decompile:
-        if not args.class_pattern and not args.method_pattern and args.limit <= 0:
+        if (
+            not args.class_pattern
+            and not args.method_pattern
+            and args.limit <= 0
+        ):
             if args.output:
                 from androguard.core.decompiler import decompile_dex
 
@@ -349,6 +365,10 @@ def app(argv: list[str] | None = None) -> int:
     if args.list_methods:
         print_methods(application.methods)
 
+    if getattr(args, "show_signature", False):
+        sig_info = application.get_signature_info()
+        print_signature(sig_info)
+
     if getattr(args, "scan_vulns", False):
         try:
             findings = application.scan_vulns()
@@ -371,9 +391,7 @@ def app(argv: list[str] | None = None) -> int:
             print_error("--findrefs requires --findrefs-value")
             return 1
         try:
-            sites = application.findrefs(
-                args.findrefs, args.findrefs_value
-            )
+            sites = application.findrefs(args.findrefs, args.findrefs_value)
         except Exception as exc:
             print_error(str(exc))
             return 1
@@ -381,9 +399,7 @@ def app(argv: list[str] | None = None) -> int:
         if not sites and args.findrefs == "string":
             needle = args.findrefs_value.casefold()
             pool = [s for s in application.strings if needle in s.casefold()]
-        print_findrefs(
-            args.findrefs, args.findrefs_value, sites, pool=pool
-        )
+        print_findrefs(args.findrefs, args.findrefs_value, sites, pool=pool)
         return 0
 
     if getattr(args, "emulate", None):
