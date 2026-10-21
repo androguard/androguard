@@ -180,6 +180,78 @@ def get_class(
     return out
 
 
+def inspect_code(
+    store: SessionStore,
+    session_id: str,
+    selector: str,
+    *,
+    format: str = "java",
+    offset: int = 0,
+    max_chars: int | None = None,
+) -> dict[str, Any]:
+    """Inspect a class or method as Java or Dalvik, with resumable output."""
+    if format not in {"java", "dalvik"}:
+        raise McpToolError("invalid_argument", "format must be java or dalvik")
+    if offset < 0:
+        raise McpToolError("invalid_argument", "offset must be non-negative")
+    if max_chars is None:
+        max_chars = default_text_chars()
+    if max_chars <= 0:
+        raise McpToolError("invalid_argument", "max_chars must be positive")
+
+    class_name, separator, method_name = selector.strip().partition("#")
+    if not class_name or (separator and not method_name) or "#" in method_name:
+        raise McpToolError(
+            "invalid_argument", "selector must be Class or Class#method"
+        )
+    if class_name.startswith("L") and class_name.endswith(";"):
+        class_name = class_name[1:-1]
+    class_name = class_name.replace("/", ".")
+    dex_class = f"L{class_name.replace('.', '/')};"
+    normalized = f"{class_name}#{method_name}" if separator else class_name
+
+    # Reuse existing tool backends, including dependency and error handling.
+    end = offset + max_chars
+    if format == "java":
+        if separator:
+            result = decompile_method(
+                store, session_id, normalized, max_chars=end
+            )
+        else:
+            result = get_class(store, session_id, class_name, max_chars=end)
+    else:
+        app = _app(store, session_id)
+        result = disassemble_method(
+            store,
+            session_id,
+            class_pattern=rf"^{re.escape(dex_class)}$",
+            method_pattern=rf"^{re.escape(method_name)}$" if separator else r".*",
+            limit_methods=len(app.methods),
+            max_chars=end,
+        )
+
+    total = result["chars"]
+    source = result["source"][offset:end]
+    next_offset = offset + len(source)
+    out = {
+        "ok": True,
+        "selector": normalized,
+        "format": format,
+        "scope": "method" if separator else "class",
+        "source": source,
+        "chars": total,
+        "returned_chars": len(source),
+        "offset": offset,
+        "truncated": next_offset < total,
+    }
+    if format == "dalvik":
+        out["methods"] = result["methods"]
+    if out["truncated"]:
+        out["next_offset"] = next_offset
+        out["hint"] = f"call inspect_code again with offset={next_offset}"
+    return out
+
+
 def decompile_package(
     store: SessionStore,
     session_id: str,

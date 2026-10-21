@@ -7,6 +7,8 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from tests.helpers import (
     HAS_BYTECODE,
@@ -100,6 +102,89 @@ class McpTruncateTest(unittest.TestCase):
         defaults = _parse_args([])
         self.assertEqual(defaults.log_level, "INFO")
         self.assertFalse(defaults.log_tools)
+
+
+class McpInspectTest(unittest.TestCase):
+    """Mocked dispatch tests run without optional decompiler/disasm bindings."""
+
+    def test_java_method_paging(self):
+        from androguard.mcp import tools as T
+
+        with patch.object(T, "decompile_method") as method:
+            method.return_value = {
+                "source": "abcdefgh", "chars": 12, "truncated": True
+            }
+            page = T.inspect_code(
+                None, "session", "com.example.Auth#login",
+                offset=3, max_chars=5,
+            )
+        method.assert_called_once_with(
+            None, "session", "com.example.Auth#login", max_chars=8
+        )
+        self.assertEqual(page["source"], "defgh")
+        self.assertEqual(page["next_offset"], 8)
+        self.assertEqual(page["chars"], 12)
+        self.assertEqual(page["scope"], "method")
+
+    def test_java_class_dex_name_and_last_page(self):
+        from androguard.mcp import tools as T
+
+        with patch.object(T, "get_class") as get_class:
+            get_class.return_value = {
+                "source": "abcdefghij", "chars": 10, "truncated": False
+            }
+            page = T.inspect_code(
+                None, "session", "Lcom/example/Auth;",
+                offset=8, max_chars=5,
+            )
+        get_class.assert_called_once_with(
+            None, "session", "com.example.Auth", max_chars=13
+        )
+        self.assertEqual(page["source"], "ij")
+        self.assertFalse(page["truncated"])
+        self.assertNotIn("next_offset", page)
+
+    def test_dalvik_literal_selection(self):
+        from androguard.mcp import tools as T
+
+        with (
+            patch.object(
+                T, "_app", return_value=SimpleNamespace(methods=[1, 2, 3])
+            ),
+            patch.object(T, "disassemble_method") as disasm,
+        ):
+            disasm.return_value = {
+                "source": "# example", "chars": 9, "methods": 2
+            }
+            page = T.inspect_code(
+                None, "session", "com.example.A$B#on.Create", format="dalvik"
+            )
+        self.assertEqual(page["methods"], 2)
+        self.assertEqual(page["source"], "# example")
+        self.assertEqual(
+            disasm.call_args.kwargs["class_pattern"], r"^Lcom/example/A\$B;$"
+        )
+        self.assertEqual(
+            disasm.call_args.kwargs["method_pattern"], r"^on\.Create$"
+        )
+        self.assertEqual(disasm.call_args.kwargs["limit_methods"], 3)
+
+    def test_invalid_parameters(self):
+        from androguard.mcp import tools as T
+        from androguard.mcp.errors import McpToolError
+
+        for kwargs in (
+            {"selector": ""},
+            {"selector": "Foo#"},
+            {"selector": "Foo#a#b"},
+            {"selector": "Foo", "format": "smali"},
+            {"selector": "Foo", "offset": -1},
+            {"selector": "Foo", "max_chars": 0},
+        ):
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(McpToolError) as ctx:
+                    T.inspect_code(None, "session", **kwargs)
+                self.assertEqual(ctx.exception.code, "invalid_argument")
 
 
 @unittest.skipUnless(file_exists(TEST_APK), "TestActivity.apk missing")
@@ -217,6 +302,22 @@ class McpDecompileTest(unittest.TestCase):
         self.assertTrue(vulns["ok"])
         self.assertIn("items", vulns)
 
+    def test_inspect_code_java(self):
+        from androguard.mcp import tools as T
+
+        sid = self.store.open(TEST_APK)["session_id"]
+        method = T.inspect_code(
+            self.store, sid,
+            "tests.androguard.TestActivity#onCreate", max_chars=8000,
+        )
+        self.assertIn("onCreate", method["source"])
+        cls = T.inspect_code(
+            self.store, sid, "tests.androguard.TestActivity",
+            max_chars=16000,
+        )
+        self.assertIn("TestActivity", cls["source"])
+
+
     def test_get_class(self):
         from androguard.mcp import tools as T
 
@@ -287,6 +388,25 @@ class McpDisasmTest(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertIn("onCreate", out["source"])
 
+    def test_inspect_code_dalvik(self):
+        from androguard.mcp import tools as T
+        from androguard.mcp.session import SessionStore
+
+        store = SessionStore(allow_any=True)
+        sid = store.open(TEST_APK)["session_id"]
+        method = T.inspect_code(
+            store, sid, "tests.androguard.TestActivity#onCreate",
+            format="dalvik", max_chars=8000,
+        )
+        self.assertIn("onCreate", method["source"])
+        self.assertGreaterEqual(method["methods"], 1)
+        cls = T.inspect_code(
+            store, sid, "Ltests/androguard/TestActivity;",
+            format="dalvik", max_chars=200000,
+        )
+        self.assertIn("onCreate", cls["source"])
+
+
     def test_disassemble_no_match(self):
         from androguard.mcp import tools as T
         from androguard.mcp.errors import McpToolError
@@ -327,6 +447,7 @@ class McpServerRegistrationTest(unittest.TestCase):
             "search_strings",
             "decompile_method",
             "get_class",
+            "inspect_code",
             "decompile_package",
             "find_refs",
             "scan_vulns",
