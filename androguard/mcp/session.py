@@ -15,14 +15,20 @@ from androguard.mcp.errors import McpToolError
 def _parse_roots(raw: str | None) -> list[Path]:
     if not raw or not raw.strip():
         return []
-    return [Path(p.strip()).expanduser().resolve() for p in raw.split(":") if p.strip()]
+    # Use os.pathsep so Windows drive letters (C:\…) are not split on ':'.
+    return [
+        Path(p.strip()).expanduser().resolve()
+        for p in raw.split(os.pathsep)
+        if p.strip()
+    ]
 
 
 def default_roots() -> list[Path]:
     """
     Allowed path roots.
 
-    ``ANDROGUARD_MCP_ROOTS`` — colon-separated absolute/relative paths.
+    ``ANDROGUARD_MCP_ROOTS`` — ``os.pathsep``-separated absolute/relative paths
+    (``:`` on POSIX, ``;`` on Windows).
     If unset: current working directory (and ``./workspace`` when present).
     ``ANDROGUARD_MCP_ALLOW_ANY=1`` disables the allowlist.
     """

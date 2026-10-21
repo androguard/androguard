@@ -45,6 +45,8 @@ Add an MCP server entry (paths adjusted to your checkout):
 }
 ```
 
+On Windows, separate roots with `;` (e.g. `C:\\workspace;D:\\samples`), not `:`.
+
 Or run via the venv Python:
 
 ```json
@@ -122,7 +124,7 @@ available; `disassemble_method` still supports regex selection.
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `ANDROGUARD_MCP_ROOTS` | cwd (+ `./workspace`) | Colon-separated path allowlist |
+| `ANDROGUARD_MCP_ROOTS` | cwd (+ `./workspace`) | Path allowlist (`:` on POSIX, `;` on Windows) |
 | `ANDROGUARD_MCP_ALLOW_ANY` | unset | `1` disables path allowlist |
 | `ANDROGUARD_MCP_ALLOW_ANY_EXT` | unset | `1` allows non-`.apk`/`.dex` |
 | `ANDROGUARD_MCP_MAX_LIST_ITEMS` | `200` | List page size |
