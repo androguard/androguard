@@ -171,6 +171,15 @@ Startup and runtime logs go to **stderr** so stdout stays reserved for MCP JSON-
 2026-09-22T13:00:00 INFO [androguard-mcp] Ready — waiting for MCP client on stdio
 ```
 
+## Session thread affinity
+
+MCP tool calls are serialized on a dedicated worker thread. The Rust-backed
+APK/DEX parser objects are not safe to access or destroy on another thread;
+routing synchronous tools through the SDK's ordinary worker pool can cause
+PyO3 thread-affinity panics. Session eviction, closure, and server shutdown
+also release objects on the same worker. This does not restrict clients from
+submitting concurrent requests; they are queued for safe execution.
+
 ## Security
 
 - Local analyst tool: inherits the host user’s privileges.  

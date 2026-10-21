@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
 import logging
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial, wraps
 from typing import Any, Callable
 
+from androguard.mcp import tools as T
 from androguard.mcp.errors import McpToolError
 from androguard.mcp.session import SessionStore
-from androguard.mcp import tools as T
 from androguard.mcp.truncate import (
     default_findrefs_limit,
     default_list_limit,
@@ -243,25 +246,52 @@ def create_server(store: SessionStore | None = None):
         ),
     )
 
-    @mcp.tool(description="Open an APK/DEX and return session_id + summary.")
+    # The APK/DEX Rust bindings contain unsendable PyO3 objects. MCP's
+    # default worker pool may route consecutive sync calls to different
+    # threads, so all session operations must use one persistent worker.
+    executor = ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="androguard-mcp"
+    )
+
+    def tool(*args: Any, **kwargs: Any):
+        def register(fn: Callable[..., str]):
+            @wraps(fn)
+            async def invoke(*fn_args: Any, **fn_kwargs: Any) -> str:
+                loop = asyncio.get_running_loop()
+                return await loop.run_in_executor(
+                    executor, partial(fn, *fn_args, **fn_kwargs)
+                )
+
+            return mcp.tool(*args, **kwargs)(invoke)
+
+        return register
+
+    def shutdown() -> int:
+        """Release sessions before stopping their dedicated worker."""
+        try:
+            return executor.submit(store.close_all).result()
+        finally:
+            executor.shutdown(wait=True)
+
+    @tool(description="Open an APK/DEX and return session_id + summary.")
     def open_apk(path: str) -> str:
         return _call(store.open, tool="open_apk", path=path)
 
-    @mcp.tool(description="Close an open APK session.")
+    @tool(description="Close an open APK session.")
     def close_apk(session_id: str) -> str:
         return _call(store.close, tool="close_apk", session_id=session_id)
 
-    @mcp.tool(description="List open APK sessions.")
+    @tool(description="List open APK sessions.")
     def list_sessions() -> str:
         return _call(store.list_sessions, tool="list_sessions")
 
-    @mcp.tool(description="Return APK metadata summary for a session.")
+    @tool(description="Return APK metadata summary for a session.")
     def apk_summary(session_id: str) -> str:
         return _call(
             T.apk_summary, tool="apk_summary", store=store, session_id=session_id
         )
 
-    @mcp.tool(description="List requested/declared permissions (paged).")
+    @tool(description="List requested/declared permissions (paged).")
     def list_permissions(
         session_id: str, offset: int = 0, limit: int = 200
     ) -> str:
@@ -274,7 +304,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(description="List DEX class names (optional regex, paged).")
+    @tool(description="List DEX class names (optional regex, paged).")
     def list_classes(
         session_id: str,
         pattern: str | None = None,
@@ -291,7 +321,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(description="List methods (optional class/method regex, paged).")
+    @tool(description="List methods (optional class/method regex, paged).")
     def list_methods(
         session_id: str,
         class_pattern: str | None = None,
@@ -312,7 +342,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(description="List or filter DEX strings (paged).")
+    @tool(description="List or filter DEX strings (paged).")
     def list_strings(
         session_id: str,
         needle: str | None = None,
@@ -329,7 +359,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(description="Search DEX strings containing needle.")
+    @tool(description="Search DEX strings containing needle.")
     def search_strings(
         session_id: str, needle: str, limit: int = 200
     ) -> str:
@@ -342,7 +372,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(
+    @tool(
         description="Decompile one method: Java CLASS#METHOD (needs [decompile])."
     )
     def decompile_method(
@@ -357,7 +387,7 @@ def create_server(store: SessionStore | None = None):
             max_chars=max_chars,
         )
 
-    @mcp.tool(description="Decompile one class (ASC getclass; needs [decompile]).")
+    @tool(description="Decompile one class (ASC getclass; needs [decompile]).")
     def get_class(
         session_id: str, class_name: str, max_chars: int = 32000
     ) -> str:
@@ -370,7 +400,7 @@ def create_server(store: SessionStore | None = None):
             max_chars=max_chars,
         )
 
-    @mcp.tool(
+    @tool(
         description=(
             "Inspect Class or Class#method as java ([decompile]) or dalvik "
             "([disasm]); page long results with offset."
@@ -414,7 +444,7 @@ def create_server(store: SessionStore | None = None):
             out_dir=out_dir,
         )
 
-    @mcp.tool(
+    @tool(
         description=(
             "ASC findrefs: kind=string|type|method|field (needs [decompile])."
         )
@@ -439,7 +469,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(description="Run vulnerability detectors (needs [decompile]).")
+    @tool(description="Run vulnerability detectors (needs [decompile]).")
     def scan_vulns(session_id: str, limit: int = 100) -> str:
         return _call(
             T.scan_vulns,
@@ -449,7 +479,7 @@ def create_server(store: SessionStore | None = None):
             limit=limit,
         )
 
-    @mcp.tool(description="Disassemble matching methods (needs [disasm]).")
+    @tool(description="Disassemble matching methods (needs [disasm]).")
     def disassemble_method(
         session_id: str,
         class_pattern: str,
@@ -470,6 +500,7 @@ def create_server(store: SessionStore | None = None):
 
     # Keep store on the server for tests.
     mcp._androguard_store = store  # type: ignore[attr-defined]
+    mcp._androguard_shutdown = shutdown  # type: ignore[attr-defined]
     return mcp
 
 
@@ -496,8 +527,8 @@ def main(argv: list[str] | None = None) -> None:
         LOG.exception("MCP server crashed")
         raise
     finally:
-        open_n = len(store.list_sessions().get("sessions", []))
-        LOG.info("Stopped (%d session(s) still open)", open_n)
+        open_n = server._androguard_shutdown()
+        LOG.info("Stopped (%d session(s) were still open)", open_n)
 
 
 if __name__ == "__main__":
