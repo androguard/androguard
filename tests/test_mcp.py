@@ -65,6 +65,41 @@ class McpTruncateTest(unittest.TestCase):
             "not_found",
         )
 
+    def test_parse_roots_uses_os_pathsep(self):
+        """ANDROGUARD_MCP_ROOTS splits on os.pathsep (#1178)."""
+        import os
+
+        from androguard.mcp.session import _parse_roots
+
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            roots = _parse_roots(os.pathsep.join([a, b]))
+            self.assertEqual(
+                {r.resolve() for r in roots},
+                {Path(a).resolve(), Path(b).resolve()},
+            )
+
+    def test_parse_roots_preserves_windows_drive_letters(self):
+        """Drive-letter roots must not be split on ':' (#1178)."""
+        from unittest.mock import MagicMock
+
+        from androguard.mcp import session as session_mod
+
+        created: list[str] = []
+
+        def fake_path(value: str):
+            created.append(value)
+            mock = MagicMock()
+            mock.expanduser.return_value = mock
+            mock.resolve.return_value = value
+            return mock
+
+        with patch.object(session_mod.os, "pathsep", ";"):
+            with patch.object(session_mod, "Path", side_effect=fake_path):
+                roots = session_mod._parse_roots(r"C:\workspace;D:\samples")
+
+        self.assertEqual(created, [r"C:\workspace", r"D:\samples"])
+        self.assertEqual(roots, [r"C:\workspace", r"D:\samples"])
+
     def test_startup_banner_logs(self):
         import io
         import logging
