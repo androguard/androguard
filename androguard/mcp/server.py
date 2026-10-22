@@ -44,6 +44,10 @@ _TOOL_NAMES = (
     "find_refs",
     "scan_vulns",
     "disassemble_method",
+    "method_cfg",
+    "dalvik_cfg",
+    "taint_solve",
+    "decode_project",
 )
 
 
@@ -154,13 +158,19 @@ def _log_startup(
     )
     if not extras["decompile"]:
         LOG.warning(
-            "dex-decompiler not installed — decompile/find_refs/scan_vulns "
-            "will return extra_missing (pip install 'androguard[decompile]')"
+            "dex-decompiler not installed — decompile/find_refs/scan_vulns/"
+            "method_cfg/taint_solve will return extra_missing "
+            "(pip install 'androguard[decompile]')"
         )
     if not extras["disasm"]:
         LOG.info(
-            "dex-bytecode not installed — disassemble_method unavailable "
-            "until pip install 'androguard[disasm]'"
+            "dex-bytecode not installed — disassemble_method/dalvik_cfg "
+            "unavailable until pip install 'androguard[disasm]'"
+        )
+    if not extras["patch"]:
+        LOG.info(
+            "apk-patch not installed — decode_project unavailable until "
+            "pip install 'androguard[patch]'"
         )
     LOG.info("Ready — waiting for MCP client on stdio")
 
@@ -496,6 +506,102 @@ def create_server(store: SessionStore | None = None):
             method_pattern=method_pattern,
             limit_methods=limit_methods,
             max_chars=max_chars,
+        )
+
+    @tool(
+        description=(
+            "Decompiler CFG for one method (needs [decompile]): "
+            "bytecode rows, nodes, edges (capped)."
+        )
+    )
+    def method_cfg(
+        session_id: str,
+        class_name: str,
+        method_name: str,
+        max_nodes: int = 200,
+        max_edges: int = 200,
+        max_rows: int = 200,
+    ) -> str:
+        return _call(
+            T.method_cfg,
+            tool="method_cfg",
+            store=store,
+            session_id=session_id,
+            class_name=class_name,
+            method_name=method_name,
+            max_nodes=max_nodes,
+            max_edges=max_edges,
+            max_rows=max_rows,
+        )
+
+    @tool(
+        description=(
+            "Dalvik CFG edges for matching methods (needs [disasm])."
+        )
+    )
+    def dalvik_cfg(
+        session_id: str,
+        class_pattern: str,
+        method_pattern: str,
+        limit_methods: int = 1,
+    ) -> str:
+        return _call(
+            T.dalvik_cfg,
+            tool="dalvik_cfg",
+            store=store,
+            session_id=session_id,
+            class_pattern=class_pattern,
+            method_pattern=method_pattern,
+            limit_methods=limit_methods,
+        )
+
+    @tool(
+        description=(
+            "Run taint solver across DEX files (needs [decompile]); "
+            "JSON report truncated to max_chars."
+        )
+    )
+    def taint_solve(
+        session_id: str,
+        config_json: str | None = None,
+        max_iterations: int | None = None,
+        max_chars: int = 32000,
+    ) -> str:
+        return _call(
+            T.taint_solve,
+            tool="taint_solve",
+            store=store,
+            session_id=session_id,
+            config_json=config_json,
+            max_iterations=max_iterations,
+            max_chars=max_chars,
+        )
+
+    @tool(
+        description=(
+            "Decode APK to in-memory apk-patch project and list entry paths "
+            "(needs [patch] + ANDROGUARD_MCP_ALLOW_WRITE=1). "
+            "Does not return file contents."
+        )
+    )
+    def decode_project(
+        session_id: str,
+        only_manifest: bool = False,
+        no_src: bool = False,
+        no_res: bool = False,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> str:
+        return _call(
+            T.decode_project,
+            tool="decode_project",
+            store=store,
+            session_id=session_id,
+            only_manifest=only_manifest,
+            no_src=no_src,
+            no_res=no_res,
+            offset=offset,
+            limit=limit,
         )
 
     # Keep store on the server for tests.
