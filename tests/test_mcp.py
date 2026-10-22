@@ -66,6 +66,38 @@ class McpTruncateTest(unittest.TestCase):
             "not_found",
         )
 
+    def test_dex_txt_method_replace(self):
+        from androguard.mcp import dex_txt
+
+        sample = (
+            "# dex-txt\n"
+            ".class public Lfoo/Bar;\n"
+            ".method public static first()V\n"
+            "    .registers 1\n"
+            "    return-void\n"
+            ".end method\n"
+            ".method public static second()V\n"
+            "    .registers 1\n"
+            "    return-void\n"
+            ".end method\n"
+        )
+        new_first = (
+            ".method public static first()V\n"
+            "    .registers 1\n"
+            "    const/4 v0, 1\n"
+            "    return-void\n"
+            ".end method\n"
+        )
+        updated = dex_txt.replace_method_block(sample, "first()V", new_first)
+        self.assertIn("const/4 v0, 1", updated)
+        self.assertIn(".method public static second()V", updated)
+        block, _, _ = dex_txt.find_method_block(updated, "first()V")
+        self.assertIn("const/4 v0, 1", block)
+        self.assertEqual(
+            dex_txt.java_to_descriptor("tests.androguard.TestActivity"),
+            "Ltests/androguard/TestActivity;",
+        )
+
     def test_parse_roots_uses_os_pathsep(self):
         """ANDROGUARD_MCP_ROOTS splits on os.pathsep (#1178)."""
         import os
@@ -512,6 +544,13 @@ class McpServerRegistrationTest(unittest.TestCase):
             "dalvik_cfg",
             "taint_solve",
             "decode_project",
+            "open_patch_project",
+            "list_patch_classes",
+            "get_patch_class",
+            "put_patch_class",
+            "get_patch_method",
+            "put_patch_method",
+            "rebuild_apk",
         ):
             self.assertIn(expected, names)
 
@@ -772,6 +811,101 @@ class McpServerRegistrationTest(unittest.TestCase):
         self.assertTrue(
             any("AndroidManifest.xml" in p for p in decoded["items"])
         )
+
+    def test_patch_class_method_and_rebuild(self):
+        import asyncio
+        import os
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not HAS_PATCH:
+            self.skipTest("apk-patch not installed")
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+
+        server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
+        sid = json.loads(
+            asyncio.run(
+                server.call_tool("open_apk", {"path": str(TEST_APK)})
+            ).content[0].text
+        )["session_id"]
+
+        previous = os.environ.get("ANDROGUARD_MCP_ALLOW_WRITE")
+        os.environ["ANDROGUARD_MCP_ALLOW_WRITE"] = "1"
+        try:
+            opened = json.loads(
+                asyncio.run(
+                    server.call_tool(
+                        "open_patch_project",
+                        {
+                            "session_id": sid,
+                            "all_src": True,
+                            "no_res": True,
+                        },
+                    )
+                ).content[0].text
+            )
+            self.assertTrue(opened["ok"])
+            self.assertGreater(opened["dex_txt_count"], 0)
+
+            cls = "tests.androguard.TestActivity"
+            sig = "testDouble()V"
+            method = json.loads(
+                asyncio.run(
+                    server.call_tool(
+                        "get_patch_method",
+                        {
+                            "session_id": sid,
+                            "class_name": cls,
+                            "method_signature": sig,
+                        },
+                    )
+                ).content[0].text
+            )
+            self.assertTrue(method["ok"])
+            original = method["source"]
+            self.assertIn(".method", original)
+
+            # No-op replace then rebuild to prove assemble works.
+            put = json.loads(
+                asyncio.run(
+                    server.call_tool(
+                        "put_patch_method",
+                        {
+                            "session_id": sid,
+                            "class_name": cls,
+                            "method_signature": sig,
+                            "content": original,
+                        },
+                    )
+                ).content[0].text
+            )
+            self.assertTrue(put["ok"])
+
+            with tempfile.TemporaryDirectory() as tmp:
+                out_apk = str(Path(tmp) / "patched.apk")
+                rebuilt = json.loads(
+                    asyncio.run(
+                        server.call_tool(
+                            "rebuild_apk",
+                            {
+                                "session_id": sid,
+                                "out_path": out_apk,
+                                "sign": True,
+                            },
+                        )
+                    ).content[0].text
+                )
+                self.assertTrue(rebuilt["ok"], msg=rebuilt)
+                self.assertTrue(Path(out_apk).is_file())
+                self.assertGreater(Path(out_apk).stat().st_size, 1000)
+        finally:
+            if previous is None:
+                os.environ.pop("ANDROGUARD_MCP_ALLOW_WRITE", None)
+            else:
+                os.environ["ANDROGUARD_MCP_ALLOW_WRITE"] = previous
 
 
 if __name__ == "__main__":

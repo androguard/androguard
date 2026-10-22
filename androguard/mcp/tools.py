@@ -10,9 +10,10 @@ from typing import Any
 
 from androguard.core.bytecode import BytecodeNotAvailable
 from androguard.core.decompiler import DecompilerNotAvailable
-from androguard.core.patch import PatchNotAvailable
+from androguard.core.patch import PatchNotAvailable, build as patch_build
+from androguard.mcp import dex_txt
 from androguard.mcp.errors import McpToolError
-from androguard.mcp.session import SessionStore
+from androguard.mcp.session import Session, SessionStore
 from androguard.mcp.truncate import (
     default_findrefs_limit,
     default_list_limit,
@@ -596,6 +597,7 @@ def decode_project(
 
     Requires ``ANDROGUARD_MCP_ALLOW_WRITE=1`` (heavy / potentially sensitive).
     File contents are not returned — only paths and counts.
+    Does not keep an editable workspace; use ``open_patch_project`` to edit.
     """
     _require_writes("decode_project")
     try:
@@ -622,3 +624,297 @@ def decode_project(
     page["dex_class_count"] = project.get("dex_class_count")
     page["only_manifest"] = only_manifest
     return page
+
+
+def _require_patch_session(store: SessionStore, session_id: str) -> Session:
+    session = store.get(session_id)
+    if not session.patch_files or not session.patch_project_root:
+        raise McpToolError(
+            "not_found",
+            "no patch project open for this session",
+            hint="call open_patch_project first",
+        )
+    return session
+
+
+def open_patch_project(
+    store: SessionStore,
+    session_id: str,
+    *,
+    all_src: bool = True,
+    no_res: bool = False,
+    only_manifest: bool = False,
+) -> dict[str, Any]:
+    """
+    Decode APK into an editable in-memory apk-patch workspace on the session.
+
+    Requires ``ANDROGUARD_MCP_ALLOW_WRITE=1``. Prefer ``all_src=True`` so
+    classes are available as ``*.dex.txt`` for class/method edits.
+    """
+    _require_writes("open_patch_project")
+    session = store.get(session_id)
+    try:
+        project = session.app.decode_project(
+            all_src=all_src,
+            no_res=no_res,
+            only_manifest=only_manifest,
+        )
+    except TypeError:
+        # Older Application.decode_project may not accept all_src.
+        project = session.app.decode_project(
+            no_res=no_res,
+            only_manifest=only_manifest,
+        )
+    except PatchNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[patch]'",
+        ) from exc
+    except Exception as exc:
+        raise McpToolError("internal", str(exc)) from exc
+
+    files = dict(project.get("files") or {})
+    root = str(project.get("project_root") or "project")
+    session.patch_files = files
+    session.patch_project_root = root
+    session.patch_dirty = False
+    dex_txt_n = sum(1 for p in files if str(p).endswith(".dex.txt"))
+    return {
+        "ok": True,
+        "session_id": session_id,
+        "project_root": root,
+        "entry_count": project.get("entry_count", len(files)),
+        "dex_class_count": project.get("dex_class_count"),
+        "dex_txt_count": dex_txt_n,
+        "all_src": all_src,
+        "hint": (
+            "use list_patch_classes / get_patch_class / put_patch_class / "
+            "get_patch_method / put_patch_method then rebuild_apk"
+        ),
+    }
+
+
+def list_patch_classes(
+    store: SessionStore,
+    session_id: str,
+    *,
+    pattern: str | None = None,
+    offset: int = 0,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    session = _require_patch_session(store, session_id)
+    assert session.patch_files is not None
+    paths = sorted(
+        p for p in session.patch_files if str(p).endswith(".dex.txt")
+    )
+    if pattern:
+        try:
+            cre = re.compile(pattern)
+        except re.error as exc:
+            raise McpToolError("invalid_argument", str(exc)) from exc
+        paths = [p for p in paths if cre.search(p)]
+    page = page_items(paths, offset=offset, limit=limit)
+    page["ok"] = True
+    page["dirty"] = session.patch_dirty
+    return page
+
+
+def get_patch_class(
+    store: SessionStore,
+    session_id: str,
+    class_name: str,
+    *,
+    max_chars: int | None = None,
+) -> dict[str, Any]:
+    session = _require_patch_session(store, session_id)
+    assert session.patch_files is not None and session.patch_project_root
+    path = dex_txt.find_class_path(
+        session.patch_files, session.patch_project_root, class_name
+    )
+    if path is None:
+        raise McpToolError(
+            "not_found",
+            f"class not found in patch project: {class_name}",
+        )
+    text = session.patch_files[path].decode("utf-8", errors="replace")
+    if max_chars is None:
+        max_chars = default_text_chars()
+    out = truncate_text(
+        text,
+        max_chars=max_chars,
+        meta={"class_name": class_name, "path": path, "format": "dex-txt"},
+    )
+    out["ok"] = True
+    return out
+
+
+def put_patch_class(
+    store: SessionStore,
+    session_id: str,
+    class_name: str,
+    content: str,
+) -> dict[str, Any]:
+    """Replace an entire class ``*.dex.txt`` (or create under ``dex/``)."""
+    _require_writes("put_patch_class")
+    session = _require_patch_session(store, session_id)
+    assert session.patch_files is not None and session.patch_project_root
+    path = dex_txt.find_class_path(
+        session.patch_files, session.patch_project_root, class_name
+    )
+    created = False
+    if path is None:
+        # Create under primary dex/ tree.
+        rel = dex_txt.descriptor_to_rel_path(
+            dex_txt.java_to_descriptor(class_name)
+        )
+        path = f"{session.patch_project_root.rstrip('/')}/dex/{rel}"
+        created = True
+    if not content.endswith("\n"):
+        content += "\n"
+    session.patch_files[path] = content.encode("utf-8")
+    session.patch_dirty = True
+    return {
+        "ok": True,
+        "path": path,
+        "created": created,
+        "chars": len(content),
+        "dirty": True,
+    }
+
+
+def get_patch_method(
+    store: SessionStore,
+    session_id: str,
+    class_name: str,
+    method_signature: str,
+    *,
+    max_chars: int | None = None,
+) -> dict[str, Any]:
+    session = _require_patch_session(store, session_id)
+    assert session.patch_files is not None and session.patch_project_root
+    path = dex_txt.find_class_path(
+        session.patch_files, session.patch_project_root, class_name
+    )
+    if path is None:
+        raise McpToolError(
+            "not_found",
+            f"class not found in patch project: {class_name}",
+        )
+    text = session.patch_files[path].decode("utf-8", errors="replace")
+    try:
+        found = dex_txt.find_method_block(text, method_signature)
+    except ValueError as exc:
+        raise McpToolError("invalid_argument", str(exc)) from exc
+    if found is None:
+        raise McpToolError(
+            "not_found",
+            f"method not found: {class_name}#{method_signature}",
+        )
+    block, _start, _end = found
+    if max_chars is None:
+        max_chars = default_text_chars()
+    out = truncate_text(
+        block,
+        max_chars=max_chars,
+        meta={
+            "class_name": class_name,
+            "method_signature": method_signature,
+            "path": path,
+            "format": "dex-txt",
+        },
+    )
+    out["ok"] = True
+    return out
+
+
+def put_patch_method(
+    store: SessionStore,
+    session_id: str,
+    class_name: str,
+    method_signature: str,
+    content: str,
+) -> dict[str, Any]:
+    """
+    Replace one method block in a class dex-txt.
+
+    ``content`` must be a full ``.method …`` / ``.end method`` block.
+    """
+    _require_writes("put_patch_method")
+    session = _require_patch_session(store, session_id)
+    assert session.patch_files is not None and session.patch_project_root
+    path = dex_txt.find_class_path(
+        session.patch_files, session.patch_project_root, class_name
+    )
+    if path is None:
+        raise McpToolError(
+            "not_found",
+            f"class not found in patch project: {class_name}",
+        )
+    text = session.patch_files[path].decode("utf-8", errors="replace")
+    try:
+        updated = dex_txt.replace_method_block(
+            text, method_signature, content
+        )
+    except ValueError as exc:
+        raise McpToolError("invalid_argument", str(exc)) from exc
+    except KeyError as exc:
+        raise McpToolError("not_found", str(exc)) from exc
+    session.patch_files[path] = updated.encode("utf-8")
+    session.patch_dirty = True
+    return {
+        "ok": True,
+        "path": path,
+        "class_name": class_name,
+        "method_signature": method_signature,
+        "chars": len(content),
+        "dirty": True,
+    }
+
+
+def rebuild_apk(
+    store: SessionStore,
+    session_id: str,
+    out_path: str,
+    *,
+    sign: bool = True,
+) -> dict[str, Any]:
+    """
+    Assemble the in-memory patch project and write a (signed) APK to ``out_path``.
+
+    Requires ``ANDROGUARD_MCP_ALLOW_WRITE=1``. ``out_path`` must be under
+    ``ANDROGUARD_MCP_ROOTS``.
+    """
+    _require_writes("rebuild_apk")
+    session = _require_patch_session(store, session_id)
+    assert session.patch_files is not None and session.patch_project_root
+    dest = store.resolve_output_file(out_path)
+    if dest.suffix.lower() != ".apk":
+        raise McpToolError(
+            "invalid_argument",
+            f"out_path must end with .apk (got {dest.suffix!r})",
+        )
+    try:
+        apk_bytes = patch_build(
+            session.patch_files,
+            project_root=session.patch_project_root,
+            sign=sign,
+        )
+    except PatchNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[patch]'",
+        ) from exc
+    except Exception as exc:
+        raise McpToolError("internal", f"rebuild failed: {exc}") from exc
+
+    dest.write_bytes(apk_bytes)
+    session.patch_dirty = False
+    return {
+        "ok": True,
+        "out_path": str(dest),
+        "size": len(apk_bytes),
+        "signed": sign,
+        "dirty": False,
+    }
