@@ -47,6 +47,21 @@ class CliSummaryTest(unittest.TestCase):
         self.assertIn("onCreate", out)
         self.assertIn("TestActivity", out)
 
+    def test_show_manifest(self):
+        code, out = self._run("--manifest")
+        self.assertEqual(code, 0)
+        self.assertIn("AndroidManifest.xml", out)
+        self.assertIn("<manifest", out)
+        self.assertIn("TestActivity", out)
+
+    def test_list_components(self):
+        code, out = self._run("--list-components")
+        self.assertEqual(code, 0)
+        self.assertIn("Android component(s)", out)
+        self.assertIn("TestActivity", out)
+        self.assertIn("activity", out)
+
+
     def test_disasm_requires_filter(self):
         code, out = self._run("--disasm")
         self.assertEqual(code, 1)
