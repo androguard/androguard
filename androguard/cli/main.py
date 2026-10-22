@@ -10,6 +10,7 @@ from androguard import __version__ as ANDROGUARD_VERSION
 from androguard.application import Application
 from androguard.cli.display import (
     print_class_names,
+    print_components,
     print_cfg_edges,
     print_decode_project,
     print_disasm_header,
@@ -19,6 +20,7 @@ from androguard.cli.display import (
     print_findrefs,
     print_info,
     print_java,
+    print_manifest,
     print_methods,
     print_scan_vulns,
     print_summary,
@@ -177,6 +179,29 @@ def _build_parser() -> argparse.ArgumentParser:
         "--list-methods",
         action="store_true",
         help="Print all method signatures",
+    )
+    parser.add_argument(
+        "--manifest",
+        "--show-manifest",
+        dest="show_manifest",
+        action="store_true",
+        help="Print the decoded AndroidManifest.xml",
+    )
+    parser.add_argument(
+        "--list-components",
+        action="store_true",
+        help="List Android components (activities, services, receivers, providers)",
+    )
+    parser.add_argument(
+        "--component-type",
+        choices=["all", "activity", "service", "receiver", "provider"],
+        default="all",
+        help="Filter --list-components by component type (default: all)",
+    )
+    parser.add_argument(
+        "--exported-only",
+        action="store_true",
+        help="Only display exported components with --list-components",
     )
     return parser
 
@@ -348,6 +373,24 @@ def app(argv: list[str] | None = None) -> int:
 
     if args.list_methods:
         print_methods(application.methods)
+
+    if getattr(args, "show_manifest", False):
+        xml = application.get_manifest_xml()
+        if not xml:
+            print_error("AndroidManifest.xml not found or empty")
+            return 1
+        print_manifest(xml)
+
+    if getattr(args, "list_components", False):
+        try:
+            comps = application.get_components(
+                component_type=args.component_type,
+                exported_only=args.exported_only,
+            )
+            print_components(comps)
+        except Exception as exc:
+            print_error(str(exc))
+            return 1
 
     if getattr(args, "scan_vulns", False):
         try:

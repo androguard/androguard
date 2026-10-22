@@ -475,3 +475,60 @@ def _style_disasm_operands(rest: str) -> Text:
         else:
             t.append(part, style="white")
     return t
+
+
+def print_manifest(xml: str, c: Console | None = None) -> None:
+    out = c or console()
+    out.print(Rule("AndroidManifest.xml", style="cyan"))
+    out.print(
+        Syntax(
+            xml,
+            "xml",
+            theme="ansi_dark",
+            line_numbers=True,
+            word_wrap=True,
+            padding=0,
+        )
+    )
+
+
+def print_components(
+    components: list[dict], c: Console | None = None
+) -> None:
+    out = c or console()
+    seq = (
+        components
+        if isinstance(components, (list, tuple))
+        else list(components)
+    )
+    out.print(Rule(f"{len(seq)} Android component(s)", style="cyan"))
+    if not seq:
+        return
+    table = Table(
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold cyan",
+        expand=True,
+    )
+    table.add_column("Type", style="magenta", no_wrap=True, width=12)
+    table.add_column("Component Name", style="cyan", ratio=2)
+    table.add_column("Exported", style="bold", width=10)
+    table.add_column("Intent Actions", style="dim", ratio=2)
+
+    for comp in seq:
+        is_exp = comp.get("exported", False)
+        exp_style = "bold green" if is_exp else "dim"
+        exp_text = Text("true" if is_exp else "false", style=exp_style)
+
+        filt = comp.get("intent_filters") or {}
+        actions = filt.get("action", []) if isinstance(filt, dict) else []
+        act_summary = ", ".join(actions) if actions else "-"
+
+        table.add_row(
+            comp.get("type", "unknown"),
+            comp.get("name", ""),
+            exp_text,
+            act_summary,
+        )
+    out.print(table)
+
