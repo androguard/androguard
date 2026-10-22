@@ -48,6 +48,13 @@ _TOOL_NAMES = (
     "dalvik_cfg",
     "taint_solve",
     "decode_project",
+    "open_patch_project",
+    "list_patch_classes",
+    "get_patch_class",
+    "put_patch_class",
+    "get_patch_method",
+    "put_patch_method",
+    "rebuild_apk",
 )
 
 
@@ -169,8 +176,8 @@ def _log_startup(
         )
     if not extras["patch"]:
         LOG.info(
-            "apk-patch not installed — decode_project unavailable until "
-            "pip install 'androguard[patch]'"
+            "apk-patch not installed — decode_project/open_patch_project/"
+            "rebuild_apk unavailable until pip install 'androguard[patch]'"
         )
     LOG.info("Ready — waiting for MCP client on stdio")
 
@@ -581,7 +588,7 @@ def create_server(store: SessionStore | None = None):
         description=(
             "Decode APK to in-memory apk-patch project and list entry paths "
             "(needs [patch] + ANDROGUARD_MCP_ALLOW_WRITE=1). "
-            "Does not return file contents."
+            "Does not return file contents. Prefer open_patch_project to edit."
         )
     )
     def decode_project(
@@ -602,6 +609,150 @@ def create_server(store: SessionStore | None = None):
             no_res=no_res,
             offset=offset,
             limit=limit,
+        )
+
+    @tool(
+        description=(
+            "Open an editable apk-patch workspace on the session "
+            "(needs [patch] + ANDROGUARD_MCP_ALLOW_WRITE=1). "
+            "Use all_src=true to get *.dex.txt for class/method edits."
+        )
+    )
+    def open_patch_project(
+        session_id: str,
+        all_src: bool = True,
+        no_res: bool = False,
+        only_manifest: bool = False,
+    ) -> str:
+        return _call(
+            T.open_patch_project,
+            tool="open_patch_project",
+            store=store,
+            session_id=session_id,
+            all_src=all_src,
+            no_res=no_res,
+            only_manifest=only_manifest,
+        )
+
+    @tool(description="List *.dex.txt class paths in the open patch project.")
+    def list_patch_classes(
+        session_id: str,
+        pattern: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> str:
+        return _call(
+            T.list_patch_classes,
+            tool="list_patch_classes",
+            store=store,
+            session_id=session_id,
+            pattern=pattern,
+            offset=offset,
+            limit=limit,
+        )
+
+    @tool(
+        description=(
+            "Get one class as dex-txt from the patch project "
+            "(Java or Dalvik class name)."
+        )
+    )
+    def get_patch_class(
+        session_id: str,
+        class_name: str,
+        max_chars: int = 32000,
+    ) -> str:
+        return _call(
+            T.get_patch_class,
+            tool="get_patch_class",
+            store=store,
+            session_id=session_id,
+            class_name=class_name,
+            max_chars=max_chars,
+        )
+
+    @tool(
+        description=(
+            "Replace/create an entire class dex-txt in the patch project "
+            "(needs ALLOW_WRITE)."
+        )
+    )
+    def put_patch_class(
+        session_id: str,
+        class_name: str,
+        content: str,
+    ) -> str:
+        return _call(
+            T.put_patch_class,
+            tool="put_patch_class",
+            store=store,
+            session_id=session_id,
+            class_name=class_name,
+            content=content,
+        )
+
+    @tool(
+        description=(
+            "Get one method block from a class dex-txt. "
+            "method_signature like onCreate(Landroid/os/Bundle;)V."
+        )
+    )
+    def get_patch_method(
+        session_id: str,
+        class_name: str,
+        method_signature: str,
+        max_chars: int = 32000,
+    ) -> str:
+        return _call(
+            T.get_patch_method,
+            tool="get_patch_method",
+            store=store,
+            session_id=session_id,
+            class_name=class_name,
+            method_signature=method_signature,
+            max_chars=max_chars,
+        )
+
+    @tool(
+        description=(
+            "Replace one method block in a class dex-txt (full .method…"
+            ".end method text; needs ALLOW_WRITE)."
+        )
+    )
+    def put_patch_method(
+        session_id: str,
+        class_name: str,
+        method_signature: str,
+        content: str,
+    ) -> str:
+        return _call(
+            T.put_patch_method,
+            tool="put_patch_method",
+            store=store,
+            session_id=session_id,
+            class_name=class_name,
+            method_signature=method_signature,
+            content=content,
+        )
+
+    @tool(
+        description=(
+            "Rebuild the patch project to a signed APK at out_path "
+            "(needs [patch] + ALLOW_WRITE; path under MCP roots)."
+        )
+    )
+    def rebuild_apk(
+        session_id: str,
+        out_path: str,
+        sign: bool = True,
+    ) -> str:
+        return _call(
+            T.rebuild_apk,
+            tool="rebuild_apk",
+            store=store,
+            session_id=session_id,
+            out_path=out_path,
+            sign=sign,
         )
 
     # Keep store on the server for tests.

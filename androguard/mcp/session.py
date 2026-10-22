@@ -59,6 +59,10 @@ class Session:
     last_used: float = field(default_factory=time.time)
     mtime: float = 0.0
     output_dir: Path | None = None
+    # In-memory apk-patch project (path → bytes), when open_patch_project was used.
+    patch_files: dict[str, bytes] | None = None
+    patch_project_root: str | None = None
+    patch_dirty: bool = False
 
 
 class SessionStore:
@@ -122,6 +126,16 @@ class SessionStore:
     def resolve_output_dir(self, path: str | Path) -> Path:
         resolved = Path(path).expanduser().resolve()
         self._assert_under_roots(resolved)
+        return resolved
+
+    def resolve_output_file(self, path: str | Path) -> Path:
+        """Resolve a writable output file path under allowed roots."""
+        resolved = Path(path).expanduser().resolve()
+        self._assert_under_roots(resolved)
+        parent = resolved.parent
+        if not parent.exists():
+            parent.mkdir(parents=True, exist_ok=True)
+        self._assert_under_roots(parent)
         return resolved
 
     def _assert_under_roots(self, path: Path) -> None:
@@ -207,6 +221,10 @@ class SessionStore:
             session.app = Application(session.path)
             session.mtime = mtime
             self._release_app(previous)
+            # Source APK changed — drop any in-memory patch workspace.
+            session.patch_files = None
+            session.patch_project_root = None
+            session.patch_dirty = False
         session.last_used = time.time()
         return session
 

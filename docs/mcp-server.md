@@ -106,7 +106,25 @@ All tool results are **JSON strings** with `ok: true|false`. On failure:
 | `taint_solve` | `[decompile]` | Taint solver JSON (truncated) |
 | `disassemble_method` | `[disasm]` | Legacy: regex-based Dalvik disassembly |
 | `dalvik_cfg` | `[disasm]` | Dalvik CFG edges for matching methods |
-| `decode_project` | `[patch]` + `ALLOW_WRITE` | List apk-patch project entry paths |
+| `decode_project` | `[patch]` + `ALLOW_WRITE` | List apk-patch project entry paths (one-shot) |
+| `open_patch_project` | `[patch]` + `ALLOW_WRITE` | Decode editable workspace onto the session |
+| `list_patch_classes` | `[patch]` | List `*.dex.txt` paths (optional regex) |
+| `get_patch_class` / `put_patch_class` | `[patch]` (+ write for put) | Read/replace class dex-txt |
+| `get_patch_method` / `put_patch_method` | `[patch]` (+ write for put) | Read/replace one method block |
+| `rebuild_apk` | `[patch]` + `ALLOW_WRITE` | Assemble workspace → signed APK on disk |
+
+### Patch workflow
+
+```text
+open_apk → open_patch_project(all_src=true)
+  → get_patch_method(sid, "pkg.Class", "onCreate(Landroid/os/Bundle;)V")
+  → put_patch_method(sid, "pkg.Class", "onCreate(Landroid/os/Bundle;)V", new_dex_txt)
+  → rebuild_apk(sid, "workspace/output/app-patched.apk")
+```
+
+Class names accept Java (`com.example.Foo`) or Dalvik (`Lcom/example/Foo;`).
+Method signatures must be exact dex-txt form: `name(params)return`.
+`rebuild_apk` writes under `ANDROGUARD_MCP_ROOTS` only; it does not return APK bytes.
 
 ### Code inspection
 
@@ -135,7 +153,7 @@ available; `disassemble_method` still supports regex selection.
 | `ANDROGUARD_MCP_MAX_TEXT_CHARS` | `32000` | Decompile/disasm cap |
 | `ANDROGUARD_MCP_MAX_FINDREFS` | `100` | findrefs cap |
 | `ANDROGUARD_MCP_MAX_VULNS` | `100` | scan_vulns cap |
-| `ANDROGUARD_MCP_ALLOW_WRITE` | unset | `1` enables `decode_project` |
+| `ANDROGUARD_MCP_ALLOW_WRITE` | unset | `1` enables patch decode/edit/rebuild tools |
 | `ANDROGUARD_MCP_MAX_SESSIONS` | `4` | Concurrent APKs |
 | `ANDROGUARD_MCP_TTL_SECONDS` | `1800` | Idle session eviction |
 
