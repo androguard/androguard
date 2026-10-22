@@ -71,22 +71,32 @@ class SessionStore:
         allow_any: bool | None = None,
     ) -> None:
         if allow_any is None:
-            allow_any = os.environ.get("ANDROGUARD_MCP_ALLOW_ANY", "").strip() in (
+            allow_any = os.environ.get(
+                "ANDROGUARD_MCP_ALLOW_ANY", ""
+            ).strip() in (
                 "1",
                 "true",
                 "True",
                 "yes",
             )
         self.allow_any = allow_any
-        self.roots = [] if allow_any else list(roots if roots is not None else default_roots())
+        self.roots = (
+            []
+            if allow_any
+            else list(roots if roots is not None else default_roots())
+        )
         self.max_sessions = max(1, max_sessions)
         self.ttl_seconds = ttl_seconds
         self._sessions: dict[str, Session] = {}
 
     @classmethod
     def from_env(cls) -> SessionStore:
-        max_sessions = int(os.environ.get("ANDROGUARD_MCP_MAX_SESSIONS", "4") or "4")
-        ttl = float(os.environ.get("ANDROGUARD_MCP_TTL_SECONDS", str(30 * 60)) or 1800)
+        max_sessions = int(
+            os.environ.get("ANDROGUARD_MCP_MAX_SESSIONS", "4") or "4"
+        )
+        ttl = float(
+            os.environ.get("ANDROGUARD_MCP_TTL_SECONDS", str(30 * 60)) or 1800
+        )
         return cls(max_sessions=max_sessions, ttl_seconds=ttl)
 
     def _is_allowed(self, path: Path) -> bool:
@@ -102,6 +112,7 @@ class SessionStore:
 
     def resolve_path(self, path: str | Path) -> Path:
         resolved = Path(path).expanduser().resolve()
+        self._assert_under_roots(resolved)
         if not resolved.is_file():
             raise McpToolError(
                 "not_found",
@@ -116,7 +127,6 @@ class SessionStore:
                 f"unsupported extension {suffix!r} (use .apk or .dex)",
                 hint="set ANDROGUARD_MCP_ALLOW_ANY_EXT=1 to override",
             )
-        self._assert_under_roots(resolved)
         return resolved
 
     def resolve_output_dir(self, path: str | Path) -> Path:
@@ -140,8 +150,12 @@ class SessionStore:
     def _release_app(app: Application) -> None:
         # apkparser.Permissions references its APK, creating a cycle that
         # could otherwise be finalized by GC on a different (unsafe) thread.
-        app.apk.permissions = None
-        app.apk.close()
+        apk = getattr(app, "apk", None)
+        if apk is not None:
+            if hasattr(apk, "permissions"):
+                apk.permissions = None
+            if hasattr(apk, "close") and callable(apk.close):
+                apk.close()
 
     def _evict_expired(self) -> None:
         now = time.time()

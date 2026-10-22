@@ -71,7 +71,10 @@ class McpTruncateTest(unittest.TestCase):
 
         from androguard.mcp.session import _parse_roots
 
-        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+        with (
+            tempfile.TemporaryDirectory() as a,
+            tempfile.TemporaryDirectory() as b,
+        ):
             roots = _parse_roots(os.pathsep.join([a, b]))
             self.assertEqual(
                 {r.resolve() for r in roots},
@@ -147,11 +150,16 @@ class McpInspectTest(unittest.TestCase):
 
         with patch.object(T, "decompile_method") as method:
             method.return_value = {
-                "source": "abcdefgh", "chars": 12, "truncated": True
+                "source": "abcdefgh",
+                "chars": 12,
+                "truncated": True,
             }
             page = T.inspect_code(
-                None, "session", "com.example.Auth#login",
-                offset=3, max_chars=5,
+                None,
+                "session",
+                "com.example.Auth#login",
+                offset=3,
+                max_chars=5,
             )
         method.assert_called_once_with(
             None, "session", "com.example.Auth#login", max_chars=8
@@ -166,11 +174,16 @@ class McpInspectTest(unittest.TestCase):
 
         with patch.object(T, "get_class") as get_class:
             get_class.return_value = {
-                "source": "abcdefghij", "chars": 10, "truncated": False
+                "source": "abcdefghij",
+                "chars": 10,
+                "truncated": False,
             }
             page = T.inspect_code(
-                None, "session", "Lcom/example/Auth;",
-                offset=8, max_chars=5,
+                None,
+                "session",
+                "Lcom/example/Auth;",
+                offset=8,
+                max_chars=5,
             )
         get_class.assert_called_once_with(
             None, "session", "com.example.Auth", max_chars=13
@@ -189,7 +202,9 @@ class McpInspectTest(unittest.TestCase):
             patch.object(T, "disassemble_method") as disasm,
         ):
             disasm.return_value = {
-                "source": "# example", "chars": 9, "methods": 2
+                "source": "# example",
+                "chars": 9,
+                "methods": 2,
             }
             page = T.inspect_code(
                 None, "session", "com.example.A$B#on.Create", format="dalvik"
@@ -279,6 +294,38 @@ class McpSessionTest(unittest.TestCase):
         self.assertTrue(sessions["ok"])
         self.assertEqual(len(sessions["sessions"]), 1)
 
+    def test_get_manifest_components_and_signature(self):
+        from androguard.mcp import tools as T
+
+        sid = self.store.open(TEST_APK)["session_id"]
+        manifest = T.get_manifest(self.store, sid, max_chars=4000)
+        self.assertTrue(manifest["ok"])
+        self.assertIn("manifest", manifest["source"])
+        self.assertIn("TestActivity", manifest["source"])
+
+        comps = T.list_components(self.store, sid, component_type="all")
+        self.assertTrue(comps["ok"])
+        self.assertGreater(comps["total"], 0)
+        self.assertEqual(comps["items"][0]["type"], "activity")
+        self.assertTrue(comps["items"][0]["exported"])
+
+        acts = T.list_components(
+            self.store, sid, component_type="activity", exported_only=True
+        )
+        self.assertTrue(acts["ok"])
+        self.assertEqual(acts["total"], 1)
+
+        srvs = T.list_components(self.store, sid, component_type="service")
+        self.assertTrue(srvs["ok"])
+        self.assertEqual(srvs["total"], 0)
+
+        sig = T.get_signature_info(self.store, sid)
+        self.assertTrue(sig["ok"])
+        self.assertTrue(sig["signature"]["is_signed"])
+        self.assertTrue(sig["signature"]["schemes"]["v1"])
+        self.assertGreater(len(sig["signature"]["certificates"]), 0)
+        self.assertTrue(sig["signature"]["certificates"][0]["is_debug"])
+
     def test_path_denied_outside_roots(self):
         with self.assertRaises(self.McpToolError) as ctx:
             self.store.open("/etc/hosts")
@@ -303,7 +350,9 @@ class McpSessionTest(unittest.TestCase):
             sid = store.open(path)["session_id"]
             path.unlink()
 
-            with patch.object(store, "_release_app", wraps=store._release_app) as release:
+            with patch.object(
+                store, "_release_app", wraps=store._release_app
+            ) as release:
                 with self.assertRaises(self.McpToolError) as ctx:
                     store.get(sid)
                 release.assert_called_once()
@@ -362,16 +411,19 @@ class McpDecompileTest(unittest.TestCase):
 
         sid = self.store.open(TEST_APK)["session_id"]
         method = T.inspect_code(
-            self.store, sid,
-            "tests.androguard.TestActivity#onCreate", max_chars=8000,
+            self.store,
+            sid,
+            "tests.androguard.TestActivity#onCreate",
+            max_chars=8000,
         )
         self.assertIn("onCreate", method["source"])
         cls = T.inspect_code(
-            self.store, sid, "tests.androguard.TestActivity",
+            self.store,
+            sid,
+            "tests.androguard.TestActivity",
             max_chars=16000,
         )
         self.assertIn("TestActivity", cls["source"])
-
 
     def test_get_class(self):
         from androguard.mcp import tools as T
@@ -450,17 +502,22 @@ class McpDisasmTest(unittest.TestCase):
         store = SessionStore(allow_any=True)
         sid = store.open(TEST_APK)["session_id"]
         method = T.inspect_code(
-            store, sid, "tests.androguard.TestActivity#onCreate",
-            format="dalvik", max_chars=8000,
+            store,
+            sid,
+            "tests.androguard.TestActivity#onCreate",
+            format="dalvik",
+            max_chars=8000,
         )
         self.assertIn("onCreate", method["source"])
         self.assertGreaterEqual(method["methods"], 1)
         cls = T.inspect_code(
-            store, sid, "Ltests/androguard/TestActivity;",
-            format="dalvik", max_chars=200000,
+            store,
+            sid,
+            "Ltests/androguard/TestActivity;",
+            format="dalvik",
+            max_chars=200000,
         )
         self.assertIn("onCreate", cls["source"])
-
 
     def test_disassemble_no_match(self):
         from androguard.mcp import tools as T
@@ -579,10 +636,12 @@ class McpServerRegistrationTest(unittest.TestCase):
             self.assertTrue(call("apk_summary", session_id=sid)["ok"])
 
             async def concurrent_calls():
-                return await asyncio.gather(*(
-                    server.call_tool("apk_summary", {"session_id": sid})
-                    for _ in range(4)
-                ))
+                return await asyncio.gather(
+                    *(
+                        server.call_tool("apk_summary", {"session_id": sid})
+                        for _ in range(4)
+                    )
+                )
 
             for response in asyncio.run(concurrent_calls()):
                 self.assertTrue(json.loads(response.content[0].text)["ok"])
@@ -607,9 +666,9 @@ class McpServerRegistrationTest(unittest.TestCase):
         server = create_server(SessionStore(allow_any=True))
         self.addCleanup(server._androguard_shutdown)
         opened = json.loads(
-            asyncio.run(
-                server.call_tool("open_apk", {"path": str(TEST_APK)})
-            ).content[0].text
+            asyncio.run(server.call_tool("open_apk", {"path": str(TEST_APK)}))
+            .content[0]
+            .text
         )
         sid = opened["session_id"]
         listed = json.loads(
@@ -622,10 +681,72 @@ class McpServerRegistrationTest(unittest.TestCase):
                         "limit": 20,
                     },
                 )
-            ).content[0].text
+            )
+            .content[0]
+            .text
         )
         self.assertTrue(listed["ok"])
         self.assertGreater(listed["total"], 0)
+
+    def test_call_get_manifest_and_components_tools(self):
+        import asyncio
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+        server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
+        opened = json.loads(
+            asyncio.run(server.call_tool("open_apk", {"path": str(TEST_APK)}))
+            .content[0]
+            .text
+        )
+        sid = opened["session_id"]
+
+        manifest_res = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "get_manifest",
+                    {"session_id": sid, "max_chars": 5000},
+                )
+            )
+            .content[0]
+            .text
+        )
+        self.assertTrue(manifest_res["ok"])
+        self.assertIn("manifest", manifest_res["source"])
+
+        comps_res = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "list_components",
+                    {
+                        "session_id": sid,
+                        "component_type": "activity",
+                        "exported_only": True,
+                    },
+                )
+            )
+            .content[0]
+            .text
+        )
+        self.assertTrue(comps_res["ok"])
+        self.assertEqual(comps_res["total"], 1)
+
+        sig_res = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "get_signature_info",
+                    {"session_id": sid},
+                )
+            )
+            .content[0]
+            .text
+        )
+        self.assertTrue(sig_res["ok"])
+        self.assertTrue(sig_res["signature"]["is_signed"])
 
 
 if __name__ == "__main__":

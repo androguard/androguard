@@ -32,6 +32,9 @@ _TOOL_NAMES = (
     "close_apk",
     "list_sessions",
     "apk_summary",
+    "get_manifest",
+    "list_components",
+    "get_signature_info",
     "list_permissions",
     "list_classes",
     "list_methods",
@@ -44,6 +47,7 @@ _TOOL_NAMES = (
     "find_refs",
     "scan_vulns",
     "disassemble_method",
+    "emulate_method",
 )
 
 
@@ -288,7 +292,67 @@ def create_server(store: SessionStore | None = None):
     @tool(description="Return APK metadata summary for a session.")
     def apk_summary(session_id: str) -> str:
         return _call(
-            T.apk_summary, tool="apk_summary", store=store, session_id=session_id
+            T.apk_summary,
+            tool="apk_summary",
+            store=store,
+            session_id=session_id,
+        )
+
+    @tool(description="Get decoded AndroidManifest.xml as UTF-8 string.")
+    def get_manifest(session_id: str, max_chars: int | None = None) -> str:
+        return _call(
+            T.get_manifest,
+            tool="get_manifest",
+            store=store,
+            session_id=session_id,
+            max_chars=max_chars,
+        )
+
+    @tool(description="List Android components and attack surface (paged).")
+    def list_components(
+        session_id: str,
+        component_type: str = "all",
+        exported_only: bool = False,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> str:
+        return _call(
+            T.list_components,
+            tool="list_components",
+            store=store,
+            session_id=session_id,
+            component_type=component_type,
+            exported_only=exported_only,
+            offset=offset,
+            limit=limit,
+        )
+
+    @tool(
+        description=(
+            "Get APK signature schemes (v1-v3) and certificate details."
+        )
+    )
+    def get_signature_info(session_id: str) -> str:
+        return _call(
+            T.get_signature_info,
+            tool="get_signature_info",
+            store=store,
+            session_id=session_id,
+        )
+
+    @tool(
+        description="Emulate a method and trace execution (needs [decompile])."
+    )
+    def emulate_method(
+        session_id: str, selector: str, max_steps: int | None = None
+    ) -> str:
+        return _call(
+            T.emulate_method,
+            tool="emulate_method",
+            store=store,
+            session_id=session_id,
+            selector=selector,
+            max_steps=max_steps,
         )
 
     @tool(description="List requested/declared permissions (paged).")
@@ -360,9 +424,7 @@ def create_server(store: SessionStore | None = None):
         )
 
     @tool(description="Search DEX strings containing needle.")
-    def search_strings(
-        session_id: str, needle: str, limit: int = 200
-    ) -> str:
+    def search_strings(session_id: str, needle: str, limit: int = 200) -> str:
         return _call(
             T.search_strings,
             tool="search_strings",

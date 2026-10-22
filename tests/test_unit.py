@@ -20,7 +20,6 @@ from androguard.core.decompiler import (
     parse_method_selector,
 )
 from androguard.misc import AnalyzeDex, clean_file_name
-
 from tests.helpers import (
     HAS_BYTECODE,
     HAS_DECOMPILER,
@@ -192,7 +191,10 @@ class AnalyzeDexTest(unittest.TestCase):
         coded = [m for m in dh.get_methods() if m.get_code()]
         self.assertGreater(len(coded), 0)
         code = coded[0].get_code()
-        self.assertGreater(code.insns_size, 0)
+        insns_size = getattr(code, "insns_size", None)
+        if insns_size is None and hasattr(code, "__getitem__"):
+            insns_size = code["insns_size"].value
+        self.assertGreater(insns_size, 0)
 
 
 if __name__ == "__main__":
