@@ -632,3 +632,69 @@ class Application:
                 self._apk.signature and self._apk.signature.is_signed()
             ),
         }
+
+    def get_manifest_xml(self) -> str:
+        """Return the decoded AndroidManifest.xml as a UTF-8 string."""
+        manifest = self._apk.get_android_manifest()
+        if manifest is None:
+            return ""
+        xml = manifest.get_xml()
+        if isinstance(xml, (bytes, bytearray)):
+            return xml.decode("utf-8", errors="replace")
+        return str(xml or "")
+
+    def get_components(
+        self,
+        component_type: str = "all",
+        exported_only: bool = False,
+    ) -> list[dict]:
+        """
+        Return parsed components (activities, services, receivers, providers).
+        """
+        valid_map = {
+            "activity": self._apk.get_activities,
+            "service": self._apk.get_services,
+            "receiver": self._apk.get_receivers,
+            "provider": self._apk.get_providers,
+        }
+        req = component_type.lower().strip()
+        if req not in ("all", *valid_map):
+            raise ValueError(
+                f"invalid component_type {component_type!r}; "
+                f"expected all|activity|service|receiver|provider"
+            )
+
+        types_to_query = list(valid_map.keys()) if req == "all" else [req]
+        results = []
+
+        for c_type in types_to_query:
+            getter = valid_map[c_type]
+            try:
+                names = list(getter() or [])
+            except Exception:
+                names = []
+
+            for name in names:
+                filters = {}
+                try:
+                    filters = self._apk.get_intent_filters(c_type, name) or {}
+                except Exception:
+                    pass
+
+                has_filters = bool(
+                    filters.get("action") or filters.get("category")
+                )
+                if exported_only and not has_filters:
+                    continue
+
+                results.append(
+                    {
+                        "name": name,
+                        "type": c_type,
+                        "exported": has_filters,
+                        "intent_filters": filters,
+                    }
+                )
+
+        return results
+
