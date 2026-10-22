@@ -51,7 +51,10 @@ def list_permissions(
                     names.append(str(item[0]))
                 else:
                     names.append(str(item))
-            names.extend(str(x) for x in (getattr(perms_obj, "declared_permissions", {}) or {}))
+            names.extend(
+                str(x)
+                for x in (getattr(perms_obj, "declared_permissions", {}) or {})
+            )
     page = page_items(names, offset=offset, limit=limit)
     page["ok"] = True
     return page
@@ -175,7 +178,9 @@ def get_class(
         raise McpToolError("not_found", str(exc)) from exc
     if max_chars is None:
         max_chars = default_text_chars()
-    out = truncate_text(src, max_chars=max_chars, meta={"class_name": class_name})
+    out = truncate_text(
+        src, max_chars=max_chars, meta={"class_name": class_name}
+    )
     out["ok"] = True
     return out
 
@@ -225,7 +230,9 @@ def inspect_code(
             store,
             session_id,
             class_pattern=rf"^{re.escape(dex_class)}$",
-            method_pattern=rf"^{re.escape(method_name)}$" if separator else r".*",
+            method_pattern=(
+                rf"^{re.escape(method_name)}$" if separator else r".*"
+            ),
             limit_methods=len(app.methods),
             max_chars=end,
         )
@@ -402,3 +409,88 @@ def disassemble_method(
     )
     out["ok"] = True
     return out
+
+
+def get_manifest(
+    store: SessionStore,
+    session_id: str,
+    *,
+    max_chars: int | None = None,
+) -> dict[str, Any]:
+    app = _app(store, session_id)
+    xml = app.get_manifest_xml()
+    if not xml:
+        raise McpToolError(
+            "not_found", "AndroidManifest.xml not found or empty"
+        )
+    if max_chars is None:
+        max_chars = default_text_chars()
+    out = truncate_text(xml, max_chars=max_chars, meta={"format": "xml"})
+    out["ok"] = True
+    return out
+
+
+def list_components(
+    store: SessionStore,
+    session_id: str,
+    *,
+    component_type: str = "all",
+    exported_only: bool = False,
+    offset: int = 0,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    app = _app(store, session_id)
+    try:
+        comps = app.get_components(
+            component_type=component_type,
+            exported_only=exported_only,
+        )
+    except ValueError as exc:
+        raise McpToolError("invalid_argument", str(exc)) from exc
+    page = page_items(comps, offset=offset, limit=limit)
+    page["ok"] = True
+    page["component_type"] = component_type
+    page["exported_only"] = exported_only
+    return page
+
+
+def get_signature_info(
+    store: SessionStore,
+    session_id: str,
+) -> dict[str, Any]:
+    app = _app(store, session_id)
+    sig_info = app.get_signature_info()
+    return {"ok": True, "signature": jsonable(sig_info)}
+
+
+def emulate_method(
+    store: SessionStore,
+    session_id: str,
+    selector: str,
+    *,
+    max_steps: int | None = None,
+) -> dict[str, Any]:
+    from androguard.core.decompiler import (
+        DecompilerNotAvailable,
+        parse_method_selector,
+    )
+
+    try:
+        cls_name, meth_name = parse_method_selector(selector)
+    except ValueError as exc:
+        raise McpToolError("invalid_argument", str(exc)) from exc
+    try:
+        result = _app(store, session_id).emulate(
+            cls_name, meth_name, max_steps=max_steps
+        )
+    except DecompilerNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[decompile]'",
+        ) from exc
+    except ValueError as exc:
+        raise McpToolError("not_found", str(exc)) from exc
+    except Exception as exc:
+        raise McpToolError("internal", str(exc)) from exc
+    return {"ok": True, "selector": selector, "emulation": jsonable(result)}

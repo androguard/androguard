@@ -92,6 +92,9 @@ All tool results are **JSON strings** with `ok: true|false`. On failure:
 | `close_apk` | — | Drop session |
 | `list_sessions` | — | Open sessions |
 | `apk_summary` | — | Package / DEX counts / signed |
+| `get_manifest` | — | AndroidManifest.xml (formatted XML, truncated) |
+| `list_components` | — | Activities, services, receivers, providers & attack surface |
+| `get_signature_info` | — | APK signature schemes (v1–v3) & signer certificates |
 | `list_permissions` | — | Permissions (paged) |
 | `list_classes` | — | Class names (regex + paging) |
 | `list_methods` | — | Methods (regex + paging) |
@@ -103,6 +106,7 @@ All tool results are **JSON strings** with `ok: true|false`. On failure:
 | `find_refs` | `[decompile]` | string/type/method/field refs |
 | `scan_vulns` | `[decompile]` | Vulnerability detectors |
 | `disassemble_method` | `[disasm]` | Legacy: regex-based Dalvik disassembly |
+| `emulate_method` | `[decompile]` | Emulate method and trace execution |
 
 ### Code inspection
 
