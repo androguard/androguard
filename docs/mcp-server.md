@@ -67,7 +67,7 @@ Or run via the venv Python:
 
 1. `open_apk` with a path under the allowlist → `session_id` + summary  
 2. `list_classes` / `list_methods` / `search_strings`  
-3. `find_refs` / `scan_vulns` / `inspect_code`
+3. `find_refs` / `scan_vulns` / `inspect_code` / `method_cfg` / `dalvik_cfg`
 4. `decompile_package` for larger trees (writes under `workspace/output/`)  
 5. `close_apk` when done  
 
@@ -102,7 +102,11 @@ All tool results are **JSON strings** with `ok: true|false`. On failure:
 | `decompile_package` | `[decompile]` | Package tree → disk |
 | `find_refs` | `[decompile]` | string/type/method/field refs |
 | `scan_vulns` | `[decompile]` | Vulnerability detectors |
+| `method_cfg` | `[decompile]` | Decompiler CFG (rows / nodes / edges) |
+| `taint_solve` | `[decompile]` | Taint solver JSON (truncated) |
 | `disassemble_method` | `[disasm]` | Legacy: regex-based Dalvik disassembly |
+| `dalvik_cfg` | `[disasm]` | Dalvik CFG edges for matching methods |
+| `decode_project` | `[patch]` + `ALLOW_WRITE` | List apk-patch project entry paths |
 
 ### Code inspection
 
@@ -131,6 +135,7 @@ available; `disassemble_method` still supports regex selection.
 | `ANDROGUARD_MCP_MAX_TEXT_CHARS` | `32000` | Decompile/disasm cap |
 | `ANDROGUARD_MCP_MAX_FINDREFS` | `100` | findrefs cap |
 | `ANDROGUARD_MCP_MAX_VULNS` | `100` | scan_vulns cap |
+| `ANDROGUARD_MCP_ALLOW_WRITE` | unset | `1` enables `decode_project` |
 | `ANDROGUARD_MCP_MAX_SESSIONS` | `4` | Concurrent APKs |
 | `ANDROGUARD_MCP_TTL_SECONDS` | `1800` | Idle session eviction |
 

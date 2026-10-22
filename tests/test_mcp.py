@@ -14,6 +14,7 @@ from tests.helpers import (
     HAS_BYTECODE,
     HAS_DECOMPILER,
     HAS_MCP,
+    HAS_PATCH,
     TEST_APK,
     file_exists,
 )
@@ -507,6 +508,10 @@ class McpServerRegistrationTest(unittest.TestCase):
             "find_refs",
             "scan_vulns",
             "disassemble_method",
+            "method_cfg",
+            "dalvik_cfg",
+            "taint_solve",
+            "decode_project",
         ):
             self.assertIn(expected, names)
 
@@ -626,6 +631,147 @@ class McpServerRegistrationTest(unittest.TestCase):
         )
         self.assertTrue(listed["ok"])
         self.assertGreater(listed["total"], 0)
+
+    def test_method_cfg_and_dalvik_cfg_tools(self):
+        import asyncio
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+        if not HAS_DECOMPILER and not HAS_BYTECODE:
+            self.skipTest("neither decompiler nor bytecode installed")
+
+        server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
+        sid = json.loads(
+            asyncio.run(
+                server.call_tool("open_apk", {"path": str(TEST_APK)})
+            ).content[0].text
+        )["session_id"]
+
+        if HAS_DECOMPILER:
+            cfg = json.loads(
+                asyncio.run(
+                    server.call_tool(
+                        "method_cfg",
+                        {
+                            "session_id": sid,
+                            "class_name": "tests.androguard.TestActivity",
+                            "method_name": "onCreate",
+                        },
+                    )
+                ).content[0].text
+            )
+            self.assertTrue(cfg["ok"])
+            self.assertIn("nodes", cfg)
+            self.assertIn("edges", cfg)
+            self.assertGreater(cfg["bytecode_rows_total"], 0)
+
+        if HAS_BYTECODE:
+            dcfg = json.loads(
+                asyncio.run(
+                    server.call_tool(
+                        "dalvik_cfg",
+                        {
+                            "session_id": sid,
+                            "class_pattern": "TestActivity",
+                            "method_pattern": "onCreate",
+                        },
+                    )
+                ).content[0].text
+            )
+            self.assertTrue(dcfg["ok"])
+            self.assertGreaterEqual(len(dcfg["methods"]), 1)
+
+    def test_taint_solve_tool(self):
+        import asyncio
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not HAS_DECOMPILER:
+            self.skipTest("dex-decompiler not installed")
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+
+        server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
+        sid = json.loads(
+            asyncio.run(
+                server.call_tool("open_apk", {"path": str(TEST_APK)})
+            ).content[0].text
+        )["session_id"]
+        result = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "taint_solve",
+                    {
+                        "session_id": sid,
+                        "max_iterations": 1,
+                        "max_chars": 8000,
+                    },
+                )
+            ).content[0].text
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["format"], "json")
+        self.assertIn("source", result)
+
+    def test_decode_project_requires_allow_write(self):
+        import asyncio
+        import os
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not HAS_PATCH:
+            self.skipTest("apk-patch not installed")
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+
+        server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
+        sid = json.loads(
+            asyncio.run(
+                server.call_tool("open_apk", {"path": str(TEST_APK)})
+            ).content[0].text
+        )["session_id"]
+
+        denied = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "decode_project",
+                    {"session_id": sid, "only_manifest": True},
+                )
+            ).content[0].text
+        )
+        self.assertFalse(denied.get("ok"))
+        self.assertEqual(denied["error"]["code"], "path_denied")
+
+        previous = os.environ.get("ANDROGUARD_MCP_ALLOW_WRITE")
+        os.environ["ANDROGUARD_MCP_ALLOW_WRITE"] = "1"
+        try:
+            decoded = json.loads(
+                asyncio.run(
+                    server.call_tool(
+                        "decode_project",
+                        {"session_id": sid, "only_manifest": True},
+                    )
+                ).content[0].text
+            )
+        finally:
+            if previous is None:
+                os.environ.pop("ANDROGUARD_MCP_ALLOW_WRITE", None)
+            else:
+                os.environ["ANDROGUARD_MCP_ALLOW_WRITE"] = previous
+
+        self.assertTrue(decoded["ok"])
+        self.assertGreater(decoded["total"], 0)
+        self.assertTrue(
+            any("AndroidManifest.xml" in p for p in decoded["items"])
+        )
 
 
 if __name__ == "__main__":

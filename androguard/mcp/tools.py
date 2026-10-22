@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
+import os
 import re
 from pathlib import Path
 from typing import Any
 
 from androguard.core.bytecode import BytecodeNotAvailable
 from androguard.core.decompiler import DecompilerNotAvailable
+from androguard.core.patch import PatchNotAvailable
 from androguard.mcp.errors import McpToolError
 from androguard.mcp.session import SessionStore
 from androguard.mcp.truncate import (
@@ -19,6 +22,24 @@ from androguard.mcp.truncate import (
     page_items,
     truncate_text,
 )
+
+
+def _writes_allowed() -> bool:
+    return os.environ.get("ANDROGUARD_MCP_ALLOW_WRITE", "").strip() in (
+        "1",
+        "true",
+        "True",
+        "yes",
+    )
+
+
+def _require_writes(tool: str) -> None:
+    if not _writes_allowed():
+        raise McpToolError(
+            "path_denied",
+            f"{tool} requires ANDROGUARD_MCP_ALLOW_WRITE=1",
+            hint="set ANDROGUARD_MCP_ALLOW_WRITE=1 to enable mutating / heavy decode tools",
+        )
 
 
 def _app(store: SessionStore, session_id: str):
@@ -402,3 +423,202 @@ def disassemble_method(
     )
     out["ok"] = True
     return out
+
+
+def method_cfg(
+    store: SessionStore,
+    session_id: str,
+    class_name: str,
+    method_name: str,
+    *,
+    max_nodes: int | None = None,
+    max_edges: int | None = None,
+    max_rows: int | None = None,
+) -> dict[str, Any]:
+    """Decompiler CFG for one method (needs ``[decompile]``)."""
+    if max_nodes is None:
+        max_nodes = default_list_limit()
+    if max_edges is None:
+        max_edges = default_list_limit()
+    if max_rows is None:
+        max_rows = default_list_limit()
+    try:
+        rows, nodes, edges = _app(store, session_id).method_cfg(
+            class_name, method_name
+        )
+    except DecompilerNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[decompile]'",
+        ) from exc
+    except ValueError as exc:
+        raise McpToolError("not_found", str(exc)) from exc
+
+    rows_j = jsonable(rows)
+    nodes_j = jsonable(nodes)
+    edges_j = jsonable(edges)
+    if not isinstance(rows_j, list):
+        rows_j = [rows_j]
+    if not isinstance(nodes_j, list):
+        nodes_j = [nodes_j]
+    if not isinstance(edges_j, list):
+        edges_j = [edges_j]
+
+    return {
+        "ok": True,
+        "class_name": class_name,
+        "method_name": method_name,
+        "bytecode_rows": rows_j[: max(0, max_rows)],
+        "bytecode_rows_total": len(rows_j),
+        "nodes": nodes_j[: max(0, max_nodes)],
+        "nodes_total": len(nodes_j),
+        "edges": edges_j[: max(0, max_edges)],
+        "edges_total": len(edges_j),
+        "truncated": (
+            len(rows_j) > max_rows
+            or len(nodes_j) > max_nodes
+            or len(edges_j) > max_edges
+        ),
+    }
+
+
+def dalvik_cfg(
+    store: SessionStore,
+    session_id: str,
+    *,
+    class_pattern: str,
+    method_pattern: str,
+    limit_methods: int = 1,
+) -> dict[str, Any]:
+    """Dalvik CFG edges for matching methods (needs ``[disasm]``)."""
+    app = _app(store, session_id)
+    methods_out: list[dict[str, Any]] = []
+    try:
+        for method in app.iter_methods(
+            class_pattern=class_pattern,
+            method_pattern=method_pattern,
+            with_code=True,
+        ):
+            edges = jsonable(app.method_cfg_edges(method))
+            if not isinstance(edges, list):
+                edges = [edges]
+            blocks = app.method_basic_blocks(method)
+            methods_out.append(
+                {
+                    "class_name": method.class_name,
+                    "method_name": method.name,
+                    "block_count": len(blocks),
+                    "edges": edges,
+                    "edge_count": len(edges),
+                }
+            )
+            if len(methods_out) >= max(1, limit_methods):
+                break
+    except BytecodeNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[disasm]'",
+        ) from exc
+    if not methods_out:
+        raise McpToolError(
+            "not_found",
+            "no methods with code matched the given patterns",
+        )
+    return {
+        "ok": True,
+        "class_pattern": class_pattern,
+        "method_pattern": method_pattern,
+        "methods": methods_out,
+    }
+
+
+def taint_solve(
+    store: SessionStore,
+    session_id: str,
+    *,
+    config_json: str | None = None,
+    max_iterations: int | None = None,
+    max_chars: int | None = None,
+) -> dict[str, Any]:
+    """Run taint solver across DEX files (needs ``[decompile]``)."""
+    if max_chars is None:
+        max_chars = default_text_chars()
+    try:
+        reports = _app(store, session_id).taint_solve(
+            config_json=config_json,
+            max_iterations=max_iterations,
+        )
+    except DecompilerNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[decompile]'",
+        ) from exc
+    except Exception as exc:
+        raise McpToolError("internal", str(exc)) from exc
+
+    parsed: list[Any] = []
+    for raw in reports:
+        try:
+            parsed.append(json.loads(raw) if isinstance(raw, str) else raw)
+        except (TypeError, json.JSONDecodeError):
+            parsed.append(raw)
+
+    # Keep payload LLM-sized: serialize then truncate.
+    blob = json.dumps(jsonable(parsed), ensure_ascii=False, default=str)
+    out = truncate_text(
+        blob,
+        max_chars=max_chars,
+        meta={
+            "dex_count": len(reports),
+            "max_iterations": max_iterations,
+        },
+    )
+    out["ok"] = True
+    out["format"] = "json"
+    return out
+
+
+def decode_project(
+    store: SessionStore,
+    session_id: str,
+    *,
+    only_manifest: bool = False,
+    no_src: bool = False,
+    no_res: bool = False,
+    offset: int = 0,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    """
+    Decode APK to an in-memory apk-patch project and list entry paths.
+
+    Requires ``ANDROGUARD_MCP_ALLOW_WRITE=1`` (heavy / potentially sensitive).
+    File contents are not returned — only paths and counts.
+    """
+    _require_writes("decode_project")
+    try:
+        project = _app(store, session_id).decode_project(
+            only_manifest=only_manifest,
+            no_src=no_src,
+            no_res=no_res,
+        )
+    except PatchNotAvailable as exc:
+        raise McpToolError(
+            "extra_missing",
+            str(exc),
+            hint="pip install 'androguard[patch]'",
+        ) from exc
+    except Exception as exc:
+        raise McpToolError("internal", str(exc)) from exc
+
+    files = project.get("files") or {}
+    paths = sorted(str(p) for p in files.keys())
+    page = page_items(paths, offset=offset, limit=limit)
+    page["ok"] = True
+    page["project_root"] = project.get("project_root")
+    page["entry_count"] = project.get("entry_count", len(paths))
+    page["dex_class_count"] = project.get("dex_class_count")
+    page["only_manifest"] = only_manifest
+    return page
