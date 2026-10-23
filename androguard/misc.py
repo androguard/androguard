@@ -7,10 +7,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import BinaryIO, Tuple, Union
 
-from dexparser import DEX, DEXHelper, DEX_from_source
-
 from androguard.application import Application
 from androguard.core.apk import APK as CoreAPK
+from androguard.core.dex import DEX, DEX_from_source, DEXHelper
 
 PathLike = Union[str, Path]
 
@@ -61,12 +60,16 @@ def clean_file_name(filename: str, unique: bool = True) -> str:
 
     cleaned = re.sub(r"[^\w.\-]+", "_", filename)
     if len(cleaned) > 230:
-        root, ext = (cleaned[:226], cleaned[226:]) if "." in cleaned[-10:] else (cleaned[:230], "")
+        root, ext = (
+            (cleaned[:226], cleaned[226:])
+            if "." in cleaned[-10:]
+            else (cleaned[:230], "")
+        )
         cleaned = root + ext
     if unique:
         try:
             with tempfile.NamedTemporaryFile(prefix=cleaned + "_") as fp:
-                return fp.name.split("/")[-1]
+                return Path(fp.name).name
         except OSError:
             pass
     return cleaned

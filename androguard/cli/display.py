@@ -68,7 +68,9 @@ def console(*, stderr: bool = False) -> Console:
 
 def print_error(message: str) -> None:
     console(stderr=True).print(
-        Text.assemble((" error ", "bold white on red"), (" ", ""), (message, "red"))
+        Text.assemble(
+            (" error ", "bold white on red"), (" ", ""), (message, "red")
+        )
     )
 
 
@@ -84,7 +86,9 @@ def print_warning(message: str) -> None:
 
 def print_info(message: str) -> None:
     console(stderr=True).print(
-        Text.assemble((" info ", "bold white on blue"), (" ", ""), (message, "cyan"))
+        Text.assemble(
+            (" info ", "bold white on blue"), (" ", ""), (message, "cyan")
+        )
     )
 
 
@@ -99,7 +103,9 @@ def print_version(c: Console | None = None) -> None:
     )
 
 
-def print_summary(summary: dict, apk_path: str, c: Console | None = None) -> None:
+def print_summary(
+    summary: dict, apk_path: str, c: Console | None = None
+) -> None:
     out = c or console()
     app_name = str(summary.get("app_name") or "") or Path(apk_path).name
     table = Table(
@@ -138,7 +144,9 @@ def print_methods(methods, c: Console | None = None) -> None:
         out.print(line)
 
 
-def print_java(java: str, heading: str | None = None, c: Console | None = None) -> None:
+def print_java(
+    java: str, heading: str | None = None, c: Console | None = None
+) -> None:
     out = c or console()
     if heading:
         out.print(Rule(heading, style="cyan"))
@@ -154,7 +162,9 @@ def print_java(java: str, heading: str | None = None, c: Console | None = None) 
     )
 
 
-def print_disasm_header(class_name: str, method_name: str, c: Console | None = None) -> None:
+def print_disasm_header(
+    class_name: str, method_name: str, c: Console | None = None
+) -> None:
     out = c or console()
     title = Text()
     title.append("# ", style="dim")
@@ -206,7 +216,9 @@ def print_findrefs(
         )
     )
     if sites:
-        table = Table(box=box.SIMPLE, show_header=True, pad_edge=False, expand=True)
+        table = Table(
+            box=box.SIMPLE, show_header=True, pad_edge=False, expand=True
+        )
         table.add_column("location", overflow="fold")
         table.add_column("offset", style="cyan", no_wrap=True)
         for s in sites:
@@ -238,7 +250,10 @@ def print_emulate(result: dict, c: Console | None = None) -> None:
             (str(result.get("steps")), "bold cyan"),
             ("  ", ""),
             ("finished=", "dim"),
-            (str(result.get("finished")), "bold green" if finished else "bold yellow"),
+            (
+                str(result.get("finished")),
+                "bold green" if finished else "bold yellow",
+            ),
         )
     )
     regs = result.get("registers") or {}
@@ -292,7 +307,9 @@ def print_scan_vulns(findings: list, c: Console | None = None) -> None:
             if not first:
                 bar.append("  ", style="")
             first = False
-            bar.append(f" {sev.upper()} {n} ", style=_SEVERITY_STYLE.get(sev, "bold"))
+            bar.append(
+                f" {sev.upper()} {n} ", style=_SEVERITY_STYLE.get(sev, "bold")
+            )
         extra = [k for k in counts if k not in order]
         for sev in extra:
             bar.append("  ")
@@ -331,7 +348,9 @@ def _print_vuln_finding(c: Console, index: int, f: dict) -> None:
     if loc:
         c.print(Text.assemble(("   at     ", "dim"), (loc, "white")))
     if f.get("cwe"):
-        c.print(Text.assemble(("   CWE    ", "dim"), (str(f["cwe"]), "magenta")))
+        c.print(
+            Text.assemble(("   CWE    ", "dim"), (str(f["cwe"]), "magenta"))
+        )
 
     msg = str(f.get("message") or "").strip()
     if msg and msg != title:
@@ -355,7 +374,9 @@ def _print_vuln_finding(c: Console, index: int, f: dict) -> None:
 
     rec = str(f.get("recommendation") or "").strip()
     if rec:
-        c.print(Text.assemble(("   fix    ", "dim"), (rec, "italic bright_white")))
+        c.print(
+            Text.assemble(("   fix    ", "dim"), (rec, "italic bright_white"))
+        )
     c.print()
 
 
@@ -380,7 +401,9 @@ def _mas_ids(links) -> list[str]:
 def _format_summary_value(key: str, value: object) -> Text:
     if key == "signed":
         ok = bool(value)
-        return Text("yes" if ok else "no", style="bold green" if ok else "bold red")
+        return Text(
+            "yes" if ok else "no", style="bold green" if ok else "bold red"
+        )
     if key in {"classes", "strings", "methods"}:
         return Text(str(value), style="bold cyan")
     if key == "dex_files":
@@ -396,7 +419,9 @@ def _format_summary_value(key: str, value: object) -> Text:
     if key == "package":
         return Text(str(value), style="bold yellow")
     if key in {"app_name", "main_activity"}:
-        return Text(str(value) if value else "—", style="white" if value else "dim")
+        return Text(
+            str(value) if value else "—", style="white" if value else "dim"
+        )
     return Text(str(value))
 
 
@@ -475,3 +500,45 @@ def _style_disasm_operands(rest: str) -> Text:
         else:
             t.append(part, style="white")
     return t
+
+
+def print_signature(sig_info: dict, c: Console | None = None) -> None:
+    out = c or console()
+    out.print(Rule("APK Signature & Certificate Info", style="cyan"))
+    is_signed = sig_info.get("is_signed", False)
+    status_style = "bold green" if is_signed else "bold red"
+    out.print(
+        Text.assemble(("Signed: ", "bold"), (str(is_signed), status_style))
+    )
+
+    schemes = sig_info.get("schemes", {})
+    scheme_parts = []
+    for k in ("v1", "v2", "v3"):
+        val = schemes.get(k, False)
+        scheme_parts.append((f"{k.upper()}: ", "dim"))
+        scheme_parts.append((str(val), "bold green" if val else "dim"))
+        scheme_parts.append(("  ", ""))
+    out.print(Text.assemble(*scheme_parts))
+
+    certs = sig_info.get("certificates", [])
+    if certs:
+        out.print(Rule(f"{len(certs)} Signer Certificate(s)", style="dim"))
+        for cert in certs:
+            table = Table(box=box.SIMPLE, show_header=False, expand=True)
+            table.add_column("key", style="dim", width=14)
+            table.add_column("val")
+            table.add_row("Issuer:", cert.get("issuer", ""))
+            table.add_row("Subject:", cert.get("subject", ""))
+            table.add_row("SHA256:", cert.get("sha256", ""))
+            table.add_row("SHA1:", cert.get("sha1", ""))
+            table.add_row("Serial:", cert.get("serial_number", ""))
+            table.add_row("Valid From:", cert.get("valid_from", ""))
+            table.add_row("Valid To:", cert.get("valid_to", ""))
+            is_dbg = cert.get("is_debug", False)
+            dbg_val = (
+                Text("YES (Insecure debug cert!)", style="bold red")
+                if is_dbg
+                else Text("No", style="green")
+            )
+            table.add_row("Debug Cert:", dbg_val)
+            out.print(table)

@@ -21,17 +21,19 @@ from androguard.core.bytecode import (
     method_cfg_edges,
 )
 from androguard.core.decompiler import (
-    decompile_method as decompile_method_bytes,
     decompile_dex_to_dir,
-    emulate_method as decompiler_emulate,
-    findrefs as decompiler_findrefs,
-    getclass as decompiler_getclass,
-    java_class_from_method,
-    method_cfg as decompiler_method_cfg,
-    parse_method_selector,
-    scan_vulns as decompiler_scan_vulns,
-    taint_solve as decompiler_taint_solve,
 )
+from androguard.core.decompiler import (
+    decompile_method as decompile_method_bytes,
+)
+from androguard.core.decompiler import emulate_method as decompiler_emulate
+from androguard.core.decompiler import findrefs as decompiler_findrefs
+from androguard.core.decompiler import getclass as decompiler_getclass
+from androguard.core.decompiler import java_class_from_method
+from androguard.core.decompiler import method_cfg as decompiler_method_cfg
+from androguard.core.decompiler import parse_method_selector
+from androguard.core.decompiler import scan_vulns as decompiler_scan_vulns
+from androguard.core.decompiler import taint_solve as decompiler_taint_solve
 
 PathLike = Union[str, Path]
 
@@ -151,16 +153,12 @@ class Application:
         class_re = (
             class_pattern
             if isinstance(class_pattern, re.Pattern)
-            else re.compile(class_pattern)
-            if class_pattern
-            else None
+            else re.compile(class_pattern) if class_pattern else None
         )
         method_re = (
             method_pattern
             if isinstance(method_pattern, re.Pattern)
-            else re.compile(method_pattern)
-            if method_pattern
-            else None
+            else re.compile(method_pattern) if method_pattern else None
         )
         for method in self.methods:
             if class_re and not class_re.search(method.class_name):
@@ -207,26 +205,20 @@ class Application:
         last_error: Exception | None = None
         for _name, raw in blobs[dex_index:]:
             try:
-                return decompile_method_bytes(
-                    raw, java_class, method.name
-                )
+                return decompile_method_bytes(raw, java_class, method.name)
             except ValueError as exc:
                 last_error = exc
                 continue
         if last_error:
             raise last_error
-        raise ValueError(
-            f"method not found: {java_class}#{method.name}"
-        )
+        raise ValueError(f"method not found: {java_class}#{method.name}")
 
     def decompile_method_selector(self, selector: str) -> str:
         """Decompile using ``CLASS#METHOD`` (Java names, dex-decompiler style)."""
         java_class, method_name = parse_method_selector(selector)
         for _name, raw in self._dex_blobs():
             try:
-                return decompile_method_bytes(
-                    raw, java_class, method_name
-                )
+                return decompile_method_bytes(raw, java_class, method_name)
             except ValueError:
                 continue
         raise ValueError(f"method not found: {selector}")
@@ -314,7 +306,11 @@ class Application:
 
     def _enrich_finding_mas(self, finding: dict) -> dict:
         """Attach MASWE/MASVS/MASTG links when the decompiler binding omitted them."""
-        if finding.get("maswe") or finding.get("masvs") or finding.get("mastg_know"):
+        if (
+            finding.get("maswe")
+            or finding.get("masvs")
+            or finding.get("mastg_know")
+        ):
             return finding
         try:
             from androguard.core.decompiler import ensure_loaded
@@ -382,7 +378,9 @@ class Application:
         if axml is None:
             return out
 
-        def _finding(category: str, title: str, message: str, severity: str = "medium") -> dict:
+        def _finding(
+            category: str, title: str, message: str, severity: str = "medium"
+        ) -> dict:
             return {
                 "category": category,
                 "title": title,
@@ -408,7 +406,9 @@ class Application:
             )
 
         try:
-            allow_backup = axml.get_attribute_value("application", "allowBackup")
+            allow_backup = axml.get_attribute_value(
+                "application", "allowBackup"
+            )
         except Exception:
             allow_backup = None
         try:
@@ -448,7 +448,11 @@ class Application:
         except Exception:
             uses = []
         for entry in uses:
-            name = entry[0] if isinstance(entry, (list, tuple)) and entry else str(entry)
+            name = (
+                entry[0]
+                if isinstance(entry, (list, tuple)) and entry
+                else str(entry)
+            )
             if name in dangerous:
                 out.append(
                     _finding(
@@ -506,7 +510,9 @@ class Application:
 
         # networkSecurityConfig + user CA trust (best-effort over decoded XML / raw zip)
         try:
-            nsc_attr = axml.get_attribute_value("application", "networkSecurityConfig")
+            nsc_attr = axml.get_attribute_value(
+                "application", "networkSecurityConfig"
+            )
         except Exception:
             nsc_attr = None
         if nsc_attr:
@@ -523,11 +529,17 @@ class Application:
             if not blob:
                 try:
                     xml = axml.get_xml() or ""
-                    blob = xml.decode("utf-8", errors="ignore").lower() if isinstance(xml, (bytes, bytearray)) else str(xml).lower()
+                    blob = (
+                        xml.decode("utf-8", errors="ignore").lower()
+                        if isinstance(xml, (bytes, bytearray))
+                        else str(xml).lower()
+                    )
                 except Exception:
                     blob = ""
             if "trust-anchors" in blob and (
-                "user" in blob or "src=\"user\"" in blob or "src='user'" in blob
+                "user" in blob
+                or "src=\"user\"" in blob
+                or "src='user'" in blob
             ):
                 out.append(
                     _finding(
@@ -631,4 +643,75 @@ class Application:
             "signed": bool(
                 self._apk.signature and self._apk.signature.is_signed()
             ),
+        }
+
+    def get_signature_info(self) -> dict:
+        """Return APK signature versions and parsed certificate details."""
+        sig = getattr(self._apk, "signature", None)
+        if sig is None:
+            return {
+                "is_signed": False,
+                "schemes": {"v1": False, "v2": False, "v3": False},
+                "signature_names": [],
+                "certificates": [],
+            }
+
+        is_signed = bool(sig.is_signed())
+        v1 = bool(getattr(sig, "is_signed_v1", lambda: False)())
+        v2 = bool(getattr(sig, "is_signed_v2", lambda: False)())
+        v3 = bool(getattr(sig, "is_signed_v3", lambda: False)())
+
+        names = []
+        try:
+            names = list(sig.get_signature_names() or [])
+        except Exception:
+            pass
+
+        certs_data = []
+        try:
+            certs = sig.get_certificates() or []
+        except Exception:
+            certs = []
+
+        for c in certs:
+            try:
+                issuer = getattr(
+                    getattr(c, "issuer", None),
+                    "human_friendly",
+                    str(getattr(c, "issuer", "")),
+                )
+                subject = getattr(
+                    getattr(c, "subject", None),
+                    "human_friendly",
+                    str(getattr(c, "subject", "")),
+                )
+                sha256 = getattr(c, "sha256_fingerprint", "")
+                sha1 = getattr(c, "sha1_fingerprint", "")
+                serial = hex(getattr(c, "serial_number", 0))
+                valid_from = str(getattr(c, "not_valid_before", ""))
+                valid_to = str(getattr(c, "not_valid_after", ""))
+                is_debug = any(
+                    "android debug" in str(s).lower()
+                    for s in (issuer, subject)
+                )
+                certs_data.append(
+                    {
+                        "sha256": sha256,
+                        "sha1": sha1,
+                        "serial_number": serial,
+                        "issuer": issuer,
+                        "subject": subject,
+                        "valid_from": valid_from,
+                        "valid_to": valid_to,
+                        "is_debug": is_debug,
+                    }
+                )
+            except Exception:
+                continue
+
+        return {
+            "is_signed": is_signed,
+            "schemes": {"v1": v1, "v2": v2, "v3": v3},
+            "signature_names": names,
+            "certificates": certs_data,
         }
