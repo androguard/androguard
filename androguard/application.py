@@ -718,3 +718,75 @@ class Application:
                 self._apk.signature and self._apk.signature.is_signed()
             ),
         }
+
+    def get_signature_info(self) -> dict:
+        """Return APK signature versions and parsed certificate details."""
+        sig = getattr(self._apk, "signature", None)
+        if sig is None:
+            return {
+                "is_signed": False,
+                "schemes": {"v1": False, "v2": False, "v3": False},
+                "signature_names": [],
+                "certificates": [],
+            }
+
+        is_signed = bool(sig.is_signed())
+        v1 = bool(getattr(sig, "is_signed_v1", lambda: False)())
+        v2 = bool(getattr(sig, "is_signed_v2", lambda: False)())
+        v3 = bool(getattr(sig, "is_signed_v3", lambda: False)())
+
+        names = []
+        try:
+            names = list(sig.get_signature_names() or [])
+        except Exception:
+            pass
+
+        certs_data = []
+        try:
+            certs = sig.get_certificates() or []
+        except Exception:
+            certs = []
+
+        for c in certs:
+            try:
+                issuer = getattr(
+                    getattr(c, "issuer", None),
+                    "human_friendly",
+                    str(getattr(c, "issuer", "")),
+                )
+                subject = getattr(
+                    getattr(c, "subject", None),
+                    "human_friendly",
+                    str(getattr(c, "subject", "")),
+                )
+                sha256 = getattr(c, "sha256_fingerprint", "")
+                sha1 = getattr(c, "sha1_fingerprint", "")
+                serial = hex(getattr(c, "serial_number", 0))
+                valid_from = str(getattr(c, "not_valid_before", ""))
+                valid_to = str(getattr(c, "not_valid_after", ""))
+                is_debug = any(
+                    "android debug" in str(s).lower()
+                    for s in (issuer, subject)
+                )
+                certs_data.append(
+                    {
+                        "sha256": sha256,
+                        "sha1": sha1,
+                        "serial_number": serial,
+                        "issuer": issuer,
+                        "subject": subject,
+                        "valid_from": valid_from,
+                        "valid_to": valid_to,
+                        "is_debug": is_debug,
+                    }
+                )
+            except Exception:
+                continue
+
+        return {
+            "is_signed": is_signed,
+            "schemes": {"v1": v1, "v2": v2, "v3": v3},
+            "signature_names": names,
+            "certificates": certs_data,
+        }
+

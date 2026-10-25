@@ -47,6 +47,11 @@ class CliSummaryTest(unittest.TestCase):
         self.assertIn("onCreate", out)
         self.assertIn("TestActivity", out)
 
+    def test_show_signature(self):
+        code, out = self._run("--show-signature")
+        self.assertEqual(code, 0)
+        self.assertIn("APK Signature & Certificate Info", out)
+
     def test_disasm_requires_filter(self):
         code, out = self._run("--disasm")
         self.assertEqual(code, 1)
@@ -277,6 +282,11 @@ class CliAscSubcommandTest(unittest.TestCase):
         code, out = self._run("getmanifest", str(TEST_APK))
         self.assertEqual(code, 0)
         self.assertIn("<manifest", out)
+
+    def test_signature(self):
+        code, out = self._run("signature", str(TEST_APK))
+        self.assertEqual(code, 0)
+        self.assertIn("APK Signature & Certificate Info", out)
 
     @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
     def test_getclass(self):

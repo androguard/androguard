@@ -38,6 +38,7 @@ from androguard.cli.display import (
     print_java,
     print_methods,
     print_scan_vulns,
+    print_signature,
     print_summary,
     print_version,
     print_warning,
@@ -56,6 +57,7 @@ _ASC_COMMANDS = frozenset(
         "listmethod",
         "liststring",
         "getmanifest",
+        "signature",
         "findrefs",
         "export",
         "version",
@@ -195,6 +197,12 @@ def _build_asc_parser() -> argparse.ArgumentParser:
     manifest_p = sub.add_parser("getmanifest", help="Decode AndroidManifest.xml")
     _add_output_arg(manifest_p, help_text="Also write XML to this file")
     manifest_p.add_argument("apk_path", help="Path to the input APK")
+
+    sig_p = sub.add_parser(
+        "signature",
+        help="Display APK signature schemes and signer certificates",
+    )
+    sig_p.add_argument("apk_path", help="Path to the input APK")
 
     findrefs_p = sub.add_parser(
         "findrefs",
@@ -428,6 +436,13 @@ def _build_legacy_parser() -> argparse.ArgumentParser:
         "--getmanifest",
         action="store_true",
         help="Print decoded AndroidManifest.xml",
+    )
+    parser.add_argument(
+        "--show-signature",
+        "--cert-info",
+        dest="show_signature",
+        action="store_true",
+        help="Display APK signature schemes and signer certificates",
     )
     return parser
 
@@ -686,6 +701,11 @@ def _run_asc(argv: list[str]) -> int:
             _write_text(args.output, xml, also_stdout=True)
             return 0
 
+        if args.command == "signature":
+            sig_info = application.get_signature_info()
+            print_signature(sig_info)
+            return 0
+
         if args.command == "findrefs":
             kind = args.find_type
             if kind in ("method", "field"):
@@ -784,6 +804,11 @@ def _run_legacy(argv: list[str] | None) -> int:
                 print_error(str(exc))
                 return 1
             _write_text(args.output, xml, also_stdout=True)
+            return 0
+
+        if getattr(args, "show_signature", False):
+            sig_info = application.get_signature_info()
+            print_signature(sig_info)
             return 0
 
         if getattr(args, "scan_vulns", False):
