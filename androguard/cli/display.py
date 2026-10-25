@@ -475,3 +475,46 @@ def _style_disasm_operands(rest: str) -> Text:
         else:
             t.append(part, style="white")
     return t
+
+
+def print_signature(sig_info: dict, c: Console | None = None) -> None:
+    out = c or console()
+    out.print(Rule("APK Signature & Certificate Info", style="cyan"))
+    is_signed = sig_info.get("is_signed", False)
+    status_style = "bold green" if is_signed else "bold red"
+    out.print(
+        Text.assemble(("Signed: ", "bold"), (str(is_signed), status_style))
+    )
+
+    schemes = sig_info.get("schemes", {})
+    scheme_parts = []
+    for k in ("v1", "v2", "v3"):
+        val = schemes.get(k, False)
+        scheme_parts.append((f"{k.upper()}: ", "dim"))
+        scheme_parts.append((str(val), "bold green" if val else "dim"))
+        scheme_parts.append(("  ", ""))
+    out.print(Text.assemble(*scheme_parts))
+
+    certs = sig_info.get("certificates", [])
+    if certs:
+        out.print(Rule(f"{len(certs)} Signer Certificate(s)", style="dim"))
+        for cert in certs:
+            table = Table(box=box.SIMPLE, show_header=False, expand=True)
+            table.add_column("key", style="dim", width=14)
+            table.add_column("val")
+            table.add_row("Issuer:", cert.get("issuer", ""))
+            table.add_row("Subject:", cert.get("subject", ""))
+            table.add_row("SHA256:", cert.get("sha256", ""))
+            table.add_row("SHA1:", cert.get("sha1", ""))
+            table.add_row("Serial:", cert.get("serial_number", ""))
+            table.add_row("Valid From:", cert.get("valid_from", ""))
+            table.add_row("Valid To:", cert.get("valid_to", ""))
+            is_dbg = cert.get("is_debug", False)
+            dbg_val = (
+                Text("YES (Insecure debug cert!)", style="bold red")
+                if is_dbg
+                else Text("No", style="green")
+            )
+            table.add_row("Debug Cert:", dbg_val)
+            out.print(table)
+
