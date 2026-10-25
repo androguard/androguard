@@ -39,20 +39,34 @@ Do **not** restore the old monolithic Androguard 3/4 decompiler as the default p
 
 ## CLI cheatsheet
 
+Legacy flags (`-i`) and ASC-style subcommands both work. Path-backed queries mmap the APK on native (bytes fallback on WASM).
+
 ```bash
 androguard -i app.apk
 androguard -i app.apk --list-classes
 androguard -i app.apk --list-methods
 
+# ASC-style (preferred for findrefs/getclass/list*/manifest/export)
+androguard getclass --thread 8 app.apk pkg.Class -o Class.java
+androguard findrefs --thread 8 app.apk string password -o refs.txt
+androguard findrefs app.apk method onCreate --class Main --fuzzy-class
+androguard findrefs app.apk extends android.app.Activity
+androguard findrefs app.apk impl android.os.IInterface
+androguard listclass app.apk --prefix com.example
+androguard listmethod app.apk --class com.example.Main -f onCreate
+androguard liststring app.apk -f https
+androguard getmanifest app.apk -o AndroidManifest.xml
+androguard export app.apk -d workspace/output/pkg/
+
 # disasm (androguard[disasm])
 androguard -i app.apk --disasm --class 'MainActivity' --method 'onCreate'
 androguard -i app.apk --disasm --class TestActivity --method onCreate --cfg
 
-# decompile (androguard[decompile])
+# decompile (androguard[decompile]) — legacy flags still supported
 androguard -i app.apk --decompile-method 'pkg.Class#method'
 androguard -i app.apk -d workspace/output/pkg/ --only-package pkg.name
 androguard -i app.apk --getclass pkg.Class
-androguard -i app.apk --findrefs string --findrefs-value password
+androguard -i app.apk --findrefs string --findrefs-value password --findrefs-fuzzy-class
 androguard -i app.apk --scan-vulns
 androguard -i app.apk --emulate 'pkg.Class#method'
 

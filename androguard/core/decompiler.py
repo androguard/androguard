@@ -118,8 +118,20 @@ def getclass(data: bytes, class_name: str) -> str:
     Locate ``class_name`` in DEX/APK bytes, slice a minimal DEX, decompile it.
 
     Accepts full APK bytes (multi-DEX aware) or a single DEX blob.
+    Prefer :func:`getclass_path` for on-disk APKs (mmap on native).
     """
     return ensure_loaded().getclass(data, java_class_from_method(class_name))
+
+
+def getclass_path(path: str, class_name: str) -> str:
+    """Path-based getclass (mmap APK on native; bytes fallback on WASM)."""
+    mod = ensure_loaded()
+    fn = getattr(mod, "getclass_path", None)
+    if fn is None:
+        from pathlib import Path
+
+        return getclass(Path(path).read_bytes(), class_name)
+    return fn(path, java_class_from_method(class_name))
 
 
 def slice_class(data: bytes, class_name: str) -> bytes:
@@ -138,7 +150,8 @@ def findrefs(
     """
     ASC findrefs over DEX or APK bytes.
 
-    ``kind`` is one of ``string``, ``type``, ``method``, ``field``.
+    ``kind`` is one of ``string``, ``type``, ``method``, ``field``,
+    ``extends``, ``impl``. Prefer :func:`findrefs_path` for on-disk APKs.
     """
     return ensure_loaded().findrefs(
         data,
@@ -147,6 +160,66 @@ def findrefs(
         class_name=class_name,
         fuzzy_class=fuzzy_class,
     )
+
+
+def findrefs_path(
+    path: str,
+    kind: str,
+    value: str,
+    *,
+    class_name: str | None = None,
+    fuzzy_class: bool = False,
+) -> list[dict[str, Any]]:
+    """Path-based findrefs (mmap APK on native; bytes fallback on WASM)."""
+    mod = ensure_loaded()
+    fn = getattr(mod, "findrefs_path", None)
+    if fn is None:
+        from pathlib import Path
+
+        return findrefs(
+            Path(path).read_bytes(),
+            kind,
+            value,
+            class_name=class_name,
+            fuzzy_class=fuzzy_class,
+        )
+    return fn(
+        path,
+        kind,
+        value,
+        class_name=class_name,
+        fuzzy_class=fuzzy_class,
+    )
+
+
+def liststring(
+    data: bytes,
+    *,
+    filter: str | None = None,
+) -> list[str]:
+    """List DEX string-pool values (optional case-insensitive substring)."""
+    mod = ensure_loaded()
+    fn = getattr(mod, "liststring", None)
+    if fn is None:
+        raise DecompilerNotAvailable(
+            "liststring requires a newer dex-decompiler binding"
+        )
+    return list(fn(data, filter))
+
+
+def liststring_path(
+    path: str,
+    *,
+    filter: str | None = None,
+) -> list[str]:
+    """Path-based string-pool listing (mmap on native)."""
+    mod = ensure_loaded()
+    fn = getattr(mod, "liststring_path", None)
+    if fn is None:
+        from pathlib import Path
+
+        return liststring(Path(path).read_bytes(), filter=filter)
+    return list(fn(path, filter))
 
 
 def scan_vulns(dex_data: bytes) -> list[dict[str, Any]]:

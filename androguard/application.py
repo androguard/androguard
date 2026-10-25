@@ -25,8 +25,12 @@ from androguard.core.decompiler import (
     decompile_dex_to_dir,
     emulate_method as decompiler_emulate,
     findrefs as decompiler_findrefs,
+    findrefs_path as decompiler_findrefs_path,
     getclass as decompiler_getclass,
+    getclass_path as decompiler_getclass_path,
     java_class_from_method,
+    liststring as decompiler_liststring,
+    liststring_path as decompiler_liststring_path,
     method_cfg as decompiler_method_cfg,
     parse_method_selector,
     scan_vulns as decompiler_scan_vulns,
@@ -95,6 +99,14 @@ class Application:
             options[OPTION_SIGNATURE] = True
         if permissions:
             options[OPTION_PERMISSION] = True
+        # Keep on-disk path so findrefs/getclass/liststring can mmap (native)
+        # instead of copying the APK into BytesIO. Bytes/stream inputs stay
+        # buffered (WASM / in-memory friendly).
+        self._source_path: Path | None = (
+            Path(source).expanduser().resolve()
+            if isinstance(source, (str, Path))
+            else None
+        )
         self._apk = APK(_read_source(source), options)
 
     @property
@@ -282,8 +294,19 @@ class Application:
         self._apk._raw.seek(0)
         return self._apk._raw.read()
 
+    @property
+    def source_path(self) -> Path | None:
+        """On-disk APK path when constructed from a path; else ``None``."""
+        return self._source_path
+
     def getclass(self, class_name: str) -> str:
-        """Slice + decompile a single class (ASC getclass; APK-aware)."""
+        """Slice + decompile a single class (ASC getclass; APK-aware).
+
+        Path-backed apps use mmap on native targets; bytes/stream apps use
+        the buffered ``getclass`` path (required for WASM).
+        """
+        if self._source_path is not None:
+            return decompiler_getclass_path(str(self._source_path), class_name)
         return decompiler_getclass(self._apk_bytes(), class_name)
 
     def findrefs(
@@ -294,7 +317,19 @@ class Application:
         class_name: str | None = None,
         fuzzy_class: bool = False,
     ) -> list:
-        """ASC findrefs over this APK (string/type/method/field)."""
+        """ASC findrefs over this APK (string/type/method/field/extends/impl).
+
+        Path-backed apps mmap the APK on native targets and parallelize across
+        DEX files; bytes/stream apps use the buffered path (WASM-safe).
+        """
+        if self._source_path is not None:
+            return decompiler_findrefs_path(
+                str(self._source_path),
+                kind,
+                value,
+                class_name=class_name,
+                fuzzy_class=fuzzy_class,
+            )
         return decompiler_findrefs(
             self._apk_bytes(),
             kind,
@@ -302,6 +337,57 @@ class Application:
             class_name=class_name,
             fuzzy_class=fuzzy_class,
         )
+
+    def liststring(self, *, filter: str | None = None) -> list[str]:
+        """List DEX string-pool values (optional case-insensitive substring)."""
+        if self._source_path is not None:
+            return decompiler_liststring_path(
+                str(self._source_path), filter=filter
+            )
+        return decompiler_liststring(self._apk_bytes(), filter=filter)
+
+    def listmethod(
+        self,
+        *,
+        class_name: str | None = None,
+        filter: str | None = None,
+    ) -> list[str]:
+        """List Dalvik method descriptors (``L…;->name(…)R``), ASC listmethod."""
+        class_needle = None
+        if class_name:
+            from androguard.core.decompiler import to_dalvik
+
+            try:
+                class_needle = to_dalvik(class_name)
+            except Exception:
+                class_needle = class_name.replace(".", "/")
+                if not class_needle.startswith("L"):
+                    class_needle = f"L{class_needle}"
+                if not class_needle.endswith(";"):
+                    class_needle = f"{class_needle};"
+        name_needle = filter.casefold() if filter else None
+        out: list[str] = []
+        for method in self.methods:
+            if class_needle and method.class_name != class_needle:
+                # Exact class match (ASC); allow descriptor/Java via to_dalvik above.
+                continue
+            if name_needle and name_needle not in method.name.casefold():
+                continue
+            proto = method.proto or ["V"]
+            ret = proto[0]
+            params = "".join(proto[1:])
+            out.append(f"{method.class_name}->{method.name}({params}){ret}")
+        return out
+
+    def get_manifest_xml(self) -> str:
+        """Decoded ``AndroidManifest.xml`` as UTF-8 text (ASC getmanifest)."""
+        axml = getattr(self._apk, "axml", None)
+        if axml is None:
+            raise ValueError("APK has no AndroidManifest.xml / AXML not loaded")
+        xml = axml.get_xml()
+        if isinstance(xml, (bytes, bytearray)):
+            return bytes(xml).decode("utf-8", errors="replace")
+        return str(xml)
 
     def scan_vulns(self) -> list:
         """Run vulnerability detectors across all DEX files (+ light manifest/native checks)."""

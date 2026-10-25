@@ -463,7 +463,7 @@ def create_server(store: SessionStore | None = None):
 
     @tool(
         description=(
-            "ASC findrefs: kind=string|type|method|field (needs [decompile])."
+            "ASC findrefs: kind=string|type|method|field|extends|impl (needs [decompile])."
         )
     )
     def find_refs(

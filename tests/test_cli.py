@@ -165,6 +165,25 @@ class CliSummaryTest(unittest.TestCase):
         self.assertIn("#", out)
 
     @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_findrefs_fuzzy_class_flag(self):
+        code, out = self._run(
+            "--findrefs",
+            "method",
+            "--findrefs-value",
+            "onCreate",
+            "--findrefs-class",
+            "TestActivity",
+            "--findrefs-fuzzy-class",
+        )
+        self.assertEqual(code, 0)
+
+    def test_getmanifest_legacy(self):
+        code, out = self._run("--getmanifest")
+        self.assertEqual(code, 0)
+        self.assertIn("<manifest", out)
+        self.assertIn("tests.androguard", out)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
     def test_scan_vulns_runs(self):
         code, out = self._run("--scan-vulns")
         self.assertEqual(code, 0)
@@ -199,9 +218,13 @@ class CliUsageTest(unittest.TestCase):
             cli_app([])
         self.assertEqual(ctx.exception.code, 2)
 
-    def test_missing_apk_raises(self):
-        with self.assertRaises(FileNotFoundError):
-            cli_app(["-i", "/tmp/androguard-missing-apk.apk"])
+    def test_missing_apk_exits(self):
+        buf = io.StringIO()
+        err = io.StringIO()
+        with redirect_stdout(buf), redirect_stderr(err):
+            code = cli_app(["-i", "/tmp/androguard-missing-apk.apk"])
+        self.assertEqual(code, 1)
+        self.assertIn("No such file", buf.getvalue() + err.getvalue())
 
     def test_version_command(self):
         buf = io.StringIO()
@@ -217,6 +240,81 @@ class CliUsageTest(unittest.TestCase):
             cli_app(["--version"])
         self.assertEqual(ctx.exception.code, 0)
         self.assertIn("androguard", buf.getvalue())
+
+
+@unittest.skipUnless(file_exists(TEST_APK), "TestActivity.apk not present")
+class CliAscSubcommandTest(unittest.TestCase):
+    def _run(self, *argv: str) -> tuple[int, str]:
+        buf = io.StringIO()
+        err = io.StringIO()
+        with redirect_stdout(buf), redirect_stderr(err):
+            code = cli_app([*argv])
+        return code, buf.getvalue() + err.getvalue()
+
+    def test_listclass(self):
+        code, out = self._run("listclass", str(TEST_APK), "--prefix", "Ltests/androguard")
+        self.assertEqual(code, 0)
+        self.assertIn("Ltests/androguard/TestActivity;", out)
+
+    def test_listmethod(self):
+        code, out = self._run(
+            "listmethod",
+            str(TEST_APK),
+            "--class",
+            "tests.androguard.TestActivity",
+            "-f",
+            "onCreate",
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("->onCreate(", out)
+
+    def test_liststring(self):
+        code, out = self._run("liststring", str(TEST_APK), "-f", "this is a test")
+        self.assertEqual(code, 0)
+        self.assertIn("this is a test", out)
+
+    def test_getmanifest(self):
+        code, out = self._run("getmanifest", str(TEST_APK))
+        self.assertEqual(code, 0)
+        self.assertIn("<manifest", out)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_getclass(self):
+        code, out = self._run(
+            "getclass", str(TEST_APK), "tests.androguard.TestActivity"
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("TestActivity", out)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_findrefs_string(self):
+        code, out = self._run(
+            "findrefs", str(TEST_APK), "string", "this is a test"
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("findrefs", out)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_findrefs_extends(self):
+        code, out = self._run(
+            "findrefs", str(TEST_APK), "extends", "android.app.Activity"
+        )
+        self.assertEqual(code, 0)
+
+    @unittest.skipUnless(HAS_DECOMPILER, "dex-decompiler not installed")
+    def test_findrefs_output_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out_path = Path(tmp) / "refs.txt"
+            code, _ = self._run(
+                "findrefs",
+                str(TEST_APK),
+                "string",
+                "this is a test",
+                "-o",
+                str(out_path),
+            )
+            self.assertEqual(code, 0)
+            self.assertTrue(out_path.is_file())
 
 
 if __name__ == "__main__":
