@@ -27,6 +27,7 @@ from androguard import __version__ as ANDROGUARD_VERSION
 from androguard.application import Application
 from androguard.cli.display import (
     print_class_names,
+    print_components,
     print_cfg_edges,
     print_decode_project,
     print_disasm_header,
@@ -36,6 +37,7 @@ from androguard.cli.display import (
     print_findrefs,
     print_info,
     print_java,
+    print_manifest,
     print_methods,
     print_scan_vulns,
     print_summary,
@@ -56,6 +58,7 @@ _ASC_COMMANDS = frozenset(
         "listmethod",
         "liststring",
         "getmanifest",
+        "listcomponents",
         "findrefs",
         "export",
         "version",
@@ -195,6 +198,25 @@ def _build_asc_parser() -> argparse.ArgumentParser:
     manifest_p = sub.add_parser("getmanifest", help="Decode AndroidManifest.xml")
     _add_output_arg(manifest_p, help_text="Also write XML to this file")
     manifest_p.add_argument("apk_path", help="Path to the input APK")
+
+    components_p = sub.add_parser(
+        "listcomponents",
+        help="List Android components (activities, services, receivers, providers)",
+    )
+    _add_thread_arg(components_p)
+    components_p.add_argument(
+        "--type",
+        dest="component_type",
+        choices=["all", "activity", "service", "receiver", "provider"],
+        default="all",
+        help="Filter by component type (default: all)",
+    )
+    components_p.add_argument(
+        "--exported-only",
+        action="store_true",
+        help="Only display exported components",
+    )
+    components_p.add_argument("apk_path", help="Path to the input APK")
 
     findrefs_p = sub.add_parser(
         "findrefs",
@@ -428,6 +450,29 @@ def _build_legacy_parser() -> argparse.ArgumentParser:
         "--getmanifest",
         action="store_true",
         help="Print decoded AndroidManifest.xml",
+    )
+    parser.add_argument(
+        "--manifest",
+        "--show-manifest",
+        dest="show_manifest",
+        action="store_true",
+        help="Print decoded AndroidManifest.xml with syntax highlighting",
+    )
+    parser.add_argument(
+        "--list-components",
+        action="store_true",
+        help="List Android components (activities, services, receivers, providers)",
+    )
+    parser.add_argument(
+        "--component-type",
+        choices=["all", "activity", "service", "receiver", "provider"],
+        default="all",
+        help="Filter --list-components by component type (default: all)",
+    )
+    parser.add_argument(
+        "--exported-only",
+        action="store_true",
+        help="Only display exported components with --list-components",
     )
     return parser
 
@@ -686,6 +731,18 @@ def _run_asc(argv: list[str]) -> int:
             _write_text(args.output, xml, also_stdout=True)
             return 0
 
+        if args.command == "listcomponents":
+            try:
+                comps = application.get_components(
+                    component_type=args.component_type,
+                    exported_only=args.exported_only,
+                )
+            except Exception as exc:
+                print_error(str(exc))
+                return 1
+            print_components(comps)
+            return 0
+
         if args.command == "findrefs":
             kind = args.find_type
             if kind in ("method", "field"):
@@ -784,6 +841,27 @@ def _run_legacy(argv: list[str] | None) -> int:
                 print_error(str(exc))
                 return 1
             _write_text(args.output, xml, also_stdout=True)
+            return 0
+
+        if getattr(args, "show_manifest", False):
+            try:
+                xml = application.get_manifest_xml()
+            except Exception as exc:
+                print_error(str(exc))
+                return 1
+            print_manifest(xml)
+            return 0
+
+        if getattr(args, "list_components", False):
+            try:
+                comps = application.get_components(
+                    component_type=args.component_type,
+                    exported_only=args.exported_only,
+                )
+                print_components(comps)
+            except Exception as exc:
+                print_error(str(exc))
+                return 1
             return 0
 
         if getattr(args, "scan_vulns", False):

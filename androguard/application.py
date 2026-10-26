@@ -718,3 +718,145 @@ class Application:
                 self._apk.signature and self._apk.signature.is_signed()
             ),
         }
+
+    def get_components(
+        self,
+        component_type: str = "all",
+        exported_only: bool = False,
+    ) -> list[dict]:
+        """
+        Return parsed components (activities, services, receivers, providers).
+        """
+        valid_map = {
+            "activity": "activity",
+            "service": "service",
+            "receiver": "receiver",
+            "provider": "provider",
+        }
+        req = component_type.lower().strip()
+        if req not in ("all", *valid_map):
+            raise ValueError(
+                f"invalid component_type {component_type!r}; "
+                f"expected all|activity|service|receiver|provider"
+            )
+
+        types_to_query = list(valid_map.keys()) if req == "all" else [req]
+        results = []
+
+        axml = getattr(self._apk, "axml", None)
+        target_sdk = 17
+        if axml is not None:
+            try:
+                eff = axml.get_effective_target_sdk_version()
+                if eff is not None:
+                    target_sdk = int(eff)
+            except Exception:
+                target_sdk = 17
+
+        for c_type in types_to_query:
+            tags = []
+            if axml is not None:
+                try:
+                    tags = axml.find_tags(c_type) or []
+                except Exception:
+                    tags = []
+
+            if not tags:
+                getter = {
+                    "activity": self._apk.get_activities,
+                    "service": self._apk.get_services,
+                    "receiver": self._apk.get_receivers,
+                    "provider": self._apk.get_providers,
+                }.get(c_type)
+                try:
+                    names = list(getter() or []) if getter else []
+                except Exception:
+                    names = []
+
+                for name in names:
+                    filters = {}
+                    try:
+                        filters = (
+                            self._apk.get_intent_filters(c_type, name) or {}
+                        )
+                    except Exception:
+                        pass
+                    has_filters = bool(
+                        filters.get("action")
+                        or filters.get("category")
+                        or filters.get("data")
+                    )
+                    exported = (
+                        (target_sdk < 17)
+                        if c_type == "provider"
+                        else has_filters
+                    )
+                    if exported_only and not exported:
+                        continue
+                    results.append(
+                        {
+                            "name": name,
+                            "type": c_type,
+                            "exported": exported,
+                            "intent_filters": filters,
+                        }
+                    )
+                continue
+
+            for tag in tags:
+                name = ""
+                exported_attr = None
+                permission = None
+                try:
+                    for k, v in tag.attrib.items():
+                        local_k = k.split("}")[-1] if "}" in k else k
+                        if local_k == "name":
+                            name = axml.format_value(v)
+                        elif local_k == "exported":
+                            exported_attr = v
+                        elif local_k == "permission":
+                            permission = axml.format_value(v)
+                except Exception:
+                    continue
+
+                if not name:
+                    continue
+
+                filters = {}
+                try:
+                    filters = self._apk.get_intent_filters(c_type, name) or {}
+                except Exception:
+                    pass
+
+                has_filters = bool(
+                    filters.get("action")
+                    or filters.get("category")
+                    or filters.get("data")
+                    or tag.findall(".//intent-filter")
+                )
+
+                if exported_attr is not None:
+                    exported = str(exported_attr).strip().lower() in (
+                        "true",
+                        "1",
+                    )
+                elif c_type == "provider":
+                    exported = target_sdk < 17
+                else:
+                    exported = has_filters
+
+                if exported_only and not exported:
+                    continue
+
+                item = {
+                    "name": name,
+                    "type": c_type,
+                    "exported": exported,
+                    "intent_filters": filters,
+                }
+                if permission:
+                    item["permission"] = permission
+                results.append(item)
+
+        return results
+
