@@ -32,6 +32,9 @@ _TOOL_NAMES = (
     "close_apk",
     "list_sessions",
     "apk_summary",
+    "get_manifest",
+    "list_components",
+    "get_signature_info",
     "list_permissions",
     "list_classes",
     "list_methods",
@@ -306,6 +309,48 @@ def create_server(store: SessionStore | None = None):
     def apk_summary(session_id: str) -> str:
         return _call(
             T.apk_summary, tool="apk_summary", store=store, session_id=session_id
+        )
+
+    @tool(description="Get decoded AndroidManifest.xml as UTF-8 string.")
+    def get_manifest(session_id: str, max_chars: int | None = None) -> str:
+        return _call(
+            T.get_manifest,
+            tool="get_manifest",
+            store=store,
+            session_id=session_id,
+            max_chars=max_chars,
+        )
+
+    @tool(description="List Android components and attack surface (paged).")
+    def list_components(
+        session_id: str,
+        component_type: str = "all",
+        exported_only: bool = False,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> str:
+        return _call(
+            T.list_components,
+            tool="list_components",
+            store=store,
+            session_id=session_id,
+            component_type=component_type,
+            exported_only=exported_only,
+            offset=offset,
+            limit=limit,
+        )
+
+    @tool(
+        description=(
+            "Get APK signature schemes (v1-v3) and certificate details."
+        )
+    )
+    def get_signature_info(session_id: str) -> str:
+        return _call(
+            T.get_signature_info,
+            tool="get_signature_info",
+            store=store,
+            session_id=session_id,
         )
 
     @tool(description="List requested/declared permissions (paged).")

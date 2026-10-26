@@ -918,3 +918,56 @@ def rebuild_apk(
         "signed": sign,
         "dirty": False,
     }
+
+
+def get_manifest(
+    store: SessionStore,
+    session_id: str,
+    *,
+    max_chars: int | None = None,
+) -> dict[str, Any]:
+    app = _app(store, session_id)
+    xml = app.get_manifest_xml()
+    if not xml:
+        raise McpToolError(
+            "not_found", "AndroidManifest.xml not found or empty"
+        )
+    if max_chars is None:
+        max_chars = default_text_chars()
+    out = truncate_text(xml, max_chars=max_chars, meta={"format": "xml"})
+    out["ok"] = True
+    return out
+
+
+def list_components(
+    store: SessionStore,
+    session_id: str,
+    *,
+    component_type: str = "all",
+    exported_only: bool = False,
+    offset: int = 0,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    app = _app(store, session_id)
+    try:
+        comps = app.get_components(
+            component_type=component_type,
+            exported_only=exported_only,
+        )
+    except ValueError as exc:
+        raise McpToolError("invalid_argument", str(exc)) from exc
+    page = page_items(comps, offset=offset, limit=limit)
+    page["ok"] = True
+    page["component_type"] = component_type
+    page["exported_only"] = exported_only
+    return page
+
+
+def get_signature_info(
+    store: SessionStore,
+    session_id: str,
+) -> dict[str, Any]:
+    app = _app(store, session_id)
+    sig_info = app.get_signature_info()
+    return {"ok": True, "signature": jsonable(sig_info)}
+

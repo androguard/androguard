@@ -92,6 +92,9 @@ All tool results are **JSON strings** with `ok: true|false`. On failure:
 | `close_apk` | — | Drop session |
 | `list_sessions` | — | Open sessions |
 | `apk_summary` | — | Package / DEX counts / signed |
+| `get_manifest` | — | Decoded `AndroidManifest.xml` (paged) |
+| `list_components` | — | Manifest components & attack surface (paged) |
+| `get_signature_info` | — | Signature schemes (v1-v3) & cert details |
 | `list_permissions` | — | Permissions (paged) |
 | `list_classes` | — | Class names (regex + paging) |
 | `list_methods` | — | Methods (regex + paging) |
