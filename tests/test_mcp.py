@@ -312,6 +312,60 @@ class McpSessionTest(unittest.TestCase):
         self.assertTrue(sessions["ok"])
         self.assertEqual(len(sessions["sessions"]), 1)
 
+    def test_get_manifest_components_and_signature(self):
+        from androguard.mcp import tools as T
+
+        sid = self.store.open(TEST_APK)["session_id"]
+        manifest = T.get_manifest(self.store, sid, max_chars=4000)
+        self.assertTrue(manifest["ok"])
+        self.assertIn("manifest", manifest["source"])
+        self.assertIn("TestActivity", manifest["source"])
+
+        comps = T.list_components(self.store, sid, component_type="all")
+        self.assertTrue(comps["ok"])
+        self.assertGreater(comps["total"], 0)
+        self.assertEqual(comps["items"][0]["type"], "activity")
+        self.assertTrue(comps["items"][0]["exported"])
+
+        acts = T.list_components(
+            self.store, sid, component_type="activity", exported_only=True
+        )
+        self.assertTrue(acts["ok"])
+        self.assertEqual(acts["total"], 1)
+
+        srvs = T.list_components(self.store, sid, component_type="service")
+        self.assertTrue(srvs["ok"])
+        self.assertEqual(srvs["total"], 0)
+
+        # Test explicit android:exported="false" with intent filters
+        intent_apk = (
+            Path(__file__).parent / "data" / "APK" / "com.test.intent_filter.apk"
+        )
+        if intent_apk.is_file():
+            sid2 = self.store.open(intent_apk)["session_id"]
+            recvs = T.list_components(
+                self.store, sid2, component_type="receiver"
+            )
+            self.assertTrue(recvs["ok"])
+            test_recv = next(
+                (r for r in recvs["items"] if "TestReceiver" in r["name"]),
+                None,
+            )
+            self.assertIsNotNone(test_recv)
+            self.assertFalse(test_recv["exported"])
+
+            exp_recvs = T.list_components(
+                self.store, sid2, component_type="receiver", exported_only=True
+            )
+            self.assertEqual(exp_recvs["total"], 0)
+
+        sig = T.get_signature_info(self.store, sid)
+        self.assertTrue(sig["ok"])
+        self.assertTrue(sig["signature"]["is_signed"])
+        self.assertTrue(sig["signature"]["schemes"]["v1"])
+        self.assertGreater(len(sig["signature"]["certificates"]), 0)
+        self.assertTrue(sig["signature"]["certificates"][0]["is_debug"])
+
     def test_path_denied_outside_roots(self):
         with self.assertRaises(self.McpToolError) as ctx:
             self.store.open("/etc/hosts")
@@ -528,6 +582,9 @@ class McpServerRegistrationTest(unittest.TestCase):
             "close_apk",
             "list_sessions",
             "apk_summary",
+            "get_manifest",
+            "list_components",
+            "get_signature_info",
             "list_permissions",
             "list_classes",
             "list_methods",
@@ -907,6 +964,67 @@ class McpServerRegistrationTest(unittest.TestCase):
             else:
                 os.environ["ANDROGUARD_MCP_ALLOW_WRITE"] = previous
 
+    def test_call_get_manifest_and_components_tools(self):
+        import asyncio
+
+        from androguard.mcp.server import create_server
+        from androguard.mcp.session import SessionStore
+
+        if not file_exists(TEST_APK):
+            self.skipTest("TestActivity.apk missing")
+        server = create_server(SessionStore(allow_any=True))
+        self.addCleanup(server._androguard_shutdown)
+        opened = json.loads(
+            asyncio.run(server.call_tool("open_apk", {"path": str(TEST_APK)}))
+            .content[0]
+            .text
+        )
+        sid = opened["session_id"]
+
+        manifest_res = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "get_manifest",
+                    {"session_id": sid, "max_chars": 5000},
+                )
+            )
+            .content[0]
+            .text
+        )
+        self.assertTrue(manifest_res["ok"])
+        self.assertIn("manifest", manifest_res["source"])
+
+        comps_res = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "list_components",
+                    {
+                        "session_id": sid,
+                        "component_type": "activity",
+                        "exported_only": True,
+                    },
+                )
+            )
+            .content[0]
+            .text
+        )
+        self.assertTrue(comps_res["ok"])
+        self.assertEqual(comps_res["total"], 1)
+
+        sig_res = json.loads(
+            asyncio.run(
+                server.call_tool(
+                    "get_signature_info",
+                    {"session_id": sid},
+                )
+            )
+            .content[0]
+            .text
+        )
+        self.assertTrue(sig_res["ok"])
+        self.assertTrue(sig_res["signature"]["is_signed"])
+
 
 if __name__ == "__main__":
     unittest.main()
+

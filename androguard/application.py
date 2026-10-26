@@ -718,3 +718,216 @@ class Application:
                 self._apk.signature and self._apk.signature.is_signed()
             ),
         }
+
+    def get_components(
+        self,
+        component_type: str = "all",
+        exported_only: bool = False,
+    ) -> list[dict]:
+        """
+        Return parsed components (activities, services, receivers, providers).
+        """
+        valid_map = {
+            "activity": "activity",
+            "service": "service",
+            "receiver": "receiver",
+            "provider": "provider",
+        }
+        req = component_type.lower().strip()
+        if req not in ("all", *valid_map):
+            raise ValueError(
+                f"invalid component_type {component_type!r}; "
+                f"expected all|activity|service|receiver|provider"
+            )
+
+        types_to_query = list(valid_map.keys()) if req == "all" else [req]
+        results = []
+
+        axml = getattr(self._apk, "axml", None)
+        target_sdk = 17
+        if axml is not None:
+            try:
+                eff = axml.get_effective_target_sdk_version()
+                if eff is not None:
+                    target_sdk = int(eff)
+            except Exception:
+                target_sdk = 17
+
+        for c_type in types_to_query:
+            tags = []
+            if axml is not None:
+                try:
+                    tags = axml.find_tags(c_type) or []
+                except Exception:
+                    tags = []
+
+            if not tags:
+                getter = {
+                    "activity": self._apk.get_activities,
+                    "service": self._apk.get_services,
+                    "receiver": self._apk.get_receivers,
+                    "provider": self._apk.get_providers,
+                }.get(c_type)
+                try:
+                    names = list(getter() or []) if getter else []
+                except Exception:
+                    names = []
+
+                for name in names:
+                    filters = {}
+                    try:
+                        filters = (
+                            self._apk.get_intent_filters(c_type, name) or {}
+                        )
+                    except Exception:
+                        pass
+                    has_filters = bool(
+                        filters.get("action")
+                        or filters.get("category")
+                        or filters.get("data")
+                    )
+                    exported = (
+                        (target_sdk < 17)
+                        if c_type == "provider"
+                        else has_filters
+                    )
+                    if exported_only and not exported:
+                        continue
+                    results.append(
+                        {
+                            "name": name,
+                            "type": c_type,
+                            "exported": exported,
+                            "intent_filters": filters,
+                        }
+                    )
+                continue
+
+            for tag in tags:
+                name = ""
+                exported_attr = None
+                permission = None
+                try:
+                    for k, v in tag.attrib.items():
+                        local_k = k.split("}")[-1] if "}" in k else k
+                        if local_k == "name":
+                            name = axml.format_value(v)
+                        elif local_k == "exported":
+                            exported_attr = v
+                        elif local_k == "permission":
+                            permission = axml.format_value(v)
+                except Exception:
+                    continue
+
+                if not name:
+                    continue
+
+                filters = {}
+                try:
+                    filters = self._apk.get_intent_filters(c_type, name) or {}
+                except Exception:
+                    pass
+
+                has_filters = bool(
+                    filters.get("action")
+                    or filters.get("category")
+                    or filters.get("data")
+                    or tag.findall(".//intent-filter")
+                )
+
+                if exported_attr is not None:
+                    exported = str(exported_attr).strip().lower() in (
+                        "true",
+                        "1",
+                    )
+                elif c_type == "provider":
+                    exported = target_sdk < 17
+                else:
+                    exported = has_filters
+
+                if exported_only and not exported:
+                    continue
+
+                item = {
+                    "name": name,
+                    "type": c_type,
+                    "exported": exported,
+                    "intent_filters": filters,
+                }
+                if permission:
+                    item["permission"] = permission
+                results.append(item)
+
+        return results
+
+    def get_signature_info(self) -> dict:
+        """Return APK signature versions and parsed certificate details."""
+        sig = getattr(self._apk, "signature", None)
+        if sig is None:
+            return {
+                "is_signed": False,
+                "schemes": {"v1": False, "v2": False, "v3": False},
+                "signature_names": [],
+                "certificates": [],
+            }
+
+        is_signed = bool(sig.is_signed())
+        v1 = bool(getattr(sig, "is_signed_v1", lambda: False)())
+        v2 = bool(getattr(sig, "is_signed_v2", lambda: False)())
+        v3 = bool(getattr(sig, "is_signed_v3", lambda: False)())
+
+        names = []
+        try:
+            names = list(sig.get_signature_names() or [])
+        except Exception:
+            pass
+
+        certs_data = []
+        try:
+            certs = sig.get_certificates() or []
+        except Exception:
+            certs = []
+
+        for c in certs:
+            try:
+                issuer = getattr(
+                    getattr(c, "issuer", None),
+                    "human_friendly",
+                    str(getattr(c, "issuer", "")),
+                )
+                subject = getattr(
+                    getattr(c, "subject", None),
+                    "human_friendly",
+                    str(getattr(c, "subject", "")),
+                )
+                sha256 = getattr(c, "sha256_fingerprint", "")
+                sha1 = getattr(c, "sha1_fingerprint", "")
+                serial = hex(getattr(c, "serial_number", 0))
+                valid_from = str(getattr(c, "not_valid_before", ""))
+                valid_to = str(getattr(c, "not_valid_after", ""))
+                is_debug = any(
+                    "android debug" in str(s).lower()
+                    for s in (issuer, subject)
+                )
+                certs_data.append(
+                    {
+                        "sha256": sha256,
+                        "sha1": sha1,
+                        "serial_number": serial,
+                        "issuer": issuer,
+                        "subject": subject,
+                        "valid_from": valid_from,
+                        "valid_to": valid_to,
+                        "is_debug": is_debug,
+                    }
+                )
+            except Exception:
+                continue
+
+        return {
+            "is_signed": is_signed,
+            "schemes": {"v1": v1, "v2": v2, "v3": v3},
+            "signature_names": names,
+            "certificates": certs_data,
+        }
+
